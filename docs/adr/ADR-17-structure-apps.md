@@ -7,13 +7,13 @@
 ```text
 apps/
 ├── api/        # API Django REST (Cookiecutter), anciennement backend/
-├── frontend/   # applications web React : portail, comptoir, atelier, gestion
+├── web/        # application web React unique (voir ADR-18)
 └── mobile/     # applications React Native : pilotage
 ```
 
 - Le backend s'appelle toujours **api** : dossier `apps/api`, job CI `api`, commandes `make test-api` / `make lint-api`.
 - `apps/api` reste un projet Cookiecutter Django standard (ses fichiers Compose, `.envs` et sa documentation Sphinx restent à l'intérieur).
-- L'espace de travail pnpm couvre `apps/frontend/*`, `apps/mobile/*`, `packages/*` et `e2e`. `apps/api` n'est pas un paquet Node.
+- L'espace de travail pnpm couvre `apps/web`, `apps/mobile/*`, `packages/*` et `e2e`. `apps/api` n'est pas un paquet Node.
 
 ## Conséquences
 

@@ -1,5 +1,5 @@
 # Proxy OptiBoul (spécification technique §2 et §7) :
-# - une seule origine, routage par préfixe vers Django (/api…) ou vers le conteneur web (/, /comptoir, /atelier, /gestion) ;
+# - une seule origine, routage par préfixe vers Django (/api…), tout le reste vers l'application web ;
 # - entrée « remote » réservée au tunnel (Cloudflare Tunnel ou Tailscale) : seule l'API y est exposée.
 log:
   level: INFO

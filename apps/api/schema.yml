@@ -141,6 +141,9 @@ paths:
           description: ''
 components:
   schemas:
+    NullEnum:
+      enum:
+      - null
     PaginatedUserList:
       type: object
       required:
@@ -175,6 +178,26 @@ components:
           type: string
           format: uri
           readOnly: true
+        profil:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ProfilEnum'
+          - $ref: '#/components/schemas/NullEnum'
+    ProfilEnum:
+      enum:
+      - caissier
+      - gerant
+      - production
+      - proprietaire
+      - administrateur
+      type: string
+      description: |-
+        * `caissier` - Caissier / caissière
+        * `gerant` - Gérant de la semaine
+        * `production` - Responsable de production
+        * `proprietaire` - Propriétaire
+        * `administrateur` - Administrateur
     Sante:
       type: object
       properties:
@@ -196,7 +219,14 @@ components:
           type: string
           format: uri
           readOnly: true
+        profil:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ProfilEnum'
+          - $ref: '#/components/schemas/NullEnum'
       required:
+      - profil
       - url
   securitySchemes:
     cookieAuth:

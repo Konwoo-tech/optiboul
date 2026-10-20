@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-test('chaque application web répond sous son préfixe', async ({ page }) => {
-  for (const prefixe of ['/', '/comptoir/', '/atelier/', '/gestion/']) {
-    await page.goto(prefixe);
+test("l'application web répond sur ses routes", async ({ page }) => {
+  for (const route of ['/', '/connexion', '/comptoir', '/gestion']) {
+    await page.goto(route);
     await expect(page).toHaveTitle(/OptiBoul/);
   }
 });

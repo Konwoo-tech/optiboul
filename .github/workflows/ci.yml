@@ -26,7 +26,7 @@ jobs:
             api:
               - 'apps/api/**'
             front:
-              - 'apps/frontend/**'
+              - 'apps/web/**'
               - 'apps/mobile/**'
               - 'packages/**'
               - 'apps/api/schema.yml'

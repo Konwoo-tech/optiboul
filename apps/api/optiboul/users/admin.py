@@ -2,10 +2,12 @@ from allauth.account.decorators import secure_admin_login
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth import admin as auth_admin
+from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
 
 from .forms import UserAdminChangeForm
 from .forms import UserAdminCreationForm
+from .models import ProfilGroupe
 from .models import User
 
 if settings.DJANGO_ADMIN_FORCE_ALLAUTH:
@@ -48,3 +50,19 @@ class UserAdmin(auth_admin.UserAdmin):
             },
         ),
     )
+
+
+class ProfilGroupeInline(admin.StackedInline):
+    model = ProfilGroupe
+    can_delete = False
+
+
+admin.site.unregister(Group)
+
+
+@admin.register(Group)
+class GroupeAdmin(auth_admin.GroupAdmin):
+    """L'administrateur crée les groupes et choisit leur profil (US-021)."""
+
+    inlines = [ProfilGroupeInline]
+    list_display = ["name", "profil_droits__profil"]

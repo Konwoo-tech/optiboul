@@ -10,14 +10,7 @@
       {
         "patterns": [
           {
-            "group": [
-              "**/apps/**",
-              "@optiboul/portail",
-              "@optiboul/comptoir",
-              "@optiboul/atelier",
-              "@optiboul/gestion",
-              "@optiboul/pilotage"
-            ],
+            "group": ["**/apps/**", "@optiboul/web", "@optiboul/pilotage"],
             "message": "Une application n'importe jamais une autre application : passer par packages/ (spécification technique §3.2)."
           }
         ]

@@ -13,14 +13,13 @@ optiboul/
 ├── apps/
 │   ├── api/              # API Django REST (Cookiecutter) : Django 6, DRF, Celery, PostgreSQL 16, Mailgun, AWS S3
 │   │   └── optiboul/     # 12 applications par domaine × 4 couches (domain, application, infrastructure, api)
-│   ├── frontend/         # applications web React + Vite + TypeScript
-│   │   ├── portail/      # /          connexion, accueil par profil
-│   │   ├── comptoir/     # /comptoir  caisse, livraisons (clavier d'abord, sombre la nuit)
-│   │   ├── atelier/      # /atelier   plan du jour, production, inventaire
-│   │   └── gestion/      # /gestion   back-office du gérant et du propriétaire
+│   ├── web/              # application web unique React + Vite + TypeScript
+│   │   └── src/
+│   │       ├── profils.ts    # profil → espaces visibles et écran d'arrivée (O10)
+│   │       └── espaces/      # connexion, comptoir, atelier, gestion
 │   └── mobile/           # applications React Native (Expo)
 │       └── pilotage/     # demandes, alertes, indicateurs (propriétaire, gérant)
-├── packages/             # code partagé par le frontend et le mobile
+├── packages/             # code partagé par le web et le mobile
 │   ├── api-client/       # client + hooks TanStack Query générés depuis apps/api/schema.yml (orval)
 │   ├── auth/             # session de même origine, gardes (web)
 │   ├── ui/               # thème OptiBoul Mantine, composants métier (web)
@@ -29,7 +28,7 @@ optiboul/
 │   ├── testing/          # mocks MSW, setup Vitest
 │   └── config/           # tsconfig, Vite
 ├── e2e/                  # Playwright
-├── compose/web/          # image Nginx des 4 applications web
+├── compose/web/          # image Nginx de l'application web
 ├── infra/                # installation, certificats, tunnel
 ├── docs/
 │   ├── specifications/   # cahier des charges, parcours, backlog, spécification technique
@@ -38,7 +37,7 @@ optiboul/
 └── scripts/github/       # import du backlog en issues
 ```
 
-En production, Traefik sert une seule origine : `/api`, `/accounts`, `/static`, `/django-admin…` vont à Django, le reste au conteneur web. Le tunnel d'accès distant n'expose que `/api`, pour l'application mobile.
+En production, Traefik sert une seule origine : `/api`, `/accounts`, `/static`, `/django-admin…` vont à Django, le reste à l'application web. Le tunnel d'accès distant n'expose que `/api`, pour l'application mobile.
 
 ## Démarrer
 
@@ -49,7 +48,7 @@ pnpm install          # dépendances des applications et paquets
 make up               # crée les .envs locaux puis lance Django, PostgreSQL, Redis, Celery, Mailpit
 make migrate
 make superuser
-pnpm dev              # portail :5173, comptoir :5174, atelier :5175, gestion :5176 (proxy /api → :8000)
+pnpm dev              # application web sur http://localhost:5173 (proxy vers Django :8000)
 pnpm dev:mobile       # application Expo (EXPO_PUBLIC_API_URL dans apps/mobile/pilotage/.env)
 ```
 
@@ -64,7 +63,7 @@ pnpm dev:mobile       # application Expo (EXPO_PUBLIC_API_URL dans apps/mobile/p
 | Commande               | Effet                                                                                          |
 | ---------------------- | ---------------------------------------------------------------------------------------------- |
 | `make help`            | Liste des commandes                                                                            |
-| `make test`            | pytest + import-linter (API), Vitest (frontend)                                                |
+| `make test`            | pytest + import-linter (API), Vitest (web et paquets)                                          |
 | `make lint`            | Ruff, mypy, oxlint, TypeScript, Prettier                                                       |
 | `make api-client`      | Régénère `apps/api/schema.yml` puis `packages/api-client` ; à lancer à chaque changement d'API |
 | `pnpm turbo run build` | Construit les applications web                                                                 |
@@ -73,6 +72,7 @@ pnpm dev:mobile       # application Expo (EXPO_PUBLIC_API_URL dans apps/mobile/p
 ## Règles du dépôt
 
 - **Clean Architecture** : `domain` (Python pur) ← `application` ← `infrastructure` / `api` ; contrôlé par import-linter.
+- **Une seule application web** : ce qu'un utilisateur voit dépend de son **profil**, porté par son groupe et configuré par l'administrateur (`apps/web/src/profils.ts`, droits vérifiés par l'API).
 - **Une application n'importe jamais une autre application** : le code commun va dans `packages/` (règle oxlint).
 - **Contrat API** : `apps/api/schema.yml` et le client généré sont versionnés ; la CI échoue s'ils ne sont pas à jour.
 - **Montants** en entiers FCFA, jamais en flottants ; **registres** de mouvements en ajout seul.

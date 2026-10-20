@@ -1,6 +1,6 @@
 # Revue obligatoire par dossier (spécification technique §3.2).
 *                 @elgeneralbaudouin
 /apps/api/        @elgeneralbaudouin
-/apps/frontend/comptoir/ @elgeneralbaudouin
+/apps/web/        @elgeneralbaudouin
 /apps/mobile/    @elgeneralbaudouin
 /packages/        @elgeneralbaudouin

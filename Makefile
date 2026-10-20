@@ -20,7 +20,7 @@ down: ## Arrête les services Docker
 logs: ## Suit les journaux Docker
 	$(API_COMPOSE) logs -f
 
-dev: ## Lance les 4 applications web Vite (proxy /api vers Django)
+dev: ## Lance l'application web Vite sur :5173 (proxy vers Django)
 	pnpm dev
 
 migrate: ## Applique les migrations

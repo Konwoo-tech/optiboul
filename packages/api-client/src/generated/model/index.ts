@@ -6,8 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './nullEnum.ts';
 export * from './paginatedUserList.ts';
 export * from './patchedUser.ts';
+export * from './profilEnum.ts';
 export * from './sante.ts';
 export * from './user.ts';
 export * from './usersListParams.ts';

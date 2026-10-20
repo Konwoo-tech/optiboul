@@ -1,5 +1,5 @@
 packages:
-  - apps/frontend/*
+  - apps/web
   - apps/mobile/*
   - packages/*
   - e2e
