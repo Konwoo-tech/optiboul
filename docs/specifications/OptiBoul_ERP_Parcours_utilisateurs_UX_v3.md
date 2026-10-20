@@ -1,10 +1,10 @@
 # OptiBoul ERP — Profils, parcours utilisateurs et UX
 
 **Boulangerie du Faubourg · Etoudi, Yaoundé**  
-Version 2 · 14 octobre 2026  
+Version 3 · 20 octobre 2026  
 Préparé par Dongmo Noukouankouang Baudouin
 
-> Remplace la version 1 du 14 octobre 2026. S'appuie sur le cahier des charges v4 (optimisations O1 à O16) et le prototype cliquable « OptiBoul ERP v2 ».
+> Remplace la version 2 du 14 octobre 2026. S'appuie sur le cahier des charges v5 du 20 octobre 2026 (optimisations O1 à O18) et le prototype cliquable mis à jour.
 
 ## Sommaire
 
@@ -18,7 +18,7 @@ Préparé par Dongmo Noukouankouang Baudouin
 
 ## 1. Objet et nouveautés
 
-Ce document décrit qui utilise OptiBoul ERP, comment chacun s'en sert au quotidien et les règles d'interface qui rendent la saisie rapide et sûre. La version 2 part du prototype cliquable et du cahier des charges v3, puis les **optimise** : chaque gain est repéré par sa référence O1 à O16, détaillée dans le cahier des charges v4.
+Ce document décrit qui utilise OptiBoul ERP, comment chacun s'en sert au quotidien et les règles d'interface qui rendent la saisie rapide et sûre. La version 3 part du prototype cliquable du 20 octobre et du cahier des charges qui en découle, puis les **optimise** : chaque gain est repéré par sa référence O1 à O16, détaillée dans le cahier des charges v4.
 
 | Ce qui ralentissait ou bloquait | Ce qui change dans les parcours | Réf. |
 | --- | --- | --- |
@@ -32,6 +32,9 @@ Ce document décrit qui utilise OptiBoul ERP, comment chacun s'en sert au quotid
 | Lundi bloqué si la clôture du dimanche est oubliée | Rappel, ouverture automatique, clôture forcée motivée | O8 |
 | Planning ressaisi chaque semaine | Copie de la semaine précédente et rotation proposée | O9 |
 | Même écran d'accueil pour tous | Accueil selon le profil | O10 |
+| Relance des clients habituels faite à la main au dernier moment | Rappel automatique 30 min avant l'heure limite, reprise de la commande habituelle | O18, O3 |
+| Chaque sac de plus après validation attend le gérant | Petit supplément accordé automatiquement, gérant informé | O17 |
+| Contrôle de stock long et influencé par le stock affiché | Contrôle guidé à l'aveugle, matières clés le mercredi | O13 |
 
 ## 2. Profils
 
@@ -102,11 +105,14 @@ Ce document décrit qui utilise OptiBoul ERP, comment chacun s'en sert au quotid
 | P5 | Mener une production | Responsable de production + gérant | 2 fois par jour | Plan < 3 min · clôture < 5 min |
 | P6 | Réceptionner et payer un fournisseur | Gérant | Hebdomadaire | Réception < 2 min |
 | P7 | Saisir et faire valider une dépense | Caissière / gérant | Quotidien | < 1 min |
-| P8 | Faire un inventaire | Responsable de production / gérant | Hebdo (tournant), mensuel (complet) | Tournant < 10 min |
+| P8 | Contrôler le stock et faire un inventaire | Gérant + responsable de production | Mercredi et dimanche, inventaire mensuel | Mercredi < 5 min · dimanche < 15 min |
 | P9 | Préparer et payer la paie | Gérant + propriétaire | Mensuel | < 30 min |
 | P10 | Clôturer la semaine et passer la main | Gérant | Hebdomadaire | < 10 min |
 | P11 | Suivre et décider à distance | Propriétaire | Quotidien | Décision < 30 s |
 | P12 | Créer un utilisateur, gérer sauvegardes | Administrateur | Ponctuel | Création < 2 min |
+| P13 | Relancer les clients habituels | Caissière | 2 fois par jour | < 2 min |
+| P14 | Augmenter la production | Responsable de production + gérant | Selon la demande | < 1 min |
+| P15 | Tenir à jour une fiche technique | Propriétaire | Ponctuel | < 5 min |
 
 ## 4. Parcours détaillés
 
@@ -188,7 +194,7 @@ Ce document décrit qui utilise OptiBoul ERP, comment chacun s'en sert au quotid
 | --- | --- |
 | Déclencheur | La livraison ferait passer la dette au-delà de 2 000 FCFA |
 | Résultat | Livraison encaissée, autorisée ou refusée, sans bloquer la file |
-| Optimisations | O5, R17 |
+| Optimisations | O5, R19 |
 
 | Étape | Action de l'utilisateur | Réponse du logiciel | Optimisation / point UX |
 | --- | --- | --- | --- |
@@ -196,7 +202,7 @@ Ce document décrit qui utilise OptiBoul ERP, comment chacun s'en sert au quotid
 | 2a | Encaisse le manque | Le bouton se réactive dès que le solde repasse sous le plafond | Solution la plus rapide en premier |
 | 2b | Clique « Demander l'autorisation » | Crée DEM-xxx ; notifie le gérant sur son téléphone ; propose aussi le code gérant sur le poste | Le gérant absent peut répondre (O5) |
 | 3 | Passe au client suivant | La livraison reste en attente dans la caisse | La file n'est pas bloquée |
-| 4 | — | Accord : livraison validée, bon disponible. Refus : livraison annulée. Sans réponse en 10 min : demande au propriétaire | Escalade automatique (R17) |
+| 4 | — | Accord : livraison validée, bon disponible. Refus : livraison annulée. Sans réponse en 10 min : demande au propriétaire | Escalade automatique (R19) |
 
 ### P5 · Mener une production
 
@@ -204,15 +210,15 @@ Ce document décrit qui utilise OptiBoul ERP, comment chacun s'en sert au quotid
 | --- | --- |
 | Déclencheur | Heure limite des commandes (18:30 nuit, 05:30 jour) |
 | Résultat | Production clôturée, sorties de stock créées, écarts justifiés |
-| Optimisations | O6, O13 |
+| Optimisations | O6, O17 |
 
 | Étape | Action de l'utilisateur | Réponse du logiciel | Optimisation / point UX |
 | --- | --- | --- | --- |
-| 1. Plan | Ouvre « Plan du jour » | Plan calculé : sacs, pains, boules par produit ; comparaison avec les 4 dernières sessions | Plan prêt sans calcul |
+| 1. Plan | Ouvre « Plan du jour » | Plan calculé : sacs, pains, boules par produit, avec ses trois sources (commandes, demande estimée, supplément) ; comparaison avec les 4 dernières sessions | Plan prêt sans calcul ; alerte si la demande estimée dépasse le plan |
 | 2. Proposer | Ajuste si besoin, clique « Proposer » | Notifie le gérant (poste + téléphone) | — |
 | 3. Valider | (Gérant) valide en un clic | Sans réponse à T-15 min : validé automatiquement si dans ± 10 %, sinon démarrage « provisoire » | Le pétrissage ne prend jamais de retard (O6) |
 | 4. Ouvrir | Clique « Ouvrir la production » | Chronomètre ; rappelle les quantités par produit | Chiffres en très grand |
-| 5. Réalisé | Saisit les pains produits par produit | Écart en pains et en % | — |
+| 5. Réalisé | Saisit chaque fournée par produit | Met à jour le reste à produire, visible au comptoir et chez le gérant ; écart en pains et en % | La caisse sait ce qui reste à livrer |
 | 6. Consommation | Saisit les matières utilisées | Affiche la valeur théorique à côté ; au-delà de 2 kg/sac, demande une justification | Motifs en liste + champ libre |
 | 7. Clôturer | Valide | Crée les sorties de stock ; informe le gérant des écarts | Impossible sans 5 et 6 |
 
@@ -251,19 +257,19 @@ Ce document décrit qui utilise OptiBoul ERP, comment chacun s'en sert au quotid
 | 3 | Enregistre | Dans le cadre pré-autorisé : enregistrée. Sinon ≥ 50 000 FCFA : DEM-xxx au gérant ou au propriétaire | Moins de demandes (O7) |
 | 4 | — | Statut de la dépense mis à jour à la décision ; budget recalculé | — |
 
-### P8 · Faire un inventaire
+### P8 · Contrôler le stock et faire un inventaire
 
 | Élément | Détail |
 | --- | --- |
-| Déclencheur | Clôture de semaine (tournant) ou fin de mois (complet) |
-| Résultat | Stock ajusté, écarts expliqués |
+| Déclencheur | Mercredi après la production de jour, dimanche à la clôture (rappel le jour même), fin de mois |
+| Résultat | Contrôle « fait », stock ajusté, écarts expliqués ; un contrôle manqué remonte en alerte (R16) |
 | Optimisations | O13 |
 
 | Étape | Action de l'utilisateur | Réponse du logiciel | Optimisation / point UX |
 | --- | --- | --- | --- |
-| 1 | Ouvre l'inventaire proposé (farine, levure) | Affiche le stock théorique masqué jusqu'à la saisie | Comptage à l'aveugle, plus honnête |
-| 2 | Saisit les quantités comptées | Calcule l'écart par matière | — |
-| 3 | Valide | ≤ 5 % : ajusté. > 5 % : demande au propriétaire (AUD-xx), ajusté après accord | — |
+| 1 | Ouvre le contrôle « à faire aujourd'hui » (gérant avec le responsable de production) | Liste pré-remplie : matières clés le mercredi, toutes le dimanche, toutes en fin de mois ; stock théorique masqué | Comptage à l'aveugle, plus honnête |
+| 2 | Saisit les quantités comptées | Calcule l'écart par matière avec le stock à date | — |
+| 3 | Valide | ≤ 5 % : ajusté. > 5 % : demande au propriétaire (AUD-xx), ajusté après accord ; statut « fait » | — |
 
 ### P9 · Préparer et payer la paie
 
@@ -291,8 +297,8 @@ Ce document décrit qui utilise OptiBoul ERP, comment chacun s'en sert au quotid
 
 | Étape | Action de l'utilisateur | Réponse du logiciel | Optimisation / point UX |
 | --- | --- | --- | --- |
-| 1 | Ouvre « Clôturer la semaine » | Contrôles : bloquants (caisse ouverte, production en cours) et à voir (dettes, factures, demandes, inventaire tournant) | Chaque contrôle ouvre l'écran qui le résout |
-| 2 | Fait l'inventaire tournant | Voir P8 | — |
+| 1 | Ouvre « Clôturer la semaine » | Contrôles : bloquants (caisse ouverte, production en cours) et à voir (dettes, factures, demandes, contrôle de stock) | Chaque contrôle ouvre l'écran qui le résout |
+| 2 | Fait le contrôle de stock du dimanche | Voir P8 | — |
 | 3 | Valide la clôture | Reporte les dettes non soldées, génère le rapport de passation, sauvegarde | — |
 | 4 | — | Envoie la passation au gérant suivant ; la semaine suivante s'ouvrira lundi 06:00 | Enchaînement automatique (O8) |
 
@@ -331,6 +337,52 @@ Ce document décrit qui utilise OptiBoul ERP, comment chacun s'en sert au quotid
 | 4 | Enregistre le poste du comptoir comme poste de confiance | Le poste accepte le code à 4 chiffres | O1 |
 | 5 | Contrôle les sauvegardes | Dernières copies locale et cloud, restauration guidée | Alerte au-delà de 48 h |
 
+### P13 · Relancer les clients habituels
+
+| Élément | Détail |
+| --- | --- |
+| Déclencheur | 30 min avant l'heure limite des commandes (18:00 nuit, 05:00 jour) |
+| Résultat | Commandes des habituels saisies avant l'heure limite |
+| Optimisations | O18, O3, O15 |
+
+| Étape | Action de l'utilisateur | Réponse du logiciel | Optimisation / point UX |
+| --- | --- | --- | --- |
+| 1 | — | Envoie automatiquement un rappel WhatsApp aux clients habituels sans commande (file d'envoi) | Relance sans action de la caissière (O18) |
+| 2 | Voit la liste « Habituels sans commande » au-dessus des commandes | Affiche pour chacun sa commande habituelle et l'état du rappel (envoyé, lu, répondu) | — |
+| 3 | Le client confirme par téléphone : clique « Reprendre l'habituelle » | Crée la commande, recalcule les sacs | Un clic (O3) |
+| 4 | Relance encore un ou tous les clients restants | Nouveau message en file | — |
+| 5 | Saisit une commande après la validation du plan | La signale au chef et au gérant comme commande tardive ; elle alimente le supplément (P14) | — |
+
+### P14 · Augmenter la production
+
+| Élément | Détail |
+| --- | --- |
+| Déclencheur | Demande estimée au-dessus du plan, commande tardive, marché ou événement |
+| Résultat | Supplément intégré au plan et aux sorties de stock, sans retarder le pétrissage |
+| Optimisations | O17, O5 |
+
+| Étape | Action de l'utilisateur | Réponse du logiciel | Optimisation / point UX |
+| --- | --- | --- | --- |
+| 1 | Compare commandes, demande estimée et plan | Affiche l'écart par produit et le stock de farine disponible | Décision sur un écran |
+| 2 | Ajoute des sacs par produit, choisit le motif | Motif obligatoire : clients habituels, guichet, marché ou événement, commande tardive | — |
+| 3a | (Avant validation du plan) valide | Le supplément s'ajoute au plan proposé | — |
+| 3b | (Après validation) valide | Supplément faible et farine suffisante : accordé automatiquement, gérant informé. Sinon demande DEM-xxx au gérant (poste ou téléphone) | Pas d'attente la nuit (O17) |
+| 4 | — | Accordé : ajouté au plan, au reste à produire et aux sorties de stock ; chef et caisse notifiés | — |
+
+### P15 · Tenir à jour une fiche technique
+
+| Élément | Détail |
+| --- | --- |
+| Déclencheur | Nouveau prix d'une matière, changement de recette ou de rendement |
+| Résultat | Coût de revient et marge à jour, ancienne version conservée |
+| Optimisations | — |
+
+| Étape | Action de l'utilisateur | Réponse du logiciel | Optimisation / point UX |
+| --- | --- | --- | --- |
+| 1 | Ouvre la fiche depuis le plan ou les paramètres | Ingrédients pour un sac de 50 kg, rendement, coût de revient par pain, marge, procédé | Accessible là où on en a besoin |
+| 2 | Modifie une quantité, un rendement ou le procédé | Recalcule coût de revient et marge | Effet visible avant d'enregistrer |
+| 3 | Enregistre | Crée une nouvelle version datée ; les plans déjà validés gardent leur version | Historique des versions tracé |
+
 ## 5. Principes UI/UX
 
 ### 5.1 Règles d'ergonomie
@@ -349,6 +401,9 @@ Ce document décrit qui utilise OptiBoul ERP, comment chacun s'en sert au quotid
 | Situation | Ce que voit l'utilisateur |
 | --- | --- |
 | Hors ligne | Pastille « Hors ligne – tout fonctionne », nombre d'envois en attente |
+| Notifications | Cloche dans l'en-tête avec compteur de non-lues ; chaque notification ouvre l'écran concerné ; seuls les rôles concernés la reçoivent |
+| Reste à produire | Bandeau par produit (prévu − réalisé) au comptoir, à l'atelier et chez le gérant, mis à jour à chaque fournée |
+| Contrôle de stock du jour | Tâche « à faire aujourd'hui » en tête de « Ma semaine » et de « Plan du jour » ; « manqué » en rouge le lendemain |
 | Envoi en file | Bon ou relance marqué « en attente d'envoi », puis « envoyé » |
 | Demande en attente | Badge sur l'objet (livraison, dépense) et compte à rebours avant escalade |
 | Production provisoire | Bandeau ambre « Plan non validé – démarrage provisoire » |
@@ -393,3 +448,6 @@ Ce document décrit qui utilise OptiBoul ERP, comment chacun s'en sert au quotid
 4. Catégories et plafonds des achats pré-autorisés.
 5. Jours et heures des relances automatiques (jeudi et samedi 10:00 proposés).
 6. Raccourcis clavier du comptoir.
+7. Seuil du supplément de production accordé automatiquement (≤ 1 sac par produit et ≤ 10 % du plan).
+8. Heure du rappel automatique aux clients habituels (30 min avant l'heure limite).
+9. Matières contrôlées le mercredi (farine, levure, améliorant proposés).

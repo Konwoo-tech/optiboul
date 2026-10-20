@@ -1,6 +1,6 @@
 # Décisions d'architecture (ADR)
 
-ADR-01 à ADR-12 sont décrites dans la [spécification technique §12](../specifications/OptiBoul_ERP_Specification_technique_Architecture_v2.md#12-décisions-darchitecture-adr). Les décisions suivantes ont été prises à l'initialisation du dépôt.
+ADR-01 à ADR-12 sont décrites dans la [spécification technique §12](../specifications/OptiBoul_ERP_Specification_technique_Architecture_v3.md#12-décisions-darchitecture-adr). Les décisions suivantes ont été prises à l'initialisation du dépôt.
 
 | N°                                          | Décision                                                                            | Statut                                   |
 | ------------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------- |

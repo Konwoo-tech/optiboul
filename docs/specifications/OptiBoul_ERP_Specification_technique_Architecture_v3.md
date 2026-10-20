@@ -1,10 +1,10 @@
 # OptiBoul ERP — Spécification technique et architecture
 
 **Boulangerie du Faubourg · Etoudi, Yaoundé**  
-Version 2 · 20 octobre 2026  
+Version 3 · 20 octobre 2026  
 Préparé par Dongmo Noukouankouang Baudouin
 
-> Monorepo · Python / Django REST Framework (Cookiecutter Django) · 5 applications web React + TypeScript (portail, comptoir, atelier, gestion, pilotage) · PostgreSQL 16. Met en œuvre le cahier des charges v4 et le backlog produit. Remplace la version 1 du 14 octobre 2026.
+> Monorepo · Python / Django REST Framework (Cookiecutter Django) · 5 applications web React + TypeScript (portail, comptoir, atelier, gestion, pilotage) · PostgreSQL 16. Met en œuvre le cahier des charges v5 et le backlog produit v2. Remplace la version 2 du 20 octobre 2026.
 
 ## Sommaire
 
@@ -24,19 +24,20 @@ Préparé par Dongmo Noukouankouang Baudouin
 
 ## 1. Objet et principes d'architecture
 
-Ce document décrit comment OptiBoul ERP est construit : un **monorepo unique** qui contient l'API **Django REST Framework** générée avec **Cookiecutter Django** et **cinq applications web React** (portail, comptoir, atelier, gestion, pilotage) partageant des paquets communs, sur une base **PostgreSQL 16**, le tout déployé sur un serveur local de la boulangerie. Il met en œuvre le cahier des charges v4 et le backlog produit.
+Ce document décrit comment OptiBoul ERP est construit : un **monorepo unique** qui contient l'API **Django REST Framework** générée avec **Cookiecutter Django** et **cinq applications web React** (portail, comptoir, atelier, gestion, pilotage) partageant des paquets communs, sur une base **PostgreSQL 16**, le tout déployé sur un serveur local de la boulangerie. Il met en œuvre le cahier des charges v5 et le backlog produit v2.
 
 | Version | Date | Changements |
 | --- | --- | --- |
 | 1 | 14 octobre 2026 | Architecture initiale : API Django REST et une seule interface React |
 | 2 | 20 octobre 2026 | Monorepo Django REST (Cookiecutter) + plusieurs applications web React : découpage par usage (§9), espace de travail pnpm + Turborepo et paquets partagés (§3), routage par préfixe et exposition distante limitée (§2, §7), CI par application touchée (§11), nouvelles décisions ADR-09 à ADR-12 |
+| 3 | 20 octobre 2026 | Alignement sur le cahier des charges v5 : demande estimée et supplément de production, reste à produire, fiches techniques versionnées avec coût de revient, stock à date, contrôles de stock bi-hebdomadaires, centre de notifications ciblé (§5, §6, §8, §9) ; règles renumérotées R15–R22 ; ADR-13 |
 
 | Principe | Décision | Conséquence |
 | --- | --- | --- |
-| Local d'abord | Tout tourne sur le serveur local ; internet ne sert qu'aux envois, à la sauvegarde cloud et à l'accès distant | Le comptoir ne s'arrête jamais (R20) |
+| Local d'abord | Tout tourne sur le serveur local ; internet ne sert qu'aux envois, à la sauvegarde cloud et à l'accès distant | Le comptoir ne s'arrête jamais (R22) |
 | Monolithe modulaire | Une seule API Django découpée en applications par domaine, sans microservices | Simple à installer et à maintenir sur un PC |
 | Clean Architecture | Règles métier en Python pur (domaine), indépendantes de Django et de l'API | Règles testées à 90 % et plus, faciles à faire évoluer |
-| Registre plutôt que solde | Comptes clients, stock et caisse sont des registres de mouvements ajoutés, jamais modifiés | Soldes toujours justifiables (R19), audit naturel |
+| Registre plutôt que solde | Comptes clients, stock et caisse sont des registres de mouvements ajoutés, jamais modifiés | Soldes toujours justifiables (R21), audit naturel |
 | Transactions et file d'envoi | Chaque opération d'argent est une transaction ; tout envoi externe passe par une table outbox | Aucun SMS ou WhatsApp perdu, aucune écriture partielle |
 | Sécurité par défaut | Droits vérifiés côté serveur, journal non modifiable, double authentification ciblée | Conforme R1, R13, R14 |
 
@@ -222,14 +223,14 @@ Les droits combinent le **profil du groupe** (groupes et permissions Django) et 
 | core | semaine, affectation_semaine, creneau_planning, session, parametre, journal, sequence_numero |
 | caisse | caisse, mouvement_caisse (encaissement espèces, dépense, remise coffre), fermeture |
 | ventes | commande, ligne_commande, livraison, ligne_livraison, encaissement, mouvement_interne |
-| clients | client, tarif_client, mouvement_compte, relance |
-| production | produit, fiche_technique, ligne_recette, plan_production, ligne_plan, production, ligne_production, consommation |
-| stocks | matiere, mouvement_stock, inventaire, ligne_inventaire |
+| clients | client, tarif_client, mouvement_compte, relance, habitude_client (commande habituelle par session, recalculée chaque nuit) |
+| production | produit, fiche_technique (versionnée : rendement, coût de revient, marge, procédé), ligne_recette, plan_production (garde la version de fiche), ligne_plan (commandes, demande estimée, supplément), supplement_production (motif, statut, demande liée), production, fournee, consommation ; vue v_reste_a_produire |
+| stocks | matiere, prix_matiere (historisé), mouvement_stock, controle_stock (mercredi / dimanche, statut prévu / à faire / fait / manqué), ligne_controle, inventaire, ligne_inventaire ; fonction stock_a_date(date) |
 | achats | fournisseur, matiere_fournisseur, reception_planifiee, reception, manquant, facture_fournisseur, paiement_fournisseur |
 | depenses | categorie_depense, budget_mensuel, pre_autorisation, depense, piece_jointe |
 | demandes | demande (objet générique : type + identifiant), decision |
 | paie | employe, etat_paie, ligne_paie, element_paie (gain / pénalité / absence / avance), paiement_salaire |
-| notifications | outbox_message, notification, modele_message |
+| notifications | outbox_message, notification (destinataire, lue_le, lien), regle_notification (type → rôles destinataires, canaux), modele_message |
 
 ### 5.3 Extraits de schéma
 
@@ -250,7 +251,7 @@ CREATE UNIQUE INDEX une_semaine_ouverte ON semaine ((true))
 
 CREATE TABLE caisse (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  session_id bigint NOT NULL UNIQUE REFERENCES session(id), -- R15
+  session_id bigint NOT NULL UNIQUE REFERENCES session(id), -- R17
   caissier_id bigint NOT NULL REFERENCES utilisateur(id),
   fonds bigint NOT NULL CHECK (fonds >= 0),
   attendu bigint, compte bigint, ecart bigint,
@@ -285,6 +286,31 @@ CREATE FUNCTION journal_immuable() RETURNS trigger LANGUAGE plpgsql AS
   $$ BEGIN RAISE EXCEPTION 'journal en ajout seul'; END $$;
 CREATE TRIGGER journal_no_update BEFORE UPDATE OR DELETE ON journal
   FOR EACH ROW EXECUTE FUNCTION journal_immuable();
+
+CREATE TABLE controle_stock (            -- R16 : mercredi et dimanche
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  semaine_id bigint NOT NULL REFERENCES semaine(id),
+  jour date NOT NULL,
+  portee text NOT NULL CHECK (portee IN ('CLES','TOUTES')),
+  statut text NOT NULL
+    CHECK (statut IN ('PREVU','A_FAIRE','FAIT','MANQUE')),
+  gerant_id bigint REFERENCES utilisateur(id),
+  resp_production_id bigint REFERENCES utilisateur(id),
+  UNIQUE (semaine_id, jour)
+);
+
+CREATE TABLE supplement_production (     -- R15, O17
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  plan_id bigint NOT NULL REFERENCES plan_production(id),
+  produit_id bigint NOT NULL REFERENCES produit(id),
+  sacs numeric(6,2) NOT NULL CHECK (sacs > 0),
+  motif text NOT NULL CHECK (motif IN
+    ('HABITUELS','GUICHET','MARCHE_EVENEMENT','COMMANDE_TARDIVE')),
+  apres_validation boolean NOT NULL,
+  statut text NOT NULL
+    CHECK (statut IN ('AJOUTE','AUTO_ACCORDE','DEMANDE','ACCORDE','REFUSE')),
+  demande_id bigint REFERENCES demande(id)
+);
 ```
 
 *Les tables sont créées par les migrations Django ; contraintes, index partiels, vues et déclencheurs sont ajoutés par des migrations `RunSQL` versionnées.*
@@ -304,15 +330,17 @@ CREATE TRIGGER journal_no_update BEFORE UPDATE OR DELETE ON journal
 | Ressource | Actions métier | Règles |
 | --- | --- | --- |
 | /auth/ | login-pin, login, verify-otp, totp, logout, switch-user, trusted-devices | R14, O1 |
-| /semaines/ | planifier, copier-precedente, ouvrir, controles-cloture, cloturer, cloturer-forcee, passation | R2, R3, R18 |
-| /caisses/ | ouvrir, remise-coffre, fermer, rouvrir | R13, R15, R16 |
-| /commandes/ | reprendre-veille ; plan des sacs | O3 |
+| /semaines/ | planifier, copier-precedente, ouvrir, controles-cloture, cloturer, cloturer-forcee, passation | R2, R3, R20 |
+| /caisses/ | ouvrir, remise-coffre, fermer, rouvrir | R13, R17, R18 |
+| /commandes/ | reprendre-habituelle, habituels-sans-commande, relancer-habituels ; plan des sacs ; commande tardive signalée | O3, O18 |
 | /livraisons/ | livrer-comme-commande, bon (pdf), envoyer-whatsapp | R6, R7 |
-| /encaissements/ | — | R7, R19 |
+| /encaissements/ | — | R7, R21 |
 | /clients/ | releve, relancer, relancer-groupe ; /clients/dettes/ | R6, O11 |
-| /demandes/ | accorder, refuser ; /demandes/en-attente/ | R17, O5 |
-| /productions/ | plan, proposer, valider, ouvrir, realise, consommation, cloturer | R4, R5, R10 |
-| /stocks/ | etat, mouvements, pertes ; /inventaires/ : valider | R9 |
+| /demandes/ | accorder, refuser ; /demandes/en-attente/ | R19, O5 |
+| /productions/ | plan (3 sources), demande-estimee, proposer, valider, supplement, ouvrir, fournee, reste-a-produire, consommation, cloturer | R4, R5, R10, R15, O17 |
+| /fiches-techniques/ | versions, nouvelle-version, cout-de-revient | — |
+| /stocks/ | etat, stock-a-date?date=, mouvements, pertes ; /controles-stock/ : commencer, valider ; /inventaires/ : valider | R9, R16 |
+| /notifications/ | non-lues (compteur), marquer-lue, tout-marquer-lu | — |
 | /fournisseurs/, /receptions/, /factures/ | receptionner, relancer-manquant, replanifier, payer | R11 |
 | /depenses/, /budgets/, /pre-autorisations/ | justificatif | R8, O7 |
 | /paie/ | preparer, soumettre, valider, payer, bulletins | R12 |
@@ -342,13 +370,19 @@ CREATE TRIGGER journal_no_update BEFORE UPDATE OR DELETE ON journal
 | ouvrir_semaine | Lundi 06:00 | Ouvre la semaine si prête, sinon alerte au propriétaire (O8) |
 | rappel_cloture_semaine | Dimanche 18:00 | Notification au gérant |
 | valider_plan_auto | Toutes les minutes | À T-15 min du pétrissage : validation automatique dans la tolérance ou statut provisoire (O6) |
-| escalader_demandes | Toutes les minutes | Demandes échues remontées au propriétaire (R17) |
+| escalader_demandes | Toutes les minutes | Demandes échues remontées au propriétaire (R19) |
 | relances_dettes | Jeudi et samedi 10:00 | Relances WhatsApp des dettes à régler avant dimanche (O11) |
 | archiver_productions | Ouverture de session | Productions non clôturées archivées et signalées |
 | sauvegarde_locale | Toutes les 4 h + clôtures | pg_dump vers le disque de sauvegarde |
 | sauvegarde_cloud | Toutes les heures si réseau | restic chiffré vers S3 ; alerte au-delà de 48 h |
 | dispatcher_outbox | Toutes les 30 s | Envoie les messages en attente, délai croissant après échec (O15) |
 | controle_registres | Chaque nuit 03:00 | Compare soldes en cache et registres ; alerte en cas d'écart |
+| rappel_clients_habituels | Heure limite − 30 min | Rappel WhatsApp aux habituels sans commande (O18) |
+| calcul_demande_estimee | À l'heure limite des commandes | Demande estimée par produit ; notification si elle dépasse le plan |
+| recalcul_habitudes | Chaque nuit 03:30 | Commande habituelle de chaque client par type de session (4 dernières sessions) |
+| planifier_controles_stock | Lundi 06:00 | Crée les contrôles du mercredi et du dimanche de la semaine |
+| rappel_controle_stock | Mercredi 13:30 · dimanche 06:00 | Rappel au gérant et au chef ; statut « à faire aujourd'hui » |
+| marquer_controles_manques | Chaque jour 00:30 | Contrôle non fait la veille → « manqué » et alerte (R16) |
 
 **Outbox** : un cas d'usage qui doit envoyer un SMS, un WhatsApp ou une notification écrit une ligne `outbox_message` dans la même transaction que l'opération. Le dispatcher la lit, l'envoie quand le réseau est là et met à jour son statut. L'opération du comptoir ne dépend donc jamais du réseau.
 
@@ -361,10 +395,10 @@ Au lieu d'une seule interface, chaque usage a **son application** : plus légèr
 | Application | Préfixe | Utilisateurs | Poste | Contenu | Exposée à distance |
 | --- | --- | --- | --- | --- | --- |
 | portail | / | Tous | Tous | Connexion (e-mail, Google, double authentification, TOTP), choix de la langue et du thème, redirection vers l'application du profil (O10) | Oui |
-| comptoir | /comptoir | Caissières, gérant | PC du comptoir (poste de confiance) | Connexion nom + code à 4 chiffres, ouverture et fermeture de caisse, commandes, livraisons, encaissements, mouvements internes, remises au coffre, dépenses de caisse, demandes de plafond | Non |
-| atelier | /atelier | Responsable de production, gérant | PC ou tablette de l'atelier | Plan du jour, validation, production ouverte, réalisé, consommation, justification des écarts, inventaire tournant ; gros boutons, saisie tactile | Non |
-| gestion | /gestion | Gérant, propriétaire, administrateur | PC | Semaines et planning, clients et dettes, fournisseurs et réceptions, stocks, dépenses et budget, paie, demandes, tableau de bord, rapports, administration | Non (local) |
-| pilotage | /pilotage | Propriétaire, gérant | Téléphone | PWA installable : demandes à valider, alertes, indicateurs du jour et du mois, notifications | Oui (tunnel) |
+| comptoir | /comptoir | Caissières, gérant | PC du comptoir (poste de confiance) | Connexion nom + code à 4 chiffres, ouverture et fermeture de caisse, commandes et clients habituels sans commande, livraisons, encaissements, mouvements internes, remises au coffre, dépenses de caisse, demandes de plafond, bandeau du reste à produire | Non |
+| atelier | /atelier | Responsable de production, gérant | PC ou tablette de l'atelier | Plan du jour, validation, production ouverte, réalisé, consommation, justification des écarts, supplément de production, reste à produire, contrôles de stock ; gros boutons, saisie tactile | Non |
+| gestion | /gestion | Gérant, propriétaire, administrateur | PC | Semaines et planning, clients et dettes, fournisseurs et réceptions, stocks et stock à date, contrôles de stock, fiches techniques, dépenses et budget, paie, demandes, tableau de bord, rapports, administration | Non (local) |
+| pilotage | /pilotage | Propriétaire, gérant | Téléphone | PWA installable : demandes à valider (dont augmentations de production), alertes, reste à produire, indicateurs du jour et du mois, notifications | Oui (tunnel) |
 
 *Le back-office gestion reste local ; le propriétaire et le gérant décident à distance depuis pilotage. Si l'accès distant à gestion devient nécessaire, il suffit d'ajouter son préfixe à l'entrée distante de Traefik.*
 
@@ -386,7 +420,7 @@ Au lieu d'une seule interface, chaque usage a **son application** : plus légèr
 | Application | Points techniques |
 | --- | --- |
 | comptoir | Gestionnaire de raccourcis clavier (F2, F4, F8, Échap) et ordre de tabulation testé.<br>Brouillons de saisie en IndexedDB (changement d'utilisateur, coupure).<br>Refus de démarrer sans jeton de poste de confiance ; thème sombre la nuit (O16).<br>Service worker : interface disponible pendant un redémarrage du serveur. |
-| atelier | Mise en page tactile (cibles ≥ 56 px), chiffres très grands.<br>Chronomètre de production, rappel des valeurs théoriques à côté des champs. |
+| atelier | Mise en page tactile (cibles ≥ 56 px), chiffres très grands.<br>Chronomètre de production, rappel des valeurs théoriques à côté des champs.<br>Saisie par fournée qui met à jour le reste à produire ; écran « Supplément » avec stock de farine disponible.<br>Contrôles de stock guidés à l'aveugle (mercredi, dimanche). |
 | gestion | Tableaux denses avec filtres, exports Excel et PDF, graphiques (Recharts).<br>Écrans d'administration réservés au profil administrateur. |
 | pilotage | PWA installable (vite-plugin-pwa), interface une colonne.<br>Notifications Web Push quand le tunnel est disponible, sinon actualisation à l'ouverture.<br>Double authentification exigée à chaque connexion distante. |
 | portail | Très léger : formulaires de connexion et de vérification, redirection selon le profil. |
@@ -432,7 +466,7 @@ Au lieu d'une seule interface, chaque usage a **son application** : plus légèr
 | Niveau | Outils | Cible |
 | --- | --- | --- |
 | Règles du domaine | pytest, Hypothesis (tests de propriétés sur plafond, écarts, paie) | Couverture ≥ 90 % |
-| Cas d'usage et API | pytest-django, factory_boy, client DRF | Chaque règle R1–R20 et chaque profil de droits |
+| Cas d'usage et API | pytest-django, factory_boy, client DRF | Chaque règle R1–R22 et chaque profil de droits |
 | Base | Tests des contraintes, index partiels et déclencheurs | Toutes les contraintes métier |
 | Interface | Vitest, Testing Library | Composants de saisie et calculs affichés |
 | Parcours | Playwright | P3 (au clavier), P4, P5, P10 |
@@ -465,6 +499,7 @@ Au lieu d'une seule interface, chaque usage a **son application** : plus légèr
 | ADR-10 | Cinq applications React par usage | Une seule application pour tous | Comptoir léger et rapide, atelier tactile, pilotage mobile ; exposition distante limitée à ce qui est utile |
 | ADR-11 | Même origine, routage par préfixe | Un sous-domaine par application | Session et CSRF partagés sans configuration CORS ; certificat local unique |
 | ADR-12 | pnpm + Turborepo, paquets partagés | Code copié entre applications | Thème, auth et client API écrits une fois ; builds et tests limités aux parties touchées |
+| ADR-13 | Reste à produire et notifications par rafraîchissement court (≤ 15 s) avec invalidation après chaque saisie | WebSocket (Django Channels) | Suffisant pour quelques postes sur un réseau local, sans service supplémentaire ; Channels reste possible si le besoin de temps réel augmente |
 
 ## 13. Risques techniques
 

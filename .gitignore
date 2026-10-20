@@ -8,6 +8,7 @@
 
 # Outils
 .ruff_cache/
+__pycache__/
 
 # Éditeurs et système
 .DS_Store

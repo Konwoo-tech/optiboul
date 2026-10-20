@@ -2,11 +2,11 @@
 
 ERP de la **Boulangerie du Faubourg** (Etoudi, Yaoundé) : caisses, livraisons et dettes clients, production, stocks, fournisseurs, dépenses, paie. Le logiciel tourne sur un serveur local et le comptoir fonctionne sans internet.
 
-Documentation fonctionnelle, technique et design : [`docs/`](docs/README.md). Backlog : [issues GitHub](../../issues), un jalon par sprint.
+Documentation fonctionnelle, technique et design : [`docs/`](docs/README.md). Backlog : [tableau du projet](https://github.com/orgs/Konwoo-tech/projects/3) (kanban, sprints S1–S13) et [issues](../../issues).
 
 ## Architecture
 
-Deux applications autonomes dans un même dépôt ([spécification technique](docs/specifications/OptiBoul_ERP_Specification_technique_Architecture_v2.md), [ADR](docs/adr/README.md)) :
+Deux applications autonomes dans un même dépôt ([spécification technique](docs/specifications/OptiBoul_ERP_Specification_technique_Architecture_v3.md), [ADR](docs/adr/README.md)) :
 
 ```text
 optiboul/
@@ -73,6 +73,16 @@ make dev              # application web sur http://localhost:5173 (proxy vers Dj
 | `make prod-build` | Images de production (api + web)                                                            |
 
 Dans `apps/web`, les scripts pnpm habituels restent disponibles : `pnpm dev`, `pnpm test`, `pnpm build`, `pnpm lint`.
+
+## Backlog et livraison
+
+- Le [tableau « OptiBoul ERP · Product backlog »](https://github.com/orgs/Konwoo-tech/projects/3) regroupe les 16 épopées, les 86 récits et les pull requests, avec les colonnes Backlog → Prêt → En cours → En revue → Terminé et des sprints de deux semaines (S1 à partir du 26/10/2026).
+- Après une nouvelle version du backlog dans `docs/specifications/`, deux commandes resynchronisent GitHub (simulation par défaut, `--appliquer` pour écrire) :
+
+```bash
+python3 scripts/github/importer_backlog.py   # issues, étiquettes, jalons datés
+python3 scripts/github/projet_backlog.py     # tableau : champs, éléments, vues
+```
 
 ## Règles du dépôt
 

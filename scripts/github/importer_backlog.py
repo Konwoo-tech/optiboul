@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Importe le backlog produit dans les issues GitHub du dépôt.
+"""Synchronise le backlog produit avec les issues GitHub du dépôt.
 
-Source : docs/specifications/OptiBoul_ERP_Backlog_produit.md
-Crée les étiquettes, un jalon par sprint (S1–S12), une issue par épopée et une issue
-par récit, puis rattache chaque récit à son épopée (sous-issues GitHub).
-Relançable : ce qui existe déjà (même identifiant EPxx / US-xxx) est conservé.
+Source : docs/specifications/OptiBoul_ERP_Backlog_produit_v2.md
+Étiquettes, un jalon daté par sprint, une issue par épopée et par récit, chaque récit
+rattaché à son épopée (sous-issues). Les issues existantes (même identifiant EPxx /
+US-xxx) sont mises à jour ; seules les étiquettes gérées ici sont touchées.
 
-    python3 scripts/github/importer_backlog.py --dry-run
-    python3 scripts/github/importer_backlog.py --repo Konwoo-tech/optiboul
+    python3 scripts/github/importer_backlog.py --hors-ligne   # lit le document, sans GitHub
+    python3 scripts/github/importer_backlog.py                # écarts avec GitHub, sans rien écrire
+    python3 scripts/github/importer_backlog.py --appliquer    # crée et met à jour
 """
 
 from __future__ import annotations
@@ -20,11 +21,14 @@ import sys
 import time
 from dataclasses import dataclass
 from dataclasses import field
+from datetime import date
+from datetime import timedelta
 from pathlib import Path
 
 RACINE = Path(__file__).resolve().parents[2]
-BACKLOG = RACINE / "docs/specifications/OptiBoul_ERP_Backlog_produit.md"
-LIEN_BACKLOG = "docs/specifications/OptiBoul_ERP_Backlog_produit.md"
+CHEMIN_BACKLOG = "docs/specifications/OptiBoul_ERP_Backlog_produit_v2.md"
+BRANCHE_DOCUMENTATION = "develop"
+DUREE_SPRINT = timedelta(days=14)
 
 DEFINITION_TERMINE = [
     "Code relu, tests unitaires du domaine et tests d'API au vert",
@@ -32,6 +36,7 @@ DEFINITION_TERMINE = [
     "Droits vérifiés côté serveur pour chaque profil ; action tracée dans le journal",
     "Textes FR et EN",
     "Fonctionne hors ligne (sauf envois mis en file) ; migration réversible ; OpenAPI à jour",
+    "Pull request vers develop validée et fusionnée",
     "Démontré au propriétaire ou au gérant et accepté",
 ]
 
@@ -46,6 +51,7 @@ ETIQUETTES = {
     "lot:1": ("BFD4F2", "Lot 1 : ventes, dettes, production de base, fournisseurs, dépenses"),
     "lot:2": ("D4C5F9", "Lot 2 : stocks, consommation réelle, paie, marge"),
 }
+PREFIXES_GERES = ("type:épopée", "type:récit", "épopée:", "prio:", "lot:", "points:")
 
 
 @dataclass
@@ -64,7 +70,7 @@ class Recit:
     def titre(self) -> str:
         """« US-051 · Trouver un client … » : l'objet du « je veux », sans le « afin de »."""
         m = re.search(r"je veux (.+?)(?: afin d| afin que|$)", self.texte)
-        objet = (m.group(1) if m else self.texte).strip().rstrip(".")
+        objet = (m.group(1) if m else self.texte).strip().rstrip(" ,;.")
         return f"{self.id} · {objet[0].upper()}{objet[1:]}"
 
 
@@ -88,10 +94,15 @@ class Sprint:
     objectif: str
     recits: list[str]
     points: int
+    debut: date | None = None
 
     @property
     def titre(self) -> str:
         return f"Sprint {self.id}"
+
+    @property
+    def fin(self) -> date | None:
+        return self.debut + DUREE_SPRINT - timedelta(days=1) if self.debut else None
 
 
 def cellules(ligne: str) -> list[str]:
@@ -132,6 +143,11 @@ def lire_backlog(chemin: Path) -> tuple[list[Epopee], list[Sprint]]:
     return epopees, sprints
 
 
+def dater_sprints(sprints: list[Sprint], debut_s1: date) -> None:
+    for rang, sprint in enumerate(sprints):
+        sprint.debut = debut_s1 + rang * DUREE_SPRINT
+
+
 class GitHub:
     def __init__(self, depot: str) -> None:
         self.depot = depot
@@ -164,7 +180,12 @@ def etiquette_epopee(epopee: Epopee) -> str:
     return f"épopée:{epopee.id}"
 
 
-def corps_epopee(epopee: Epopee, numeros: dict[str, int] | None = None) -> str:
+def lien_backlog(depot: str) -> str:
+    # Lien absolu : un lien relatif dans le corps d'une issue ne mène pas au fichier.
+    return f"https://github.com/{depot}/blob/{BRANCHE_DOCUMENTATION}/{CHEMIN_BACKLOG}"
+
+
+def corps_epopee(epopee: Epopee, depot: str, numeros: dict[str, int]) -> str:
     points = sum(r.points for r in epopee.recits)
     lignes = [
         f"**Objectif :** {epopee.objectif}",
@@ -175,14 +196,17 @@ def corps_epopee(epopee: Epopee, numeros: dict[str, int] | None = None) -> str:
         "",
     ]
     for r in epopee.recits:
-        lien = f"#{numeros[r.id]}" if numeros and r.id in numeros else r.id
+        lien = f"#{numeros[r.id]}" if r.id in numeros else r.id
         lignes.append(f"- [ ] {lien} · {r.priorite} · {r.points} pts · {r.sprint or 'hors plan'}")
-    lignes += ["", f"Source : [backlog produit]({LIEN_BACKLOG})"]
+    lignes += ["", f"Source : [backlog produit v2]({lien_backlog(depot)})"]
     return "\n".join(lignes)
 
 
-def corps_recit(recit: Recit, epopee: Epopee, numero_epopee: int | None) -> str:
+def corps_recit(recit: Recit, epopee: Epopee, numero_epopee: int | None, depot: str) -> str:
     lien_epopee = f"#{numero_epopee}" if numero_epopee else epopee.id
+    criteres = [f"- [ ] {c}" for c in recit.criteres] or [
+        "- [ ] À préciser avant l'entrée en sprint (définition de « prêt »)",
+    ]
     lignes = [
         f"> {recit.texte}",
         "",
@@ -193,100 +217,181 @@ def corps_recit(recit: Recit, epopee: Epopee, numero_epopee: int | None) -> str:
         "",
         "## Critères d'acceptation",
         "",
-        *([f"- [ ] {c}" for c in recit.criteres] or ["- [ ] À préciser avant l'entrée en sprint (définition de « prêt »)"]),
+        *criteres,
         "",
         "## Définition de « terminé »",
         "",
         *[f"- [ ] {d}" for d in DEFINITION_TERMINE],
         "",
-        f"Source : [backlog produit]({LIEN_BACKLOG})",
+        f"Source : [backlog produit v2]({lien_backlog(depot)})",
     ]
     return "\n".join(lignes)
 
 
-def importer(gh: GitHub, epopees: list[Epopee], sprints: list[Sprint]) -> None:
-    print("Étiquettes…")
-    etiquettes = dict(ETIQUETTES)
-    for e in epopees:
-        etiquettes[etiquette_epopee(e)] = ("8B5E3C", e.nom[:100])
-    for pts in sorted({r.points for e in epopees for r in e.recits}):
-        etiquettes[f"points:{pts}"] = ("FFF4DC", "Complexité relative")
-    existantes = {e["name"] for e in gh.depot_api("labels?per_page=100")}  # type: ignore[union-attr]
-    for nom, (couleur, description) in etiquettes.items():
-        if nom not in existantes:
-            gh.depot_api("labels", "POST", {"name": nom, "color": couleur, "description": description})
+def etiquettes_recit(recit: Recit, epopee: Epopee) -> list[str]:
+    return [
+        "type:récit",
+        etiquette_epopee(epopee),
+        f"prio:{recit.priorite.lower()}",
+        f"lot:{recit.lot}",
+        f"points:{recit.points}",
+    ]
 
-    print("Jalons (sprints)…")
-    jalons = {m["title"]: m["number"] for m in gh.depot_api("milestones?state=all&per_page=100")}  # type: ignore[union-attr]
-    for s in sprints:
-        if s.titre not in jalons:
-            description = f"Lot {s.lot} · {s.points} points · {s.objectif}"
-            jalons[s.titre] = gh.depot_api("milestones", "POST", {"title": s.titre, "description": description})["number"]  # type: ignore[index]
 
-    issues = gh.depot_api("issues?state=all&per_page=100")
-    par_cle: dict[str, dict] = {}
-    for issue in issues:  # type: ignore[union-attr]
-        if "pull_request" not in issue and (m := re.match(r"^(EP\d{2}|US-\d{3}) · ", issue["title"])):
-            par_cle[m.group(1)] = issue
+def etiquettes_epopee(epopee: Epopee) -> list[str]:
+    return ["type:épopée", etiquette_epopee(epopee), f"lot:{epopee.lot.split(' ')[0]}"]
 
-    def creer(cle: str, donnees: dict) -> dict:
-        if cle in par_cle:
-            print(f"  = {cle} existe (#{par_cle[cle]['number']})")
-            return par_cle[cle]
-        issue = gh.depot_api("issues", "POST", donnees)
-        par_cle[cle] = issue  # type: ignore[assignment]
-        print(f"  + {cle} → #{issue['number']}")  # type: ignore[index]
-        time.sleep(1)  # limite secondaire de GitHub sur la création de contenu
-        return issue  # type: ignore[return-value]
 
-    print("Épopées…")
-    for e in epopees:
-        creer(e.id, {"title": e.titre, "body": corps_epopee(e), "labels": ["type:épopée", etiquette_epopee(e), f"lot:{e.lot.split(' ')[0]}"]})
+class Synchronisation:
+    def __init__(self, gh: GitHub, *, appliquer: bool) -> None:
+        self.gh = gh
+        self.appliquer = appliquer
+        self.bilan: dict[str, list[str]] = {"créées": [], "mises à jour": [], "inchangées": []}
 
-    print("Récits…")
-    for e in epopees:
-        numero_epopee = par_cle[e.id]["number"]
-        for r in e.recits:
-            donnees = {
-                "title": r.titre,
-                "body": corps_recit(r, e, numero_epopee),
-                "labels": ["type:récit", etiquette_epopee(e), f"prio:{r.priorite.lower()}", f"lot:{r.lot}", f"points:{r.points}"],
-            }
-            if r.sprint:
-                donnees["milestone"] = jalons[f"Sprint {r.sprint}"]
-            creer(r.id, donnees)
+    def ecrire(self, chemin: str, methode: str, donnees: dict) -> object:
+        if not self.appliquer:
+            return None
+        resultat = self.gh.depot_api(chemin, methode, donnees)
+        time.sleep(0.7)  # limite secondaire de GitHub sur l'écriture de contenu
+        return resultat
 
-    print("Rattachement des récits aux épopées…")
-    for e in epopees:
-        epopee = par_cle[e.id]
-        deja = {i["id"] for i in gh.depot_api(f"issues/{epopee['number']}/sub_issues?per_page=100")}  # type: ignore[union-attr]
-        for r in e.recits:
-            if par_cle[r.id]["id"] not in deja:
-                gh.depot_api(f"issues/{epopee['number']}/sub_issues", "POST", {"sub_issue_id": par_cle[r.id]["id"]})
-        numeros = {r.id: par_cle[r.id]["number"] for r in e.recits}
-        gh.depot_api(f"issues/{epopee['number']}", "PATCH", {"body": corps_epopee(e, numeros)})
-        print(f"  {e.id} : {len(e.recits)} récits")
+    def etiquettes(self, epopees: list[Epopee]) -> None:
+        voulues = dict(ETIQUETTES)
+        for e in epopees:
+            voulues[etiquette_epopee(e)] = ("8B5E3C", e.nom[:100])
+        for pts in sorted({r.points for e in epopees for r in e.recits}):
+            voulues[f"points:{pts}"] = ("FFF4DC", "Complexité relative")
+        existantes = {e["name"] for e in self.gh.depot_api("labels?per_page=100")}  # type: ignore[union-attr]
+        for nom, (couleur, description) in voulues.items():
+            if nom not in existantes:
+                print(f"  + étiquette {nom}")
+                self.ecrire("labels", "POST", {"name": nom, "color": couleur, "description": description})
+
+    def jalons(self, sprints: list[Sprint]) -> dict[str, int]:
+        existants = {m["title"]: m for m in self.gh.depot_api("milestones?state=all&per_page=100")}  # type: ignore[union-attr]
+        numeros: dict[str, int] = {}
+        for s in sprints:
+            voulu = {"title": s.titre, "description": f"Lot {s.lot} · {s.points} points · {s.objectif}"}
+            if s.debut and s.fin:
+                voulu["description"] = f"{s.debut:%d/%m/%Y} → {s.fin:%d/%m/%Y} · " + voulu["description"]
+                voulu["due_on"] = f"{s.fin.isoformat()}T23:59:59Z"
+            actuel = existants.get(s.titre)
+            if actuel is None:
+                print(f"  + jalon {s.titre}")
+                cree = self.ecrire("milestones", "POST", voulu)
+                numeros[s.titre] = cree["number"] if cree else 0  # type: ignore[index]
+                continue
+            numeros[s.titre] = actuel["number"]
+            ecarts = []
+            if actuel.get("description") != voulu["description"]:
+                ecarts.append("description")
+            if (actuel.get("due_on") or "")[:10] != voulu.get("due_on", "")[:10]:
+                ecarts.append("échéance")
+            if ecarts:
+                print(f"  ~ jalon {s.titre} : {', '.join(ecarts)}")
+                self.ecrire(f"milestones/{actuel['number']}", "PATCH", voulu)
+        return numeros
+
+    def issue(self, cle: str, voulue: dict, existante: dict | None) -> dict | None:
+        if existante is None:
+            print(f"  + {voulue['title']}")
+            self.bilan["créées"].append(cle)
+            return self.ecrire("issues", "POST", voulue)  # type: ignore[return-value]
+        actuelles = [e["name"] for e in existante["labels"]]
+        hors_gestion = [e for e in actuelles if not e.startswith(PREFIXES_GERES)]
+        etiquettes = sorted(set(voulue["labels"]) | set(hors_gestion))
+        ecarts = []
+        if existante["title"] != voulue["title"]:
+            ecarts.append("titre")
+        if (existante["body"] or "").strip() != voulue["body"].strip():
+            ecarts.append("description")
+        if sorted(actuelles) != etiquettes:
+            ecarts.append("étiquettes")
+        jalon_actuel = existante["milestone"]["number"] if existante.get("milestone") else None
+        if jalon_actuel != voulue.get("milestone"):
+            ecarts.append("sprint")
+        if not ecarts:
+            self.bilan["inchangées"].append(cle)
+            return existante
+        print(f"  ~ #{existante['number']} {cle} : {', '.join(ecarts)}")
+        self.bilan["mises à jour"].append(cle)
+        self.ecrire(f"issues/{existante['number']}", "PATCH", {**voulue, "labels": etiquettes})
+        return existante
+
+    def executer(self, epopees: list[Epopee], sprints: list[Sprint]) -> None:
+        depot = self.gh.depot
+        print("Étiquettes…")
+        self.etiquettes(epopees)
+        print("Jalons (sprints)…")
+        jalons = self.jalons(sprints)
+
+        par_cle: dict[str, dict] = {}
+        for issue in self.gh.depot_api("issues?state=all&per_page=100"):  # type: ignore[union-attr]
+            if "pull_request" not in issue and (m := re.match(r"^(EP\d{2}|US-\d{3}) · ", issue["title"])):
+                par_cle[m.group(1)] = issue
+        prevues = {e.id for e in epopees} | {r.id for e in epopees for r in e.recits}
+        for cle in sorted(set(par_cle) - prevues):
+            print(f"  ! {cle} existe sur GitHub mais plus dans le backlog (#{par_cle[cle]['number']})")
+
+        numeros = {cle: issue["number"] for cle, issue in par_cle.items()}
+        print("Épopées…")
+        for e in epopees:
+            voulue = {"title": e.titre, "body": corps_epopee(e, depot, numeros), "labels": etiquettes_epopee(e)}
+            if (issue := self.issue(e.id, voulue, par_cle.get(e.id))) and e.id not in par_cle:
+                par_cle[e.id] = issue
+                numeros[e.id] = issue["number"]
+
+        print("Récits…")
+        for e in epopees:
+            for r in e.recits:
+                voulue = {
+                    "title": r.titre,
+                    "body": corps_recit(r, e, numeros.get(e.id), depot),
+                    "labels": etiquettes_recit(r, e),
+                    "milestone": jalons.get(f"Sprint {r.sprint}") if r.sprint else None,
+                }
+                if (issue := self.issue(r.id, voulue, par_cle.get(r.id))) and r.id not in par_cle:
+                    par_cle[r.id] = issue
+                    numeros[r.id] = issue["number"]
+
+        print("Rattachement aux épopées et listes de récits…")
+        for e in epopees:
+            if e.id not in par_cle or not self.appliquer:
+                continue
+            epopee = par_cle[e.id]
+            deja = {i["id"] for i in self.gh.depot_api(f"issues/{epopee['number']}/sub_issues?per_page=100")}  # type: ignore[union-attr]
+            for r in e.recits:
+                if par_cle[r.id]["id"] not in deja:
+                    self.ecrire(f"issues/{epopee['number']}/sub_issues", "POST", {"sub_issue_id": par_cle[r.id]["id"]})
+            corps = corps_epopee(e, depot, numeros)
+            if (epopee.get("body") or "").strip() != corps:
+                self.ecrire(f"issues/{epopee['number']}", "PATCH", {"body": corps})
+
+        print("\nBilan" + ("" if self.appliquer else " (simulation : rien n'a été écrit, relancer avec --appliquer)"))
+        for nature, cles in self.bilan.items():
+            print(f"  {nature} : {len(cles)}" + (f" ({', '.join(cles)})" if cles and nature != "inchangées" and len(cles) <= 20 else ""))
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo", default="Konwoo-tech/optiboul")
-    parser.add_argument("--dry-run", action="store_true", help="analyse le backlog sans rien créer")
+    parser.add_argument("--debut-s1", type=date.fromisoformat, default=date(2026, 10, 26), help="lundi de début du sprint S1")
+    parser.add_argument("--hors-ligne", action="store_true", help="analyse le document sans interroger GitHub")
+    parser.add_argument("--appliquer", action="store_true", help="écrit les changements sur GitHub")
     args = parser.parse_args()
 
-    epopees, sprints = lire_backlog(BACKLOG)
+    epopees, sprints = lire_backlog(RACINE / CHEMIN_BACKLOG)
+    dater_sprints(sprints, args.debut_s1)
     recits = [r for e in epopees for r in e.recits]
     print(
         f"{len(epopees)} épopées, {len(recits)} récits, {sum(r.points for r in recits)} points, "
         f"{len(sprints)} sprints ({sum(1 for r in recits if r.sprint)} récits planifiés)",
     )
-    if args.dry_run:
-        for e in epopees:
-            print(f"\n{e.titre} (lot {e.lot})")
-            for r in e.recits:
-                print(f"  {r.titre}  [{r.priorite}, {r.points} pts, {r.sprint or '—'}]")
+    if args.hors_ligne:
+        for s in sprints:
+            print(f"  {s.titre} : {s.debut:%d/%m/%Y} → {s.fin:%d/%m/%Y} · {s.points} pts · {', '.join(s.recits)}")
         return 0
-    importer(GitHub(args.repo), epopees, sprints)
+    Synchronisation(GitHub(args.repo), appliquer=args.appliquer).executer(epopees, sprints)
     return 0
 
 
