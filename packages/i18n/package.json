@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Catalogues FR / EN (react-i18next), partagés par le web et le mobile.",
+  "description": "Catalogues FR / EN (react-i18next).",
   "exports": {
     ".": "./src/index.ts"
   },

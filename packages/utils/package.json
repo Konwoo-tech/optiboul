@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Formats FCFA, créneaux jour / nuit (Africa/Douala), raccourcis du comptoir. Sans dépendance au DOM : utilisable par le web et le mobile.",
+  "description": "Formats FCFA, créneaux jour / nuit (Africa/Douala), raccourcis du comptoir.",
   "exports": {
     ".": "./src/index.ts"
   },

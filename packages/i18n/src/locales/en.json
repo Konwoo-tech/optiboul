@@ -1,8 +1,4 @@
 {
-  "applications": {
-    "web": "OptiBoul",
-    "pilotage": "Monitoring"
-  },
   "accueil": {
     "maCaisse": "My till",
     "planDuJour": "Today's plan",

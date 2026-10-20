@@ -1,6 +1,7 @@
 # Proxy OptiBoul (spécification technique §2 et §7) :
 # - une seule origine, routage par préfixe vers Django (/api…), tout le reste vers l'application web ;
-# - entrée « remote » réservée au tunnel (Cloudflare Tunnel ou Tailscale) : seule l'API y est exposée.
+# - entrée « remote » réservée au tunnel (Cloudflare Tunnel ou Tailscale) : application web et API,
+#   jamais l'admin Django ni Flower (ADR-19).
 log:
   level: INFO
 
@@ -54,7 +55,7 @@ http:
       tls: {}
 
     django-distant:
-      rule: 'PathPrefix(`/api`)'
+      rule: 'PathPrefix(`/api`) || PathPrefix(`/accounts`) || PathPrefix(`/static`)'
       entryPoints:
         - remote
       middlewares:
@@ -62,6 +63,15 @@ http:
         - securite
         - entree-distante
       service: django
+
+    web-distant:
+      rule: 'PathPrefix(`/`)'
+      priority: 1
+      entryPoints:
+        - remote
+      middlewares:
+        - securite
+      service: web
 
     flower:
       rule: 'PathPrefix(`/`)'

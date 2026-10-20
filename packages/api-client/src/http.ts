@@ -1,7 +1,6 @@
 /**
- * Accès HTTP commun à toutes les applications.
- * - Web : même origine, cookie de session et en-tête CSRF (ADR-06, ADR-11).
- * - Mobile : URL absolue de l'API (tunnel) et en-têtes fournis par l'application.
+ * Accès HTTP à l'API : même origine, cookie de session et en-tête CSRF (ADR-06, ADR-11).
+ * `baseUrl` ne sert qu'aux tests et outils hors navigateur.
  */
 export type ConfigurationApi = {
   baseUrl: string;

@@ -13,18 +13,16 @@ optiboul/
 ├── apps/
 │   ├── api/              # API Django REST (Cookiecutter) : Django 6, DRF, Celery, PostgreSQL 16, Mailgun, AWS S3
 │   │   └── optiboul/     # 12 applications par domaine × 4 couches (domain, application, infrastructure, api)
-│   ├── web/              # application web unique React + Vite + TypeScript
-│   │   └── src/
-│   │       ├── profils.ts    # profil → espaces visibles et écran d'arrivée (O10)
-│   │       └── espaces/      # connexion, comptoir, atelier, gestion
-│   └── mobile/           # applications React Native (Expo)
-│       └── pilotage/     # demandes, alertes, indicateurs (propriétaire, gérant)
-├── packages/             # code partagé par le web et le mobile
+│   └── web/              # application web unique React + Vite + TypeScript
+│       └── src/
+│           ├── profils.ts    # profil → espaces visibles et écran d'arrivée (O10)
+│           └── espaces/      # connexion, comptoir, atelier, gestion
+├── packages/             # code partagé (paquets internes)
 │   ├── api-client/       # client + hooks TanStack Query générés depuis apps/api/schema.yml (orval)
 │   ├── auth/             # session de même origine, gardes (web)
 │   ├── ui/               # thème OptiBoul Mantine, composants métier (web)
-│   ├── i18n/             # FR / EN (web + mobile)
-│   ├── utils/            # FCFA, créneaux jour / nuit, couleurs (web + mobile)
+│   ├── i18n/             # FR / EN
+│   ├── utils/            # FCFA, créneaux jour / nuit, couleurs
 │   ├── testing/          # mocks MSW, setup Vitest
 │   └── config/           # tsconfig, Vite
 ├── e2e/                  # Playwright
@@ -37,11 +35,11 @@ optiboul/
 └── scripts/github/       # import du backlog en issues
 ```
 
-En production, Traefik sert une seule origine : `/api`, `/accounts`, `/static`, `/django-admin…` vont à Django, le reste à l'application web. Le tunnel d'accès distant n'expose que `/api`, pour l'application mobile.
+En production, Traefik sert une seule origine : `/api`, `/accounts`, `/static`, `/django-admin…` vont à Django, le reste à l'application web. Le tunnel d'accès distant expose l'application web et l'API au propriétaire et au gérant (jamais l'admin Django) ; l'interface s'adapte au téléphone.
 
 ## Démarrer
 
-Prérequis : Docker, Node.js 24 (`.nvmrc`), pnpm 12, [uv](https://docs.astral.sh/uv/) ; Expo Go ou un émulateur pour le mobile.
+Prérequis : Docker, Node.js 24 (`.nvmrc`), pnpm 12, [uv](https://docs.astral.sh/uv/).
 
 ```bash
 pnpm install          # dépendances des applications et paquets
@@ -49,7 +47,6 @@ make up               # crée les .envs locaux puis lance Django, PostgreSQL, Re
 make migrate
 make superuser
 pnpm dev              # application web sur http://localhost:5173 (proxy vers Django :8000)
-pnpm dev:mobile       # application Expo (EXPO_PUBLIC_API_URL dans apps/mobile/pilotage/.env)
 ```
 
 | Service                      | URL                                                        |

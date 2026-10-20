@@ -1,8 +1,4 @@
 {
-  "applications": {
-    "web": "OptiBoul",
-    "pilotage": "Pilotage"
-  },
   "accueil": {
     "maCaisse": "Ma caisse",
     "planDuJour": "Plan du jour",

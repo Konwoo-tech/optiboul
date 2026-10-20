@@ -5,11 +5,6 @@ coverage/
 .turbo/
 *.tsbuildinfo
 
-# Expo / React Native
-.expo/
-apps/mobile/pilotage/ios/
-apps/mobile/pilotage/android/
-
 # Playwright
 e2e/test-results/
 e2e/playwright-report/

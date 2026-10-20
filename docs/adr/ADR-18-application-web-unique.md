@@ -17,5 +17,5 @@ La spécification v2 découpait le web en quatre applications (portail, comptoir
 ## Conséquences
 
 - Une seule image web, une seule URL, un seul build à tester.
-- L'accès distant reste limité à `/api` (application mobile). Si le web doit un jour être ouvert à distance, ce sera toute l'application : la protection repose alors sur la double authentification et les droits de l'API.
+- À distance, c'est la même application qui est ouverte au propriétaire et au gérant (ADR-19) : la protection repose sur la double authentification et les droits de l'API.
 - Le comptoir partage la même session que les autres espaces. Le changement d'utilisateur rapide (US-014) se fait dans l'application.

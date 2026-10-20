@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "typescript", "oxc", "import", "jsx-a11y"],
-  "ignorePatterns": ["**/dist/**", "**/generated/**", "**/.expo/**"],
+  "ignorePatterns": ["**/dist/**", "**/generated/**"],
   "rules": {
     "react/rules-of-hooks": "error",
     "react/only-export-components": ["warn", { "allowConstantExport": true }],
@@ -10,8 +10,8 @@
       {
         "patterns": [
           {
-            "group": ["**/apps/**", "@optiboul/web", "@optiboul/pilotage"],
-            "message": "Une application n'importe jamais une autre application : passer par packages/ (spécification technique §3.2)."
+            "group": ["**/apps/**", "@optiboul/web"],
+            "message": "Les paquets n'importent jamais une application : le code commun va dans packages/ (spécification technique §3.2)."
           }
         ]
       }

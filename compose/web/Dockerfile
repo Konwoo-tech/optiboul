@@ -1,5 +1,4 @@
 # Image « web » : l'application web React, servie par Nginx (spécification §10.2).
-# L'application mobile (apps/mobile/pilotage) est distribuée par les stores / EAS, pas par ce conteneur.
 FROM docker.io/node:24-alpine AS build
 RUN npm install -g pnpm@12.9.1
 WORKDIR /app

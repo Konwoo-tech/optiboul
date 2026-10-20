@@ -1,6 +1,6 @@
 # ADR-13 · Application mobile en React Native (Expo)
 
-**Statut :** acceptée · 20 octobre 2026
+**Statut :** remplacée par [ADR-19](ADR-19-sans-application-mobile.md) · 20 octobre 2026 · l'application mobile a été retirée du projet
 
 ## Contexte
 
