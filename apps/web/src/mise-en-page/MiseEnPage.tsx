@@ -1,7 +1,7 @@
 import { Center, Group, Loader, Tabs } from '@mantine/core';
-import { useUtilisateurCourant } from '@optiboul/auth';
-import { useTranslation } from '@optiboul/i18n';
-import { BandeauHorsLigne, EnTeteApplication } from '@optiboul/ui';
+import { useUtilisateurCourant } from '@/auth';
+import { useTranslation } from '@/i18n';
+import { BandeauHorsLigne, EnTeteApplication } from '@/ui';
 import { Suspense } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 

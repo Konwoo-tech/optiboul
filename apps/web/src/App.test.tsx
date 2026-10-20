@@ -1,7 +1,7 @@
-import { configurerApi } from '@optiboul/api-client';
-import { initI18n } from '@optiboul/i18n';
-import { creerServeurApi } from '@optiboul/testing';
-import { OptiboulProvider } from '@optiboul/ui';
+import { configurerApi } from '@/api';
+import { initI18n } from '@/i18n';
+import { creerServeurApi } from '@/test';
+import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';

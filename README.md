@@ -6,74 +6,79 @@ Documentation fonctionnelle, technique et design : [`docs/`](docs/README.md). Ba
 
 ## Architecture
 
-Monorepo unique ([spécification technique](docs/specifications/OptiBoul_ERP_Specification_technique_Architecture_v2.md), [ADR](docs/adr/README.md)) :
+Deux applications autonomes dans un même dépôt ([spécification technique](docs/specifications/OptiBoul_ERP_Specification_technique_Architecture_v2.md), [ADR](docs/adr/README.md)) :
 
 ```text
 optiboul/
 ├── apps/
-│   ├── api/              # API Django REST (Cookiecutter) : Django 6, DRF, Celery, PostgreSQL 16, Mailgun, AWS S3
-│   │   └── optiboul/     # 12 applications par domaine × 4 couches (domain, application, infrastructure, api)
-│   ├── web/              # application web unique React + Vite + TypeScript
-│   │   └── src/
-│   │       ├── profils.ts    # profil → espaces visibles et écran d'arrivée (O10)
-│   │       └── espaces/      # connexion, comptoir, atelier, gestion
-│   └── mobile/           # applications React Native (Expo)
-│       └── pilotage/     # demandes, alertes, indicateurs (propriétaire, gérant)
-├── packages/             # code partagé par le web et le mobile
-│   ├── api-client/       # client + hooks TanStack Query générés depuis apps/api/schema.yml (orval)
-│   ├── auth/             # session de même origine, gardes (web)
-│   ├── ui/               # thème OptiBoul Mantine, composants métier (web)
-│   ├── i18n/             # FR / EN (web + mobile)
-│   ├── utils/            # FCFA, créneaux jour / nuit, couleurs (web + mobile)
-│   ├── testing/          # mocks MSW, setup Vitest
-│   └── config/           # tsconfig, Vite
-├── e2e/                  # Playwright
-├── compose/web/          # image Nginx de l'application web
-├── infra/                # installation, certificats, tunnel
+│   ├── api/                  # API Django REST (Cookiecutter) : Django 6, DRF, Celery, PostgreSQL 16, Mailgun, AWS S3
+│   │   ├── optiboul/         # 12 applications par domaine × 4 couches (domain, application, infrastructure, api)
+│   │   ├── config/           # settings, urls, celery
+│   │   ├── compose/          # Dockerfiles, Traefik
+│   │   └── schema.yml        # contrat OpenAPI publié
+│   └── web/                  # application web unique : React + Vite + TypeScript (pnpm)
+│       ├── src/
+│       │   ├── profils.ts    # profil → espaces visibles et écran d'arrivée (O10)
+│       │   ├── espaces/      # connexion, comptoir, atelier, gestion
+│       │   ├── mise-en-page/ # en-tête, navigation, gardes
+│       │   ├── api/          # client + hooks TanStack Query générés depuis apps/api/schema.yml (orval)
+│       │   ├── ui/           # thème OptiBoul (Mantine), composants métier
+│       │   ├── auth/         # utilisateur connecté et son profil
+│       │   ├── i18n/         # FR / EN
+│       │   ├── utils/        # FCFA, créneaux jour / nuit, couleurs
+│       │   └── test/         # mocks MSW, setup Vitest
+│       ├── e2e/              # parcours Playwright
+│       ├── Dockerfile        # image Nginx de production
+│       └── package.json
 ├── docs/
-│   ├── specifications/   # cahier des charges, parcours, backlog, spécification technique
-│   ├── design/           # export Claude Design (prototype cliquable, maquettes)
-│   └── adr/              # décisions d'architecture
-└── scripts/github/       # import du backlog en issues
+│   ├── specifications/       # cahier des charges, parcours, backlog, spécification technique
+│   ├── design/               # export Claude Design (prototype cliquable, maquettes)
+│   └── adr/                  # décisions d'architecture
+├── infra/                    # installation, certificats, tunnel
+├── scripts/github/           # import du backlog en issues
+├── docker-compose.production.yml
+└── Makefile
 ```
 
-En production, Traefik sert une seule origine : `/api`, `/accounts`, `/static`, `/django-admin…` vont à Django, le reste à l'application web. Le tunnel d'accès distant n'expose que `/api`, pour l'application mobile.
+En production, Traefik sert une seule origine : `/api`, `/accounts`, `/static`, `/django-admin…` vont à Django, le reste à l'application web. Le tunnel d'accès distant expose l'application web et l'API au propriétaire et au gérant (jamais l'admin Django) ; l'interface s'adapte au téléphone.
 
 ## Démarrer
 
-Prérequis : Docker, Node.js 24 (`.nvmrc`), pnpm 12, [uv](https://docs.astral.sh/uv/) ; Expo Go ou un émulateur pour le mobile.
+Prérequis : Docker, Node.js 24 (`apps/web/.nvmrc`), pnpm 12, [uv](https://docs.astral.sh/uv/).
 
 ```bash
-pnpm install          # dépendances des applications et paquets
-make up               # crée les .envs locaux puis lance Django, PostgreSQL, Redis, Celery, Mailpit
+make install          # crée les .envs locaux, installe les dépendances de apps/web
+make up               # lance Django, PostgreSQL, Redis, Celery, Mailpit (Docker)
 make migrate
 make superuser
-pnpm dev              # application web sur http://localhost:5173 (proxy vers Django :8000)
-pnpm dev:mobile       # application Expo (EXPO_PUBLIC_API_URL dans apps/mobile/pilotage/.env)
+make dev              # application web sur http://localhost:5173 (proxy vers Django :8000)
 ```
 
 | Service                      | URL                                                        |
 | ---------------------------- | ---------------------------------------------------------- |
+| Application web              | http://localhost:5173                                      |
 | API et documentation OpenAPI | http://localhost:8000/api/v1/docs/ (compte administrateur) |
 | Mailpit (e-mails de test)    | http://localhost:8025                                      |
 | Flower (Celery)              | http://localhost:5555                                      |
 
 ## Commandes
 
-| Commande               | Effet                                                                                          |
-| ---------------------- | ---------------------------------------------------------------------------------------------- |
-| `make help`            | Liste des commandes                                                                            |
-| `make test`            | pytest + import-linter (API), Vitest (web et paquets)                                          |
-| `make lint`            | Ruff, mypy, oxlint, TypeScript, Prettier                                                       |
-| `make api-client`      | Régénère `apps/api/schema.yml` puis `packages/api-client` ; à lancer à chaque changement d'API |
-| `pnpm turbo run build` | Construit les applications web                                                                 |
-| `make prod-build`      | Images de production (api + web)                                                               |
+| Commande          | Effet                                                                                       |
+| ----------------- | ------------------------------------------------------------------------------------------- |
+| `make help`       | Liste des commandes                                                                         |
+| `make test`       | pytest + import-linter (API), Vitest (web)                                                  |
+| `make lint`       | Ruff, mypy (API) ; oxlint, TypeScript, Prettier (web)                                       |
+| `make api-client` | Régénère `apps/api/schema.yml` puis `apps/web/src/api` ; à lancer à chaque changement d'API |
+| `make e2e`        | Parcours Playwright sur l'environnement complet                                             |
+| `make prod-build` | Images de production (api + web)                                                            |
+
+Dans `apps/web`, les scripts pnpm habituels restent disponibles : `pnpm dev`, `pnpm test`, `pnpm build`, `pnpm lint`.
 
 ## Règles du dépôt
 
-- **Clean Architecture** : `domain` (Python pur) ← `application` ← `infrastructure` / `api` ; contrôlé par import-linter.
+- **Deux applications autonomes** : chacune a ses dépendances, ses outils et son image Docker ; rien de spécifique à une application à la racine.
+- **Clean Architecture (API)** : `domain` (Python pur) ← `application` ← `infrastructure` / `api` ; contrôlé par import-linter.
 - **Une seule application web** : ce qu'un utilisateur voit dépend de son **profil**, porté par son groupe et configuré par l'administrateur (`apps/web/src/profils.ts`, droits vérifiés par l'API).
-- **Une application n'importe jamais une autre application** : le code commun va dans `packages/` (règle oxlint).
 - **Contrat API** : `apps/api/schema.yml` et le client généré sont versionnés ; la CI échoue s'ils ne sont pas à jour.
 - **Montants** en entiers FCFA, jamais en flottants ; **registres** de mouvements en ajout seul.
-- Commits conventionnels (`feat:`, `fix:`, `chore:`…), une branche par récit, `Closes #n` dans la pull request.
+- Commits conventionnels (`feat:`, `fix:`, `chore:`…), une branche par récit, pull request vers `develop` avec `Closes #n`.

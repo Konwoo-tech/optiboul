@@ -1,5 +1,5 @@
-import { useUtilisateurCourant } from '@optiboul/auth';
-import { useTranslation } from '@optiboul/i18n';
+import { useUtilisateurCourant } from '@/auth';
+import { useTranslation } from '@/i18n';
 
 import { EcransPrevus } from '../EcransPrevus.tsx';
 

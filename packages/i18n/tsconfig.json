@@ -1,7 +1,0 @@
-{
-  "extends": "@optiboul/config/tsconfig.base.json",
-  "compilerOptions": {
-    "resolveJsonModule": true
-  },
-  "include": ["src"]
-}

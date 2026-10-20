@@ -1,6 +1,6 @@
-import { configurerApi } from '@optiboul/api-client';
-import { initI18n } from '@optiboul/i18n';
-import { OptiboulProvider } from '@optiboul/ui';
+import { configurerApi } from '@/api';
+import { initI18n } from '@/i18n';
+import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';

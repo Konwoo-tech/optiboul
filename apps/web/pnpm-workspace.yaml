@@ -1,0 +1,12 @@
+# Réglages pnpm du projet web (pas d'espace de travail : un seul paquet).
+
+# Scripts d'installation autorisés (pnpm les bloque par défaut).
+allowBuilds:
+  esbuild: true
+
+# Paquets plus récents que l'âge minimal de publication exigé par pnpm, acceptés explicitement.
+minimumReleaseAgeExclude:
+  - '@tanstack/query-core@5.104.5'
+  - '@tanstack/react-query@5.104.5'
+  - i18next@26.5.3
+  - react-router@8.5.0

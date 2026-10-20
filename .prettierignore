@@ -1,7 +1,0 @@
-apps/api/
-docs/specifications/
-pnpm-lock.yaml
-**/dist/
-**/generated/
-**/.expo/
-docs/design/claude-design/

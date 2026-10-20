@@ -1,11 +1,11 @@
 name: CI
 
-# Ne teste que les parties touchées : API, applications et paquets (spécification technique §11).
+# Ne teste que les parties touchées : API ou application web (spécification technique §11).
 on:
   pull_request:
-    branches: ['main']
+    branches: ['main', 'develop']
   push:
-    branches: ['main']
+    branches: ['main', 'develop']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       api: ${{ steps.filtre.outputs.api }}
-      front: ${{ steps.filtre.outputs.front }}
+      web: ${{ steps.filtre.outputs.web }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v3
@@ -25,17 +25,9 @@ jobs:
           filters: |
             api:
               - 'apps/api/**'
-            front:
+            web:
               - 'apps/web/**'
-              - 'apps/mobile/**'
-              - 'packages/**'
               - 'apps/api/schema.yml'
-              - 'package.json'
-              - 'pnpm-lock.yaml'
-              - 'pnpm-workspace.yaml'
-              - 'turbo.json'
-              - '.oxlintrc.json'
-              - '.prettierrc.json'
 
   pre-commit:
     runs-on: ubuntu-latest
@@ -83,30 +75,41 @@ jobs:
         if: always()
         run: $COMPOSE down
 
-  front:
+  web:
     needs: changements
-    if: needs.changements.outputs.front == 'true'
+    if: needs.changements.outputs.web == 'true'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
     steps:
       - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
       - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: apps/web/package.json
       - uses: actions/setup-node@v5
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: 'apps/web/.nvmrc'
           cache: 'pnpm'
+          cache-dependency-path: 'apps/web/pnpm-lock.yaml'
       - run: pnpm install --frozen-lockfile
 
       - name: Contrat API (client généré à jour)
         run: |
           pnpm api-client
-          git diff --exit-code packages/api-client || { echo "::error::packages/api-client n'est pas à jour : lancer make api-client"; exit 1; }
+          git diff --exit-code src/api/generated || { echo "::error::apps/web/src/api/generated n'est pas à jour : lancer make api-client"; exit 1; }
 
       - name: Format
         run: pnpm format:check
 
-      - name: Lint, types, tests, build (applications et paquets touchés)
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then AFFECTED=--affected; fi
-          pnpm turbo run lint typecheck test build $AFFECTED
+      - name: Lint
+        run: pnpm lint
+
+      - name: Types
+        run: pnpm typecheck
+
+      - name: Tests (Vitest)
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

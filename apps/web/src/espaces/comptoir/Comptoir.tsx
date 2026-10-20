@@ -1,6 +1,6 @@
 import { Group, Kbd, Text } from '@mantine/core';
-import { useTranslation } from '@optiboul/i18n';
-import { RACCOURCIS_COMPTOIR } from '@optiboul/utils';
+import { useTranslation } from '@/i18n';
+import { RACCOURCIS_COMPTOIR } from '@/utils';
 
 import { EcransPrevus } from '../EcransPrevus.tsx';
 

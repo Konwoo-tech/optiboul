@@ -15,5 +15,5 @@ Livrables de design d'OptiBoul ERP, versionnés avec le code pour servir de réf
 ## Règles
 
 - Les maquettes sont la référence visuelle, le [cahier des charges](../specifications/OptiBoul_ERP_Cahier_des_charges_v4.md) reste la référence fonctionnelle : en cas d'écart, le cahier des charges l'emporte et l'écart est signalé dans une issue.
-- Les couleurs et la typographie du design sont implémentées une seule fois dans [`packages/ui`](../../packages/ui) et [`packages/utils`](../../packages/utils/src/couleurs.ts).
+- Les couleurs et la typographie du design sont implémentées une seule fois dans [`apps/web/src/ui`](../../apps/web/src/ui) et [`apps/web/src/utils`](../../apps/web/src/utils/couleurs.ts).
 - Aucun code de production n'importe de fichier de ce dossier.

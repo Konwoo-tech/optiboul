@@ -1,0 +1,40 @@
+{
+  "accueil": {
+    "maCaisse": "My till",
+    "planDuJour": "Today's plan",
+    "maSemaine": "My week",
+    "tableauDeBord": "Dashboard"
+  },
+  "creneau": {
+    "jour": "Day session",
+    "nuit": "Night session"
+  },
+  "etat": {
+    "enLigne": "Online",
+    "horsLigne": "Offline – everything still works",
+    "envoisEnAttente_one": "{{count}} message waiting",
+    "envoisEnAttente_other": "{{count}} messages waiting"
+  },
+  "commun": {
+    "changerUtilisateur": "Switch user",
+    "bientot": "Screen planned in the backlog",
+    "chargement": "Loading…"
+  },
+  "espaces": {
+    "comptoir": "Counter",
+    "atelier": "Workshop",
+    "gestion": "Back office"
+  },
+  "profils": {
+    "caissier": "Cashier",
+    "gerant": "Manager of the week",
+    "production": "Production manager",
+    "proprietaire": "Owner",
+    "administrateur": "Administrator"
+  },
+  "connexion": {
+    "titre": "Sign in",
+    "seConnecter": "Sign in",
+    "aucunProfil": "Your account doesn't belong to any group. Ask the administrator to add you to your team's group."
+  }
+}
