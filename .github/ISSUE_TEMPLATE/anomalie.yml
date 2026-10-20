@@ -1,0 +1,15 @@
+name: Anomalie
+description: Un comportement ne correspond pas au cahier des charges
+labels: ['type:anomalie']
+body:
+  - type: textarea
+    id: constat
+    attributes:
+      label: Constat
+      description: Application (comptoir, atelier…), profil, étapes, résultat obtenu et attendu
+    validations:
+      required: true
+  - type: input
+    id: regle
+    attributes:
+      label: Règle ou parcours concerné (R…, P…)

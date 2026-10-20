@@ -1,0 +1,28 @@
+name: Bout en bout
+
+# Parcours Playwright sur l'environnement Docker complet (P3, P4, P5, P10).
+# Manuel tant que les parcours ne sont pas écrits ; à brancher sur les pull requests ensuite.
+on:
+  workflow_dispatch:
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile --filter @optiboul/e2e
+      - run: pnpm --filter @optiboul/e2e install-browsers
+      - name: Environnement complet
+        run: |
+          for f in .django .postgres; do cp backend/.envs/.production/$f.example backend/.envs/.production/$f; done
+          sudo apt-get install -y libnss3-tools && curl -sL https://dl.filippo.io/mkcert/latest?for=linux/amd64 -o /usr/local/bin/mkcert && chmod +x /usr/local/bin/mkcert
+          make certs
+          docker compose -f docker-compose.production.yml up -d --build
+      - run: pnpm test:e2e
+        env:
+          OPTIBOUL_E2E_URL: https://localhost

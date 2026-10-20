@@ -1,0 +1,111 @@
+name: CI
+
+# Ne teste que les parties touchées : backend, applications et paquets (spécification technique §11).
+on:
+  pull_request:
+    branches: ['main']
+  push:
+    branches: ['main']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  changements:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filtre.outputs.backend }}
+      front: ${{ steps.filtre.outputs.front }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filtre
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            front:
+              - 'apps/**'
+              - 'packages/**'
+              - 'backend/schema.yml'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'turbo.json'
+              - '.oxlintrc.json'
+              - '.prettierrc.json'
+
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: 'backend/.python-version'
+      - uses: pre-commit/action@v3.0.1
+
+  backend:
+    needs: changements
+    if: needs.changements.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      COMPOSE: docker compose -f docker-compose.local.yml
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Fichiers d'environnement locaux (exemples sans secret)
+        run: |
+          for f in .envs/.local/.django .envs/.local/.postgres; do cp "$f.example" "$f"; done
+
+      - name: Construction de l'image Django
+        run: $COMPOSE build django
+
+      - name: Migrations à jour
+        run: $COMPOSE run --rm django python manage.py makemigrations --check
+
+      - name: Tests (pytest)
+        run: $COMPOSE run --rm django pytest
+
+      - name: Règle de dépendance (import-linter)
+        run: $COMPOSE run --rm django lint-imports
+
+      - name: Contrat API (schema.yml à jour)
+        run: |
+          $COMPOSE run --rm django python manage.py spectacular --file schema.yml --validate
+          git diff --exit-code schema.yml || { echo "::error::backend/schema.yml n'est pas à jour : lancer make api-client"; exit 1; }
+
+      - name: Arrêt
+        if: always()
+        run: $COMPOSE down
+
+  front:
+    needs: changements
+    if: needs.changements.outputs.front == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+
+      - name: Contrat API (client généré à jour)
+        run: |
+          pnpm api-client
+          git diff --exit-code packages/api-client || { echo "::error::packages/api-client n'est pas à jour : lancer make api-client"; exit 1; }
+
+      - name: Format
+        run: pnpm format:check
+
+      - name: Lint, types, tests, build (applications et paquets touchés)
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then AFFECTED=--affected; fi
+          pnpm turbo run lint typecheck test build $AFFECTED
