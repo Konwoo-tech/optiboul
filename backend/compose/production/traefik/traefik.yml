@@ -1,0 +1,116 @@
+# Proxy OptiBoul (spécification technique §2 et §7) :
+# - une seule origine, routage par préfixe vers Django (/api…) ou vers le conteneur web (/, /comptoir, /atelier, /gestion) ;
+# - entrée « remote » réservée au tunnel (Cloudflare Tunnel ou Tailscale) : seule l'API y est exposée.
+log:
+  level: INFO
+
+entryPoints:
+  web:
+    address: ':80'
+    http:
+      redirections:
+        entryPoint:
+          to: web-secure
+
+  web-secure:
+    address: ':443'
+
+  # Jamais publiée sur l'hôte : le service tunnel s'y connecte sur le réseau Docker.
+  remote:
+    address: ':8443'
+
+  flower:
+    address: ':5555'
+
+# Certificat local généré par mkcert (`make certs`), monté dans /etc/traefik/certs.
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/traefik/certs/optiboul.pem
+        keyFile: /etc/traefik/certs/optiboul-key.pem
+
+http:
+  routers:
+    django:
+      rule: 'PathPrefix(`/api`) || PathPrefix(`/accounts`) || PathPrefix(`/static`) || PathPrefix(`/django-admin`)'
+      entryPoints:
+        - web-secure
+      middlewares:
+        - csrf
+        - securite
+        - entree-locale
+      service: django
+      tls: {}
+
+    web:
+      rule: 'PathPrefix(`/`)'
+      priority: 1
+      entryPoints:
+        - web-secure
+      middlewares:
+        - securite
+      service: web
+      tls: {}
+
+    django-distant:
+      rule: 'PathPrefix(`/api`)'
+      entryPoints:
+        - remote
+      middlewares:
+        - csrf
+        - securite
+        - entree-distante
+      service: django
+
+    flower:
+      rule: 'PathPrefix(`/`)'
+      entryPoints:
+        - flower
+      service: flower
+      tls: {}
+
+  middlewares:
+    csrf:
+      # https://docs.djangoproject.com/en/dev/ref/csrf/#ajax
+      headers:
+        hostsProxyHeaders: ['X-CSRFToken']
+
+    securite:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        referrerPolicy: 'same-origin'
+        stsSeconds: 31536000
+
+    # L'API lit cet en-tête : la connexion par code à 4 chiffres est refusée depuis l'entrée distante.
+    entree-locale:
+      headers:
+        customRequestHeaders:
+          X-OptiBoul-Entree: 'locale'
+
+    entree-distante:
+      headers:
+        customRequestHeaders:
+          X-OptiBoul-Entree: 'distante'
+
+  services:
+    django:
+      loadBalancer:
+        servers:
+          - url: http://django:5000
+
+    web:
+      loadBalancer:
+        servers:
+          - url: http://web:80
+
+    flower:
+      loadBalancer:
+        servers:
+          - url: http://flower:5555
+
+providers:
+  file:
+    filename: /etc/traefik/traefik.yml
+    watch: true

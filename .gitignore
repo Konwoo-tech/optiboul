@@ -1,0 +1,26 @@
+# Dépendances et builds
+node_modules/
+dist/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# Expo / React Native
+.expo/
+apps/pilotage/ios/
+apps/pilotage/android/
+
+# Playwright
+e2e/test-results/
+e2e/playwright-report/
+
+# Environnements et secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# Éditeurs et système
+.DS_Store
+.idea/
+*.log

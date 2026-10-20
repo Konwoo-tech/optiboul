@@ -1,0 +1,1 @@
+"""Ventes : commandes, livraisons, encaissements."""
