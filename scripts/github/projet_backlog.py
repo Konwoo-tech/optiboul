@@ -7,7 +7,7 @@ Le projet regroupe toutes les issues (épopées, récits) et pull requests du d�
   déduits des étiquettes et jalons posés par importer_backlog.py ;
 - vues Kanban, Sprint en cours, Product backlog, Feuille de route, Épopées, Pull requests.
 
-Relançable : un Status déjà posé (déplacement sur le tableau) n'est jamais écrasé.
+Relançable : un statut posé à la main (au-delà de « Backlog ») n'est jamais écrasé.
 
     python3 scripts/github/projet_backlog.py              # simulation
     python3 scripts/github/projet_backlog.py --appliquer
@@ -363,7 +363,9 @@ class Projet:
                 contenu = {**contenu, **prs.get(noeud, {})}  # noqa: PLW2901
             element = presents[noeud]
             voulues = self.valeurs_voulues(contenu, est_pr)
-            if "Status" not in element["valeurs"]:
+            # GitHub range tout nouvel élément dans « Backlog » : ce statut compte comme non posé.
+            # Un statut choisi à la main (Prêt, En cours…) n'est jamais écrasé.
+            if element["valeurs"].get("Status") in (None, self.option("Status", "Backlog")):
                 voulues["Status"] = self.option("Status", self.statut_initial(contenu, est_pr))
             for champ, valeur in voulues.items():
                 if valeur is None or element["valeurs"].get(champ) == valeur:
