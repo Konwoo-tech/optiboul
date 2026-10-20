@@ -1,0 +1,30 @@
+{
+  "applications": {
+    "portail": "Portail",
+    "comptoir": "Comptoir",
+    "atelier": "Atelier",
+    "gestion": "Gestion",
+    "pilotage": "Pilotage"
+  },
+  "accueil": {
+    "maCaisse": "Ma caisse",
+    "planDuJour": "Plan du jour",
+    "maSemaine": "Ma semaine",
+    "tableauDeBord": "Tableau de bord"
+  },
+  "creneau": {
+    "jour": "Session de jour",
+    "nuit": "Session de nuit"
+  },
+  "etat": {
+    "enLigne": "En ligne",
+    "horsLigne": "Hors ligne – tout fonctionne",
+    "envoisEnAttente_one": "{{count}} envoi en attente",
+    "envoisEnAttente_other": "{{count}} envois en attente"
+  },
+  "commun": {
+    "seConnecter": "Se connecter",
+    "changerUtilisateur": "Changer d'utilisateur",
+    "bientot": "Écran prévu au backlog"
+  }
+}

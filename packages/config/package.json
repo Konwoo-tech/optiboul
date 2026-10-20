@@ -1,0 +1,11 @@
+{
+  "name": "@optiboul/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Configurations partagées : TypeScript, Vite.",
+  "dependencies": {
+    "@vitejs/plugin-react": "catalog:",
+    "vite": "catalog:"
+  }
+}

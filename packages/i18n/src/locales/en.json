@@ -1,0 +1,30 @@
+{
+  "applications": {
+    "portail": "Portal",
+    "comptoir": "Counter",
+    "atelier": "Workshop",
+    "gestion": "Back office",
+    "pilotage": "Monitoring"
+  },
+  "accueil": {
+    "maCaisse": "My till",
+    "planDuJour": "Today's plan",
+    "maSemaine": "My week",
+    "tableauDeBord": "Dashboard"
+  },
+  "creneau": {
+    "jour": "Day session",
+    "nuit": "Night session"
+  },
+  "etat": {
+    "enLigne": "Online",
+    "horsLigne": "Offline – everything still works",
+    "envoisEnAttente_one": "{{count}} message waiting",
+    "envoisEnAttente_other": "{{count}} messages waiting"
+  },
+  "commun": {
+    "seConnecter": "Sign in",
+    "changerUtilisateur": "Switch user",
+    "bientot": "Screen planned in the backlog"
+  }
+}

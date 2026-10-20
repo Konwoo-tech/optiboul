@@ -1,0 +1,25 @@
+# Production sur le serveur local de la boulangerie (spécification technique §10.2).
+# Le backend reste un projet Cookiecutter Django standard : ses services sont inclus tels quels.
+include:
+  - backend/docker-compose.production.yml
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: ./compose/web/Dockerfile
+    image: optiboul_production_web
+    restart: always
+
+  # Accès distant sans ouvrir de port : le tunnel pointe vers http://traefik:8443 (entrée « remote »).
+  # Activé avec : docker compose -f docker-compose.production.yml --profile distant up -d
+  tunnel:
+    image: docker.io/cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - traefik
+    restart: always
+    profiles:
+      - distant

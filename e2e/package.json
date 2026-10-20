@@ -1,0 +1,16 @@
+{
+  "name": "@optiboul/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Parcours de bout en bout Playwright (P3, P4, P5, P10) sur l'environnement Docker complet.",
+  "scripts": {
+    "e2e": "playwright test",
+    "install-browsers": "playwright install --with-deps chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

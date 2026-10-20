@@ -1,0 +1,6 @@
+backend/
+docs/specifications/
+pnpm-lock.yaml
+**/dist/
+**/generated/
+**/.expo/

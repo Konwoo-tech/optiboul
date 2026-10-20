@@ -1,0 +1,33 @@
+{
+  "name": "@optiboul/pilotage",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Application mobile React Native (Expo) du propriétaire et du gérant : demandes à valider, alertes, indicateurs.",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "lint": "oxlint -c ../../.oxlintrc.json src",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@optiboul/api-client": "workspace:*",
+    "@optiboul/i18n": "workspace:*",
+    "@optiboul/utils": "workspace:*",
+    "@tanstack/react-query": "catalog:",
+    "expo": "~58.0.16",
+    "expo-constants": "~58.0.12",
+    "expo-linking": "~58.0.13",
+    "expo-router": "~58.0.24",
+    "expo-status-bar": "~58.0.3",
+    "react": "catalog:",
+    "react-native": "0.88.0",
+    "react-native-safe-area-context": "~5.10.1",
+    "react-native-screens": "~4.30.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.3.0",
+    "typescript": "~6.0.3"
+  }
+}

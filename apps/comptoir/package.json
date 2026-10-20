@@ -1,0 +1,39 @@
+{
+  "name": "@optiboul/comptoir",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Caisse, commandes, livraisons et encaissements. Navigation entièrement au clavier.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview",
+    "lint": "oxlint -c ../../.oxlintrc.json src",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mantine/core": "catalog:",
+    "@optiboul/api-client": "workspace:*",
+    "@optiboul/auth": "workspace:*",
+    "@optiboul/i18n": "workspace:*",
+    "@optiboul/ui": "workspace:*",
+    "@optiboul/utils": "workspace:*",
+    "@tanstack/react-query": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router": "catalog:"
+  },
+  "devDependencies": {
+    "@optiboul/config": "workspace:*",
+    "@optiboul/testing": "workspace:*",
+    "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "jsdom": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}
