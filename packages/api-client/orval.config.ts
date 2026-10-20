@@ -2,7 +2,7 @@ import { defineConfig } from 'orval';
 
 export default defineConfig({
   optiboul: {
-    input: { target: '../../backend/schema.yml' },
+    input: { target: '../../apps/api/schema.yml' },
     output: {
       mode: 'tags-split',
       target: 'src/generated/endpoints',

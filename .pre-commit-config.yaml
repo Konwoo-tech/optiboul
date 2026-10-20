@@ -1,5 +1,5 @@
-# Monorepo : les hooks Python ne visent que backend/ ; le front est contrôlé par oxlint / Prettier (Turborepo).
-exclude: '^(docs|backend/docs)/|/migrations/|devcontainer.json|^packages/api-client/src/generated/|^pnpm-lock.yaml$'
+# Monorepo : les hooks Python ne visent que apps/api/ ; le front est contrôlé par oxlint / Prettier (Turborepo).
+exclude: '^(docs|apps/api/docs)/|/migrations/|devcontainer.json|^packages/api-client/src/generated/|^pnpm-lock.yaml$'
 default_stages: [pre-commit]
 minimum_pre_commit_version: '3.2.0'
 
@@ -27,7 +27,7 @@ repos:
     rev: '1.33.0'
     hooks:
       - id: django-upgrade
-        files: ^backend/
+        files: ^apps/api/
         args: ['--target-version', '6.0']
 
   # Run the Ruff linter.
@@ -36,25 +36,25 @@ repos:
     hooks:
       # Linter
       - id: ruff-check
-        files: ^backend/
+        files: ^apps/api/
         args: [--fix, --exit-non-zero-on-fix]
       # Formatter
       - id: ruff-format
-        files: ^backend/
+        files: ^apps/api/
 
   - repo: https://github.com/tox-dev/pyproject-fmt
     rev: v2.30.3
     hooks:
       - id: pyproject-fmt
-        files: ^backend/pyproject\.toml$
+        files: ^apps/api/pyproject\.toml$
 
   - repo: https://github.com/djlint/djLint
     rev: v1.46.4
     hooks:
       - id: djlint-reformat-django
-        files: ^backend/.*\.html$
+        files: ^apps/api/.*\.html$
       - id: djlint-django
-        files: ^backend/.*\.html$
+        files: ^apps/api/.*\.html$
 
 # sets up .pre-commit-ci.yaml to ensure pre-commit dependencies stay up to date
 ci:

@@ -1,3 +1,5 @@
+name: optiboul
+
 volumes:
   optiboul_local_postgres_data: {}
   optiboul_local_postgres_data_backups: {}

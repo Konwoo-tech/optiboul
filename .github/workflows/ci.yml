@@ -1,6 +1,6 @@
 name: CI
 
-# Ne teste que les parties touchées : backend, applications et paquets (spécification technique §11).
+# Ne teste que les parties touchées : API, applications et paquets (spécification technique §11).
 on:
   pull_request:
     branches: ['main']
@@ -15,7 +15,7 @@ jobs:
   changements:
     runs-on: ubuntu-latest
     outputs:
-      backend: ${{ steps.filtre.outputs.backend }}
+      api: ${{ steps.filtre.outputs.api }}
       front: ${{ steps.filtre.outputs.front }}
     steps:
       - uses: actions/checkout@v6
@@ -23,12 +23,13 @@ jobs:
         id: filtre
         with:
           filters: |
-            backend:
-              - 'backend/**'
+            api:
+              - 'apps/api/**'
             front:
-              - 'apps/**'
+              - 'apps/frontend/**'
+              - 'apps/mobile/**'
               - 'packages/**'
-              - 'backend/schema.yml'
+              - 'apps/api/schema.yml'
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
@@ -42,16 +43,16 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
-          python-version-file: 'backend/.python-version'
+          python-version-file: 'apps/api/.python-version'
       - uses: pre-commit/action@v3.0.1
 
-  backend:
+  api:
     needs: changements
-    if: needs.changements.outputs.backend == 'true'
+    if: needs.changements.outputs.api == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: backend
+        working-directory: apps/api
     env:
       COMPOSE: docker compose -f docker-compose.local.yml
     steps:
@@ -76,7 +77,7 @@ jobs:
       - name: Contrat API (schema.yml à jour)
         run: |
           $COMPOSE run --rm django python manage.py spectacular --file schema.yml --validate
-          git diff --exit-code schema.yml || { echo "::error::backend/schema.yml n'est pas à jour : lancer make api-client"; exit 1; }
+          git diff --exit-code schema.yml || { echo "::error::apps/api/schema.yml n'est pas à jour : lancer make api-client"; exit 1; }
 
       - name: Arrêt
         if: always()

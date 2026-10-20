@@ -8,7 +8,7 @@ La spécification v2 prévoit `pilotage` comme une PWA (§9.1). Le porteur du pr
 
 ## Décision
 
-- `apps/pilotage` est une application **Expo (SDK 58) + Expo Router**, en TypeScript.
+- `apps/mobile/pilotage` est une application **Expo (SDK 58) + Expo Router**, en TypeScript.
 - Elle partage avec le web les paquets sans dépendance au DOM : `@optiboul/api-client` (client fetch généré), `@optiboul/i18n`, `@optiboul/utils` (FCFA, créneaux, couleurs). `@optiboul/ui` (Mantine) et `@optiboul/auth` (cookies du navigateur) restent propres au web.
 - L'API est atteinte par le tunnel sur l'entrée « remote » de Traefik, qui n'expose que `/api`. Le préfixe web `/pilotage` disparaît.
 - Authentification mobile : la session par cookie du navigateur ne s'applique pas. Elle sera réalisée avec le client « app » de **django-allauth headless** (jeton de session, double authentification), dans US-013 / US-071.

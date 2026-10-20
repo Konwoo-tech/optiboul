@@ -1,4 +1,4 @@
-# ADR-15 · Versions du socle backend
+# ADR-15 · Versions du socle de l'API
 
 **Statut :** acceptée · 20 octobre 2026
 

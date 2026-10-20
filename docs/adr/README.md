@@ -8,3 +8,4 @@ ADR-01 à ADR-12 sont décrites dans la [spécification technique §12](../speci
 | [ADR-14](ADR-14-aws-mailgun.md)         | AWS S3 (médias, sauvegardes) et Mailgun (e-mails) via Cookiecutter Django         | Acceptée, à confirmer pour le hors-ligne |
 | [ADR-15](ADR-15-versions-socle.md)      | Socle aligné sur le gabarit Cookiecutter Django courant : Django 6.0, Python 3.14 | Acceptée                                 |
 | [ADR-16](ADR-16-outillage-front.md)     | oxlint, TypeScript 7, catalogue pnpm aligné sur la version de React d'Expo        | Acceptée                                 |
+| [ADR-17](ADR-17-structure-apps.md)      | Toutes les applications sous `apps/` : `api`, `frontend`, `mobile`                | Acceptée                                 |

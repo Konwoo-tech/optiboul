@@ -1,7 +1,7 @@
 # Production sur le serveur local de la boulangerie (spécification technique §10.2).
-# Le backend reste un projet Cookiecutter Django standard : ses services sont inclus tels quels.
+# L'API (apps/api) reste un projet Cookiecutter Django standard : ses services sont inclus tels quels.
 include:
-  - backend/docker-compose.production.yml
+  - apps/api/docker-compose.production.yml
 
 services:
   web:

@@ -1,14 +1,14 @@
 {
-  "name": "@optiboul/atelier",
+  "name": "@optiboul/gestion",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Plan du jour, production, consommation et inventaire tournant. Gros boutons, saisie tactile.",
+  "description": "Back-office du gérant et du propriétaire.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview",
-    "lint": "oxlint -c ../../.oxlintrc.json src",
+    "lint": "oxlint -c ../../../.oxlintrc.json src",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },

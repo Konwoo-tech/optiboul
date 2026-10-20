@@ -7,8 +7,8 @@ coverage/
 
 # Expo / React Native
 .expo/
-apps/pilotage/ios/
-apps/pilotage/android/
+apps/mobile/pilotage/ios/
+apps/mobile/pilotage/android/
 
 # Playwright
 e2e/test-results/

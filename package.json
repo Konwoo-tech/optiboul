@@ -8,7 +8,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "turbo run dev --filter=./apps/* --filter=!@optiboul/pilotage",
+    "dev": "turbo run dev --filter=./apps/frontend/*",
     "dev:mobile": "pnpm --filter @optiboul/pilotage start",
     "build": "turbo run build",
     "lint": "turbo run lint",
