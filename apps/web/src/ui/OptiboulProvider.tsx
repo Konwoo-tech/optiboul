@@ -2,10 +2,10 @@ import '@fontsource-variable/manrope';
 import '@mantine/core/styles.css';
 
 import { MantineProvider } from '@mantine/core';
-import { creneauDe } from '@optiboul/utils';
 import type { ReactNode } from 'react';
 
 import { themeOptiboul } from './theme.ts';
+import { useCreneau } from './useCreneau.ts';
 
 type Props = {
   children: ReactNode;
@@ -14,7 +14,8 @@ type Props = {
 };
 
 export function OptiboulProvider({ children, sombreLaNuit = false }: Props) {
-  const nuit = sombreLaNuit && creneauDe(new Date()) === 'nuit';
+  const creneau = useCreneau();
+  const nuit = sombreLaNuit && creneau === 'nuit';
   return (
     <MantineProvider theme={themeOptiboul} defaultColorScheme={nuit ? 'dark' : 'light'}>
       {children}

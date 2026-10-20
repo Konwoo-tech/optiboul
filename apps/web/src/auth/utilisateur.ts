@@ -1,4 +1,4 @@
-import { useUsersMeRetrieve } from '@optiboul/api-client';
+import { useUsersMeRetrieve } from '@/api';
 
 /**
  * Utilisateur connecté et son profil (cookie de session de même origine).

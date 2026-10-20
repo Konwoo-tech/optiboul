@@ -1,5 +1,5 @@
 import { Badge, Card, Container, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { useTranslation } from '@optiboul/i18n';
+import { useTranslation } from '@/i18n';
 import type { ReactNode } from 'react';
 
 export type EcranPrevu = { libelle: string; recit: string };

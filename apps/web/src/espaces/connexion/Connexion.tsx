@@ -1,7 +1,7 @@
 import { Alert, Button, Center, Paper, Stack, Text, Title } from '@mantine/core';
-import { useUtilisateurCourant } from '@optiboul/auth';
-import { useTranslation } from '@optiboul/i18n';
-import { COULEURS } from '@optiboul/ui';
+import { useUtilisateurCourant } from '@/auth';
+import { useTranslation } from '@/i18n';
+import { COULEURS } from '@/ui';
 import { Navigate, useSearchParams } from 'react-router';
 
 import { PROFILS } from '../../profils.ts';

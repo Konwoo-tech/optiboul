@@ -1,5 +1,5 @@
-# Monorepo : les hooks Python ne visent que apps/api/ ; le front est contrôlé par oxlint / Prettier (Turborepo).
-exclude: '^(docs|apps/api/docs)/|/migrations/|devcontainer.json|^packages/api-client/src/generated/|^pnpm-lock.yaml$'
+# Monorepo : les hooks Python ne visent que apps/api/ ; le web est contrôlé par oxlint / Prettier (apps/web).
+exclude: '^(docs|apps/api/docs)/|/migrations/|devcontainer.json|^apps/web/src/api/generated/|^apps/web/pnpm-lock.yaml$'
 default_stages: [pre-commit]
 minimum_pre_commit_version: '3.2.0'
 

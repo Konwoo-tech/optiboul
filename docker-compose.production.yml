@@ -6,8 +6,7 @@ include:
 services:
   web:
     build:
-      context: .
-      dockerfile: ./compose/web/Dockerfile
+      context: ./apps/web
     image: optiboul_production_web
     restart: always
 

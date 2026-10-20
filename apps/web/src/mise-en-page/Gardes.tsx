@@ -1,5 +1,5 @@
 import { Center, Loader } from '@mantine/core';
-import { useUtilisateurCourant } from '@optiboul/auth';
+import { useUtilisateurCourant } from '@/auth';
 import { Navigate, Outlet, useLocation } from 'react-router';
 
 import { PROFILS, peutOuvrir, type Espace } from '../profils.ts';

@@ -1,4 +1,4 @@
-import type { ProfilEnum } from '@optiboul/api-client';
+import type { ProfilEnum } from '@/api';
 
 export type Profil = ProfilEnum;
 export type Espace = 'comptoir' | 'atelier' | 'gestion';

@@ -4,3 +4,4 @@ export { EnTeteApplication } from './EnTeteApplication.tsx';
 export { MontantFCFA } from './MontantFCFA.tsx';
 export { OptiboulProvider } from './OptiboulProvider.tsx';
 export { COULEURS, themeOptiboul } from './theme.ts';
+export { useCreneau } from './useCreneau.ts';

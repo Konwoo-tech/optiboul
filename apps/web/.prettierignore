@@ -1,0 +1,6 @@
+dist/
+coverage/
+pnpm-lock.yaml
+src/api/generated/
+e2e/test-results/
+e2e/playwright-report/

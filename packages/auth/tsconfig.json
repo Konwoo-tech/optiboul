@@ -1,4 +1,0 @@
-{
-  "extends": "@optiboul/config/tsconfig.react.json",
-  "include": ["src"]
-}

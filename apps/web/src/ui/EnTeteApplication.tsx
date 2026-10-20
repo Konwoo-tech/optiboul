@@ -1,17 +1,17 @@
 import { Group, Text, Title } from '@mantine/core';
 import { useNetwork } from '@mantine/hooks';
-import { useTranslation } from '@optiboul/i18n';
-import { creneauDe } from '@optiboul/utils';
+import { useTranslation } from '@/i18n';
 import type { ReactNode } from 'react';
 
 import { BadgeEtat } from './BadgeEtat.tsx';
+import { useCreneau } from './useCreneau.ts';
 import { COULEURS } from './theme.ts';
 
 /** Toujours savoir qui et où : application, créneau, état en ligne (UX §5.1). */
 export function EnTeteApplication({ titre, actions }: { titre: string; actions?: ReactNode }) {
   const { t } = useTranslation();
   const { online } = useNetwork();
-  const creneau = creneauDe(new Date());
+  const creneau = useCreneau();
   return (
     <Group justify="space-between" px="md" py="sm" bg={COULEURS.chocolat} c={COULEURS.creme}>
       <Group gap="sm">

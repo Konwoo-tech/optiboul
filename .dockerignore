@@ -1,8 +1,0 @@
-**/node_modules
-**/dist
-**/.turbo
-.git
-apps/api
-docs
-e2e/test-results
-e2e/playwright-report

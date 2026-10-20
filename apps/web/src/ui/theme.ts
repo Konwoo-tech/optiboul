@@ -1,6 +1,6 @@
 import { createTheme, type MantineColorsTuple } from '@mantine/core';
 
-export { COULEURS } from '@optiboul/utils';
+export { COULEURS } from '@/utils';
 
 const or: MantineColorsTuple = [
   '#fff9e0',

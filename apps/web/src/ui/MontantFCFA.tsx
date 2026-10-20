@@ -1,5 +1,5 @@
 import { Text, type TextProps } from '@mantine/core';
-import { formatFCFA } from '@optiboul/utils';
+import { formatFCFA } from '@/utils';
 
 type Props = TextProps & { montant: number };
 

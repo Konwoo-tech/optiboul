@@ -1,4 +1,0 @@
-{
-  "extends": "@optiboul/config/tsconfig.base.json",
-  "include": ["src"]
-}

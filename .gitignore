@@ -1,19 +1,13 @@
-# Dépendances et builds
-node_modules/
-dist/
-coverage/
-.turbo/
-*.tsbuildinfo
-
-# Playwright
-e2e/test-results/
-e2e/playwright-report/
+# Les dépendances et builds de chaque application sont ignorés dans apps/api/.gitignore et apps/web/.gitignore.
 
 # Environnements et secrets
 .env
 .env.*
 !.env.example
 *.pem
+
+# Outils
+.ruff_cache/
 
 # Éditeurs et système
 .DS_Store

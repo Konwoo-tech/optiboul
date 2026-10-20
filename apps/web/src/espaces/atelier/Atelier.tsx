@@ -1,4 +1,4 @@
-import { useTranslation } from '@optiboul/i18n';
+import { useTranslation } from '@/i18n';
 
 import { EcransPrevus } from '../EcransPrevus.tsx';
 
