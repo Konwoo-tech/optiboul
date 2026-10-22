@@ -153,6 +153,7 @@
     "equipe": "Gérant : {{gerant}} · Production : {{production}}",
     "kickerSemaine": "Semaine {{numero}} · {{du}} → {{au}} · gérant : {{gerant}} · production : {{production}}",
     "kickerSession": "Ouverte à {{heure}} par {{nom}}",
+    "kickerSessionCloturee": "Clôturée à {{heure}} par {{nom}}",
     "pastilleSession": "{{type}} · ouverte",
     "pastilleSessionCloturee": "{{type}} · clôturée",
     "pastilleReseau": "En ligne · sauvegarde cloud active",
@@ -317,6 +318,207 @@
         "motif_obligatoire": "Le motif de la réouverture est obligatoire.",
         "montant_invalide": "Le montant remis doit être positif et ne pas dépasser les espèces en caisse.",
         "receveur_inconnu": "Choisissez le gérant qui reçoit la remise."
+      }
+    },
+    "session": {
+      "titre": "Session en cours",
+      "onglets": {
+        "commandes": "Commandes",
+        "livraisons": "Livraisons",
+        "mouvements": "Mouvements internes",
+        "cloture": "Clôture"
+      },
+      "sections": "Sections de la session",
+      "chargement": "Chargement de la session…",
+      "erreurChargement": "La session n’a pas pu être chargée.",
+      "bandeau": {
+        "cloturee": "{{session}} du {{date}} clôturée à {{heure}} par {{nom}} · lecture seule",
+        "rouverte": "Session rouverte par {{nom}} à {{heure}} pour correction · tracé dans le journal",
+        "rouvrir": "Rouvrir la session",
+        "ouvrirSuivante": "Ouvrir la session de {{type}} du {{date}}"
+      },
+      "modes": {
+        "especes": "Espèces",
+        "mtn": "MTN MoMo",
+        "orange": "Orange Money"
+      },
+      "commandes": {
+        "titre": "Commandes de la session",
+        "sousTitre": "Tab ou Entrée pour passer au champ suivant. Le plan de production se calcule tout seul.",
+        "voirPlan": "Voir le plan de production",
+        "client": "Client",
+        "montantEstime": "Montant estimé",
+        "totalPains": "Total pains",
+        "sacsAPetrir": "Sacs à pétrir",
+        "quantite": "Commande {{produit}} de {{client}}",
+        "relance": {
+          "titre_one": "{{count}} client habituel n’a pas encore commandé",
+          "titre_other": "{{count}} clients habituels n’ont pas encore commandé",
+          "sous": "Ils commandent d’habitude à cette session. Relancez-les par WhatsApp, ou reprenez leur commande habituelle s’ils confirment par téléphone. Une commande ajoutée après validation du plan est signalée au chef.",
+          "relancerTous": "Relancer les {{count}}",
+          "habituel": "Habituel : {{commande}}",
+          "relanceA": "Relancé à {{heure}}",
+          "relancer": "Relancer",
+          "relancerEncore": "Relancer à nouveau",
+          "reprendre": "Reprendre l’habituel",
+          "message": "Message envoyé : « Bonjour {{nom}}, OptiBoul prend vos commandes pour la {{session}}. Votre commande habituelle : {{commande}}. Répondez OUI pour la confirmer. »",
+          "relancerClient": "Relancer {{nom}}",
+          "reprendreClient": "Reprendre l’habituel de {{nom}}"
+        },
+        "toasts": {
+          "relancesEnvoyees": "{{count}} messages WhatsApp envoyés",
+          "relanceEnvoyee": "Message WhatsApp envoyé à {{nom}}",
+          "commandeAjoutee": "Commande de {{nom}} ajoutée"
+        }
+      },
+      "livraisons": {
+        "recherche": "Client : premières lettres…",
+        "rechercheEtiquette": "Rechercher un client",
+        "listeClients": "Clients",
+        "aucunClient": "Aucun client ne commence par « {{recherche}} ».",
+        "dejaLivre": "Déjà livré · {{lieu}}",
+        "aJour": "À jour",
+        "dette": "Dette",
+        "plafondDepasseCourt": "Plafond dépassé",
+        "verrouillee": "La session est clôturée : la saisie est verrouillée.",
+        "lectureSeule": "Lecture seule : votre profil consulte la session sans saisir.",
+        "aucuneTitre": "Aucune livraison en cours",
+        "aucuneSous": "Sélectionnez un client à gauche ou tapez les premières lettres de son nom pour commencer.",
+        "soldeActuel": "Solde actuel",
+        "quantite": "{{produit}} livrés",
+        "montantDu": "Montant dû",
+        "modePaiement": "Mode de paiement",
+        "recu": "Montant reçu",
+        "exact": "Exact",
+        "reference": "Référence de transaction",
+        "referenceObligatoire": "Référence obligatoire pour le mobile money.",
+        "reste": "Reste",
+        "soldeApres": "Solde après livraison",
+        "devientDette": "Devient une dette",
+        "rembourse": "Rembourse une ancienne dette",
+        "payeExactement": "Payé exactement",
+        "plafondDepasse": "Plafond de {{plafond}} FCFA dépassé",
+        "texteBloque": "Solde après livraison {{solde}} FCFA. Le client peut payer une partie de sa dette : il manque {{manque}} FCFA pour repasser sous le plafond.",
+        "encaisserPlus": "Encaisser {{manque}} FCFA de plus",
+        "codeGerant": "Le gérant saisit son code",
+        "enAttente": "Demande envoyée au gérant à {{heure}} · en attente de décision.",
+        "autoriser": "Autoriser le dépassement",
+        "demanderAutorisation": "Demander l’autorisation du gérant",
+        "autorise": "Dépassement autorisé par {{par}} à {{heure}}. L’autorisation est tracée.",
+        "valider": "Valider la livraison",
+        "validerAutorisee": "Valider la livraison (autorisée)",
+        "bon": "Bon de livraison",
+        "dernieres": "Dernières livraisons",
+        "aucuneLivraison": "Aucune livraison : sélectionnez un client pour commencer.",
+        "bonCourt": "Bon",
+        "bonDe": "Bon de {{nom}}",
+        "meta": "Bon n° {{numero}} · {{heure}} · {{mode}}",
+        "paye": "Payé",
+        "stats": {
+          "livraisons": "Livraisons",
+          "pains": "Pains livrés",
+          "recette": "Recette attendue",
+          "encaisse": "Encaissé",
+          "dettes": "Dettes de la session",
+          "remboursements": "Remboursements"
+        },
+        "toasts": {
+          "enregistree": "Livraison enregistrée · {{nom}} · bon n° {{numero}}",
+          "depassementAutorise": "Dépassement autorisé et tracé"
+        }
+      },
+      "mouvements": {
+        "nouveau": "Nouveau mouvement interne",
+        "type": "Type",
+        "types": {
+          "vente-guichet": "Vente au guichet",
+          "retours": "Retours",
+          "reste-en-salle": "Reste en salle",
+          "ration": "Ration"
+        },
+        "produit": "Produit",
+        "quantite": "Quantité",
+        "motif": "Motif (obligatoire)",
+        "ajouter": "Ajouter le mouvement",
+        "titre": "Mouvements de la session",
+        "vide": "Aucun mouvement pour cette session.",
+        "ligne": "{{type}} · {{quantite}} {{produit}}",
+        "erreurQuantite": "Indiquez une quantité.",
+        "erreurMotif": "Motif obligatoire : précisez la raison du mouvement.",
+        "toastAjoute": "Mouvement ajouté aux totaux de la session"
+      },
+      "cloture": {
+        "recap": "Récapitulatif de la session",
+        "lignes": {
+          "attendue": "Recette attendue (montants dus)",
+          "especes": "Encaissé en espèces",
+          "mtn": "Encaissé MTN MoMo",
+          "orange": "Encaissé Orange Money",
+          "dettes": "Dettes nouvelles de la session",
+          "remboursements": "Remboursements d’anciennes dettes",
+          "depenses": "Dépenses payées en caisse",
+          "fonds": "Fonds de caisse à l’ouverture"
+        },
+        "comptage": "Comptage de la caisse",
+        "attendues": "Espèces attendues en caisse",
+        "comptees": "Espèces comptées",
+        "ecart": "Écart de caisse",
+        "saisir": "Saisissez les espèces comptées",
+        "juste": "Caisse juste",
+        "manque": "Manque {{montant}} FCFA",
+        "excedent": "Excédent de {{montant}} FCFA",
+        "cloturer": "Clôturer la session",
+        "note": "Un récapitulatif est affiché avant confirmation. Après clôture, la session passe en lecture seule.",
+        "toastCloturee": "Session clôturée et verrouillée",
+        "toastOuverte": "Session ouverte · soldes clients repris"
+      },
+      "modales": {
+        "annuler": "Annuler",
+        "fermer": "Fermer",
+        "autorisation": {
+          "titre": "Autorisation du gérant",
+          "info": "{{client}} : {{solde}} FCFA / {{plafond}} FCFA de plafond. Demande de {{par}} à {{heure}}.",
+          "aide": "Le gérant de la semaine ou le propriétaire saisit son code sur ce poste. La décision est tracée (qui, quand, montant).",
+          "code": "Code du gérant",
+          "laisser": "Laisser en attente",
+          "refuser": "Refuser",
+          "autoriser": "Autoriser la livraison",
+          "codeIncorrect": "Code incorrect : seul le gérant ou le propriétaire peut décider.",
+          "accorde": "Accordé · Livraison au-delà du plafond : {{client}}",
+          "refuse": "Refusé · Livraison au-delà du plafond : {{client}}"
+        },
+        "bon": {
+          "titre": "Bon de livraison",
+          "numero": "N° {{numero}}",
+          "quand": "{{date}} · {{heure}} · {{session}}",
+          "du": "Montant dû",
+          "paye": "Payé ({{mode}})",
+          "especes": "espèces",
+          "reste": "Reste",
+          "nouveauSolde": "Nouveau solde",
+          "dette": "Dette à régler avant {{date}}.",
+          "servi": "Servi par {{nom}}",
+          "reference": " · réf. {{reference}}",
+          "autorisePar": " · dépassement autorisé par {{nom}}",
+          "pdf": "Télécharger le PDF",
+          "whatsapp": "Envoyer par WhatsApp",
+          "toastPdf": "PDF du bon n° {{numero}} prêt",
+          "toastWhatsapp": "Bon envoyé par WhatsApp à {{nom}}"
+        },
+        "cloture": {
+          "titre": "Confirmer la clôture",
+          "avertissement": "Après clôture, la session passe en lecture seule. Seul le gérant ou le propriétaire peut la rouvrir ; chaque correction est tracée.",
+          "confirmer": "Confirmer la clôture"
+        }
+      },
+      "erreurs": {
+        "droit_insuffisant": "Votre profil ne permet pas cette action.",
+        "session_cloturee": "La session est clôturée : la saisie est verrouillée.",
+        "plafond_depasse": "Le plafond de dette du client est dépassé.",
+        "reference_obligatoire": "Référence obligatoire pour le mobile money.",
+        "montant_nul": "Aucun pain à livrer.",
+        "comptage_requis": "Saisissez les espèces comptées.",
+        "defaut": "L’action a échoué. Réessayez."
       }
     }
   }

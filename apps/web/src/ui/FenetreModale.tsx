@@ -38,6 +38,8 @@ export function FenetreModale({ titre, onFermer, largeurMax = 480, children }: P
     fenetre.current?.focus();
     const surTouche = (evenement: KeyboardEvent) => {
       if (evenement.key === 'Escape') {
+        // Échap referme la liste d'un sélecteur natif : il ne ferme pas la fenêtre à sa place.
+        if (evenement.target instanceof HTMLSelectElement) return;
         fermer.current();
         return;
       }
@@ -71,7 +73,7 @@ export function FenetreModale({ titre, onFermer, largeurMax = 480, children }: P
         // se pose sur le titre de la page plutôt que de se perdre dans le document.
         const titrePage = document.querySelector<HTMLElement>('h1');
         titrePage?.setAttribute('tabindex', '-1');
-        titrePage?.focus();
+        titrePage?.focus({ preventScroll: true });
       }
     };
   }, []);

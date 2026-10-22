@@ -2,6 +2,7 @@ import { useNetwork } from '@mantine/hooks';
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { useContexteSimule, useNotificationsSimulees } from '@/simulation';
+import type { Creneau } from '@/utils';
 import { useState } from 'react';
 
 import { BasculeApparence } from './BasculeApparence.tsx';
@@ -27,7 +28,16 @@ function Pastille({ niveau, libelle }: { niveau: Niveau; libelle: string }) {
  * Titre de l'écran, avec ce qu'il faut toujours savoir : notifications, session en cours,
  * réseau, langue et thème.
  */
-export function EnTetePage({ kicker, titre }: { kicker?: string; titre: string }) {
+export function EnTetePage({
+  kicker,
+  titre,
+  session,
+}: {
+  kicker?: string;
+  titre: string;
+  /** Session affichée par l'écran (« Session en cours ») : elle prime sur celle du contexte. */
+  session?: { creneau: Creneau; ouverte: boolean };
+}) {
   const { t } = useTranslation();
   const { online } = useNetwork();
   const creneau = useCreneau();
@@ -38,8 +48,8 @@ export function EnTetePage({ kicker, titre }: { kicker?: string; titre: string }
   const nonLues = notifications.filter((notification) => !notification.lue).length;
 
   // « Session de nuit » / « Session de jour » (la connexion, elle, dit « Nuit » / « Jour »).
-  const type = t(`creneau.${contexte?.sessionType ?? creneau}`);
-  const sessionOuverte = contexte?.sessionOuverte !== false;
+  const type = t(`creneau.${session?.creneau ?? contexte?.sessionType ?? creneau}`);
+  const sessionOuverte = session ? session.ouverte : contexte?.sessionOuverte !== false;
   const enLigne = contexte ? t('coque.pastilleReseau') : t('etat.enLigne');
 
   return (
@@ -58,9 +68,9 @@ export function EnTetePage({ kicker, titre }: { kicker?: string; titre: string }
           {nonLues > 0 && <span className={styles.badge}>{nonLues}</span>}
         </button>
         <Pastille
-          niveau={contexte && sessionOuverte ? 'ok' : 'neutre'}
+          niveau={(session || contexte) && sessionOuverte ? 'ok' : 'neutre'}
           libelle={
-            contexte
+            session || contexte
               ? t(sessionOuverte ? 'coque.pastilleSession' : 'coque.pastilleSessionCloturee', {
                   type,
                 })

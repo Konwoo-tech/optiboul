@@ -1,0 +1,621 @@
+/* Onglet Livraisons, repris de la maquette « OptiBoul ERP v2 » (lignes 216-304). */
+.page {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* Colonne de gauche : recherche et clients. */
+.clients {
+  flex: 1 1 240px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.recherche {
+  height: 48px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 16px;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.recherche:focus,
+.quantite:focus,
+.recu:focus {
+  outline: none;
+  border-color: var(--ob-marque);
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.liste {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 560px;
+  overflow: auto;
+}
+
+.client {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  background: var(--ob-surface);
+  cursor: pointer;
+  text-align: left;
+}
+
+.clientChoisi {
+  border-color: #f2b705;
+  background: var(--ob-fond);
+}
+
+.clientTextes {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.clientNom {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.clientLieu {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.clientSolde {
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.aucunClient {
+  padding: 16px 8px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+/* Colonne centrale : la livraison en cours. */
+.livraison {
+  flex: 2 1 380px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.lectureSeule {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ob-discret);
+}
+
+.vide {
+  min-height: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.videTitre {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.videSous {
+  font-size: 15px;
+  max-width: 340px;
+  color: var(--ob-discret);
+}
+
+.entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nom {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  letter-spacing: -0.01em;
+}
+
+.sousNom {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.soldeActuel {
+  text-align: right;
+}
+
+.soldeLibelle {
+  font-size: 12px;
+  color: var(--ob-discret);
+  font-weight: 700;
+}
+
+.soldeValeur {
+  font-size: 18px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.quantites {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+}
+
+.etiquetteQuantite {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.etiquetteHaut {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.prix {
+  color: var(--ob-discret);
+  font-weight: 600;
+}
+
+.quantite {
+  height: 60px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 28px;
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.sousTotal {
+  font-size: 12px;
+  color: var(--ob-discret);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.du {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--ob-fond);
+}
+
+.duLibelle {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.duMontant {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+}
+
+.duUnite {
+  font-size: 16px;
+}
+
+.modes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modesLibelle {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.modesBoutons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mode {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.modeChoisi {
+  border-color: #f2b705;
+  background: #f2b705;
+  color: #2e1a10;
+}
+
+.paiement {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.etiquette {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.recuLigne {
+  display: flex;
+  gap: 8px;
+}
+
+.recu {
+  flex: 1;
+  min-width: 0;
+  height: 52px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 22px;
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.exact {
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reference {
+  height: 52px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.referenceErreur {
+  border-color: #d9796d;
+}
+
+.reference:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.erreur {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c2453a;
+}
+
+.resultats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.resultat {
+  border: 1px solid var(--ob-ligne);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.resultatLibelle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ob-discret);
+}
+
+.resultatValeur {
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.resultatMot {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.resultatPastille {
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* Plafond dépassé. */
+.bloque {
+  border: 1.5px solid #e7a69d;
+  background: #fbe0dc;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bloqueTitre {
+  font-size: 16px;
+  font-weight: 800;
+  color: #a2251b;
+}
+
+.bloqueTexte {
+  font-size: 14px;
+  color: #5a1a12;
+}
+
+.bloqueActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.encaisserPlus {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid #a2251b;
+  border-radius: 12px;
+  background: #fff;
+  color: #a2251b;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.autoriser {
+  min-height: 44px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 12px;
+  background: #5a3220;
+  color: #fff4dc;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.bloqueAttente {
+  font-size: 13px;
+  color: #5a1a12;
+}
+
+.autorise {
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #e2f1e5;
+  color: #1f6b3a;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--ob-ligne);
+  padding-top: 16px;
+}
+
+.bon {
+  min-height: 52px;
+  padding: 0 18px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.valider {
+  min-height: 52px;
+  padding: 0 24px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 800;
+  background: var(--ob-doux);
+  color: var(--ob-discret);
+  cursor: not-allowed;
+}
+
+.validerPret {
+  background: #f2b705;
+  color: #2e1a10;
+  cursor: pointer;
+}
+
+/* Colonne de droite : la session et les dernières livraisons. */
+.droite {
+  flex: 1 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.session {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.sessionTitre {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 12px;
+  margin-top: 12px;
+}
+
+.statLibelle {
+  font-size: 12px;
+  color: var(--ob-discret);
+  font-weight: 600;
+}
+
+.statValeur {
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.dernieres {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 8px 0;
+}
+
+.dernieresTitre {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  padding: 8px 16px;
+}
+
+.derniere {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--ob-ligne);
+}
+
+.derniereTextes {
+  flex: 1;
+  min-width: 0;
+}
+
+.derniereNom {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.derniereMeta {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.derniereMontants {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.derniereDu {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.derniereReste {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.derniereBon {
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 10px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.aucuneLivraison {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}

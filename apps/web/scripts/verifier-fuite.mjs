@@ -10,6 +10,8 @@ const MARQUEURS = [
   'Nkolondom',
   'Etoudi Château',
   'optiboul-simulation',
+  'Carrefour Emana',
+  'Ration de l’équipe de nuit',
 ];
 
 function fichiers(dossier) {

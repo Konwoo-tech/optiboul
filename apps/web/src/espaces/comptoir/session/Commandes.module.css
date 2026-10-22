@@ -1,0 +1,252 @@
+/* Onglet Commandes, repris de la maquette « OptiBoul ERP v2 » (lignes 183-214). */
+
+/* Relance des habituels sans commande. */
+.relance {
+  background: var(--ob-surface);
+  border: 1.5px solid #f2b705;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.relanceEntete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.relanceTextes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 640px;
+}
+
+.relanceTitre {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.relanceSous {
+  font-size: 13px;
+  color: var(--ob-discret);
+  text-wrap: pretty;
+}
+
+.relancerTous {
+  min-height: 48px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--ob-ligne);
+}
+
+.ligneClient {
+  flex: 1 1 200px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ligneNom {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.ligneMeta {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.habituel {
+  flex: 1 1 180px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-encre);
+  font-variant-numeric: tabular-nums;
+}
+
+.relanceFaite {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  background: #e2f1e5;
+  color: #1f6b3a;
+}
+
+.ligneActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bouton {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.message {
+  font-size: 12px;
+  color: var(--ob-discret);
+  line-height: 1.5;
+  background: var(--ob-champ);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+/* Tableau des commandes. */
+.carte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.entete {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.titre {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.sousTitre {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.voirPlan {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.defilement {
+  overflow-x: auto;
+}
+
+.tableau {
+  min-width: 560px;
+}
+
+.grille {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.6fr) repeat(3, minmax(80px, 1fr)) minmax(100px, 1fr);
+  gap: 8px;
+}
+
+.grilleTitres {
+  padding: 10px 20px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ob-discret);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--ob-champ);
+}
+
+.grilleLigne {
+  padding: 5px 20px;
+  align-items: center;
+  border-top: 1px solid var(--ob-ligne);
+}
+
+.droite {
+  text-align: right;
+}
+
+.client {
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.champ {
+  height: 44px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 10px;
+  padding: 0 10px;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.champ:focus {
+  outline: none;
+  border-color: var(--ob-marque);
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.montant {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-marque);
+  font-weight: 700;
+}
+
+.totaux {
+  padding: 12px 20px;
+  border-top: 2px solid var(--ob-ligne-champ);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+}
+
+.sacs {
+  padding: 12px 20px;
+  background: var(--ob-fond);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-marque);
+}
+
+.sacsNombre {
+  text-align: right;
+  font-size: 20px;
+}

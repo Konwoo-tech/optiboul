@@ -10,6 +10,11 @@ import {
   type ContexteSimule,
 } from './donnees.ts';
 import { reinitialiserClients, repondreClients } from './clients.ts';
+import {
+  adapterNotificationsAuComptoir,
+  reinitialiserComptoir,
+  repondreComptoir,
+} from './comptoir.ts';
 import { contexteCaisses, reinitialiserCaisses, repondreCaisses } from './caisses.ts';
 import { NOTIFICATIONS_PAR_PROFIL } from './notifications.ts';
 import { lireUtilisateurConnecte, memoriserUtilisateurConnecte } from './session.ts';
@@ -45,6 +50,7 @@ export function reinitialiserSimulation(): void {
   lues.clear();
   reinitialiserClients();
   reinitialiserCaisses();
+  reinitialiserComptoir();
   memoriserUtilisateurConnecte(null);
 }
 
@@ -177,7 +183,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
       if (!utilisateur) return probleme(403, 'non_authentifie', 'Connexion requise.');
       const vues = lues.get(utilisateur.id);
       return Response.json(
-        NOTIFICATIONS_PAR_PROFIL[utilisateur.profil].map((n) => ({
+        adapterNotificationsAuComptoir(NOTIFICATIONS_PAR_PROFIL[utilisateur.profil]).map((n) => ({
           ...n,
           lue: vues?.has(n.id) ?? false,
         })),
@@ -202,6 +208,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
       return (
         repondreClients(methode, chemin, corps) ??
         repondreCaisses(chemin, methode, corps) ??
+        repondreComptoir(url, methode, corps) ??
         probleme(404, 'non_simule', `Pas encore simulé : ${methode} ${chemin}`)
       );
   }
