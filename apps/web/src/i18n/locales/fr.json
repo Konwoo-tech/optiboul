@@ -210,5 +210,102 @@
     "toastReleve": "Relevé envoyé par WhatsApp à {{nom}}",
     "erreur": "Impossible de charger les clients.",
     "chargement": "Chargement des clients…"
+  },
+  "comptoir": {
+    "caisses": {
+      "filtre": "Filtrer par caissière",
+      "toutes": "Toutes les caissières",
+      "sessionJour": "session de jour",
+      "sessionNuit": "session de nuit",
+      "typeJour": "jour",
+      "typeNuit": "nuit",
+      "ouverte": "Caisse ouverte · {{session}} du {{jour}} · {{nom}} depuis {{heure}}",
+      "fermer": "Fermer la caisse",
+      "ouvrir": "Ouvrir la caisse · {{type}} {{jour}}",
+      "rouvrir": "Rouvrir la caisse",
+      "remettre": "Remettre au coffre",
+      "plafondDepasse": "Plus de {{plafond}} FCFA en caisse",
+      "recette": "Recette encaissée",
+      "ecartCumule": "Écart cumulé",
+      "resume": "{{ouvertures}} ouvertures · {{fermetures}} fermetures",
+      "derniere": "Dernière ouverture : {{jour}} · {{heure}}",
+      "cartesRegion": "Synthèse par caissière",
+      "tableau": "Ouvertures et fermetures de caisse",
+      "colonnes": {
+        "jour": "Jour",
+        "session": "Session",
+        "caissiere": "Caissière",
+        "ouverture": "Ouverture",
+        "fermeture": "Fermeture",
+        "fonds": "Fonds",
+        "attendu": "Attendu",
+        "compte": "Compté",
+        "ecart": "Écart",
+        "statut": "Statut"
+      },
+      "jour": "Jour",
+      "nuit": "Nuit",
+      "enCours": "En cours",
+      "statuts": {
+        "ouverte": "Ouverte",
+        "juste": "Caisse juste",
+        "manque": "Manque",
+        "excedent": "Excédent"
+      },
+      "aucune": "Aucune ouverture de caisse.",
+      "chargement": "Chargement des caisses…",
+      "erreur": "Les caisses n’ont pas pu être chargées.",
+      "regle": "Chaque caissière ouvre sa caisse en comptant le fonds de caisse, et la ferme en comptant les espèces. L’écart est calculé automatiquement. Une caisse fermée ne peut être rouverte que par le gérant ou le propriétaire, et la correction est tracée.",
+      "annuler": "Annuler",
+      "echec": "L’action n’a pas pu être enregistrée.",
+      "ouverture": {
+        "titre": "Ouverture de caisse",
+        "creneau": "{{session}} · {{jour}}",
+        "planifiee": "Caissière planifiée : {{nom}}",
+        "nonPlanifiee": "Aucune caissière planifiée pour ce créneau",
+        "horsPlanning": "Vous n’êtes pas la personne planifiée : l’ouverture sera signalée dans le journal.",
+        "fonds": "Fonds de caisse compté (FCFA)",
+        "par": "Ouverture par {{nom}} · {{heure}}",
+        "confirmer": "Ouvrir la caisse",
+        "fait": "Caisse ouverte · fonds {{fonds}} FCFA"
+      },
+      "fermeture": {
+        "titre": "Fermeture de caisse",
+        "fonds": "Fonds de caisse à l’ouverture",
+        "especes": "Encaissé en espèces",
+        "depenses": "Dépenses payées en caisse",
+        "remises": "Remises au coffre",
+        "attendu": "Espèces attendues en caisse",
+        "compte": "Espèces comptées",
+        "ecart": "Écart de caisse",
+        "saisir": "Saisissez les espèces comptées",
+        "juste": "Caisse juste",
+        "manque": "Manque {{montant}} FCFA",
+        "excedent": "Excédent de {{montant}} FCFA",
+        "note": "Un seul comptage suffit : l’écart est calculé tout de suite. Après la fermeture, la caisse est verrouillée ; seul le gérant ou le propriétaire peut la rouvrir.",
+        "confirmer": "Fermer la caisse",
+        "fait": "Caisse fermée et verrouillée"
+      },
+      "reouverture": {
+        "titre": "Rouvrir la caisse",
+        "caisse": "Caisse de la {{session}} du {{jour}}",
+        "motif": "Motif de la réouverture",
+        "note": "Le motif est tracé dans le journal et le propriétaire est informé.",
+        "obligatoire": "Motif obligatoire : précisez la raison de la réouverture.",
+        "confirmer": "Rouvrir la caisse",
+        "fait": "Caisse rouverte · tracé dans le journal"
+      },
+      "coffre": {
+        "titre": "Remise au coffre",
+        "explication": "Il y a {{attendu}} FCFA attendus en caisse, au-delà du plafond de {{plafond}} FCFA. Remettez des espèces au coffre pour limiter l’argent exposé.",
+        "montant": "Montant remis au coffre (FCFA)",
+        "receveur": "Remis à",
+        "invalide": "Le montant doit être positif et ne pas dépasser les espèces en caisse.",
+        "reste": "Reste attendu en caisse : {{montant}} FCFA",
+        "trace": "La remise est tracée avec le receveur et l’heure ({{heure}}).",
+        "confirmer": "Enregistrer la remise",
+        "fait": "Remise de {{montant}} FCFA au coffre · reçue par {{nom}}"
+      }
+    }
   }
 }

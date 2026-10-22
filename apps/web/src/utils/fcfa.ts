@@ -17,3 +17,8 @@ export function formaterNombre(montant: number): string {
 export function formatFCFA(montant: number): string {
   return `${formaterNombre(montant)} FCFA`;
 }
+
+/** Comme `formaterNombre`, avec « + » devant un montant positif (écarts). Ex. 500 → « +500 ». */
+export function formaterNombreSigne(montant: number): string {
+  return `${montant > 0 ? '+' : ''}${formaterNombre(montant)}`;
+}

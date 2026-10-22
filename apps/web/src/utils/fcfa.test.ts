@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formaterNombre, formatFCFA } from './fcfa.ts';
+import { formaterNombre, formaterNombreSigne, formatFCFA } from './fcfa.ts';
 
 const normaliser = (texte: string) => texte.replace(/[  ]/g, ' ');
 
@@ -29,5 +29,13 @@ describe('formaterNombre', () => {
     expect(formaterNombre(-1250)).toBe('−1 250');
     expect(formaterNombre(0)).toBe('0');
     expect(formaterNombre(999)).toBe('999');
+  });
+});
+
+describe('formaterNombreSigne', () => {
+  it('met un plus devant un écart positif seulement', () => {
+    expect(formaterNombreSigne(500)).toBe('+500');
+    expect(formaterNombreSigne(0)).toBe('0');
+    expect(formaterNombreSigne(-1000)).toBe('−1�000');
   });
 });

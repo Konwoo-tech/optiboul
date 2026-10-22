@@ -7,6 +7,7 @@ export { Carte } from './Carte.tsx';
 export { EcranChargement } from './EcranChargement.tsx';
 export { EcranErreur } from './EcranErreur.tsx';
 export { EnTetePage } from './EnTetePage.tsx';
+export { FenetreModale } from './FenetreModale.tsx';
 export { Jauge } from './Jauge.tsx';
 export { LimiteErreur } from './LimiteErreur.tsx';
 export { LogoGoogle } from './LogoGoogle.tsx';

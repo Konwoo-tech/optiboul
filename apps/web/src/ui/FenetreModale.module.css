@@ -1,0 +1,47 @@
+/* Fenêtre modale, reprise valeur par valeur de la maquette « OptiBoul ERP v2 » (lignes 977-979). */
+.voile {
+  /* Absolu et non fixe, comme dans la maquette (voir PanneauNotifications). */
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 12, 8, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 50;
+}
+
+/* Un clic hors de la fenêtre la ferme ; le calque n'a pas de rôle pour le clavier (Échap suffit). */
+.fond {
+  position: absolute;
+  inset: 0;
+}
+
+.fenetre {
+  /* Neutralise les réglages par défaut de <dialog>. */
+  position: relative;
+  inset: auto;
+  margin: 0;
+  border: 0;
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  overflow: auto;
+  background: var(--ob-surface);
+  color: var(--ob-encre);
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 60px rgba(20, 12, 8, 0.4);
+  line-height: normal;
+  outline: none;
+}
+
+.titre {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
