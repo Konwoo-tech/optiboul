@@ -1,7 +1,7 @@
 import { Alert, Button, Center, Paper, Stack, Text, Title } from '@mantine/core';
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { COULEURS } from '@/ui';
+import { BasculeApparence } from '@/ui';
 import { cheminSuivant } from '@/utils';
 import { Navigate, useSearchParams } from 'react-router';
 
@@ -22,10 +22,11 @@ export default function Connexion() {
   }
 
   return (
-    <Center mih="100vh" bg={COULEURS.creme} p="md">
-      <Paper withBorder shadow="sm" p="xl" w={420} maw="100%">
+    <Center mih="100vh" bg="var(--ob-fond)" p="md">
+      <Paper withBorder shadow="sm" p="xl" w={420} maw="100%" bg="var(--ob-surface)">
         <Stack>
-          <Title order={1} c={COULEURS.chocolat}>
+          <BasculeApparence />
+          <Title order={1} c="var(--ob-marque)">
             OptiBoul
           </Title>
           <Title order={2} size="h3">

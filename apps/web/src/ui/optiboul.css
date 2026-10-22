@@ -1,0 +1,9 @@
+/*
+ * Ajustements que le thème Mantine ne sait pas exprimer.
+ * Cibles tactiles >= 44 px : un doigt, parfois enfariné, sur un seul PC partagé (UX §5.1).
+ */
+.mantine-Button-root,
+.mantine-Input-input,
+.mantine-Tabs-tab {
+  min-height: 44px;
+}
