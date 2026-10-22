@@ -84,6 +84,26 @@ python3 scripts/github/importer_backlog.py   # issues, étiquettes, jalons daté
 python3 scripts/github/projet_backlog.py     # tableau : champs, éléments, vues
 ```
 
+## Graphe de connaissances (graphify)
+
+`graphify-out/` contient un graphe du dépôt : symboles du code, concepts des spécifications et liens entre les deux. Il sert à retrouver « où est traité X » ou « qu'est-ce qui dépend de Y » sans parcourir les fichiers.
+
+```bash
+graphify query "comment le plafond de dette est-il vérifié ?"   # réponse depuis le graphe
+graphify explain "verifier_plafond"                             # un nœud et ses voisins
+graphify path "Caisse" "Mouvement de compte"                    # chemin entre deux notions
+graphify update .                                               # après un changement de code (sans appel LLM)
+```
+
+| Fichier | Versionné | Rôle |
+| --- | --- | --- |
+| `graphify-out/graph.json` | oui | le graphe, lu par `query`, `path` et `explain` |
+| `graphify-out/GRAPH_REPORT.md` | oui | rapport lisible : nœuds centraux, communautés, audit |
+| `graphify-out/graph.html` | non | graphe interactif ; `graphify export html` le régénère (1,8 Mo) |
+| le reste de `graphify-out/` | non | cache, manifeste et fichiers propres à chaque poste |
+
+`.graphifyignore` exclut du graphe ce qui n'apporte rien : code généré, verrous de dépendances, gabarits fournis par Cookiecutter, prototypes de `docs/design/`. `graph.json` est réécrit entièrement à chaque construction : un gros diff sur ce fichier dans une pull request est normal.
+
 ## Règles du dépôt
 
 - **Deux applications autonomes** : chacune a ses dépendances, ses outils et son image Docker ; rien de spécifique à une application à la racine.

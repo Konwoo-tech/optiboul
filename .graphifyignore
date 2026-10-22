@@ -1,0 +1,26 @@
+# Fichiers exclus du graphe de connaissances graphify (en plus de .gitignore).
+# Le graphe ne retient que le code écrit à la main et la documentation de référence.
+
+# Prototypes Claude Design : HTML/JS minifiés et pièces jointes en double
+docs/design/claude-design/
+
+# Schémas PNG des spécifications : ils reprennent le texte des documents
+docs/specifications/img/
+
+# Code généré
+apps/web/src/api/generated/
+apps/api/schema.yml
+**/migrations/
+
+# Verrous de dépendances, gabarits et traductions générés
+apps/api/uv.lock
+apps/web/pnpm-lock.yaml
+apps/api/locale/
+apps/api/docs/
+apps/api/optiboul/static/
+
+# Gabarits HTML Django / allauth fournis par Cookiecutter (pages génériques)
+apps/api/optiboul/templates/
+
+# Icônes et images statiques du web
+apps/web/public/
