@@ -1,54 +1,106 @@
-import { Alert, Button, Center, Paper, Stack, Text, Title } from '@mantine/core';
-import { useUtilisateurCourant } from '@/auth';
+import { effacerMessageConnexion, lireMessageConnexion, useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { BasculeApparence } from '@/ui';
+import {
+  annulerIdentification,
+  configurationSimulee,
+  identifier,
+  SIMULATION,
+  type Identification,
+} from '@/simulation';
 import { cheminSuivant } from '@/utils';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router';
 
-import { PROFILS } from '../../profils.ts';
+import { cheminAccueil } from '../../navigation.ts';
+import { ChoixCompteGoogle } from './ChoixCompteGoogle.tsx';
+import { ChoixUtilisateur } from './ChoixUtilisateur.tsx';
+import { ColonneSession } from './ColonneSession.tsx';
+import styles from './Connexion.module.css';
+import { FormulaireEmail } from './FormulaireEmail.tsx';
+import { VerificationDeuxEtapes, type EnAttente } from './VerificationDeuxEtapes.tsx';
 
 /**
  * Connexion. En attendant les écrans dédiés (US-010 code à 4 chiffres, US-011 double
  * authentification), le bouton ouvre la connexion django-allauth sur la même origine.
+ * En simulation, le parcours de la maquette est joué sur de fausses données : identification
+ * (Google, e-mail ou nom + code), puis vérification en deux étapes par SMS ou WhatsApp.
  */
 export default function Connexion() {
   const { t } = useTranslation();
+  const client = useQueryClient();
   const { utilisateur } = useUtilisateurCourant();
   const [parametres] = useSearchParams();
   const suivant = cheminSuivant(parametres.get('suivant'));
+  const configuration = configurationSimulee();
+  const [message, setMessage] = useState(lireMessageConnexion);
+  const [googleOuvert, setGoogleOuvert] = useState(false);
+  const [attente, setAttente] = useState<EnAttente | null>(null);
+
+  // Le message n'est montré qu'une fois : on le retire du stockage dès qu'il est affiché.
+  useEffect(() => effacerMessageConnexion(), []);
 
   if (utilisateur?.profil) {
-    return <Navigate to={suivant ?? PROFILS[utilisateur.profil].accueil} replace />;
+    return <Navigate to={suivant ?? cheminAccueil(utilisateur.profil)} replace />;
   }
 
+  /** Première étape. Une erreur (code ou mot de passe faux) remonte à l'écran qui l'a demandée. */
+  const identifierEtSuivre = async (identification: Identification) => {
+    const reponse = await identifier(identification, configuration.deuxFacteurs);
+    setMessage('');
+    if (reponse.deuxFacteurs) {
+      setGoogleOuvert(false);
+      setAttente(reponse);
+    } else {
+      await client.invalidateQueries();
+    }
+  };
+
+  const revenirDeLaVerification = () => {
+    void annulerIdentification();
+    setAttente(null);
+  };
+
   return (
-    <Center mih="100vh" bg="var(--ob-fond)" p="md">
-      <Paper withBorder shadow="sm" p="xl" w={420} maw="100%" bg="var(--ob-surface)">
-        <Stack>
-          <BasculeApparence />
-          <Title order={1} c="var(--ob-marque)">
-            OptiBoul
-          </Title>
-          <Title order={2} size="h3">
-            {t('connexion.titre')}
-          </Title>
-          {utilisateur ? (
-            <Alert color="yellow">{t('connexion.aucunProfil')}</Alert>
-          ) : (
-            <>
-              <Text c="dimmed" size="sm">
-                Boulangerie du Faubourg · Etoudi
-              </Text>
-              <Button
-                component="a"
-                href={`/accounts/login/?next=${encodeURIComponent(suivant ?? '/')}`}
-              >
-                {t('connexion.seConnecter')}
-              </Button>
-            </>
-          )}
-        </Stack>
-      </Paper>
-    </Center>
+    <div className={styles.page}>
+      <ColonneSession />
+      <div className={styles.droite}>
+        {message && <div className={styles.alerte}>{message}</div>}
+        {utilisateur ? (
+          <div className={styles.alerte}>{t('connexion.aucunProfil')}</div>
+        ) : !SIMULATION ? (
+          <div className={styles.allauth}>
+            <h1 className={styles.titre}>{t('connexion.titre')}</h1>
+            <a
+              className={styles.boutonAllauth}
+              href={`/accounts/login/?next=${encodeURIComponent(suivant ?? '/')}`}
+            >
+              {t('connexion.seConnecter')}
+            </a>
+          </div>
+        ) : attente ? (
+          <VerificationDeuxEtapes
+            attente={attente}
+            onRetour={revenirDeLaVerification}
+            onTermine={() => void client.invalidateQueries()}
+          />
+        ) : configuration.mode === 'code' ? (
+          <ChoixUtilisateur identifier={identifierEtSuivre} onChoisi={() => setMessage('')} />
+        ) : googleOuvert ? (
+          <ChoixCompteGoogle
+            onChoisir={(email) => void identifierEtSuivre({ methode: 'google', email })}
+            onAnnuler={() => setGoogleOuvert(false)}
+          />
+        ) : (
+          <FormulaireEmail
+            identifier={identifierEtSuivre}
+            onGoogle={() => {
+              setMessage('');
+              setGoogleOuvert(true);
+            }}
+          />
+        )}
+      </div>
+    </div>
   );
 }

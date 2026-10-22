@@ -6,6 +6,7 @@ import { MantineProvider } from '@mantine/core';
 import type { ReactNode } from 'react';
 
 import { resolveurVariablesOptiboul, themeOptiboul } from './theme.ts';
+import { Toasts } from './Toasts.tsx';
 import { useCreneau } from './useCreneau.ts';
 
 type Props = {
@@ -24,7 +25,7 @@ export function OptiboulProvider({ children, sombreLaNuit = false }: Props) {
       // Le choix manuel (clair / sombre) est mémorisé par Mantine et prime sur la bascule de nuit.
       defaultColorScheme={nuit ? 'dark' : 'light'}
     >
-      {children}
+      <Toasts>{children}</Toasts>
     </MantineProvider>
   );
 }
