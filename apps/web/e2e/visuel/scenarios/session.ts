@@ -74,20 +74,29 @@ type Options = {
   profil?: RegExp;
   /** Écran d'arrivée : le prototype y va par le menu, l'application par l'adresse. */
   menu?: boolean;
+  /** Pixels tolérés ; la justification est alors obligatoire. */
+  seuil?: number;
+  justification?: string;
 };
 
-function scenarioSession({ nom, etapes, profil = /Davy/, menu = false }: Options): Scenario {
+function scenarioSession(options: Options): Scenario {
+  const { nom, etapes, profil = /Davy/, menu = false } = options;
   return definirScenario({
     nom,
     variante: 'code',
     zones: { contenu: CONTENU },
+    ...(options.seuil ? { seuil: options.seuil, justification: options.justification } : {}),
     prototype: async (page: Page, env: Environnement) => {
       await connecterLePrototype(page, env.urlPrototype, profil);
-      if (menu) await cliquerTexte(page, /^Session en cours$/);
+      if (menu) await cliquerTexte(page, /^\s*Session en cours/);
       await etapes(page);
     },
     application: async (page: Page, env: Environnement) => {
       await connecterLApplication(page, env.urlApplication, profil);
+      if (menu) {
+        // Le gérant et le propriétaire arrivent dans la gestion : on attend la fin de la connexion.
+        await page.waitForURL(/\/gestion\//);
+      }
       if (menu) await page.goto(`${env.urlApplication}/comptoir/session`);
       await page.getByRole('tab', { name: 'Livraisons' }).waitFor();
       await masquerLeBandeauDeSimulation(page);
@@ -246,6 +255,9 @@ export const scenariosSession: Scenario[] = [
   }),
   scenarioSession({
     nom: 'session-cloturee-livraisons',
+    seuil: 6,
+    justification:
+      'Six pixels (écart max 39/255) au bord du rond rouge du compteur de notifications, composant partagé de l’en-tête : anticrénelage de la forme, déterministe, sans effet sur le texte ni la mise en page. Le même compteur est identique à l’octet près dans les 23 autres scénarios.',
     etapes: async (page) => {
       await cloture(page);
       await saisirChamp(page, 0, '22950');

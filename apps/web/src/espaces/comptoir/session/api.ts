@@ -79,6 +79,8 @@ export function actionsSession(client: QueryClient, utilisateur: string | undefi
   const ranger = async <T extends { instantane: InstantaneSession }>(demande: Promise<T>) => {
     const reponse = await demande;
     client.setQueryData(cle, reponse.instantane);
+    // Les notifications suivent la session (commandes manquantes) : on les relit.
+    void client.invalidateQueries({ queryKey: ['simulation', 'notifications'] });
     return reponse;
   };
   return {

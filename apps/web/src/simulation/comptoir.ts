@@ -36,8 +36,8 @@ const RACINE = '/api/v1/simulation/comptoir/session/';
 const probleme = (status: number, code: string, detail: string) =>
   Response.json({ detail, code }, { status });
 
-const A: Quantites = { BAG: 100, KO: 70, GC: 160 };
-const B: Quantites = { BAG: 110, KO: 75, GC: 165 };
+const TARIF_A: Quantites = { BAG: 100, KO: 70, GC: 160 };
+const TARIF_B: Quantites = { BAG: 110, KO: 75, GC: 165 };
 
 const client = (
   id: string,
@@ -49,13 +49,14 @@ const client = (
   solde: number,
 ): Client => ({ id, nom, type, lieu, telephone, prix, solde });
 
-const CLIENTS: readonly Client[] = [
-  client('alain', 'Alain', 'Client livreur', 'Marché Etoudi', '6 77 21 45 10', B, -1250),
-  client('alex', 'Alex', 'Client livreur', 'Carrefour Emana', '6 99 08 33 41', A, 0),
-  client('ebene', 'Ebène', 'Client livreur', 'Lycée d’Etoudi', '6 55 72 19 08', A, -2350),
-  client('white', 'White', 'Client livreur', 'Olembé', '6 78 40 12 66', B, -500),
-  client('ngono', 'Mama Ngono', 'Client livreur', 'Marché Etoudi', '6 94 15 70 22', A, 0),
-  client('junior', 'Junior', 'Client livreur', 'Messassi', '6 70 66 01 93', A, -1900),
+/** Fonctions et non constantes : aucun appel au chargement du module, donc rien dans le paquet de production. */
+const clientsDeDepart = (): readonly Client[] => [
+  client('alain', 'Alain', 'Client livreur', 'Marché Etoudi', '6 77 21 45 10', TARIF_B, -1250),
+  client('alex', 'Alex', 'Client livreur', 'Carrefour Emana', '6 99 08 33 41', TARIF_A, 0),
+  client('ebene', 'Ebène', 'Client livreur', 'Lycée d’Etoudi', '6 55 72 19 08', TARIF_A, -2350),
+  client('white', 'White', 'Client livreur', 'Olembé', '6 78 40 12 66', TARIF_B, -500),
+  client('ngono', 'Mama Ngono', 'Client livreur', 'Marché Etoudi', '6 94 15 70 22', TARIF_A, 0),
+  client('junior', 'Junior', 'Client livreur', 'Messassi', '6 70 66 01 93', TARIF_A, -1900),
   client(
     'brice',
     'Brice',
@@ -65,11 +66,11 @@ const CLIENTS: readonly Client[] = [
     { BAG: 100, KO: 75, GC: 165 },
     -4200,
   ),
-  client('clarisse', 'Clarisse', 'Client livreur', 'Emana', '6 97 82 64 05', A, -300),
-  client('herve', 'Hervé', 'Restaurant', 'Etoudi Château', '6 76 59 30 18', B, 0),
-  client('sandrine', 'Sandrine', 'Client livreur', 'Olembé', '6 93 24 81 57', A, -2750),
-  client('yannick', 'Yannick', 'Client livreur', 'Messassi', '6 58 11 96 42', A, -800),
-  client('aicha', 'Aïcha', 'Hôtel', 'Carrefour Emana', '6 90 47 05 36', A, 0),
+  client('clarisse', 'Clarisse', 'Client livreur', 'Emana', '6 97 82 64 05', TARIF_A, -300),
+  client('herve', 'Hervé', 'Restaurant', 'Etoudi Château', '6 76 59 30 18', TARIF_B, 0),
+  client('sandrine', 'Sandrine', 'Client livreur', 'Olembé', '6 93 24 81 57', TARIF_A, -2750),
+  client('yannick', 'Yannick', 'Client livreur', 'Messassi', '6 58 11 96 42', TARIF_A, -800),
+  client('aicha', 'Aïcha', 'Hôtel', 'Carrefour Emana', '6 90 47 05 36', TARIF_A, 0),
 ];
 
 /** Commande habituelle de chaque client : BAG, KO, GC. */
@@ -89,7 +90,7 @@ const HABITUELLES: Record<string, [number, number, number]> = {
 };
 
 /** Clients qui n'ont pas encore commandé au départ : la relance a de quoi faire. */
-const SANS_COMMANDE = new Set(['brice', 'sandrine', 'yannick']);
+const sansCommande = () => new Set(['brice', 'sandrine', 'yannick']);
 
 const quantites = ([BAG, KO, GC]: readonly [number, number, number]): Quantites => ({
   BAG,
@@ -106,7 +107,7 @@ const livraisonDeDepart = (
   reference: string,
   heure: string,
 ): Livraison => {
-  const cible = CLIENTS.find((c) => c.id === clientId)!;
+  const cible = clientsDeDepart().find((c) => c.id === clientId)!;
   const livrees = quantites(quantitesLivrees);
   const du = CLES_PRODUIT.reduce((somme, cle) => somme + livrees[cle] * cible.prix[cle], 0);
   return {
@@ -158,14 +159,15 @@ function dimanche(iso: string): string {
 }
 
 const commandesVides = (): Record<string, Saisies> =>
-  Object.fromEntries(CLIENTS.map((c) => [c.id, { BAG: '', KO: '', GC: '' }]));
+  Object.fromEntries(clientsDeDepart().map((c) => [c.id, { BAG: '', KO: '', GC: '' }]));
 
 function etatInitial(): Etat {
   const date = dateDuJour();
   const commandes = commandesVides();
-  for (const c of CLIENTS) {
+  const sansCommandeDeDepart = sansCommande();
+  for (const c of clientsDeDepart()) {
     const habituelle = HABITUELLES[c.id]!;
-    if (SANS_COMMANDE.has(c.id)) continue;
+    if (sansCommandeDeDepart.has(c.id)) continue;
     commandes[c.id] = {
       BAG: String(habituelle[0]),
       KO: String(habituelle[1]),
@@ -187,7 +189,7 @@ function etatInitial(): Etat {
       rouverteA: '',
     },
     plafond: PLAFOND_PAR_DEFAUT,
-    clients: CLIENTS.map((c) => ({ ...c, prix: { ...c.prix } })),
+    clients: clientsDeDepart().map((c) => ({ ...c, prix: { ...c.prix } })),
     commandes,
     habituelles: Object.fromEntries(
       Object.entries(HABITUELLES).map(([id, valeurs]) => [id, quantites(valeurs)]),
@@ -221,27 +223,28 @@ function etatInitial(): Etat {
   };
 }
 
-let etat: Etat = etatInitial();
+let courant: Etat | undefined;
+const lireEtat = (): Etat => (courant ??= etatInitial());
 
 /** Remet la session à son état de départ (tests). */
 export function reinitialiserComptoir(): void {
-  etat = etatInitial();
+  courant = undefined;
 }
 
 /** Actions tracées dans le journal, plus récentes en premier (tests). */
 export function journalComptoir(): readonly Journal[] {
-  return etat.journal;
+  return lireEtat().journal;
 }
 
 const instantane = (): InstantaneSession => {
-  const { journal: _journal, ...reste } = etat;
+  const { journal: _journal, ...reste } = lireEtat();
   return structuredClone(reste);
 };
 
 const reponse = (extra: object = {}) => Response.json({ instantane: instantane(), ...extra });
 
 function tracer(qui: string, quoi: string) {
-  etat.journal = [{ heure: heureCourante(), qui, quoi }, ...etat.journal];
+  lireEtat().journal = [{ heure: heureCourante(), qui, quoi }, ...lireEtat().journal];
 }
 
 /** Personne connectée : seuls le caissier, le gérant et le propriétaire voient la session. */
@@ -257,7 +260,7 @@ function acteur(): Acteur | undefined {
   return undefined;
 }
 
-const ouverte = () => etat.session.statut === 'ouverte';
+const ouverte = () => lireEtat().session.statut === 'ouverte';
 const peutSaisir = (a: Acteur) => (a.profil === 'caissier' || a.profil === 'gerant') && ouverte();
 const estDirection = (a: Acteur) => a.profil === 'gerant' || a.profil === 'proprietaire';
 
@@ -283,7 +286,7 @@ function lireQuantites(brut: unknown): Quantites | undefined {
 
 function enregistrerLivraison(a: Acteur, corps: Corps): Response {
   if (!peutSaisir(a)) return ouverte() ? refus() : verrouillee();
-  const cible = etat.clients.find((c) => c.id === corps.clientId);
+  const cible = lireEtat().clients.find((c) => c.id === corps.clientId);
   const livrees = lireQuantites(corps.quantites);
   const mode = corps.mode as ModePaiement;
   const recu = corps.recu;
@@ -295,7 +298,7 @@ function enregistrerLivraison(a: Acteur, corps: Corps): Response {
     return probleme(400, 'livraison_invalide', 'Le montant reçu doit être un entier positif.');
   }
   const reference = typeof corps.reference === 'string' ? corps.reference.trim() : '';
-  const autorisation = etat.autorisations[cible.id];
+  const autorisation = lireEtat().autorisations[cible.id];
   const calcul = calculerLivraison({
     client: cible,
     saisies: {
@@ -306,7 +309,7 @@ function enregistrerLivraison(a: Acteur, corps: Corps): Response {
     recu: String(recu),
     mode,
     reference,
-    plafond: etat.plafond,
+    plafond: lireEtat().plafond,
     autorise: Boolean(autorisation),
     peutSaisir: true,
   });
@@ -318,8 +321,8 @@ function enregistrerLivraison(a: Acteur, corps: Corps): Response {
     return probleme(409, 'plafond_depasse', 'Le plafond de dette du client est dépassé.');
   }
   const livraison: Livraison = {
-    id: `d${etat.numeroProchainBon}`,
-    numero: etat.numeroProchainBon,
+    id: `d${lireEtat().numeroProchainBon}`,
+    numero: lireEtat().numeroProchainBon,
     clientId: cible.id,
     nom: cible.nom,
     quantites: livrees,
@@ -335,11 +338,11 @@ function enregistrerLivraison(a: Acteur, corps: Corps): Response {
     par: a.nom,
     autorisePar: calcul.depasse && autorisation ? autorisation.par : '',
   };
-  etat.livraisons = [livraison, ...etat.livraisons];
-  etat.numeroProchainBon += 1;
+  lireEtat().livraisons = [livraison, ...lireEtat().livraisons];
+  lireEtat().numeroProchainBon += 1;
   cible.solde = calcul.soldeApres;
-  delete etat.autorisations[cible.id];
-  etat.dernierBon = livraison.id;
+  delete lireEtat().autorisations[cible.id];
+  lireEtat().dernierBon = livraison.id;
   tracer(
     a.nom,
     `Livraison ${livraison.nom} – ${livraison.du} FCFA dû, ${livraison.recu} reçu` +
@@ -350,36 +353,38 @@ function enregistrerLivraison(a: Acteur, corps: Corps): Response {
 
 function demanderAutorisation(a: Acteur, corps: Corps): Response {
   if (!peutSaisir(a)) return ouverte() ? refus() : verrouillee();
-  const cible = etat.clients.find((c) => c.id === corps.clientId);
+  const cible = lireEtat().clients.find((c) => c.id === corps.clientId);
   if (!cible) return probleme(404, 'client_inconnu', 'Client inconnu.');
   const soldeApres = corps.soldeApres;
   if (typeof soldeApres !== 'number' || !Number.isInteger(soldeApres)) {
     return probleme(400, 'solde_invalide', 'Solde après livraison invalide.');
   }
   if (estDirection(a)) {
-    etat.autorisations[cible.id] = { par: a.nom, heure: heureCourante() };
+    lireEtat().autorisations[cible.id] = { par: a.nom, heure: heureCourante() };
     tracer(a.nom, `Autorisation de dépassement du plafond : ${cible.nom} (${soldeApres} FCFA)`);
     return reponse({ autorise: true });
   }
-  const existante = etat.demandes.find((d) => d.clientId === cible.id && d.statut === 'en-attente');
+  const existante = lireEtat().demandes.find(
+    (d) => d.clientId === cible.id && d.statut === 'en-attente',
+  );
   if (existante) return reponse({ demande: existante });
   const demande = {
     id: `q${Date.now()}`,
     clientId: cible.id,
     clientNom: cible.nom,
     soldeApres,
-    plafond: etat.plafond,
+    plafond: lireEtat().plafond,
     par: a.nom,
     heure: heureCourante(),
     statut: 'en-attente' as const,
   };
-  etat.demandes = [demande, ...etat.demandes];
+  lireEtat().demandes = [demande, ...lireEtat().demandes];
   tracer(a.nom, `Demande d’autorisation : ${cible.nom}`);
   return reponse({ demande });
 }
 
 function deciderAutorisation(corps: Corps): Response {
-  const demande = etat.demandes.find((d) => d.id === corps.demandeId);
+  const demande = lireEtat().demandes.find((d) => d.id === corps.demandeId);
   if (!demande || demande.statut !== 'en-attente') {
     return probleme(404, 'demande_inconnue', 'Aucune demande en attente.');
   }
@@ -396,7 +401,8 @@ function deciderAutorisation(corps: Corps): Response {
   }
   const accord = corps.accord === true;
   demande.statut = accord ? 'acceptee' : 'refusee';
-  if (accord) etat.autorisations[demande.clientId] = { par: decideur.nom, heure: heureCourante() };
+  if (accord)
+    lireEtat().autorisations[demande.clientId] = { par: decideur.nom, heure: heureCourante() };
   tracer(
     decideur.nom,
     `${accord ? 'Accord' : 'Refus'} – Livraison au-delà du plafond : ${demande.clientNom}`,
@@ -423,17 +429,20 @@ function ajouterMouvement(a: Acteur, corps: Corps): Response {
       'Motif obligatoire : précisez la raison du mouvement.',
     );
   }
-  etat.mouvements = [
+  lireEtat().mouvements = [
     { type, produit, quantite, motif, par: a.nom, heure: heureCourante() },
-    ...etat.mouvements,
+    ...lireEtat().mouvements,
   ];
   tracer(a.nom, `Mouvement interne : ${type} ${quantite} ${produit}`);
   return reponse();
 }
 
 function prochaineSession() {
-  const type = etat.session.type === 'nuit' ? 'jour' : 'nuit';
-  const date = etat.session.type === 'nuit' ? lendemain(etat.session.date) : etat.session.date;
+  const type = lireEtat().session.type === 'nuit' ? 'jour' : 'nuit';
+  const date =
+    lireEtat().session.type === 'nuit'
+      ? lendemain(lireEtat().session.date)
+      : lireEtat().session.date;
   return { type, date } as const;
 }
 
@@ -456,7 +465,7 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
 
     case 'PUT commandes/': {
       if (!peutSaisir(a)) return ouverte() ? refus() : verrouillee();
-      const saisies = etat.commandes[String(corps.clientId)];
+      const saisies = lireEtat().commandes[String(corps.clientId)];
       const cle = corps.produit as (typeof CLES_PRODUIT)[number];
       if (!saisies || !CLES_PRODUIT.includes(cle)) {
         return probleme(400, 'commande_invalide', 'Client ou produit inconnu.');
@@ -467,10 +476,10 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
 
     case 'POST commandes/habituelle/': {
       if (!ouverte()) return verrouillee();
-      const cible = etat.clients.find((c) => c.id === corps.clientId);
-      const habituelle = cible ? etat.habituelles[cible.id] : undefined;
+      const cible = lireEtat().clients.find((c) => c.id === corps.clientId);
+      const habituelle = cible ? lireEtat().habituelles[cible.id] : undefined;
       if (!cible || !habituelle) return probleme(404, 'client_inconnu', 'Client inconnu.');
-      etat.commandes[cible.id] = {
+      lireEtat().commandes[cible.id] = {
         BAG: habituelle.BAG ? String(habituelle.BAG) : '',
         KO: habituelle.KO ? String(habituelle.KO) : '',
         GC: habituelle.GC ? String(habituelle.GC) : '',
@@ -482,10 +491,10 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
     case 'POST relances/': {
       if (!ouverte()) return verrouillee();
       const ids = Array.isArray(corps.clientIds) ? corps.clientIds.map(String) : [];
-      const cibles = etat.clients.filter((c) => ids.includes(c.id));
+      const cibles = lireEtat().clients.filter((c) => ids.includes(c.id));
       if (cibles.length === 0) return probleme(400, 'relance_vide', 'Aucun client à relancer.');
       const heure = heureCourante();
-      for (const cible of cibles) etat.relances[cible.id] = heure;
+      for (const cible of cibles) lireEtat().relances[cible.id] = heure;
       tracer(a.nom, `Relance commande WhatsApp : ${cibles.map((c) => c.nom).join(', ')}`);
       return reponse({ relances: cibles.map((c) => c.nom) });
     }
@@ -504,31 +513,34 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
 
     case 'PUT comptage/': {
       if (!ouverte()) return verrouillee();
-      etat.session.especesComptees = chiffres(String(corps.especes ?? ''));
+      lireEtat().session.especesComptees = chiffres(String(corps.especes ?? ''));
       return reponse();
     }
 
     case 'POST cloturer/': {
       if (!ouverte()) return verrouillee();
-      if (etat.session.especesComptees === '') {
+      if (lireEtat().session.especesComptees === '') {
         return probleme(409, 'comptage_requis', 'Saisissez les espèces comptées.');
       }
-      etat.session.statut = 'cloturee';
-      etat.session.clotureeA = heureCourante();
-      etat.session.cloturePar = a.nom;
-      tracer(a.nom, `Clôture de la session de ${etat.session.type} du ${etat.session.date}`);
+      lireEtat().session.statut = 'cloturee';
+      lireEtat().session.clotureeA = heureCourante();
+      lireEtat().session.cloturePar = a.nom;
+      tracer(
+        a.nom,
+        `Clôture de la session de ${lireEtat().session.type} du ${lireEtat().session.date}`,
+      );
       return reponse();
     }
 
     case 'POST rouvrir/': {
       if (!estDirection(a)) return refus();
       if (ouverte()) return probleme(409, 'session_ouverte', 'La session est déjà ouverte.');
-      etat.session.statut = 'ouverte';
-      etat.session.rouvertePar = a.nom;
-      etat.session.rouverteA = heureCourante();
+      lireEtat().session.statut = 'ouverte';
+      lireEtat().session.rouvertePar = a.nom;
+      lireEtat().session.rouverteA = heureCourante();
       tracer(
         a.nom,
-        `Réouverture de la session de ${etat.session.type} du ${etat.session.date} (correction après clôture)`,
+        `Réouverture de la session de ${lireEtat().session.type} du ${lireEtat().session.date} (correction après clôture)`,
       );
       return reponse();
     }
@@ -537,7 +549,7 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
       if (a.profil === 'proprietaire') return refus();
       if (ouverte()) return probleme(409, 'session_ouverte', 'La session est déjà ouverte.');
       const { type, date } = prochaineSession();
-      etat.session = {
+      lireEtat().session = {
         type,
         date,
         statut: 'ouverte',
@@ -550,14 +562,14 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
         rouvertePar: '',
         rouverteA: '',
       };
-      etat.livraisons = [];
-      etat.mouvements = [];
-      etat.dernierBon = null;
-      etat.commandes = commandesVides();
-      etat.relances = {};
-      etat.autorisations = {};
-      etat.depensesCaisse = 0;
-      etat.echeanceDettes = dimanche(date);
+      lireEtat().livraisons = [];
+      lireEtat().mouvements = [];
+      lireEtat().dernierBon = null;
+      lireEtat().commandes = commandesVides();
+      lireEtat().relances = {};
+      lireEtat().autorisations = {};
+      lireEtat().depensesCaisse = 0;
+      lireEtat().echeanceDettes = dimanche(date);
       tracer(a.nom, `Ouverture de la session de ${type} du ${date}`);
       return reponse();
     }
@@ -575,7 +587,7 @@ export function adapterNotificationsAuComptoir(
   notifications: readonly NotificationSimulee[],
 ): NotificationSimulee[] {
   const manquants = ouverte()
-    ? clientsSansCommande(etat.clients, etat.commandes, etat.habituelles)
+    ? clientsSansCommande(lireEtat().clients, lireEtat().commandes, lireEtat().habituelles)
     : [];
   return notifications.flatMap((notification) => {
     if (!notification.enDirect || notification.fr.type !== 'Commandes') return [notification];
