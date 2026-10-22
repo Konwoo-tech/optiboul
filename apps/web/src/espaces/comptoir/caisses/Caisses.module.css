@@ -50,6 +50,8 @@
 }
 
 .ouverte {
+  /* Hauteur du bouton « Fermer la caisse » de la maquette, même quand il est absent (propriétaire). */
+  min-height: 44px;
   display: flex;
   align-items: center;
   gap: 10px;

@@ -15,13 +15,24 @@ import { definirScenario, type Scenario, type Zone } from '../scenario.ts';
 
 const CONTENU: Zone = { x: 248, y: 0, width: 1032, height: 800 };
 
-// Après une ouverture, une fermeture ou une réouverture, la rangée d'actions de l'en-tête (badge des
-// notifications, pastille « Session … ouverte/clôturée ») suit l'état de la session : elle relève
-// de la coque et des notifications, pas de cet écran. On compare le titre (y 0-95) et le contenu
-// (y 145-800), pas cette rangée (y 96-144).
+// Après une ouverture, une fermeture ou une réouverture, le badge des notifications (premier bouton de
+// la rangée d'actions de l'en-tête, x 280-425) suit l'état de la session : les notifications sont
+// calculées par la coque, pas par cet écran, et restent statiques en simulation. On le laisse hors
+// zone ; la pastille « Session … ouverte/clôturée » et le reste de l'en-tête sont comparés.
 const ZONES_APRES_ACTION: Record<string, Zone> = {
   titre: { x: 248, y: 0, width: 1032, height: 95 },
+  pastilles: { x: 428, y: 96, width: 852, height: 48 },
   contenu: { x: 248, y: 145, width: 1032, height: 655 },
+};
+
+// Une caisse rouverte garde sa ligne fermée dans le tableau, comme le prototype ; mais les cartes ne
+// la comptent pas deux fois (demande de relecture de #131), alors que le prototype la compte : les
+// cartes (y 220-380 en vue gérant) sont donc hors zone, la barre et le tableau sont comparés.
+const ZONES_REOUVERTURE: Record<string, Zone> = {
+  titre: ZONES_APRES_ACTION.titre!,
+  pastilles: ZONES_APRES_ACTION.pastilles!,
+  barre: { x: 248, y: 145, width: 1032, height: 70 },
+  tableau: { x: 248, y: 385, width: 1032, height: 415 },
 };
 
 type Personne = 'Davy' | 'Willy' | 'M. Fotso';
@@ -129,8 +140,15 @@ const filtrerRachel = (page: Page) =>
   page.getByRole('button', { name: 'Rachel', exact: true }).click();
 const gerantFiltre = scenario('caisses-gerant-filtre', 'Willy', filtrerRachel, filtrerRachel);
 
-// Vue du propriétaire : voit tout, n'ouvre pas de caisse.
-const proprietaire = scenario('caisses-proprietaire', 'M. Fotso', rien, rien);
+// Vue du propriétaire : voit tout, en lecture seule (CdC §3.3) : pas de bouton « Fermer la caisse »,
+// que le prototype lui montre. On compare le titre, l'en-tête et ce qui est sous la barre d'actions.
+const proprietaire = scenario('caisses-proprietaire', 'M. Fotso', rien, rien, {
+  zones: {
+    titre: { x: 248, y: 0, width: 1032, height: 95 },
+    pastilles: { x: 428, y: 96, width: 852, height: 48 },
+    'sous-la-barre': { x: 248, y: 215, width: 1032, height: 585 },
+  },
+});
 
 // Après la fermeture par la caissière : « Ouvrir la caisse · jour 15 oct. » remplace la bannière.
 const fermeture = scenario(
@@ -200,6 +218,7 @@ const reouverture = scenario(
     await page.getByRole('dialog').waitFor({ state: 'detached' });
     await attendreLaFinDuMessage(page);
   },
+  { zones: ZONES_REOUVERTURE },
 );
 
 // Vue du gérant en anglais et en thème sombre : textes, dates et palette suivent le prototype.

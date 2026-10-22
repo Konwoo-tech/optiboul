@@ -141,7 +141,12 @@ export default function EcranCaisses({ ecran }: { ecran: Ecran }) {
     setFenetre(nom);
   };
   const messageErreur = (erreur: unknown) =>
-    erreur ? (erreur instanceof ErreurApi ? erreur.message : t('comptoir.caisses.echec')) : null;
+    !erreur
+      ? null
+      : erreur instanceof ErreurApi
+        ? // Le code métier de l'API donne le texte traduit ; à défaut, le message du serveur.
+          t(`comptoir.caisses.erreurs.${erreur.code}`, { defaultValue: erreur.message })
+        : t('comptoir.caisses.echec');
   const termine = (message: string) => {
     setFenetre(null);
     afficherToast(message);

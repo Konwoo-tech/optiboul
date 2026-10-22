@@ -38,7 +38,8 @@ export function EnTetePage({ kicker, titre }: { kicker?: string; titre: string }
   const nonLues = notifications.filter((notification) => !notification.lue).length;
 
   // « Session de nuit » / « Session de jour » (la connexion, elle, dit « Nuit » / « Jour »).
-  const type = t(`creneau.${creneau}`);
+  const type = t(`creneau.${contexte?.sessionType ?? creneau}`);
+  const sessionOuverte = contexte?.sessionOuverte !== false;
   const enLigne = contexte ? t('coque.pastilleReseau') : t('etat.enLigne');
 
   return (
@@ -57,8 +58,14 @@ export function EnTetePage({ kicker, titre }: { kicker?: string; titre: string }
           {nonLues > 0 && <span className={styles.badge}>{nonLues}</span>}
         </button>
         <Pastille
-          niveau={contexte ? 'ok' : 'neutre'}
-          libelle={contexte ? t('coque.pastilleSession', { type }) : type}
+          niveau={contexte && sessionOuverte ? 'ok' : 'neutre'}
+          libelle={
+            contexte
+              ? t(sessionOuverte ? 'coque.pastilleSession' : 'coque.pastilleSessionCloturee', {
+                  type,
+                })
+              : type
+          }
         />
         <Pastille
           niveau={online ? 'ok' : 'surveiller'}

@@ -115,13 +115,13 @@ describe('droits d’affichage par profil', () => {
     });
   });
 
-  it('le propriétaire voit tout et rouvre, mais n’ouvre pas de caisse', () => {
+  it('le propriétaire voit tout et rouvre, mais en lecture seule : ni ouvrir, ni fermer, ni remise (CdC §3.3)', () => {
     expect(droitsCaisse('proprietaire', false)).toEqual({
       voitToutes: true,
       ouvrir: false,
-      fermer: true,
+      fermer: false,
       rouvrir: true,
-      remettreAuCoffre: true,
+      remettreAuCoffre: false,
     });
   });
 
@@ -175,10 +175,28 @@ describe('tableau et cartes', () => {
 
   it('résume une caissière : ouvertures, fermetures, recette, écart cumulé, dernière ouverture', () => {
     const resume = syntheseCaissiere(davy, [
-      session({ id: 'n1', caissiere: davy, attendu: 241_350, compte: 240_850, recette: 327_400 }),
-      session({ id: 'n2', caissiere: davy, attendu: 233_600, compte: 233_600, recette: 301_200 }),
+      session({
+        id: 'n1',
+        caissiere: davy,
+        jour: '2026-10-12',
+        type: 'nuit',
+        attendu: 241_350,
+        compte: 240_850,
+        recette: 327_400,
+      }),
+      session({
+        id: 'n2',
+        caissiere: davy,
+        jour: '2026-10-13',
+        type: 'nuit',
+        attendu: 233_600,
+        compte: 233_600,
+        recette: 301_200,
+      }),
       session({
         id: 'live',
+        jour: '2026-10-14',
+        type: 'nuit',
         caissiere: davy,
         enCours: true,
         fermeture: null,
@@ -194,6 +212,34 @@ describe('tableau et cartes', () => {
       ecart: -500,
     });
     expect(resume.derniere?.id).toBe('live');
+  });
+
+  it('ne compte pas deux fois une caisse rouverte (ligne fermée + ligne ouverte du même créneau)', () => {
+    const resume = syntheseCaissiere(davy, [
+      session({ id: 'n1', caissiere: davy, jour: '2026-10-13', type: 'nuit', recette: 301_200 }),
+      session({
+        id: 'n2-fermee',
+        caissiere: davy,
+        jour: '2026-10-14',
+        type: 'nuit',
+        attendu: 22_950,
+        compte: 22_450,
+        recette: 58_450,
+      }),
+      session({
+        id: 'en-cours',
+        caissiere: davy,
+        jour: '2026-10-14',
+        type: 'nuit',
+        enCours: true,
+        fermeture: null,
+        compte: null,
+        attendu: 22_950,
+        recette: 58_450,
+      }),
+    ]);
+    expect(resume).toMatchObject({ ouvertures: 2, fermetures: 1, recette: 359_650, ecart: 0 });
+    expect(resume.derniere?.id).toBe('en-cours');
   });
 
   it('ne compte pas l’écart d’une caisse encore ouverte', () => {

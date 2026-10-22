@@ -64,7 +64,8 @@ export function droitsCaisse(
   estSaCaisse: boolean,
 ): DroitsCaisse {
   const direction = profil === 'gerant' || profil === 'proprietaire';
-  const peutAgir = direction || (profil === 'caissier' && estSaCaisse);
+  // Cahier des charges §3.3 : le propriétaire est en lecture seule sur la caisse (il rouvre, c'est tout).
+  const peutAgir = profil === 'gerant' || (profil === 'caissier' && estSaCaisse);
   return {
     voitToutes: direction,
     // Maquette : la caissière et le gérant ouvrent ; le propriétaire consulte seulement.
@@ -103,7 +104,11 @@ export function syntheseCaissiere(
   personne: Personne,
   sessions: readonly SessionCaisse[],
 ): SyntheseCaissiere {
-  const siennes = sessions.filter((s) => s.caissiere.id === personne.id);
+  // Une caisse rouverte garde sa ligne fermée dans la liste : on ne la compte pas deux fois.
+  const rouvertes = new Set(sessions.filter((s) => s.enCours).map((s) => `${s.jour}/${s.type}`));
+  const siennes = sessions.filter(
+    (s) => s.caissiere.id === personne.id && (s.enCours || !rouvertes.has(`${s.jour}/${s.type}`)),
+  );
   const fermees = siennes.filter((s) => !s.enCours);
   return {
     personne,

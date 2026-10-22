@@ -14,7 +14,7 @@ import type {
   TypeSession,
 } from '../espaces/comptoir/caisses/types.ts';
 import type { Profil } from '../profils.ts';
-import { COMPTES_SIMULES } from './donnees.ts';
+import { COMPTES_SIMULES, type ContexteSimule } from './donnees.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
 /*
@@ -48,9 +48,7 @@ const personne = (id: string): Personne => {
 // production n'embarque aucune donnée de simulation.
 const caissieres = (): Personne[] => [personne('davy'), personne('rachel')];
 const receveurs = (): Personne[] =>
-  COMPTES_SIMULES.filter((c) => c.profil === 'gerant' || c.profil === 'proprietaire').map((c) =>
-    personne(c.id),
-  );
+  COMPTES_SIMULES.filter((c) => c.profil === 'gerant').map((c) => personne(c.id));
 
 /** Caisses fermées de la semaine 42 (maquette : `caisses`). */
 const fermee = (
@@ -117,6 +115,19 @@ export function reinitialiserCaisses(): void {
   journal = [];
 }
 
+/** Ce que la coque sait de la session : elle suit l'état de la caisse (ouverture, fermeture). */
+export function contexteCaisses(): Pick<
+  ContexteSimule,
+  'caissierDeSession' | 'sessionOuverteDepuis' | 'sessionType' | 'sessionOuverte'
+> {
+  return {
+    caissierDeSession: courante.ouverture.par,
+    sessionOuverteDepuis: courante.ouverture.heure,
+    sessionType: courante.type,
+    sessionOuverte: courante.statut === 'ouverte',
+  };
+}
+
 const probleme = (status: number, code: string, detail: string) =>
   Response.json({ detail, code }, { status });
 const sansContenu = () => new Response(null, { status: 204 });
@@ -175,6 +186,9 @@ function tracer(qui: { nom: string; profil: Profil }, action: string): void {
 type Acteur = { id: string; nom: string; profil: Profil };
 
 const estDirection = (a: Acteur) => a.profil === 'gerant' || a.profil === 'proprietaire';
+/** Cahier des charges §3.3 : le propriétaire consulte (et rouvre), il ne ferme pas et ne fait pas de remise. */
+const peutAgir = (a: Acteur) =>
+  a.profil === 'gerant' || (a.profil === 'caissier' && estSaCaisse(a));
 const estSaCaisse = (a: Acteur) => courante.caissiere.id === a.id;
 
 /** Le gérant et le propriétaire voient tout ; la caissière ne voit que ses caisses (US-044). */
@@ -247,12 +261,8 @@ function fermer(acteur: Acteur, corps: Corps): Response {
   if (courante.statut !== 'ouverte') {
     return probleme(409, 'caisse_fermee', 'Aucune caisse n’est ouverte.');
   }
-  if (!estDirection(acteur) && !(acteur.profil === 'caissier' && estSaCaisse(acteur))) {
-    return probleme(
-      403,
-      'interdit',
-      'Seule la caissière de cette caisse, le gérant ou le propriétaire la ferme.',
-    );
+  if (!peutAgir(acteur)) {
+    return probleme(403, 'interdit', 'Seule la caissière de cette caisse ou le gérant la ferme.');
   }
   const compte = entier(corps.compte);
   if (compte === null || compte < 0) {
@@ -305,11 +315,11 @@ function remettre(acteur: Acteur, corps: Corps): Response {
   if (courante.statut !== 'ouverte') {
     return probleme(409, 'caisse_fermee', 'Aucune caisse n’est ouverte.');
   }
-  if (!estDirection(acteur) && !(acteur.profil === 'caissier' && estSaCaisse(acteur))) {
+  if (!peutAgir(acteur)) {
     return probleme(
       403,
       'interdit',
-      'Seule la caissière de cette caisse ou la direction fait une remise.',
+      'Seule la caissière de cette caisse ou le gérant fait une remise.',
     );
   }
   const montant = entier(corps.montant);

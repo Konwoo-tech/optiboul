@@ -17,7 +17,9 @@ const CIBLES =
  * Fenêtre modale de la maquette « OptiBoul ERP v2 » (lignes 977-1062) : voile sombre, fenêtre de
  * 18 px d'arrondi centrée. À l'ouverture le focus entre dans la fenêtre (sur la fenêtre elle-même,
  * sans anneau), Tab reste à l'intérieur, Échap la ferme et le focus revient là où il était.
- * Le parent la monte seulement quand elle est ouverte.
+ * Le parent la monte seulement quand elle est ouverte. Une seule modale à la fois : pas de pile
+ * (une modale ouverte depuis une autre se disputerait Échap et le piège du focus). Une seule modale à la fois : pas de pile
+ * (une modale ouverte depuis une autre se disputerait Échap et le piège du focus).
  */
 export function FenetreModale({ titre, onFermer, largeurMax = 480, children }: Props) {
   const idTitre = useId();
@@ -30,7 +32,9 @@ export function FenetreModale({ titre, onFermer, largeurMax = 480, children }: P
 
   useEffect(() => {
     const declencheur =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+        ? document.activeElement
+        : null;
     fenetre.current?.focus();
     const surTouche = (evenement: KeyboardEvent) => {
       if (evenement.key === 'Escape') {
@@ -60,7 +64,15 @@ export function FenetreModale({ titre, onFermer, largeurMax = 480, children }: P
     window.addEventListener('keydown', surTouche);
     return () => {
       window.removeEventListener('keydown', surTouche);
-      declencheur?.focus();
+      if (declencheur?.isConnected) {
+        declencheur.focus();
+      } else {
+        // Le bouton a disparu (ex. « Ouvrir la caisse » remplacé par la bannière) : le focus
+        // se pose sur le titre de la page plutôt que de se perdre dans le document.
+        const titrePage = document.querySelector<HTMLElement>('h1');
+        titrePage?.setAttribute('tabindex', '-1');
+        titrePage?.focus();
+      }
     };
   }, []);
 

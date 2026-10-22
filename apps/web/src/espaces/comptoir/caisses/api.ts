@@ -48,7 +48,12 @@ function useActionCaisse<Demande extends object, Resultat = undefined>(
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (demande: Demande) => (await poster<Resultat>(chemin, demande)).data,
-    onSuccess: () => client.invalidateQueries({ queryKey: cleCaisses(utilisateur) }),
+    // La pastille « Session … » de l'en-tête dérive du contexte : on le relit aussi.
+    onSuccess: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: cleCaisses(utilisateur) }),
+        client.invalidateQueries({ queryKey: ['simulation', 'contexte'] }),
+      ]),
   });
 }
 

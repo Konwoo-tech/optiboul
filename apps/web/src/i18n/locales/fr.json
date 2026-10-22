@@ -154,6 +154,7 @@
     "kickerSemaine": "Semaine {{numero}} · {{du}} → {{au}} · gérant : {{gerant}} · production : {{production}}",
     "kickerSession": "Ouverte à {{heure}} par {{nom}}",
     "pastilleSession": "{{type}} · ouverte",
+    "pastilleSessionCloturee": "{{type}} · clôturée",
     "pastilleReseau": "En ligne · sauvegarde cloud active",
     "notifications": "Notifications",
     "aucuneNotification": "Aucune notification.",
@@ -305,6 +306,17 @@
         "trace": "La remise est tracée avec le receveur et l’heure ({{heure}}).",
         "confirmer": "Enregistrer la remise",
         "fait": "Remise de {{montant}} FCFA au coffre · reçue par {{nom}}"
+      },
+      "erreurs": {
+        "interdit": "Votre profil ne permet pas cette action sur la caisse.",
+        "caisse_deja_ouverte": "Une caisse est déjà ouverte.",
+        "caisse_fermee": "Aucune caisse n’est ouverte.",
+        "caisse_ouverte": "La caisse est déjà ouverte.",
+        "fonds_invalide": "Le fonds de caisse est un montant entier en FCFA.",
+        "comptage_invalide": "Saisissez les espèces comptées (montant entier).",
+        "motif_obligatoire": "Le motif de la réouverture est obligatoire.",
+        "montant_invalide": "Le montant remis doit être positif et ne pas dépasser les espèces en caisse.",
+        "receveur_inconnu": "Choisissez le gérant qui reçoit la remise."
       }
     }
   }

@@ -154,6 +154,7 @@
     "kickerSemaine": "Week {{numero}} · {{du}} → {{au}} · manager: {{gerant}} · production: {{production}}",
     "kickerSession": "Opened at {{heure}} by {{nom}}",
     "pastilleSession": "{{type}} · open",
+    "pastilleSessionCloturee": "{{type}} · closed",
     "pastilleReseau": "Online · cloud backup on",
     "notifications": "Notifications",
     "aucuneNotification": "No notifications.",
@@ -305,6 +306,17 @@
         "trace": "The handover is logged with the receiver and the time ({{heure}}).",
         "confirmer": "Record the handover",
         "fait": "{{montant}} FCFA handed to the safe · received by {{nom}}"
+      },
+      "erreurs": {
+        "interdit": "Your profile cannot do this on the cash desk.",
+        "caisse_deja_ouverte": "A cash desk is already open.",
+        "caisse_fermee": "No cash desk is open.",
+        "caisse_ouverte": "The cash desk is already open.",
+        "fonds_invalide": "The float is a whole amount in FCFA.",
+        "comptage_invalide": "Enter the counted cash (whole amount).",
+        "motif_obligatoire": "The reason for reopening is required.",
+        "montant_invalide": "The amount handed over must be positive and not exceed the cash in the drawer.",
+        "receveur_inconnu": "Choose the manager who receives the cash."
       }
     }
   }

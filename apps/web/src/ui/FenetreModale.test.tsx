@@ -72,6 +72,34 @@ describe('fenêtre modale', () => {
     expect(document.activeElement).toBe(declencheur);
   });
 
+  it('si le bouton a disparu à la fermeture, le focus passe au titre de la page', () => {
+    function Disparait() {
+      const [etat, setEtat] = useState<'ferme' | 'ouvert' | 'fait'>('ferme');
+      return (
+        <>
+          <h1>Caisses</h1>
+          {etat === 'ferme' && (
+            <button type="button" onClick={() => setEtat('ouvert')}>
+              Ouvrir
+            </button>
+          )}
+          {etat === 'ouvert' && (
+            <FenetreModale titre="Ouverture" onFermer={() => setEtat('fait')}>
+              <button type="button">Confirmer</button>
+            </FenetreModale>
+          )}
+        </>
+      );
+    }
+    render(<Disparait />);
+    const declencheur = screen.getByRole('button', { name: 'Ouvrir' });
+    declencheur.focus();
+    fireEvent.click(declencheur);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(declencheur.isConnected).toBe(false);
+    expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Caisses' }));
+  });
+
   it('un clic hors de la fenêtre la ferme, un clic dedans non', () => {
     const onFermer = vi.fn();
     const { container } = render(<Page onFermer={onFermer} />);

@@ -104,6 +104,35 @@ describe('caisses simulées', () => {
       expect((await poster('ouvrir/', { fonds: -1 })).status).toBe(400);
     });
 
+    it('le propriétaire ne ferme pas et ne fait pas de remise : 403 (CdC §3.3)', async () => {
+      memoriserUtilisateurConnecte('fotso');
+      const fermer = await poster('fermer/', { compte: 22_950 });
+      expect(fermer.status).toBe(403);
+      expect(await fermer.json()).toMatchObject({ code: 'interdit' });
+      expect((await poster('remettre/', { montant: 1_000, receveur: 'willy' })).status).toBe(403);
+      expect((await caisses()).caisseOuverte).not.toBeNull();
+    });
+
+    it('seul le gérant reçoit une remise au coffre', async () => {
+      const ids = (await caisses()).receveurs.map((r) => r.id);
+      expect(ids).toContain('willy');
+      expect(ids).not.toContain('fotso');
+      expect((await poster('remettre/', { montant: 1_000, receveur: 'fotso' })).status).toBe(400);
+    });
+
+    it('le contexte de la coque suit l’état de la caisse', async () => {
+      const contexte = async () =>
+        (await (await fetch('http://localhost/api/v1/simulation/contexte/')).json()) as object;
+      expect(await contexte()).toMatchObject({
+        sessionType: 'nuit',
+        sessionOuverte: true,
+        sessionOuverteDepuis: '18:02',
+        caissierDeSession: 'Davy',
+      });
+      await jusquaLaFermeture();
+      expect(await contexte()).toMatchObject({ sessionOuverte: false });
+    });
+
     it('le propriétaire n’ouvre pas de caisse', async () => {
       await jusquaLaFermeture();
       memoriserUtilisateurConnecte('fotso');
@@ -214,7 +243,7 @@ describe('caisses simulées', () => {
     });
 
     it('la remise réduit l’espèces attendues à la fermeture', async () => {
-      await poster('remettre/', { montant: 10_000, receveur: 'fotso' });
+      await poster('remettre/', { montant: 10_000, receveur: 'willy' });
       expect((await caisses()).sessions.at(-1)?.attendu).toBe(12_950);
     });
 

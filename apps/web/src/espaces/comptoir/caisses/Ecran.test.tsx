@@ -131,10 +131,12 @@ describe('Comptoir › Caisses', () => {
       expect(lignesDonnees()).toHaveLength(3);
     });
 
-    it('le propriétaire consulte et ferme, sans bouton pour ouvrir', async () => {
+    it('le propriétaire consulte seulement : ni ouvrir, ni fermer, ni remettre au coffre', async () => {
       await monter('fotso');
       expect(lignesDonnees()).toHaveLength(6);
-      expect(screen.getByRole('button', { name: 'Fermer la caisse' })).toBeTruthy();
+      expect(screen.getByText(/^Caisse ouverte · session de nuit/)).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Fermer la caisse' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Remettre au coffre' })).toBeNull();
       expect(screen.queryByRole('button', { name: /^Ouvrir la caisse/ })).toBeNull();
     });
 
@@ -240,6 +242,9 @@ describe('Comptoir › Caisses', () => {
         await screen.findByText(/^Caisse ouverte · session de jour du 15 oct\. · Davy depuis/),
       ).toBeTruthy();
       expect(cellules(lignesDonnees()[0]!)[0]).toBe('Jour');
+      // Le bouton « Ouvrir la caisse » a disparu : le focus passe au titre de la page.
+      expect(ouvrir.isConnected).toBe(false);
+      expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1 }));
     });
   });
 
@@ -273,11 +278,11 @@ describe('Comptoir › Caisses', () => {
       fireEvent.change(within(fenetre).getByLabelText('Montant remis au coffre (FCFA)'), {
         target: { value: '82950' },
       });
-      fireEvent.change(within(fenetre).getByLabelText('Remis à'), { target: { value: 'fotso' } });
+      fireEvent.change(within(fenetre).getByLabelText('Remis à'), { target: { value: 'willy' } });
       fireEvent.click(within(fenetre).getByRole('button', { name: 'Enregistrer la remise' }));
 
       expect(
-        await screen.findByText(`Remise de 82 950 FCFA au coffre · reçue par M. Fotso`),
+        await screen.findByText(`Remise de 82 950 FCFA au coffre · reçue par Willy`),
       ).toBeTruthy();
       // Sous le plafond, la proposition disparaît ; l'attendu a baissé du montant remis.
       await waitFor(() =>
