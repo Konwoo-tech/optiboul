@@ -10,6 +10,7 @@ import {
   type ContexteSimule,
 } from './donnees.ts';
 import { reinitialiserClients, repondreClients } from './clients.ts';
+import { reinitialiserComptoir, repondreComptoir } from './comptoir.ts';
 import { contexteCaisses, reinitialiserCaisses, repondreCaisses } from './caisses.ts';
 import { NOTIFICATIONS_PAR_PROFIL } from './notifications.ts';
 import { lireUtilisateurConnecte, memoriserUtilisateurConnecte } from './session.ts';
@@ -45,6 +46,7 @@ export function reinitialiserSimulation(): void {
   lues.clear();
   reinitialiserClients();
   reinitialiserCaisses();
+  reinitialiserComptoir();
   memoriserUtilisateurConnecte(null);
 }
 
@@ -202,6 +204,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
       return (
         repondreClients(methode, chemin, corps) ??
         repondreCaisses(chemin, methode, corps) ??
+        repondreComptoir(url, methode, corps) ??
         probleme(404, 'non_simule', `Pas encore simulé : ${methode} ${chemin}`)
       );
   }

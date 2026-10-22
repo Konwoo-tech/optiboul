@@ -1,0 +1,167 @@
+/* Onglet Mouvements internes, repris de la maquette « OptiBoul ERP v2 » (lignes 306-324). */
+.page {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.formulaire {
+  flex: 1 1 320px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.titre {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.groupe {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.libelle {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.puces {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.puceType {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.puceProduit {
+  padding: 0 16px;
+}
+
+.puceChoisie {
+  border-color: var(--ob-marque);
+  background: var(--ob-marque);
+  color: var(--ob-fond);
+}
+
+.etiquette {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.quantite {
+  height: 48px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.quantite:focus {
+  outline: none;
+  border-color: var(--ob-marque);
+}
+
+.motif {
+  height: 48px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.motifErreur {
+  border-color: #d9796d;
+}
+
+.motif:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.erreur {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c2453a;
+}
+
+.ajouter {
+  align-self: flex-end;
+  min-height: 48px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.liste {
+  flex: 1.4 1 320px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 8px 0;
+}
+
+.listeTitre {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  padding: 12px 20px;
+}
+
+.mouvement {
+  padding: 12px 20px;
+  border-top: 1px solid var(--ob-ligne);
+}
+
+.mouvementTitre {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.mouvementMeta {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.vide {
+  padding: 12px 20px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}

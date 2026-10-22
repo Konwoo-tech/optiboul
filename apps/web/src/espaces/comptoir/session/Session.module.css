@@ -1,0 +1,93 @@
+/*
+ * Comptoir › Session en cours, repris valeur par valeur de la maquette « OptiBoul ERP v2 »
+ * (lignes 168-343) : bandeau de session, onglets.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Le contenu d'un onglet est un enfant direct de la page dans la maquette : même espacement. */
+.panneau {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bandeau {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--ob-doux);
+  border: 1px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.bandeauTexte {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ob-marque);
+}
+
+.bandeauActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rouvrir {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ouvrirSuivante {
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.onglets {
+  display: flex;
+  gap: 4px;
+  background: var(--ob-doux);
+  padding: 4px;
+  border-radius: 12px;
+  align-self: flex-start;
+  flex-wrap: wrap;
+}
+
+.onglet {
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  color: var(--ob-discret);
+  box-shadow: none;
+}
+
+.ongletActif {
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  box-shadow: 0 1px 3px rgba(46, 26, 16, 0.15);
+}

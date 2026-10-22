@@ -7,3 +7,10 @@ export const RACCOURCIS_COMPTOIR = {
 } as const;
 
 export type ActionComptoir = (typeof RACCOURCIS_COMPTOIR)[keyof typeof RACCOURCIS_COMPTOIR];
+
+/** Action du comptoir liée à une touche (`KeyboardEvent.key`), s'il y en a une. */
+export function actionDeLaTouche(touche: string): ActionComptoir | undefined {
+  return Object.hasOwn(RACCOURCIS_COMPTOIR, touche)
+    ? RACCOURCIS_COMPTOIR[touche as keyof typeof RACCOURCIS_COMPTOIR]
+    : undefined;
+}

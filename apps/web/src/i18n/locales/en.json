@@ -153,6 +153,7 @@
     "equipe": "Manager: {{gerant}} · Production: {{production}}",
     "kickerSemaine": "Week {{numero}} · {{du}} → {{au}} · manager: {{gerant}} · production: {{production}}",
     "kickerSession": "Opened at {{heure}} by {{nom}}",
+    "kickerSessionCloturee": "Closed at {{heure}} by {{nom}}",
     "pastilleSession": "{{type}} · open",
     "pastilleSessionCloturee": "{{type}} · closed",
     "pastilleReseau": "Online · cloud backup on",
@@ -317,6 +318,207 @@
         "motif_obligatoire": "The reason for reopening is required.",
         "montant_invalide": "The amount handed over must be positive and not exceed the cash in the drawer.",
         "receveur_inconnu": "Choose the manager who receives the cash."
+      }
+    },
+    "session": {
+      "titre": "Current session",
+      "onglets": {
+        "commandes": "Orders",
+        "livraisons": "Deliveries",
+        "mouvements": "Internal movements",
+        "cloture": "Closing"
+      },
+      "sections": "Session sections",
+      "chargement": "Loading the session…",
+      "erreurChargement": "The session could not be loaded.",
+      "bandeau": {
+        "cloturee": "{{session}} of {{date}} closed at {{heure}} by {{nom}} · read-only",
+        "rouverte": "Session reopened by {{nom}} at {{heure}} for correction · logged",
+        "rouvrir": "Reopen session",
+        "ouvrirSuivante": "Open the {{type}} session of {{date}}"
+      },
+      "modes": {
+        "especes": "Cash",
+        "mtn": "MTN MoMo",
+        "orange": "Orange Money"
+      },
+      "commandes": {
+        "titre": "Session orders",
+        "sousTitre": "Tab or Enter moves to the next field. The production plan is calculated automatically.",
+        "voirPlan": "See production plan",
+        "client": "Customer",
+        "montantEstime": "Est. amount",
+        "totalPains": "Total loaves",
+        "sacsAPetrir": "Sacks to knead",
+        "quantite": "{{produit}} order of {{client}}",
+        "relance": {
+          "titre_one": "{{count}} regular customer has not ordered yet",
+          "titre_other": "{{count}} regular customers have not ordered yet",
+          "sous": "They usually order for this session. Remind them on WhatsApp, or reuse their usual order if they confirm by phone. An order added after the plan is approved is flagged to the head baker.",
+          "relancerTous": "Remind all {{count}}",
+          "habituel": "Usual: {{commande}}",
+          "relanceA": "Reminded at {{heure}}",
+          "relancer": "Remind",
+          "relancerEncore": "Remind again",
+          "reprendre": "Use usual order",
+          "message": "Message sent: “Hello {{nom}}, OptiBoul is taking orders for the {{session}}. Your usual order: {{commande}}. Reply YES to confirm.”",
+          "relancerClient": "Remind {{nom}}",
+          "reprendreClient": "Use the usual order of {{nom}}"
+        },
+        "toasts": {
+          "relancesEnvoyees": "{{count}} WhatsApp messages sent",
+          "relanceEnvoyee": "WhatsApp message sent to {{nom}}",
+          "commandeAjoutee": "Order for {{nom}} added"
+        }
+      },
+      "livraisons": {
+        "recherche": "Customer: first letters…",
+        "rechercheEtiquette": "Search for a customer",
+        "listeClients": "Customers",
+        "aucunClient": "No customer starts with \"{{recherche}}\".",
+        "dejaLivre": "Delivered · {{lieu}}",
+        "aJour": "Up to date",
+        "dette": "Debt",
+        "plafondDepasseCourt": "Limit exceeded",
+        "verrouillee": "The session is closed: entry is locked.",
+        "lectureSeule": "Read-only: your profile can view the session but not enter data.",
+        "aucuneTitre": "No delivery in progress",
+        "aucuneSous": "Select a customer on the left or type the first letters of their name to start.",
+        "soldeActuel": "Current balance",
+        "quantite": "{{produit}} delivered",
+        "montantDu": "Amount due",
+        "modePaiement": "Payment method",
+        "recu": "Amount received",
+        "exact": "Exact",
+        "reference": "Transaction reference",
+        "referenceObligatoire": "Reference required for mobile money.",
+        "reste": "Balance",
+        "soldeApres": "Balance after delivery",
+        "devientDette": "Becomes a debt",
+        "rembourse": "Pays back an old debt",
+        "payeExactement": "Paid exactly",
+        "plafondDepasse": "Credit limit of {{plafond}} FCFA exceeded",
+        "texteBloque": "Balance after delivery {{solde}} FCFA. The customer can pay part of the debt: {{manque}} FCFA more brings them back under the limit.",
+        "encaisserPlus": "Collect {{manque}} FCFA more",
+        "codeGerant": "Manager enters code",
+        "enAttente": "Request sent to the manager at {{heure}} · awaiting decision.",
+        "autoriser": "Authorise over-limit",
+        "demanderAutorisation": "Ask the manager to authorise",
+        "autorise": "Over-limit authorised by {{par}} at {{heure}}. The authorisation is logged.",
+        "valider": "Confirm delivery",
+        "validerAutorisee": "Confirm delivery (authorised)",
+        "bon": "Delivery slip",
+        "dernieres": "Latest deliveries",
+        "aucuneLivraison": "No deliveries yet: select a customer to start.",
+        "bonCourt": "Slip",
+        "bonDe": "Slip of {{nom}}",
+        "meta": "Slip #{{numero}} · {{heure}} · {{mode}}",
+        "paye": "Paid",
+        "stats": {
+          "livraisons": "Deliveries",
+          "pains": "Loaves delivered",
+          "recette": "Expected takings",
+          "encaisse": "Collected",
+          "dettes": "New debts",
+          "remboursements": "Repayments"
+        },
+        "toasts": {
+          "enregistree": "Delivery saved · {{nom}} · slip #{{numero}}",
+          "depassementAutorise": "Over-limit authorised and logged"
+        }
+      },
+      "mouvements": {
+        "nouveau": "New internal movement",
+        "type": "Type",
+        "types": {
+          "vente-guichet": "Counter sale",
+          "retours": "Returns",
+          "reste-en-salle": "Left in shop",
+          "ration": "Staff ration"
+        },
+        "produit": "Product",
+        "quantite": "Quantity",
+        "motif": "Reason (required)",
+        "ajouter": "Add movement",
+        "titre": "Session movements",
+        "vide": "No movements in this session.",
+        "ligne": "{{type}} · {{quantite}} {{produit}}",
+        "erreurQuantite": "Enter a quantity.",
+        "erreurMotif": "Reason required: explain the movement.",
+        "toastAjoute": "Movement added to session totals"
+      },
+      "cloture": {
+        "recap": "Session summary",
+        "lignes": {
+          "attendue": "Expected takings (amounts due)",
+          "especes": "Collected in cash",
+          "mtn": "Collected MTN MoMo",
+          "orange": "Collected Orange Money",
+          "dettes": "New session debts",
+          "remboursements": "Old debts repaid",
+          "depenses": "Expenses paid from cash",
+          "fonds": "Opening float"
+        },
+        "comptage": "Cash count",
+        "attendues": "Expected cash in drawer",
+        "comptees": "Counted cash",
+        "ecart": "Cash difference",
+        "saisir": "Enter the counted cash",
+        "juste": "Cash balances",
+        "manque": "Short by {{montant}} FCFA",
+        "excedent": "Over by {{montant}} FCFA",
+        "cloturer": "Close session",
+        "note": "A summary is shown before confirming. Once closed, the session becomes read-only.",
+        "toastCloturee": "Session closed and locked",
+        "toastOuverte": "Session opened · customer balances carried over"
+      },
+      "modales": {
+        "annuler": "Cancel",
+        "fermer": "Close",
+        "autorisation": {
+          "titre": "Manager authorisation",
+          "info": "{{client}}: {{solde}} FCFA / {{plafond}} FCFA limit. Requested by {{par}} at {{heure}}.",
+          "aide": "The manager of the week or the owner enters their code on this workstation. The decision is logged (who, when, amount).",
+          "code": "Manager code",
+          "laisser": "Leave pending",
+          "refuser": "Refuse",
+          "autoriser": "Authorise delivery",
+          "codeIncorrect": "Wrong code: only the manager or the owner can decide.",
+          "accorde": "Approved · Delivery over the limit: {{client}}",
+          "refuse": "Refused · Delivery over the limit: {{client}}"
+        },
+        "bon": {
+          "titre": "Delivery slip",
+          "numero": "No. {{numero}}",
+          "quand": "{{date}} · {{heure}} · {{session}}",
+          "du": "Amount due",
+          "paye": "Paid ({{mode}})",
+          "especes": "cash",
+          "reste": "Balance",
+          "nouveauSolde": "New balance",
+          "dette": "Debt to be settled before {{date}}.",
+          "servi": "Served by {{nom}}",
+          "reference": " · ref. {{reference}}",
+          "autorisePar": " · over-limit authorised by {{nom}}",
+          "pdf": "Download PDF",
+          "whatsapp": "Send via WhatsApp",
+          "toastPdf": "PDF for slip #{{numero}} ready",
+          "toastWhatsapp": "Slip sent via WhatsApp to {{nom}}"
+        },
+        "cloture": {
+          "titre": "Confirm closing",
+          "avertissement": "Once closed, the session becomes read-only. Only the manager or the owner can reopen it; every correction is logged.",
+          "confirmer": "Confirm closing"
+        }
+      },
+      "erreurs": {
+        "droit_insuffisant": "Your profile does not allow this action.",
+        "session_cloturee": "The session is closed: entry is locked.",
+        "plafond_depasse": "The customer’s debt limit is exceeded.",
+        "reference_obligatoire": "Reference required for mobile money.",
+        "montant_nul": "No loaves to deliver.",
+        "comptage_requis": "Enter the counted cash.",
+        "defaut": "The action failed. Try again."
       }
     }
   }

@@ -1,0 +1,271 @@
+/* Fenêtres de la session, reprises de la maquette « OptiBoul ERP v2 » (lignes 977-1062). */
+
+/*
+ * Position absolue et non fixe : l'écran occupe toujours la hauteur de la fenêtre, et une couche
+ * fixe perdrait l'anticrénelage sous-pixel du texte, contrairement à la maquette. La fenêtre vit
+ * hors de la coque (portail) : elle reprend la police, la couleur et l'interligne de la maquette.
+ */
+.voile {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 12, 8, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 50;
+  font-family: 'Manrope Variable', system-ui, sans-serif;
+  line-height: normal;
+}
+
+/* Clic à côté de la fenêtre : un bouton invisible couvre tout le voile. */
+.fond {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.fenetre {
+  position: relative;
+  inset: auto;
+  margin: 0;
+  border: none;
+  width: 100%;
+  max-height: 100%;
+  overflow: auto;
+  background: var(--ob-surface);
+  color: var(--ob-encre);
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 20px 60px rgba(20, 12, 8, 0.4);
+}
+
+.titre {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.boutons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.annuler {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.confirmer {
+  min-height: 48px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.discret {
+  min-height: 48px;
+  padding: 0 14px;
+  border: none;
+  background: none;
+  color: var(--ob-discret);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Autorisation du gérant. */
+.information {
+  font-size: 15px;
+  font-weight: 700;
+  color: #a2251b;
+  background: #fbe0dc;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.aide {
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+.etiquette {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.code {
+  height: 56px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.4em;
+  text-align: center;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.code:focus {
+  outline: none;
+  border-color: var(--ob-marque);
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.erreurCode {
+  font-size: 13px;
+  font-weight: 600;
+  color: #c2453a;
+  min-height: 16px;
+}
+
+.refuser {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1.5px solid #a2251b;
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: #c2453a;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Bon de livraison : un papier, donc des couleurs fixes en clair comme en sombre. */
+.bon {
+  border: 1.5px dashed #c9b38a;
+  border-radius: 12px;
+  padding: 18px;
+  background: #fffdf8;
+  color: #2e1a10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bonEnseigne {
+  text-align: center;
+}
+
+.bonNom {
+  font-weight: 800;
+  font-size: 16px;
+  color: #5a3220;
+}
+
+.bonAdresse {
+  font-size: 12px;
+  color: #7a5a45;
+}
+
+.bonReferences {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: #7a5a45;
+  border-top: 1px dashed #c9b38a;
+  padding-top: 10px;
+}
+
+.bonClient {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.bonLigne {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.bonLigneTotal {
+  font-weight: 700;
+}
+
+.bonTotaux {
+  border-top: 1px dashed #c9b38a;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bonTotal {
+  font-weight: 800;
+}
+
+.bonDette {
+  font-size: 13px;
+  font-weight: 800;
+  color: #8a5a00;
+  background: #fcebc5;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.bonServi {
+  font-size: 12px;
+  color: #7a5a45;
+}
+
+/* Confirmation de clôture. */
+.recap {
+  display: flex;
+  flex-direction: column;
+}
+
+.recapLigne {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--ob-ligne);
+  font-size: 14px;
+}
+
+.recapValeur {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.ecart {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.avertissement {
+  font-size: 14px;
+  color: var(--ob-discret);
+}
