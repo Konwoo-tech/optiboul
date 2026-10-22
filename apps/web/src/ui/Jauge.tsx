@@ -16,7 +16,8 @@ type Props = {
 
 /** Barre de progression d'un budget ou d'une dette : verte, ambre dès 85 %, rouge à 100 %. */
 export function Jauge({ valeur, maximum, libelle }: Props) {
-  const pourcentage = maximum > 0 ? Math.min(100, (valeur / maximum) * 100) : 100;
+  const plein = valeur > 0 ? 100 : 0; // sans maximum : vide à zéro, pleine (rouge) au-delà
+  const pourcentage = maximum > 0 ? Math.min(100, (valeur / maximum) * 100) : plein;
   return (
     <Progress
       value={pourcentage}

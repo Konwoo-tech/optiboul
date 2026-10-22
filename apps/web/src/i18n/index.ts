@@ -29,6 +29,12 @@ export function initI18n(langue?: Langue) {
       fallbackLng: 'fr',
       interpolation: { escapeValue: false },
     });
+    // Les lecteurs d'écran choisissent la voix d'après <html lang>.
+    const surLangue = (lng: string) => {
+      document.documentElement.lang = lng;
+    };
+    surLangue(i18n.language);
+    i18n.on('languageChanged', surLangue);
   }
   return i18n;
 }
