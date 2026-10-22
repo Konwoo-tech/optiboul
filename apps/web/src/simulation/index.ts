@@ -13,6 +13,18 @@ export {
   type NotificationVue,
   type ReponseIdentification,
 } from './api.ts';
+export {
+  useClientsSimules,
+  useHistoriqueClientSimule,
+  useRelancerClientsSimules,
+} from './clientsApi.ts';
+export type {
+  ClientSimule,
+  LigneHistoriqueClient,
+  ListeClientsSimulee,
+  TarifsClient,
+  TypeClient,
+} from './clients.ts';
 export { configurationSimulee, type ModeConnexion } from './configuration.ts';
 export {
   CODE_DEMO,

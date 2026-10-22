@@ -1,10 +1,19 @@
-const nombre = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
+/**
+ * Entier avec espace insécable des milliers et signe moins explicite (U+2212), comme la maquette.
+ * Ex. 20000 → « 20 000 », -1500 → « −1 500 ». Sans unité : pour « 1 250 / 2 000 FCFA ».
+ */
+export function formaterNombre(montant: number): string {
+  const entier = Math.round(montant);
+  const absolu = Math.abs(entier)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return `${entier < 0 ? '−' : ''}${absolu}`;
+}
 
 /**
  * Montant en FCFA : sans décimale, espace des milliers, signe moins explicite.
  * Ex. 20000 → « 20 000 FCFA », -1500 → « −1 500 FCFA ».
  */
 export function formatFCFA(montant: number): string {
-  const absolu = nombre.format(Math.abs(Math.round(montant)));
-  return `${montant < 0 ? '−' : ''}${absolu} FCFA`;
+  return `${formaterNombre(montant)} FCFA`;
 }
