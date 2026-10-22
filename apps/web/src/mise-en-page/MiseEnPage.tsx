@@ -1,7 +1,9 @@
 import { useMediaQuery } from '@mantine/hooks';
+import { memoriserMessageConnexion, useDeconnexionAutomatique } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { SIMULATION } from '@/simulation';
+import { configurationSimulee, deconnecterSimulation, SIMULATION } from '@/simulation';
 import { BandeauHorsLigne, LimiteErreur } from '@/ui';
+import { useQueryClient } from '@tanstack/react-query';
 import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router';
 
@@ -16,6 +18,19 @@ export function MiseEnPage() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const telephone = useMediaQuery('(max-width: 767px)') ?? false;
+  const client = useQueryClient();
+  const { inactiviteMinutes } = configurationSimulee();
+
+  // Poste partagé : une session oubliée se ferme seule. Pour l'instant en simulation seulement ;
+  // la vraie déconnexion passe par django-allauth.
+  useDeconnexionAutomatique({
+    minutes: inactiviteMinutes,
+    actif: SIMULATION,
+    onExpire: () => {
+      memoriserMessageConnexion(t('connexion.inactivite', { minutes: inactiviteMinutes }));
+      void deconnecterSimulation().then(() => client.invalidateQueries());
+    },
+  });
 
   return (
     <div className={`${styles.coque} ${telephone ? styles.coqueTelephone : ''}`}>

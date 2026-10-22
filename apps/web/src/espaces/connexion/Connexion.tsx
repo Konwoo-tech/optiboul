@@ -1,54 +1,68 @@
-import { Alert, Button, Center, Paper, Stack, Text, Title } from '@mantine/core';
-import { useUtilisateurCourant } from '@/auth';
+import { effacerMessageConnexion, lireMessageConnexion, useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { BasculeApparence } from '@/ui';
 import { cheminSuivant } from '@/utils';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router';
 
-import { PROFILS } from '../../profils.ts';
+import { cheminAccueil } from '../../navigation.ts';
+import { ColonneSession } from './ColonneSession.tsx';
+import styles from './Connexion.module.css';
+
+// Chargé seulement en mode simulation. La condition lit `import.meta.env.MODE` ici même : le
+// compilateur la remplace par `false` en production et retire alors l'import et tout ce qu'il
+// cite (codes et mots de passe de démonstration compris). Via une constante importée, il ne
+// le ferait pas à coup sûr.
+const EcransSimules =
+  import.meta.env.MODE === 'simulation' ? lazy(() => import('./EcransSimules.tsx')) : null;
 
 /**
  * Connexion. En attendant les écrans dédiés (US-010 code à 4 chiffres, US-011 double
  * authentification), le bouton ouvre la connexion django-allauth sur la même origine.
+ * En simulation, le parcours de la maquette est joué sur de fausses données.
  */
 export default function Connexion() {
   const { t } = useTranslation();
   const { utilisateur } = useUtilisateurCourant();
   const [parametres] = useSearchParams();
   const suivant = cheminSuivant(parametres.get('suivant'));
+  const [message, setMessage] = useState(lireMessageConnexion);
+
+  // Le message n'est montré qu'une fois : on le retire du stockage dès qu'il est affiché.
+  useEffect(() => effacerMessageConnexion(), []);
 
   if (utilisateur?.profil) {
-    return <Navigate to={suivant ?? PROFILS[utilisateur.profil].accueil} replace />;
+    return <Navigate to={suivant ?? cheminAccueil(utilisateur.profil)} replace />;
   }
 
   return (
-    <Center mih="100vh" bg="var(--ob-fond)" p="md">
-      <Paper withBorder shadow="sm" p="xl" w={420} maw="100%" bg="var(--ob-surface)">
-        <Stack>
-          <BasculeApparence />
-          <Title order={1} c="var(--ob-marque)">
-            OptiBoul
-          </Title>
-          <Title order={2} size="h3">
-            {t('connexion.titre')}
-          </Title>
-          {utilisateur ? (
-            <Alert color="yellow">{t('connexion.aucunProfil')}</Alert>
-          ) : (
-            <>
-              <Text c="dimmed" size="sm">
-                Boulangerie du Faubourg · Etoudi
-              </Text>
-              <Button
-                component="a"
-                href={`/accounts/login/?next=${encodeURIComponent(suivant ?? '/')}`}
-              >
-                {t('connexion.seConnecter')}
-              </Button>
-            </>
-          )}
-        </Stack>
-      </Paper>
-    </Center>
+    <div className={styles.page}>
+      <ColonneSession />
+      <div className={styles.droite}>
+        {message && (
+          <div className={styles.alerte} role="alert">
+            {message}
+          </div>
+        )}
+        {utilisateur ? (
+          <div className={styles.alerte} role="alert">
+            {t('connexion.aucunProfil')}
+          </div>
+        ) : EcransSimules ? (
+          <Suspense fallback={null}>
+            <EcransSimules onMessage={setMessage} />
+          </Suspense>
+        ) : (
+          <div className={styles.allauth}>
+            <h1 className={styles.titre}>{t('connexion.titre')}</h1>
+            <a
+              className={styles.boutonAllauth}
+              href={`/accounts/login/?next=${encodeURIComponent(suivant ?? '/')}`}
+            >
+              {t('connexion.seConnecter')}
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

@@ -21,4 +21,5 @@ export {
   type ContexteSimule,
   type UtilisateurSimule,
 } from './donnees.ts';
+export { texteDemo } from './textes.ts';
 export { ESSAIS_MAX, installerApiSimulee, type Canal, type Via } from './routeur.ts';

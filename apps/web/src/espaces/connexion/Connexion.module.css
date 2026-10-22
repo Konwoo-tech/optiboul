@@ -1,0 +1,315 @@
+/*
+ * Écran de connexion, repris valeur par valeur de la maquette « OptiBoul ERP v2 »
+ * (lignes 18-120). Les tailles sont celles du design : on ne les arrondit pas.
+ */
+.page {
+  height: 100vh;
+  display: flex;
+  flex-wrap: wrap;
+  overflow: auto;
+  background: var(--ob-fond);
+  color: var(--ob-encre);
+  line-height: normal;
+}
+
+/* Colonne de gauche : heure, session, gérant, poste. */
+.gauche {
+  flex: 1 1 340px;
+  background: var(--ob-barre);
+  color: #fff4dc;
+  padding: 36px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.marque {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nom {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.etiquette {
+  background: #f2b705;
+  color: #2e1a10;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
+
+.horodatage {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.date {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f3ddb0;
+}
+
+.horloge {
+  font-size: 80px;
+  line-height: 1.1;
+  margin-top: 4px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.lignes {
+  display: flex;
+  flex-direction: column;
+  margin-top: 28px;
+  border-top: 1px solid rgba(255, 244, 220, 0.18);
+}
+
+.ligne {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(255, 244, 220, 0.18);
+  font-size: 14px;
+}
+
+.libelle {
+  color: #f3ddb0;
+}
+
+.valeur {
+  font-weight: 700;
+}
+
+.session {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.point {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.pied {
+  font-size: 13px;
+  color: #f3ddb0;
+}
+
+/* Colonne de droite : qui êtes-vous, puis le code. */
+.droite {
+  flex: 1.6 1 420px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  min-width: 0;
+}
+
+.titre {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  letter-spacing: -0.02em;
+}
+
+.sousTitre {
+  margin: 6px 0 0;
+  font-size: 16px;
+  color: var(--ob-discret);
+}
+
+.grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.carte {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  min-height: 76px;
+  background: var(--ob-surface);
+  border: 1.5px solid var(--ob-ligne);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+}
+
+.carte:hover {
+  border-color: var(--ob-marque);
+  box-shadow: 0 4px 14px rgba(90, 50, 32, 0.12);
+}
+
+.textes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nomCarte {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.roleCarte {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+/* Saisie du code. */
+.pin {
+  max-width: 340px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.retour {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.identite {
+  text-align: center;
+}
+
+.nomPin {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.rolePin {
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+.points {
+  display: flex;
+  gap: 14px;
+}
+
+.pointPin {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--ob-marque);
+}
+
+.erreur {
+  min-height: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #a2251b;
+  text-align: center;
+}
+
+.clavier {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.touche {
+  height: 64px;
+  border-radius: 14px;
+  border: 1.5px solid var(--ob-ligne);
+  background: var(--ob-surface);
+  font-family: inherit;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ob-encre);
+  cursor: pointer;
+}
+
+.toucheTexte {
+  font-size: 15px;
+}
+
+.toucheValider {
+  background: #f2b705;
+  color: #2e1a10;
+}
+
+.demo {
+  font-size: 13px;
+  color: var(--ob-discret);
+  text-align: center;
+}
+
+/* Hors simulation : le bouton vers la connexion django-allauth. */
+.allauth {
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.boutonAllauth {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-size: 16px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.boutonAllauth:hover {
+  background: #e3aa00;
+}
+
+.alerte {
+  background: #fcebc5;
+  color: #8a5a00;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 600;
+}

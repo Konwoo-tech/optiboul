@@ -1,0 +1,24 @@
+/* Message bref, repris de la maquette « OptiBoul ERP v2 » (ligne 1067). */
+.toast {
+  display: block;
+  /*
+   * Position absolue et non fixe : l'écran occupe toujours la hauteur de la fenêtre (le défilement
+   * est interne), et une couche fixe perdrait l'anticrénelage sous-pixel du texte, contrairement
+   * à la maquette.
+   */
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: #2e1a10;
+  color: #fff4dc;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  box-shadow: 0 10px 30px rgba(46, 26, 16, 0.3);
+  z-index: 60;
+  max-width: calc(100% - 32px);
+  text-align: center;
+}

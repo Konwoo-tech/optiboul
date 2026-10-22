@@ -1,0 +1,537 @@
+/*
+ * Étapes de la connexion après le choix de la méthode, reprises valeur par valeur de la maquette
+ * « OptiBoul ERP v2 » : Google ou e-mail (lignes 64-86), choix du compte Google (87-96),
+ * vérification en deux étapes (97-118).
+ */
+
+/* Connexion par Google ou e-mail. */
+.formulaireEmail {
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.titre {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  letter-spacing: -0.02em;
+}
+
+.sousTitre {
+  margin: 6px 0 0;
+  font-size: 16px;
+  color: var(--ob-discret);
+}
+
+.boutonGoogle {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  background: #fff;
+  color: #1f1f1f;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.boutonGoogle:hover {
+  box-shadow: 0 4px 14px rgba(90, 50, 32, 0.14);
+}
+
+.separateur {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ob-discret);
+}
+
+.separateur::before,
+.separateur::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--ob-ligne-champ);
+}
+
+.formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ob-marque);
+}
+
+.champEntete {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.saisie {
+  height: 52px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 16px;
+  /* Une saisie n'hérite pas du gras de son étiquette. */
+  font-weight: 400;
+  color: var(--ob-encre);
+  background: var(--ob-surface);
+}
+
+.saisie:focus,
+.saisieCode:focus {
+  outline: none;
+  border-color: var(--ob-marque);
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.ligneMotDePasse {
+  display: flex;
+  gap: 8px;
+}
+
+.saisieMotDePasse {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+.basculeMotDePasse {
+  min-height: 52px;
+  min-width: 88px;
+  padding: 0 12px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lien {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.erreurChamp {
+  min-height: 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #c2453a;
+}
+
+.boutonPrincipal {
+  min-height: 52px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.boutonPrincipal:hover {
+  background: #e3aa00;
+}
+
+.demoProfils {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--ob-ligne);
+  padding-top: 16px;
+}
+
+.demoEntete {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.demoTitre {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.demoAstuce,
+.demoIdentifiants {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.demoGrille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.demoCarte {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--ob-ligne);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+}
+
+.demoCarte[aria-pressed='true'] {
+  border-color: #f2b705;
+  background: var(--ob-fond);
+}
+
+/* Après l'état sélectionné : comme dans la maquette, le survol l'emporte sur la bordure or. */
+.demoCarte:hover {
+  border-color: var(--ob-marque);
+}
+
+.demoTextes {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.demoNom {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.demoRole {
+  font-weight: 600;
+}
+
+.demoEmail {
+  font-size: 11px;
+  color: var(--ob-discret);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Choix du compte Google. */
+.google {
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
+  background: #fff;
+  color: #1f1f1f;
+  border: 1px solid #dadce0;
+  border-radius: 20px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 10px 30px rgba(46, 26, 16, 0.12);
+}
+
+.googleEntete {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.googleTitre {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.googleSous {
+  font-size: 15px;
+  color: #444746;
+}
+
+.googleComptes {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #e3e3e3;
+}
+
+.googleCompte {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 60px;
+  padding: 10px 8px;
+  border: none;
+  border-bottom: 1px solid #e3e3e3;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+}
+
+.googleCompte:hover {
+  background: #f6f8fc;
+}
+
+.googleTextes {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.googleNom {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.googleEmail {
+  font-size: 13px;
+  color: #444746;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.googleNote {
+  font-size: 13px;
+  color: #444746;
+  line-height: 1.5;
+}
+
+.googleAnnuler {
+  align-self: flex-end;
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: #0b57d0;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Vérification en deux étapes. */
+.otp {
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.retour {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.otpEntete {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.otpTitre {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  letter-spacing: -0.01em;
+}
+
+.otpEtape {
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+.otpQuestion {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.canaux {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.canal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 76px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 2px solid var(--ob-ligne);
+  background: var(--ob-surface);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+}
+
+.canal[aria-pressed='true'] {
+  border-color: #f2b705;
+  background: var(--ob-fond);
+}
+
+.canalNom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.canalPoint {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.canalTelephone {
+  font-size: 13px;
+  color: var(--ob-discret);
+  font-variant-numeric: tabular-nums;
+}
+
+.otpInfo {
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--ob-doux);
+  font-size: 14px;
+  color: var(--ob-encre);
+}
+
+.champCode {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.saisieCode {
+  height: 66px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 14px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 0.5em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.saisieCodeErreur {
+  border-color: #d9796d;
+}
+
+.boutonVerifier {
+  min-height: 52px;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  background: var(--ob-doux);
+  color: var(--ob-discret);
+}
+
+.boutonVerifierPret {
+  background: #f2b705;
+  color: #2e1a10;
+}
+
+.otpActions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.renvoyer,
+.autreCanal {
+  min-height: 44px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.renvoyer {
+  color: var(--ob-marque);
+}
+
+.renvoyer:disabled {
+  color: var(--ob-discret);
+}
+
+.autreCanal {
+  color: var(--ob-marque);
+  text-decoration: underline;
+}
+
+.otpDemo {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
