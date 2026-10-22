@@ -39,7 +39,7 @@ const entree = (champs: Partial<EntreeLivraison> = {}): EntreeLivraison => ({
   mode: 'especes',
   reference: '',
   plafond: PLAFOND_PAR_DEFAUT,
-  autorise: false,
+  soldeAutorise: null,
   peutSaisir: true,
   ...champs,
 });
@@ -189,7 +189,7 @@ describe('livraison', () => {
         client: client({ solde: -4200 }),
         saisies: { BAG: '30', KO: '', GC: '' },
         recu: '1000',
-        autorise: true,
+        soldeAutorise: -6200,
       }),
     );
     expect(calcul.depasse).toBe(true);

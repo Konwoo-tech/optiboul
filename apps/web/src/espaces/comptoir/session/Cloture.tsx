@@ -79,7 +79,9 @@ export function Cloture({
         >
           <div>
             <div className={styles.ecartLibelle}>{t('comptoir.session.cloture.ecart')}</div>
-            <div className={styles.ecartMot}>{motDeLEcart(instantane, t)}</div>
+            <div className={styles.ecartMot} id="mot-ecart">
+              {motDeLEcart(instantane, t)}
+            </div>
           </div>
           <div className={styles.ecartMontant}>{ecartEnTexte(instantane)}</div>
         </div>
@@ -88,6 +90,7 @@ export function Cloture({
             type="button"
             className={`${styles.cloturer} ${pret ? styles.cloturerPret : ''}`}
             aria-disabled={!pret}
+            aria-describedby={pret ? undefined : 'mot-ecart'}
             onClick={() => pret && onDemanderCloture()}
           >
             {t('comptoir.session.cloture.cloturer')}

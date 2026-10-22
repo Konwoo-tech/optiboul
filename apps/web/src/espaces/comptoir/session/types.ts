@@ -50,6 +50,7 @@ export type Livraison = {
 };
 
 export type Mouvement = {
+  id: string;
   type: TypeMouvement;
   produit: CleProduit;
   quantite: number;
@@ -58,7 +59,8 @@ export type Mouvement = {
   heure: string;
 };
 
-export type Autorisation = { par: string; heure: string };
+/** `soldeApres` : le solde le plus bas que cette autorisation couvre. Au-delà, elle ne vaut plus. */
+export type Autorisation = { par: string; heure: string; soldeApres: number };
 
 export type DemandePlafond = {
   id: string;

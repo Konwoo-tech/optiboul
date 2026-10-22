@@ -17,6 +17,8 @@ export function useRaccourcis(actions: ActionsClavier) {
   useEffect(() => {
     const surTouche = (evenement: KeyboardEvent) => {
       if (evenement.altKey || evenement.ctrlKey || evenement.metaKey) return;
+      // Échap ferme la liste d'un sélecteur natif : on ne l'annule pas à sa place.
+      if (evenement.key === 'Escape' && evenement.target instanceof HTMLSelectElement) return;
       const action = actionDeLaTouche(evenement.key);
       const executer = action ? dernieres.current[action] : undefined;
       if (!executer) return;

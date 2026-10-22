@@ -80,8 +80,8 @@ export type EntreeLivraison = {
   mode: ModePaiement;
   reference: string;
   plafond: number;
-  /** Le gérant ou le propriétaire a autorisé le dépassement pour ce client. */
-  autorise: boolean;
+  /** Solde le plus bas autorisé par le gérant pour ce client ; `null` sans autorisation. */
+  soldeAutorise: number | null;
   /** La personne connectée peut saisir (caissier ou gérant, session ouverte). */
   peutSaisir: boolean;
 };
@@ -116,7 +116,9 @@ export function calculerLivraison(entree: EntreeLivraison): CalculLivraison {
   const reste = recu - du;
   const soldeApres = client ? client.solde + reste : 0;
   const depasse = Boolean(client) && soldeApres < -plafond;
-  const bloquee = depasse && !entree.autorise;
+  // Une autorisation couvre le solde demandé, pas un solde plus bas.
+  const autorise = entree.soldeAutorise !== null && soldeApres >= entree.soldeAutorise;
+  const bloquee = depasse && !autorise;
   const referenceManquante = entree.mode !== 'especes' && entree.reference.trim() === '';
   return {
     lignes,

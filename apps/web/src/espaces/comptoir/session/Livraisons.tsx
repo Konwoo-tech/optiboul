@@ -62,6 +62,13 @@ export function Livraisons({
         ? couleurDe('ok')
         : { color: 'var(--ob-encre)' };
 
+  // Pourquoi « Valider » est refusé, quand l'écran le dit : lu avec le bouton par les lecteurs d'écran.
+  const raisonDuRefus = calcul.bloquee
+    ? 'raison-blocage'
+    : calcul.referenceManquante && calcul.du > 0
+      ? 'erreur-reference'
+      : undefined;
+
   const ouverte = session.statut === 'ouverte';
   const nomSession = nomDeSession(t, session.type);
   const titreSession = t('titres.session', {
@@ -269,7 +276,7 @@ export function Livraisons({
                     onChange={(e) => lv.saisirReference(e.target.value)}
                     placeholder="MP241014.2150.C7"
                   />
-                  <span className={styles.erreur}>
+                  <span className={styles.erreur} id="erreur-reference">
                     {calcul.referenceManquante && calcul.du > 0
                       ? t('comptoir.session.livraisons.referenceObligatoire')
                       : ''}
@@ -311,7 +318,7 @@ export function Livraisons({
                     plafond: formaterNombre(plafond),
                   })}
                 </div>
-                <div className={styles.bloqueTexte}>
+                <div className={styles.bloqueTexte} id="raison-blocage">
                   {t('comptoir.session.livraisons.texteBloque', {
                     solde: formaterNombre(calcul.soldeApres),
                     manque: formaterNombre(calcul.manque),
@@ -356,7 +363,7 @@ export function Livraisons({
                 )}
               </div>
             )}
-            {calcul.depasse && lv.autorisation && (
+            {calcul.depasse && !calcul.bloquee && lv.autorisation && (
               <div className={styles.autorise}>
                 {t('comptoir.session.livraisons.autorise', {
                   par: lv.autorisation.par,
@@ -380,9 +387,10 @@ export function Livraisons({
               type="button"
               className={`${styles.valider} ${calcul.valide ? styles.validerPret : ''}`}
               aria-disabled={!calcul.valide}
+              aria-describedby={raisonDuRefus}
               onClick={() => void lv.valider()}
             >
-              {calcul.depasse && lv.autorisation
+              {calcul.depasse && !calcul.bloquee
                 ? t('comptoir.session.livraisons.validerAutorisee')
                 : t('comptoir.session.livraisons.valider')}
             </button>

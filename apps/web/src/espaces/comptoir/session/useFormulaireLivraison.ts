@@ -98,7 +98,7 @@ export function useFormulaireLivraison({
         mode: formulaire.mode,
         reference: formulaire.reference,
         plafond: instantane?.plafond ?? 0,
-        autorise: Boolean(autorisation),
+        soldeAutorise: autorisation ? autorisation.soldeApres : null,
         peutSaisir,
       }),
     [client, formulaire, instantane?.plafond, autorisation, peutSaisir],

@@ -336,3 +336,59 @@ describe('API simulée de la session du comptoir', () => {
     });
   });
 });
+
+describe('droits et autorisations de la session (cahier des charges §3.3)', () => {
+  let retablir: () => void;
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+    retablir = installerApiSimulee({ latenceMs: 0 });
+    reinitialiserSimulation();
+  });
+  afterEach(() => {
+    retablir();
+    vi.unstubAllGlobals();
+  });
+
+  it('le propriétaire consulte seulement : ni relance, ni habituelle, ni comptage, ni clôture', async () => {
+    memoriserUtilisateurConnecte('davy');
+    await appeler('PUT', 'comptage/', { especes: '22950' });
+    memoriserUtilisateurConnecte('fotso');
+    expect((await instantane()).session.statut).toBe('ouverte');
+    const refuses = [
+      await appeler('POST', 'relances/', { clientIds: ['brice'] }),
+      await appeler('POST', 'commandes/habituelle/', { clientId: 'brice' }),
+      await appeler('PUT', 'comptage/', { especes: '1' }),
+      await appeler('POST', 'cloturer/'),
+    ];
+    expect(refuses.map((r) => r.status)).toEqual([403, 403, 403, 403]);
+    const etat = await instantane();
+    expect(etat.session.especesComptees).toBe('22950');
+    expect(etat.relances).toEqual({});
+    expect(etat.session.statut).toBe('ouverte');
+  });
+
+  it('refuse une demande pour un client qui ne dépasse pas le plafond', async () => {
+    memoriserUtilisateurConnecte('davy');
+    const reponse = await appeler('POST', 'autorisations/', { clientId: 'alex', soldeApres: -500 });
+    expect(reponse.status).toBe(400);
+    expect(reponse.corps.code).toBe('pas_de_depassement');
+  });
+
+  it('une autorisation ne couvre pas un solde plus bas que celui demandé', async () => {
+    memoriserUtilisateurConnecte('willy');
+    await appeler('POST', 'autorisations/', { clientId: 'brice', soldeApres: -6200 });
+    memoriserUtilisateurConnecte('davy');
+    // 40 BAG payés 1 000 : solde −7 200, au-delà des −6 200 autorisés.
+    const trop = await livrer({
+      clientId: 'brice',
+      quantites: { BAG: 40, KO: 0, GC: 0 },
+      mode: 'especes',
+      recu: 1000,
+      reference: '',
+    });
+    expect(trop.status).toBe(409);
+    expect(trop.corps.code).toBe('plafond_depasse');
+    expect((await livrer(venteDeBrice(1000))).status).toBe(200);
+  });
+});

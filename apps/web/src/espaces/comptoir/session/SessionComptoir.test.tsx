@@ -449,3 +449,70 @@ describe('profils', () => {
     expect(screen.getByRole('button', { name: 'Valider la livraison (autorisée)' })).toBeTruthy();
   });
 });
+
+describe('droits et clavier', () => {
+  afterEach(() => {
+    retablir();
+    vi.useRealTimers();
+  });
+
+  /** Une livraison enregistrée (F4) puis son bon ouvert (F8). */
+  async function ouvrirUnBon() {
+    await choisir(/^Alex/);
+    saisir(quantite('BAG'), '50');
+    saisir(champsDeLaFiche()[3]!, '5000');
+    touche(window, 'F4');
+    await screen.findByText('Livraison enregistrée · Alex · bon n° 147');
+    touche(window, 'F8');
+    return screen.findByRole('dialog', { name: 'Bon de livraison' });
+  }
+
+  it('le propriétaire ne relance ni ne clôture : tout est en lecture seule', async () => {
+    await ouvrir('fotso');
+    fireEvent.click(screen.getByRole('tab', { name: 'Commandes' }));
+    await screen.findByLabelText('Commande BAG de Alain');
+    expect(screen.queryByText(/clients habituels n’ont pas encore commandé/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /Relancer/ })).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'Clôture' }));
+    const comptees = (await screen.findByLabelText('Espèces comptées')) as HTMLInputElement;
+    expect(comptees.disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Clôturer la session' })).toBeNull();
+  });
+
+  it('F2 et F8 sont ignorés quand une fenêtre est ouverte', async () => {
+    await ouvrir();
+    await ouvrirUnBon();
+    touche(window, 'F2');
+    touche(window, 'F8');
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+  });
+
+  it('Échap ne ferme pas la fenêtre quand il vient d’un sélecteur natif', async () => {
+    await ouvrir();
+    await ouvrirUnBon();
+    const liste = document.createElement('select');
+    document.body.append(liste);
+    fireEvent.keyDown(liste, { key: 'Escape' });
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    liste.remove();
+    touche(window, 'Escape');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('une autorisation ne couvre pas une livraison qui dépasse davantage', async () => {
+    await ouvrir('willy');
+    fireEvent.click(screen.getByRole('button', { name: /^Brice/ }));
+    saisir(await screen.findByLabelText('BAG livrés'), '30');
+    saisir(champsDeLaFiche()[3]!, '1000');
+    fireEvent.click(screen.getByRole('button', { name: 'Autoriser le dépassement' }));
+    await screen.findByText('Dépassement autorisé et tracé');
+    const valider = screen.getByRole('button', { name: 'Valider la livraison (autorisée)' });
+    expect(valider.getAttribute('aria-disabled')).toBe('false');
+
+    saisir(quantite('BAG'), '40');
+    const bloque = screen.getByRole('button', { name: 'Valider la livraison' });
+    expect(bloque.getAttribute('aria-disabled')).toBe('true');
+    expect(bloque.getAttribute('aria-describedby')).toBe('raison-blocage');
+    expect(document.getElementById('raison-blocage')).toBeTruthy();
+  });
+});

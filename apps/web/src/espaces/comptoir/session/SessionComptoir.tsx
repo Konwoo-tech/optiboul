@@ -57,7 +57,8 @@ export default function SessionComptoir() {
   const ouverte = instantane?.session.statut === 'ouverte';
   const direction = profil === 'gerant' || profil === 'proprietaire';
   const peutSaisir = ouverte && (profil === 'caissier' || profil === 'gerant');
-  const peutRelancer = ouverte && (profil === 'caissier' || direction);
+  // Le propriétaire consulte : il ne saisit, ne relance et ne clôture pas (cahier des charges §3.3).
+  const peutRelancer = peutSaisir;
 
   const surErreur = useCallback(
     (erreur: unknown) => {
@@ -90,7 +91,7 @@ export default function SessionComptoir() {
 
   useRaccourcis({
     'nouvelle-livraison': () => {
-      if (!peutSaisir) return;
+      if (!peutSaisir || fenetre) return;
       setFenetre(null);
       choisirOnglet('livraisons');
       livraison.reinitialiser();
@@ -101,6 +102,7 @@ export default function SessionComptoir() {
       else champs.recu.current?.focus();
     },
     bon: () => {
+      if (fenetre) return;
       if (instantane?.dernierBon) setFenetre({ type: 'bon', livraisonId: instantane.dernierBon });
     },
     annuler: () => {
@@ -297,8 +299,8 @@ export default function SessionComptoir() {
             <Cloture
               instantane={instantane}
               actions={actions}
-              verrouille={!ouverte}
-              peutCloturer={Boolean(ouverte)}
+              verrouille={!peutSaisir}
+              peutCloturer={Boolean(peutSaisir)}
               onDemanderCloture={() => setFenetre({ type: 'cloture' })}
             />
           )}

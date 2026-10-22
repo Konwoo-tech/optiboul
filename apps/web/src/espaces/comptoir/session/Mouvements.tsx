@@ -96,8 +96,8 @@ export function Mouvements({ instantane, brouillon, onChange, onAjouter, peutSai
         <div className={styles.listeTitre} id="titre-mouvements">
           {t('comptoir.session.mouvements.titre')}
         </div>
-        {mouvements.map((mouvement, rang) => (
-          <div className={styles.mouvement} key={`${mouvement.heure}-${rang}`}>
+        {mouvements.map((mouvement) => (
+          <div className={styles.mouvement} key={mouvement.id}>
             <div className={styles.mouvementTitre}>
               {t('comptoir.session.mouvements.ligne', {
                 type: t(`comptoir.session.mouvements.types.${mouvement.type}`),

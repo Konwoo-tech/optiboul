@@ -204,6 +204,7 @@ function etatInitial(): Etat {
     ],
     mouvements: [
       {
+        id: 'm1',
         type: 'ration',
         produit: 'BAG',
         quantite: 12,
@@ -223,6 +224,7 @@ function etatInitial(): Etat {
   };
 }
 
+let numeroMouvement = 1;
 let courant: Etat | undefined;
 const lireEtat = (): Etat => (courant ??= etatInitial());
 
@@ -310,7 +312,7 @@ function enregistrerLivraison(a: Acteur, corps: Corps): Response {
     mode,
     reference,
     plafond: lireEtat().plafond,
-    autorise: Boolean(autorisation),
+    soldeAutorise: autorisation ? autorisation.soldeApres : null,
     peutSaisir: true,
   });
   if (calcul.du === 0) return probleme(400, 'montant_nul', 'Aucun pain à livrer.');
@@ -359,8 +361,12 @@ function demanderAutorisation(a: Acteur, corps: Corps): Response {
   if (typeof soldeApres !== 'number' || !Number.isInteger(soldeApres)) {
     return probleme(400, 'solde_invalide', 'Solde après livraison invalide.');
   }
+  // Seul un client réellement en dépassement a besoin d'une autorisation.
+  if (soldeApres >= -lireEtat().plafond) {
+    return probleme(400, 'pas_de_depassement', 'Ce client ne dépasse pas le plafond.');
+  }
   if (estDirection(a)) {
-    lireEtat().autorisations[cible.id] = { par: a.nom, heure: heureCourante() };
+    lireEtat().autorisations[cible.id] = { par: a.nom, heure: heureCourante(), soldeApres };
     tracer(a.nom, `Autorisation de dépassement du plafond : ${cible.nom} (${soldeApres} FCFA)`);
     return reponse({ autorise: true });
   }
@@ -402,7 +408,11 @@ function deciderAutorisation(corps: Corps): Response {
   const accord = corps.accord === true;
   demande.statut = accord ? 'acceptee' : 'refusee';
   if (accord)
-    lireEtat().autorisations[demande.clientId] = { par: decideur.nom, heure: heureCourante() };
+    lireEtat().autorisations[demande.clientId] = {
+      par: decideur.nom,
+      heure: heureCourante(),
+      soldeApres: demande.soldeApres,
+    };
   tracer(
     decideur.nom,
     `${accord ? 'Accord' : 'Refus'} – Livraison au-delà du plafond : ${demande.clientNom}`,
@@ -430,7 +440,15 @@ function ajouterMouvement(a: Acteur, corps: Corps): Response {
     );
   }
   lireEtat().mouvements = [
-    { type, produit, quantite, motif, par: a.nom, heure: heureCourante() },
+    {
+      id: `m${++numeroMouvement}`,
+      type,
+      produit,
+      quantite,
+      motif,
+      par: a.nom,
+      heure: heureCourante(),
+    },
     ...lireEtat().mouvements,
   ];
   tracer(a.nom, `Mouvement interne : ${type} ${quantite} ${produit}`);
@@ -475,7 +493,7 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
     }
 
     case 'POST commandes/habituelle/': {
-      if (!ouverte()) return verrouillee();
+      if (!peutSaisir(a)) return ouverte() ? refus() : verrouillee();
       const cible = lireEtat().clients.find((c) => c.id === corps.clientId);
       const habituelle = cible ? lireEtat().habituelles[cible.id] : undefined;
       if (!cible || !habituelle) return probleme(404, 'client_inconnu', 'Client inconnu.');
@@ -489,7 +507,7 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
     }
 
     case 'POST relances/': {
-      if (!ouverte()) return verrouillee();
+      if (!peutSaisir(a)) return ouverte() ? refus() : verrouillee();
       const ids = Array.isArray(corps.clientIds) ? corps.clientIds.map(String) : [];
       const cibles = lireEtat().clients.filter((c) => ids.includes(c.id));
       if (cibles.length === 0) return probleme(400, 'relance_vide', 'Aucun client à relancer.');
@@ -512,13 +530,13 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
       return ajouterMouvement(a, corps);
 
     case 'PUT comptage/': {
-      if (!ouverte()) return verrouillee();
+      if (!peutSaisir(a)) return ouverte() ? refus() : verrouillee();
       lireEtat().session.especesComptees = chiffres(String(corps.especes ?? ''));
       return reponse();
     }
 
     case 'POST cloturer/': {
-      if (!ouverte()) return verrouillee();
+      if (!peutSaisir(a)) return ouverte() ? refus() : verrouillee();
       if (lireEtat().session.especesComptees === '') {
         return probleme(409, 'comptage_requis', 'Saisissez les espèces comptées.');
       }

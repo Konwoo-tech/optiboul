@@ -148,7 +148,7 @@ export function Commandes({
           </div>
         </section>
       )}
-      <section className={styles.carte} aria-labelledby="titre-commandes">
+      <section className={styles.carte}>
         <div className={styles.entete}>
           <div>
             <div className={styles.titre} id="titre-commandes">
@@ -163,7 +163,12 @@ export function Commandes({
           )}
         </div>
         <div className={styles.defilement}>
-          <div className={styles.tableau} ref={tableau}>
+          <div
+            className={styles.tableau}
+            ref={tableau}
+
+            aria-labelledby="titre-commandes"
+          >
             <div className={`${styles.grille} ${styles.grilleTitres}`}>
               <span>{t('comptoir.session.commandes.client')}</span>
               {PRODUITS.map((produit) => (
