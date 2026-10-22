@@ -45,7 +45,14 @@ function lireCookie(nom: string): string | undefined {
   if (typeof document === 'undefined') return undefined;
   const debut = `${nom}=`;
   const cookie = document.cookie.split('; ').find((c) => c.startsWith(debut));
-  return cookie && decodeURIComponent(cookie.slice(debut.length));
+  if (!cookie) return undefined;
+  const valeur = cookie.slice(debut.length);
+  try {
+    return decodeURIComponent(valeur);
+  } catch {
+    // Cookie mal encodé : on envoie la valeur brute plutôt que de bloquer toute écriture.
+    return valeur;
+  }
 }
 
 /** Jeton CSRF courant, pour les formulaires envoyés par le navigateur (hors `fetch`). */

@@ -5,5 +5,7 @@
 export function cheminSuivant(valeur: string | null): string | null {
   if (!valeur?.startsWith('/')) return null;
   if (valeur.startsWith('//') || valeur.startsWith('/\\')) return null;
+  // Revenir à la connexion après la connexion ferait tourner l'utilisateur en rond.
+  if (/^\/connexion(?:[/?#]|$)/.test(valeur)) return null;
   return valeur;
 }

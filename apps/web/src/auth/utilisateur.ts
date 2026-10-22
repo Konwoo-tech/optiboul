@@ -1,4 +1,4 @@
-import { estSansSession, useUsersMeRetrieve } from '@/api';
+import { estSansSession, reessayer, useUsersMeRetrieve } from '@/api';
 
 /**
  * Utilisateur connecté et son profil (cookie de session de même origine).
@@ -7,7 +7,11 @@ import { estSansSession, useUsersMeRetrieve } from '@/api';
  * donc on ne déconnecte pas.
  */
 export function useUtilisateurCourant() {
-  const requete = useUsersMeRetrieve({ query: { staleTime: 60_000 } });
+  const requete = useUsersMeRetrieve({
+    // Une seule nouvelle tentative : « Serveur injoignable » doit s'afficher vite
+    // (avec les deux du client par défaut : jusqu'à 3 × 15 s d'attente).
+    query: { staleTime: 60_000, retry: (n, erreur) => reessayer(n, erreur) && n < 1 },
+  });
   const sansSession = estSansSession(requete.error);
   return {
     utilisateur: sansSession ? undefined : requete.data?.data,

@@ -8,10 +8,21 @@ describe('cheminSuivant', () => {
     expect(cheminSuivant('/gestion?semaine=42#ventes')).toBe('/gestion?semaine=42#ventes');
   });
 
-  it.each([null, '', 'comptoir', 'https://exemple.test', '//exemple.test', '/\\exemple.test'])(
-    'refuse %s',
-    (valeur) => {
-      expect(cheminSuivant(valeur)).toBeNull();
-    },
-  );
+  it.each([
+    null,
+    '',
+    'comptoir',
+    'https://exemple.test',
+    '//exemple.test',
+    '/\\exemple.test',
+    '/connexion',
+    '/connexion?suivant=%2Fcomptoir',
+    '/connexion/x',
+  ])('refuse %s', (valeur) => {
+    expect(cheminSuivant(valeur)).toBeNull();
+  });
+
+  it('accepte un chemin qui commence seulement comme « connexion »', () => {
+    expect(cheminSuivant('/connexions-bancaires')).toBe('/connexions-bancaires');
+  });
 });

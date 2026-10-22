@@ -51,7 +51,7 @@ describe('application web', () => {
   it('serveur en panne : propose de réessayer sans renvoyer à la connexion', async () => {
     serveur.use(http.get('*/api/v1/users/me/', () => new HttpResponse(null, { status: 503 })));
     ouvrir('/comptoir');
-    expect(await screen.findByText('Serveur injoignable')).toBeTruthy();
+    expect(await screen.findByText('Serveur injoignable', {}, { timeout: 4000 })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Se connecter' })).toBeNull();
     connecte('caissier');
     fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
@@ -61,7 +61,7 @@ describe('application web', () => {
   it('coupure réseau : même comportement, pas de déconnexion', async () => {
     serveur.use(http.get('*/api/v1/users/me/', () => HttpResponse.error()));
     ouvrir('/');
-    expect(await screen.findByText('Serveur injoignable')).toBeTruthy();
+    expect(await screen.findByText('Serveur injoignable', {}, { timeout: 4000 })).toBeTruthy();
   });
 
   it('la caissière arrive sur sa caisse, sans les autres espaces', async () => {
