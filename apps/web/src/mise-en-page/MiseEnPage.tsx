@@ -1,56 +1,38 @@
-import { Center, Group, Loader, Tabs } from '@mantine/core';
-import { useUtilisateurCourant } from '@/auth';
+import { useMediaQuery } from '@mantine/hooks';
 import { useTranslation } from '@/i18n';
-import { BandeauHorsLigne, BoutonDeconnexion, EnTeteApplication, LimiteErreur } from '@/ui';
+import { SIMULATION } from '@/simulation';
+import { BandeauHorsLigne, LimiteErreur } from '@/ui';
 import { Suspense } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router';
+import { Outlet, useLocation } from 'react-router';
 
-import { espacesDe } from '../profils.ts';
+import styles from './MiseEnPage.module.css';
+import { BarreLaterale, BarreTelephone } from './Navigation.tsx';
 
-/** Cadre commun : en-tête (qui, où, en ligne), navigation limitée aux espaces du profil. */
+/**
+ * Cadre commun : menu de gauche sur ordinateur, barre du haut avec un bouton « Menu » sur
+ * téléphone (le propriétaire et le gérant suivent l'activité depuis leur téléphone, ADR-19).
+ */
 export function MiseEnPage() {
   const { t } = useTranslation();
-  const { utilisateur } = useUtilisateurCourant();
   const { pathname } = useLocation();
-  const naviguer = useNavigate();
-  const espaces = espacesDe(utilisateur?.profil);
-  const actif = espaces.find((espace) => pathname.startsWith(`/${espace}`)) ?? null;
+  const telephone = useMediaQuery('(max-width: 767px)') ?? false;
 
   return (
-    <>
-      <EnTeteApplication
-        titre={utilisateur?.profil ? t(`profils.${utilisateur.profil}`) : ''}
-        actions={
-          <Group gap="xs">
-            {utilisateur?.name}
-            <BoutonDeconnexion />
-          </Group>
-        }
-      />
-      <BandeauHorsLigne />
-      {espaces.length > 1 && (
-        <Tabs value={actif} onChange={(espace) => espace && naviguer(`/${espace}`)} px="md">
-          <Tabs.List>
-            {espaces.map((espace) => (
-              <Tabs.Tab key={espace} value={espace}>
-                {t(`espaces.${espace}`)}
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-        </Tabs>
+    <div className={`${styles.coque} ${telephone ? styles.coqueTelephone : ''}`}>
+      {telephone ? <BarreTelephone /> : <BarreLaterale />}
+      <main className={styles.principal}>
+        <BandeauHorsLigne />
+        <LimiteErreur reinitialiser={pathname}>
+          <Suspense fallback={null}>
+            <Outlet />
+          </Suspense>
+        </LimiteErreur>
+      </main>
+      {SIMULATION && (
+        <div className={styles.simulation} data-simulation>
+          {t('commun.simulation')}
+        </div>
       )}
-      {/* L'en-tête et la navigation restent affichés si un espace plante ou ne se charge pas. */}
-      <LimiteErreur reinitialiser={pathname}>
-        <Suspense
-          fallback={
-            <Center py="xl">
-              <Loader />
-            </Center>
-          }
-        >
-          <Outlet />
-        </Suspense>
-      </LimiteErreur>
-    </>
+    </div>
   );
 }

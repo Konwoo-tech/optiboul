@@ -16,9 +16,10 @@
     "envoisEnAttente_other": "{{count}} envois en attente"
   },
   "commun": {
-    "changerUtilisateur": "Changer d'utilisateur",
+    "changerUtilisateur": "Changer d’utilisateur",
     "deconnexion": "Se déconnecter",
     "bientot": "Écran prévu au backlog",
+    "simulation": "Mode simulation · données de démonstration",
     "chargement": "Chargement…"
   },
   "espaces": {
@@ -27,9 +28,9 @@
     "gestion": "Gestion"
   },
   "profils": {
-    "caissier": "Caissière",
+    "caissier": "Caissier",
     "gerant": "Gérant de la semaine",
-    "production": "Responsable de production",
+    "production": "Chef de production",
     "proprietaire": "Propriétaire",
     "administrateur": "Administrateur"
   },
@@ -51,5 +52,59 @@
     "titre": "Connexion",
     "seConnecter": "Se connecter",
     "aucunProfil": "Votre compte n'appartient à aucun groupe. Demandez à l'administrateur de vous ajouter au groupe de votre poste."
+  },
+  "navigation": {
+    "espaces": "Espaces",
+    "menu": "Menu",
+    "fermer": "Fermer"
+  },
+  "menu": {
+    "session": "Session en cours",
+    "caisses": "Caisses",
+    "clients": "Clients et dettes",
+    "depenses": "Dépenses",
+    "demandes": "Demandes",
+    "production": "Production",
+    "stocks": "Stocks",
+    "semaines": "Semaines",
+    "tableau-de-bord": "Tableau de bord",
+    "fournisseurs": "Fournisseurs",
+    "personnel": "Personnel et paie",
+    "utilisateurs": "Utilisateurs et rôles",
+    "sauvegardes": "Sauvegardes",
+    "journal": "Journal des actions",
+    "parametres": "Paramètres"
+  },
+  "titres": {
+    "session": "{{session}} du {{date}}",
+    "caisses": "Ouvertures et fermetures de caisse",
+    "clients": "Clients et dettes",
+    "depenses": "Dépenses et budget",
+    "demandes": "Demandes à traiter",
+    "production": "Production · {{session}} {{date}}",
+    "stocks": "Stocks",
+    "semaines": "Semaines de travail",
+    "tableau-de-bord": "Tableau de bord",
+    "fournisseurs": "Fournisseurs et réceptions",
+    "personnel": "Personnel et paie",
+    "utilisateurs": "Utilisateurs et rôles",
+    "sauvegardes": "Sauvegardes",
+    "journal": "Journal des actions",
+    "parametres": "Paramètres"
+  },
+  "coque": {
+    "semaine": "Semaine {{numero}} · {{du}} → {{au}}",
+    "equipe": "Gérant : {{gerant}} · Production : {{production}}",
+    "kickerSemaine": "Semaine {{numero}} · {{du}} → {{au}} · gérant : {{gerant}} · production : {{production}}",
+    "kickerSession": "Ouverte à {{heure}} par {{nom}}",
+    "pastilleSession": "{{type}} · ouverte",
+    "pastilleReseau": "En ligne · sauvegarde cloud active",
+    "notifications": "Notifications",
+    "aucuneNotification": "Aucune notification.",
+    "changer": "Changer",
+    "notificationsPour": "Pour {{nom}} · {{role}}",
+    "notificationsRegle": "Chaque notification va aux rôles concernés : la programmation et le plan de production à toute l’équipe, les relances de commande à la caisse, le reste à produire au chef, au gérant et à la caisse, les contrôles de stock au gérant et au chef. Envoi WhatsApp ou SMS en complément (fournisseur à choisir).",
+    "toutMarquerLu": "Tout marquer lu",
+    "ouvrir": "Ouvrir ›"
   }
 }

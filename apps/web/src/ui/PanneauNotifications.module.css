@@ -1,0 +1,180 @@
+/* Tiroir de notifications, repris de la maquette « OptiBoul ERP v2 » (lignes 956-977). */
+.voile {
+  /* Absolu et non fixe, comme dans la maquette : l'écran occupe toute la fenêtre, et une couche fixe
+     perdrait l'anticrénelage sous-pixel du texte. */
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 12, 8, 0.35);
+  z-index: 40;
+}
+
+.panneau {
+  /* Neutralise les réglages par défaut de <dialog>. */
+  margin: 0;
+  padding: 0;
+  max-width: none;
+  max-height: none;
+  height: auto;
+  border: 0;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: auto;
+  width: min(440px, 100%);
+  background: var(--ob-fond);
+  color: var(--ob-encre);
+  border-left: 1px solid var(--ob-ligne);
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -20px 0 50px rgba(46, 26, 16, 0.2);
+  line-height: normal;
+}
+
+.entete {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.titres {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.titre {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.sousTitre {
+  font-size: 13px;
+  color: var(--ob-discret);
+  text-wrap: pretty;
+}
+
+.fermer {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.liste {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vide {
+  padding: 20px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+.regle {
+  padding: 14px 20px;
+  border-top: 1px solid var(--ob-ligne);
+  font-size: 12px;
+  color: var(--ob-discret);
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.carte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.pastille {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  margin-top: 6px;
+  border-radius: 50%;
+}
+
+.corps {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ligneType {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.type {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  background: var(--ob-doux);
+  color: var(--ob-marque);
+}
+
+.typeEnDirect {
+  background: #fcebc5;
+  color: #8a5a00;
+}
+
+.heure {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.titreCarte {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-encre);
+  text-wrap: pretty;
+}
+
+.detail {
+  font-size: 13px;
+  color: var(--ob-encre);
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.ouvrir {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: 4px 0 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  text-decoration: underline;
+  cursor: pointer;
+}

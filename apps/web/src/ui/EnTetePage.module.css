@@ -1,0 +1,86 @@
+/* En-tête de page, repris de la maquette « OptiBoul ERP v2 » (lignes 159-167). */
+.entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.texte {
+  min-width: 0;
+}
+
+.kicker {
+  font-size: 13px;
+  color: var(--ob-discret);
+  font-weight: 600;
+}
+
+.titre {
+  margin: 2px 0 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  letter-spacing: -0.02em;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.notifications {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 999px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.pastille {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.point {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.apparence {
+  margin-left: 4px;
+}
+
+.badge {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #c2453a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

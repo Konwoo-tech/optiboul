@@ -1,11 +1,12 @@
 export { BadgeEtat, type NiveauEtat } from './BadgeEtat.tsx';
+export { AvatarUtilisateur } from './AvatarUtilisateur.tsx';
 export { BandeauHorsLigne } from './BandeauHorsLigne.tsx';
 export { BasculeApparence } from './BasculeApparence.tsx';
 export { BoutonDeconnexion } from './BoutonDeconnexion.tsx';
 export { Carte } from './Carte.tsx';
 export { EcranChargement } from './EcranChargement.tsx';
 export { EcranErreur } from './EcranErreur.tsx';
-export { EnTeteApplication } from './EnTeteApplication.tsx';
+export { EnTetePage } from './EnTetePage.tsx';
 export { Jauge } from './Jauge.tsx';
 export { LimiteErreur } from './LimiteErreur.tsx';
 export { MontantFCFA } from './MontantFCFA.tsx';
@@ -13,3 +14,4 @@ export { OptiboulProvider } from './OptiboulProvider.tsx';
 export { COULEURS, themeOptiboul } from './theme.ts';
 export { TuileKpi } from './TuileKpi.tsx';
 export { useCreneau } from './useCreneau.ts';
+export { useHorloge } from './useHorloge.ts';

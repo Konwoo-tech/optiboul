@@ -3,7 +3,8 @@ import { useTranslation } from '@/i18n';
 import { EcranChargement, EcranErreur } from '@/ui';
 import { Navigate, Outlet, useLocation } from 'react-router';
 
-import { PROFILS, peutOuvrir, type Espace } from '../profils.ts';
+import { cheminAccueil } from '../navigation.ts';
+import { peutOuvrir, type Espace } from '../profils.ts';
 
 /**
  * Sans session, renvoie vers la connexion en gardant la page demandée.
@@ -36,7 +37,7 @@ export function RequiertConnexion() {
 export function AccueilDuProfil() {
   const { utilisateur } = useUtilisateurCourant();
   if (!utilisateur?.profil) return <Navigate to="/connexion" replace />;
-  return <Navigate to={PROFILS[utilisateur.profil].accueil} replace />;
+  return <Navigate to={cheminAccueil(utilisateur.profil)} replace />;
 }
 
 /** Un espace non autorisé pour le profil renvoie à son accueil. */
