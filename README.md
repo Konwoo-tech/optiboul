@@ -72,7 +72,7 @@ make dev              # application web sur http://localhost:5173 (proxy vers Dj
 | `make e2e`        | Parcours Playwright sur l'environnement complet                                             |
 | `make prod-build` | Images de production (api + web)                                                            |
 
-Dans `apps/web`, les scripts pnpm habituels restent disponibles : `pnpm dev`, `pnpm test`, `pnpm build`, `pnpm lint`.
+Dans `apps/web`, les scripts pnpm habituels restent disponibles : `pnpm dev`, `pnpm test`, `pnpm build`, `pnpm lint`. `pnpm e2e:visuel` compare l'interface au prototype de design image par image ([mode d'emploi](apps/web/e2e/visuel/README.md)).
 
 ## Backlog et livraison
 
