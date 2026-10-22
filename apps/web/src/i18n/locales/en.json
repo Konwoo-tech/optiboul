@@ -11,12 +11,13 @@
   },
   "etat": {
     "enLigne": "Online",
-    "horsLigne": "Offline – everything still works",
+    "horsLigne": "Offline",
     "envoisEnAttente_one": "{{count}} message waiting",
     "envoisEnAttente_other": "{{count}} messages waiting"
   },
   "commun": {
     "changerUtilisateur": "Switch user",
+    "deconnexion": "Sign out",
     "bientot": "Screen planned in the backlog",
     "chargement": "Loading…"
   },
@@ -31,6 +32,14 @@
     "production": "Production manager",
     "proprietaire": "Owner",
     "administrateur": "Administrator"
+  },
+  "erreur": {
+    "titre": "Something went wrong",
+    "message": "The screen could not be displayed. Reload the page; if the problem comes back, tell the administrator.",
+    "recharger": "Reload the page",
+    "injoignableTitre": "Server unreachable",
+    "injoignable": "The server is not answering. You are still signed in: try again in a moment.",
+    "reessayer": "Try again"
   },
   "connexion": {
     "titre": "Sign in",

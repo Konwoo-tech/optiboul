@@ -1,7 +1,7 @@
 import { Center, Group, Loader, Tabs } from '@mantine/core';
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { BandeauHorsLigne, EnTeteApplication } from '@/ui';
+import { BandeauHorsLigne, BoutonDeconnexion, EnTeteApplication, LimiteErreur } from '@/ui';
 import { Suspense } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 
@@ -20,7 +20,12 @@ export function MiseEnPage() {
     <>
       <EnTeteApplication
         titre={utilisateur?.profil ? t(`profils.${utilisateur.profil}`) : ''}
-        actions={utilisateur?.name ? <Group gap="xs">{utilisateur.name}</Group> : null}
+        actions={
+          <Group gap="xs">
+            {utilisateur?.name}
+            <BoutonDeconnexion />
+          </Group>
+        }
       />
       <BandeauHorsLigne />
       {espaces.length > 1 && (
@@ -34,15 +39,18 @@ export function MiseEnPage() {
           </Tabs.List>
         </Tabs>
       )}
-      <Suspense
-        fallback={
-          <Center py="xl">
-            <Loader />
-          </Center>
-        }
-      >
-        <Outlet />
-      </Suspense>
+      {/* L'en-tête et la navigation restent affichés si un espace plante ou ne se charge pas. */}
+      <LimiteErreur reinitialiser={pathname}>
+        <Suspense
+          fallback={
+            <Center py="xl">
+              <Loader />
+            </Center>
+          }
+        >
+          <Outlet />
+        </Suspense>
+      </LimiteErreur>
     </>
   );
 }

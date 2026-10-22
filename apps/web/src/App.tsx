@@ -1,4 +1,5 @@
-import { lazy } from 'react';
+import { EcranChargement, LimiteErreur } from '@/ui';
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 
 import { AccueilDuProfil, EspaceAutorise, RequiertConnexion } from './mise-en-page/Gardes.tsx';
@@ -12,23 +13,32 @@ const Gestion = lazy(() => import('./espaces/gestion/Gestion.tsx'));
 
 export function App() {
   return (
-    <Routes>
-      <Route path="connexion" element={<Connexion />} />
-      <Route element={<RequiertConnexion />}>
-        <Route element={<MiseEnPage />}>
-          <Route index element={<AccueilDuProfil />} />
-          <Route element={<EspaceAutorise espace="comptoir" />}>
-            <Route path="comptoir/*" element={<Comptoir />} />
-          </Route>
-          <Route element={<EspaceAutorise espace="atelier" />}>
-            <Route path="atelier/*" element={<Atelier />} />
-          </Route>
-          <Route element={<EspaceAutorise espace="gestion" />}>
-            <Route path="gestion/*" element={<Gestion />} />
+    <LimiteErreur>
+      <Routes>
+        <Route
+          path="connexion"
+          element={
+            <Suspense fallback={<EcranChargement />}>
+              <Connexion />
+            </Suspense>
+          }
+        />
+        <Route element={<RequiertConnexion />}>
+          <Route element={<MiseEnPage />}>
+            <Route index element={<AccueilDuProfil />} />
+            <Route element={<EspaceAutorise espace="comptoir" />}>
+              <Route path="comptoir/*" element={<Comptoir />} />
+            </Route>
+            <Route element={<EspaceAutorise espace="atelier" />}>
+              <Route path="atelier/*" element={<Atelier />} />
+            </Route>
+            <Route element={<EspaceAutorise espace="gestion" />}>
+              <Route path="gestion/*" element={<Gestion />} />
+            </Route>
           </Route>
         </Route>
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </LimiteErreur>
   );
 }

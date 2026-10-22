@@ -11,12 +11,13 @@
   },
   "etat": {
     "enLigne": "En ligne",
-    "horsLigne": "Hors ligne – tout fonctionne",
+    "horsLigne": "Hors ligne",
     "envoisEnAttente_one": "{{count}} envoi en attente",
     "envoisEnAttente_other": "{{count}} envois en attente"
   },
   "commun": {
     "changerUtilisateur": "Changer d'utilisateur",
+    "deconnexion": "Se déconnecter",
     "bientot": "Écran prévu au backlog",
     "chargement": "Chargement…"
   },
@@ -31,6 +32,14 @@
     "production": "Responsable de production",
     "proprietaire": "Propriétaire",
     "administrateur": "Administrateur"
+  },
+  "erreur": {
+    "titre": "Un problème est survenu",
+    "message": "L'écran n'a pas pu s'afficher. Rechargez la page ; si le problème revient, prévenez l'administrateur.",
+    "recharger": "Recharger la page",
+    "injoignableTitre": "Serveur injoignable",
+    "injoignable": "Le serveur ne répond pas. Vous n'êtes pas déconnecté : réessayez dans un instant.",
+    "reessayer": "Réessayer"
   },
   "connexion": {
     "titre": "Connexion",

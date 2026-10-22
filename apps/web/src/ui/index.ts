@@ -1,6 +1,10 @@
 export { BadgeEtat, type NiveauEtat } from './BadgeEtat.tsx';
 export { BandeauHorsLigne } from './BandeauHorsLigne.tsx';
+export { BoutonDeconnexion } from './BoutonDeconnexion.tsx';
+export { EcranChargement } from './EcranChargement.tsx';
+export { EcranErreur } from './EcranErreur.tsx';
 export { EnTeteApplication } from './EnTeteApplication.tsx';
+export { LimiteErreur } from './LimiteErreur.tsx';
 export { MontantFCFA } from './MontantFCFA.tsx';
 export { OptiboulProvider } from './OptiboulProvider.tsx';
 export { COULEURS, themeOptiboul } from './theme.ts';

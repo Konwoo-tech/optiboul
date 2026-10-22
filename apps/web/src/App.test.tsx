@@ -3,7 +3,7 @@ import { initI18n } from '@/i18n';
 import { creerServeurApi } from '@/test';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -46,6 +46,22 @@ describe('application web', () => {
     serveur.use(http.get('*/api/v1/users/me/', () => new HttpResponse(null, { status: 403 })));
     ouvrir('/comptoir');
     expect(await screen.findByRole('link', { name: 'Se connecter' })).toBeTruthy();
+  });
+
+  it('serveur en panne : propose de réessayer sans renvoyer à la connexion', async () => {
+    serveur.use(http.get('*/api/v1/users/me/', () => new HttpResponse(null, { status: 503 })));
+    ouvrir('/comptoir');
+    expect(await screen.findByText('Serveur injoignable')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Se connecter' })).toBeNull();
+    connecte('caissier');
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
+    expect(await screen.findByRole('heading', { name: 'Ma caisse' })).toBeTruthy();
+  });
+
+  it('coupure réseau : même comportement, pas de déconnexion', async () => {
+    serveur.use(http.get('*/api/v1/users/me/', () => HttpResponse.error()));
+    ouvrir('/');
+    expect(await screen.findByText('Serveur injoignable')).toBeTruthy();
   });
 
   it('la caissière arrive sur sa caisse, sans les autres espaces', async () => {
