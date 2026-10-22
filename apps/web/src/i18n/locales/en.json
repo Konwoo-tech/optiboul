@@ -19,6 +19,7 @@
     "changerUtilisateur": "Switch user",
     "deconnexion": "Sign out",
     "bientot": "Screen planned in the backlog",
+    "simulation": "Simulation mode · demo data",
     "chargement": "Loading…"
   },
   "espaces": {
@@ -29,7 +30,7 @@
   "profils": {
     "caissier": "Cashier",
     "gerant": "Manager of the week",
-    "production": "Production manager",
+    "production": "Head baker",
     "proprietaire": "Owner",
     "administrateur": "Administrator"
   },
@@ -51,5 +52,59 @@
     "titre": "Sign in",
     "seConnecter": "Sign in",
     "aucunProfil": "Your account doesn't belong to any group. Ask the administrator to add you to your team's group."
+  },
+  "navigation": {
+    "espaces": "Areas",
+    "menu": "Menu",
+    "fermer": "Close"
+  },
+  "menu": {
+    "session": "Current session",
+    "caisses": "Cash desks",
+    "clients": "Customers & debts",
+    "depenses": "Expenses",
+    "demandes": "Requests",
+    "production": "Production",
+    "stocks": "Stock",
+    "semaines": "Weeks",
+    "tableau-de-bord": "Dashboard",
+    "fournisseurs": "Suppliers",
+    "personnel": "Staff & payroll",
+    "utilisateurs": "Users & roles",
+    "sauvegardes": "Backups",
+    "journal": "Activity log",
+    "parametres": "Settings"
+  },
+  "titres": {
+    "session": "{{session}} · {{date}}",
+    "caisses": "Cash desk openings & closings",
+    "clients": "Customers & debts",
+    "depenses": "Expenses & budget",
+    "demandes": "Pending requests",
+    "production": "Production · {{session}} {{date}}",
+    "stocks": "Stock",
+    "semaines": "Work weeks",
+    "tableau-de-bord": "Dashboard",
+    "fournisseurs": "Suppliers & deliveries",
+    "personnel": "Staff & payroll",
+    "utilisateurs": "Users & roles",
+    "sauvegardes": "Backups",
+    "journal": "Activity log",
+    "parametres": "Settings"
+  },
+  "coque": {
+    "semaine": "Week {{numero}} · {{du}} → {{au}}",
+    "equipe": "Manager: {{gerant}} · Production: {{production}}",
+    "kickerSemaine": "Week {{numero}} · {{du}} → {{au}} · manager: {{gerant}} · production: {{production}}",
+    "kickerSession": "Opened at {{heure}} by {{nom}}",
+    "pastilleSession": "{{type}} · open",
+    "pastilleReseau": "Online · cloud backup on",
+    "notifications": "Notifications",
+    "aucuneNotification": "No notifications.",
+    "changer": "Switch",
+    "notificationsPour": "For {{nom}} · {{role}}",
+    "notificationsRegle": "Each notification goes to the roles concerned: schedule and production plan to the whole team, order reminders to the cash desk, remaining output to the head baker, manager and cash desk, stock counts to the manager and head baker. WhatsApp or SMS delivery on top (provider to be chosen).",
+    "toutMarquerLu": "Mark all read",
+    "ouvrir": "Open ›"
   }
 }

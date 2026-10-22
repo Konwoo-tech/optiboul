@@ -55,7 +55,9 @@ describe('application web', () => {
     expect(screen.queryByRole('link', { name: 'Se connecter' })).toBeNull();
     connecte('caissier');
     fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
-    expect(await screen.findByRole('heading', { name: 'Ma caisse' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { name: /^Session de (jour|nuit) du / }),
+    ).toBeTruthy();
   });
 
   it('coupure réseau : même comportement, pas de déconnexion', async () => {
@@ -67,23 +69,66 @@ describe('application web', () => {
   it('la caissière arrive sur sa caisse, sans les autres espaces', async () => {
     connecte('caissier');
     ouvrir('/');
-    expect(await screen.findByRole('heading', { name: 'Ma caisse' })).toBeTruthy();
-    expect(screen.queryByRole('tab', { name: 'Gestion' })).toBeNull();
+    expect(
+      await screen.findByRole('heading', { name: /^Session de (jour|nuit) du / }),
+    ).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Gestion' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Atelier' })).toBeNull();
+  });
+
+  it('la caissière retrouve clients, dépenses et demandes dans son menu', async () => {
+    connecte('caissier');
+    ouvrir('/');
+    await screen.findByRole('heading', { name: /^Session de (jour|nuit) du / });
+    for (const ecran of [
+      'Session en cours',
+      'Caisses',
+      'Clients et dettes',
+      'Dépenses',
+      'Demandes',
+    ]) {
+      expect(screen.getByRole('link', { name: ecran })).toBeTruthy();
+    }
+    expect(screen.queryByRole('link', { name: 'Fournisseurs' })).toBeNull();
+  });
+
+  it('un écran que le profil ne voit pas renvoie à son accueil', async () => {
+    connecte('caissier');
+    ouvrir('/comptoir/fournisseurs');
+    expect(
+      await screen.findByRole('heading', { name: /^Session de (jour|nuit) du / }),
+    ).toBeTruthy();
   });
 
   it("un espace interdit renvoie à l'accueil du profil", async () => {
     connecte('production');
     ouvrir('/gestion');
-    expect(await screen.findByRole('heading', { name: 'Plan du jour' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', { name: /^Production · Session de (jour|nuit) / }),
+    ).toBeTruthy();
   });
 
-  it('le gérant arrive sur Ma semaine et voit ses trois espaces', async () => {
+  it('le gérant arrive sur les semaines de travail et voit ses trois espaces', async () => {
     connecte('gerant');
     ouvrir('/');
-    expect(await screen.findByRole('heading', { name: 'Ma semaine' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Semaines de travail' })).toBeTruthy();
     for (const espace of ['Gestion', 'Comptoir', 'Atelier']) {
-      expect(screen.getByRole('tab', { name: espace })).toBeTruthy();
+      expect(screen.getByRole('link', { name: espace })).toBeTruthy();
     }
+    expect(screen.getByRole('link', { name: 'Fournisseurs' })).toBeTruthy();
+  });
+
+  it('le propriétaire arrive sur le tableau de bord', async () => {
+    connecte('proprietaire');
+    ouvrir('/');
+    expect(await screen.findByRole('heading', { name: 'Tableau de bord' })).toBeTruthy();
+  });
+
+  it('l’administrateur arrive sur les utilisateurs et ne voit que la gestion', async () => {
+    connecte('administrateur');
+    ouvrir('/');
+    expect(await screen.findByRole('heading', { name: 'Utilisateurs et rôles' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Comptoir' })).toBeNull();
   });
 
   it('un compte sans groupe est invité à contacter l’administrateur', async () => {

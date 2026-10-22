@@ -1,4 +1,5 @@
 import type { Profil } from '../profils.ts';
+import type { CleEcran } from '../navigation.ts';
 import type { Espace } from '../profils.ts';
 
 export type TexteNotification = { type: string; heure: string; titre: string; detail: string };
@@ -10,7 +11,7 @@ export type NotificationSimulee = {
   fr: TexteNotification;
   en: TexteNotification;
   /** Écran que « Ouvrir › » atteint ; absent si le profil ne peut pas l'ouvrir. */
-  destination: { espace: Espace; cle: string } | null;
+  destination: { espace: Espace; cle: CleEcran } | null;
 };
 
 /**

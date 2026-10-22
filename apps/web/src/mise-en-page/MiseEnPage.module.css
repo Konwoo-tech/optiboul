@@ -1,0 +1,271 @@
+/*
+ * Coque de l'application, reprise valeur par valeur de la maquette « OptiBoul ERP v2 »
+ * (lignes 123-157). Sur ordinateur : menu de gauche de 248 px ; sur téléphone : barre du haut
+ * et menu déroulant.
+ */
+.coque {
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+  background: var(--ob-fond);
+  color: var(--ob-encre);
+  line-height: normal;
+}
+
+.coqueTelephone {
+  flex-direction: column;
+}
+
+.principal {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 28px 32px 90px;
+}
+
+.coqueTelephone .principal {
+  padding: 18px 16px 90px;
+}
+
+/* Menu de gauche. */
+.barre {
+  width: 248px;
+  flex: none;
+  background: var(--ob-barre);
+  color: #fff4dc;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 14px 16px;
+  gap: 18px;
+  overflow: auto;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+}
+
+.logoNom {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.logoEtiquette {
+  background: #f2b705;
+  color: #2e1a10;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+.semaine {
+  padding: 0 10px;
+  font-size: 12px;
+  color: #f3ddb0;
+  line-height: 1.5;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.section {
+  padding: 0 12px;
+  margin: 8px 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #f3ddb0;
+  text-transform: uppercase;
+}
+
+.section:first-child {
+  margin-top: 0;
+}
+
+.groupe {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lien {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  text-align: left;
+  font-weight: 600;
+  background: transparent;
+  color: #fff4dc;
+  text-decoration: none;
+}
+
+.lien[aria-current='page'] {
+  background: #f2b705;
+  color: #2e1a10;
+  font-weight: 800;
+}
+
+/* Changement d'espace : l'espace ouvert reste discret, l'écran ouvert est en or. */
+.lienEspace[aria-current='page'] {
+  background: rgba(255, 244, 220, 0.18);
+  color: #fff4dc;
+}
+
+.badge {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: #fbe0dc;
+  color: #a2251b;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.utilisateur {
+  border-top: 1px solid rgba(255, 244, 220, 0.18);
+  padding: 14px 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.identite {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.identiteTextes {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.identiteNom {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.identiteRole {
+  font-size: 12px;
+  color: #f3ddb0;
+}
+
+.changer {
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255, 244, 220, 0.45);
+  background: transparent;
+  color: #fff4dc;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.changer:hover {
+  background: rgba(255, 244, 220, 0.08);
+}
+
+/* Téléphone : barre du haut, puis menu déroulant. */
+.barreTelephone {
+  background: var(--ob-barre);
+  color: #fff4dc;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.logoTelephone {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.logoTelephone .logoNom {
+  font-size: 19px;
+}
+
+.logoTelephone .logoEtiquette {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+
+.boutonMenu {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255, 244, 220, 0.45);
+  background: transparent;
+  color: #fff4dc;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.menuTelephone {
+  background: var(--ob-barre);
+  padding: 0 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.piedTelephone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid rgba(255, 244, 220, 0.18);
+  margin-top: 8px;
+  padding-top: 12px;
+  color: #fff4dc;
+}
+
+.piedTelephoneNom {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.piedTelephone .changer {
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+/* Rappel discret : ce que l'on voit est simulé. */
+.simulation {
+  position: fixed;
+  right: 8px;
+  bottom: 8px;
+  z-index: 100;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #fcebc5;
+  color: #8a5a00;
+  font-size: 12px;
+  font-weight: 700;
+  pointer-events: none;
+}
