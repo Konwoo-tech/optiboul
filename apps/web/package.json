@@ -5,11 +5,15 @@
   "type": "module",
   "description": "Application web OptiBoul : connexion, comptoir, atelier et gestion. Le profil de l'utilisateur décide des espaces visibles.",
   "packageManager": "pnpm@12.9.1",
+  "sideEffects": [
+    "*.css"
+  ],
   "engines": {
     "node": ">=24"
   },
   "scripts": {
     "dev": "vite",
+    "dev:simulation": "vite --mode simulation",
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview",
     "lint": "oxlint src e2e",
