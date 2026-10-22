@@ -8,6 +8,7 @@ import {
 } from '@/simulation';
 import { useToast } from '@/ui';
 import { formaterNombre } from '@/utils';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import type { Ecran } from '../../navigation.ts';
@@ -20,6 +21,7 @@ import {
   enDette,
   FILTRES,
   filtrerClients,
+  LIBELLE_DU_STATUT,
   NIVEAU_DU_STATUT,
   peutRelancer,
   remplissageJauge,
@@ -28,7 +30,6 @@ import {
   type FiltreClients,
 } from './logique.ts';
 
-const CLE_STATUT = { ok: 'AJour', surveiller: 'Dette', bloquant: 'Depasse' } as const;
 const CLE_FILTRE: Record<FiltreClients, string> = {
   tous: 'clients.filtreTous',
   dette: 'clients.filtreDette',
@@ -46,9 +47,13 @@ type LigneProps = {
 
 function LigneClient({ client, plafond, choisi, relancable, onChoisir, onRelancer }: LigneProps) {
   const { t } = useTranslation();
-  const niveau = NIVEAU_DU_STATUT[statutDeSolde(client.solde, plafond)];
+  const statut = statutDeSolde(client.solde, plafond);
+  const niveau = NIVEAU_DU_STATUT[statut];
   const couleur = `var(--ob-${niveau}-texte)`;
   const libelleRelance = client.relance ? t('clients.relance') : t('clients.relancer');
+  const nomRelance = t(client.relance ? 'clients.relanceNom' : 'clients.relancerNom', {
+    nom: client.nom,
+  });
 
   return (
     // La ligne entière se clique à la souris ; au clavier, on passe par le nom (bouton).
@@ -62,7 +67,9 @@ function LigneClient({ client, plafond, choisi, relancable, onChoisir, onRelance
         <button type="button" className={styles.nom} aria-pressed={choisi}>
           {client.nom}
         </button>
-        <div className={styles.sousTitre}>{`${client.type} · ${client.lieu}`}</div>
+        <div
+          className={styles.sousTitre}
+        >{`${t(`clients.types.${client.type}`)} · ${client.lieu}`}</div>
       </div>
       <div className={styles.jaugeColonne}>
         <div className={styles.jauge} aria-hidden>
@@ -87,13 +94,13 @@ function LigneClient({ client, plafond, choisi, relancable, onChoisir, onRelance
         className={styles.statut}
         style={{ background: `var(--ob-${niveau}-fond)`, color: couleur }}
       >
-        {t(`clients.statut${CLE_STATUT[niveau]}`)}
+        {t(LIBELLE_DU_STATUT[statut])}
       </span>
       {relancable && client.solde < 0 && (
         <button
           type="button"
           className={styles.relancer}
-          aria-label={`${libelleRelance} ${client.nom}`}
+          aria-label={nomRelance}
           onClick={(evenement) => {
             evenement.stopPropagation();
             onRelancer();
@@ -153,6 +160,7 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
   const { data, isPending, isError } = useClientsSimules();
   const relancer = useRelancerClientsSimules();
   const [parametres, definirParametres] = useSearchParams();
+  const [focusDetail, setFocusDetail] = useState(false);
 
   const relancable = peutRelancer(utilisateur?.profil);
   const filtreDemande = parametres.get('filtre');
@@ -187,15 +195,34 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
     const liste = filtrerClients(clients, filtre, plafond);
     const dettes = enDette(clients);
 
-    const relancerUn = (client: ClientSimule) => {
-      relancer.mutate([client.id]);
-      afficherToast(
-        t('clients.toastRelance', { nom: client.nom, montant: formaterNombre(-client.solde) }),
+    // Le message suit le résultat : « envoyée » seulement si le serveur l'a confirmé.
+    const surErreur = () => afficherToast(t('clients.toastRelanceErreur'));
+    const relancerUn = (client: ClientSimule) =>
+      relancer.mutate([client.id], {
+        onSuccess: () =>
+          afficherToast(
+            t('clients.toastRelance', { nom: client.nom, montant: formaterNombre(-client.solde) }),
+          ),
+        onError: surErreur,
+      });
+    const relancerTous = () =>
+      relancer.mutate(
+        dettes.map((c) => c.id),
+        {
+          onSuccess: () =>
+            afficherToast(t('clients.toastRelanceGroupee', { count: dettes.length })),
+          onError: surErreur,
+        },
       );
+    const choisir = (client: ClientSimule) => {
+      // Rechoisir le client ouvert referme le détail.
+      setFocusDetail(true);
+      modifier({ client: choisi?.id === client.id ? null : client.id });
     };
-    const relancerTous = () => {
-      relancer.mutate(dettes.map((c) => c.id));
-      afficherToast(t('clients.toastRelanceGroupee', { count: dettes.length }));
+    const fermer = () => {
+      const id = choisi?.id;
+      modifier({ client: null });
+      document.querySelector<HTMLElement>(`[data-client="${id}"] button`)?.focus();
     };
 
     contenu = (
@@ -230,14 +257,20 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
                 plafond={plafond}
                 choisi={choisi?.id === client.id}
                 relancable={relancable}
-                onChoisir={() => modifier({ client: client.id })}
+                onChoisir={() => choisir(client)}
                 onRelancer={() => relancerUn(client)}
               />
             ))}
             {liste.length === 0 && <li className={styles.vide}>{t('clients.vide')}</li>}
           </ul>
           {choisi ? (
-            <DetailClient client={choisi} plafond={plafond} echeance={echeance} />
+            <DetailClient
+              client={choisi}
+              plafond={plafond}
+              echeance={echeance}
+              prendreFocus={focusDetail}
+              onFermer={fermer}
+            />
           ) : (
             <div className={styles.detail}>
               <div className={styles.detailVide}>{t('clients.detailVide')}</div>

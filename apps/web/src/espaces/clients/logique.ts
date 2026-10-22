@@ -17,6 +17,13 @@ export const NIVEAU_DU_STATUT = {
   depasse: 'bloquant',
 } as const satisfies Record<StatutClient, 'ok' | 'surveiller' | 'bloquant'>;
 
+/** Clé de traduction du libellé de chaque statut. */
+export const LIBELLE_DU_STATUT = {
+  ajour: 'clients.statutAJour',
+  dette: 'clients.statutDette',
+  depasse: 'clients.statutDepasse',
+} as const satisfies Record<StatutClient, string>;
+
 /**
  * Statut d'après le solde (négatif = dette) : « Plafond dépassé » seulement au-delà du plafond
  * (une dette exactement égale au plafond reste une simple dette), « Dette » dès le premier franc.

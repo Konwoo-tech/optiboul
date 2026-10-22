@@ -5,7 +5,7 @@ import { memoriserUtilisateurConnecte } from '@/simulation/session.ts';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, useLocation } from 'react-router';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Ecran } from '../../navigation.ts';
@@ -34,7 +34,12 @@ afterEach(async () => {
   await changerLangue('fr');
 });
 
-function ouvrir(utilisateur: string, adresse = '/') {
+/** Montre l'adresse courante, pour vérifier ce que l'écran y écrit. */
+function Adresse() {
+  return <output data-testid="adresse">{useLocation().search}</output>;
+}
+
+function ouvrir(utilisateur: string | null, adresse = '/') {
   memoriserUtilisateurConnecte(utilisateur);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
@@ -42,6 +47,7 @@ function ouvrir(utilisateur: string, adresse = '/') {
       <QueryClientProvider client={client}>
         <MemoryRouter initialEntries={[adresse]}>
           <EcranClients ecran={ECRAN} />
+          <Adresse />
         </MemoryRouter>
       </QueryClientProvider>
     </OptiboulProvider>,
@@ -61,6 +67,10 @@ describe('Clients et dettes', () => {
     expect(screen.getByText('Clients en dette').nextElementSibling?.textContent).toBe('8');
     expect(espace(screen.getByText(/^Au-delà du plafond de/).textContent ?? '')).toBe(
       'Au-delà du plafond de 2 000',
+    );
+    // Espace insécable U+00A0 des milliers, comme le design (pas U+202F).
+    expect(screen.getByText('Dettes clients').nextElementSibling?.textContent).toBe(
+      '−14\u00A0050 FCFA',
     );
     expect(screen.getByRole('button', { name: 'Tous · 12' }).getAttribute('aria-pressed')).toBe(
       'true',
@@ -114,7 +124,7 @@ describe('Clients et dettes', () => {
         ' ',
       ),
     ).toBe('Relance WhatsApp envoyée à Brice : 4 200 FCFA à régler avant dimanche.');
-    expect(await screen.findByRole('button', { name: 'Relancé Brice' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Relancé : Brice' })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Relancer les 8 clients en dette' }));
     expect(await screen.findByText('8 relances WhatsApp envoyées')).toBeTruthy();
@@ -139,6 +149,70 @@ describe('Clients et dettes', () => {
     ouvrir('willy', '/?filtre=depasse&client=ebene');
     expect(await lignes()).toHaveLength(3);
     expect(await screen.findByRole('heading', { name: 'Ebène', level: 2 })).toBeTruthy();
+  });
+
+  it('un clic écrit le client et le filtre dans l’adresse, un second clic referme le détail', async () => {
+    ouvrir('davy');
+    const [brice] = await lignes();
+    fireEvent.click(brice!);
+    expect(screen.getByTestId('adresse').textContent).toBe('?client=brice');
+    fireEvent.click(screen.getByRole('button', { name: 'Plafond dépassé · 3' }));
+    expect(screen.getByTestId('adresse').textContent).toBe('?client=brice&filtre=depasse');
+    fireEvent.click((await lignes())[0]!);
+    expect(screen.getByTestId('adresse').textContent).toBe('?filtre=depasse');
+    expect(screen.queryByRole('heading', { name: 'Brice', level: 2 })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Tous · 12' }));
+    expect(screen.getByTestId('adresse').textContent).toBe('');
+  });
+
+  it('Échap referme le détail et rend le focus à la ligne', async () => {
+    ouvrir('davy');
+    fireEvent.click((await lignes())[0]!);
+    const titre = await screen.findByRole('heading', { name: 'Brice', level: 2 });
+    fireEvent.keyDown(titre, { key: 'Escape' });
+    expect(screen.queryByRole('heading', { name: 'Brice', level: 2 })).toBeNull();
+    expect(document.activeElement?.textContent).toBe('Brice');
+  });
+
+  it('n’enlève pas le focus à l’arrivée avec ?client= dans l’adresse', async () => {
+    ouvrir('davy', '/?client=brice');
+    const titre = await screen.findByRole('heading', { name: 'Brice', level: 2 });
+    expect(document.activeElement).not.toBe(titre);
+  });
+
+  it('ignore un filtre inconnu dans l’adresse', async () => {
+    ouvrir('davy', '/?filtre=nimporte');
+    expect(await lignes()).toHaveLength(12);
+    expect(screen.getByRole('button', { name: 'Tous · 12' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+  });
+
+  it('le propriétaire relance comme le gérant', async () => {
+    ouvrir('fotso');
+    await lignes();
+    expect(screen.getByRole('button', { name: 'Relancer les 8 clients en dette' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Relancer Brice' })).toBeTruthy();
+  });
+
+  it('signale une erreur de chargement', async () => {
+    ouvrir(null);
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Impossible de charger les clients.',
+    );
+  });
+
+  it('une relance qui échoue ne dit pas « envoyée »', async () => {
+    ouvrir('willy');
+    await lignes();
+    const simule = globalThis.fetch;
+    globalThis.fetch = async (entree, init) =>
+      String(entree instanceof Request ? entree.url : entree).includes('/relancer/')
+        ? new Response('{}', { status: 500 })
+        : simule(entree, init);
+    fireEvent.click(screen.getByRole('button', { name: 'Relancer Brice' }));
+    expect(await screen.findByText('La relance a échoué : réessayez.')).toBeTruthy();
+    expect(screen.queryByText(/^Relance WhatsApp envoyée/)).toBeNull();
   });
 
   it('parle anglais', async () => {

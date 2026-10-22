@@ -372,3 +372,15 @@ output.message {
   outline: 2px solid var(--ob-marque);
   outline-offset: 2px;
 }
+
+/* Texte pour les lecteurs d'écran seulement (« Dû », « Payé » devant les montants). */
+.cache {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

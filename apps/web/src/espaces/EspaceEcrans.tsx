@@ -2,19 +2,29 @@ import { useUtilisateurCourant } from '@/auth';
 import { lazy, Suspense, type ComponentType } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
 
-import { cheminEcran, ecranAccueil, ecransDe, type CleEcran, type Ecran } from '../navigation.ts';
+import { cheminEcran, ecranAccueil, ecransDe, type Ecran } from '../navigation.ts';
 import type { Espace } from '../profils.ts';
 import { EcranPrevu } from './EcranPrevu.tsx';
 
+type EcranLivre = ComponentType<{ ecran: Ecran }>;
+
 /**
- * Écrans déjà construits, servis par un seul composant pour tous les espaces qui les listent.
- * Pour l'instant ils lisent l'API simulée : hors simulation, la page d'attente s'affiche
- * (la condition lit `import.meta.env.MODE` ici même, pour que le compilateur retire l'import).
+ * Les écrans construits lisent l'API simulée : hors simulation, la page d'attente s'affiche.
+ * ATTENTION : chaque entrée de `ECRANS_LIVRES` doit être gardée par `EN_SIMULATION`. Un
+ * `lazy(import(...))` sans garde embarquerait l'écran dans le paquet de production. (Une fonction
+ * `enSimulation(() => import(...))` ne suffit pas : le compilateur ne retire pas l'import.)
+ * `pnpm verifier:fuite`, à lancer après `pnpm build`, détecte une fuite.
  */
-const ECRANS_LIVRES: Partial<Record<CleEcran, ComponentType<{ ecran: Ecran }>>> =
-  import.meta.env.MODE === 'simulation'
-    ? { clients: lazy(() => import('./clients/EcranClients.tsx')) }
-    : {};
+const EN_SIMULATION = import.meta.env.MODE === 'simulation';
+
+/**
+ * Écrans déjà construits, une entrée par ligne, triées. Clé `espace/écran` : un écran peut donc
+ * différer d'un espace à l'autre. Ajouter un écran = ajouter une ligne.
+ */
+const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
+  'comptoir/clients': EN_SIMULATION ? lazy(() => import('./clients/EcranClients.tsx')) : null,
+  'gestion/clients': EN_SIMULATION ? lazy(() => import('./clients/EcranClients.tsx')) : null,
+};
 
 /**
  * Écrans d'un espace pour le profil connecté : `/comptoir` ouvre l'écran d'accueil du profil,
@@ -30,7 +40,7 @@ export function EspaceEcrans({ espace }: { espace: Espace }) {
     <Routes>
       <Route index element={versAccueil} />
       {ecransDe(profil, espace).map((ecran) => {
-        const Livre = ECRANS_LIVRES[ecran.cle];
+        const Livre = ECRANS_LIVRES[`${ecran.espace}/${ecran.cle}`];
         return (
           <Route
             key={ecran.cle}

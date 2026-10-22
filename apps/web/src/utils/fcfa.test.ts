@@ -5,6 +5,11 @@ import { formaterNombre, formatFCFA } from './fcfa.ts';
 const normaliser = (texte: string) => texte.replace(/[  ]/g, ' ');
 
 describe('formatFCFA', () => {
+  it('sépare les milliers par une espace insécable U+00A0, pas U+202F (design)', () => {
+    expect(formatFCFA(1500)).toBe('1\u00A0500 FCFA');
+    expect(formatFCFA(-1500)).toBe('−1\u00A0500 FCFA');
+  });
+
   it('sépare les milliers sans décimale', () => {
     expect(normaliser(formatFCFA(9786075))).toBe('9 786 075 FCFA');
   });

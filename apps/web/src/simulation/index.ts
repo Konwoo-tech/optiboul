@@ -23,6 +23,7 @@ export type {
   LigneHistoriqueClient,
   ListeClientsSimulee,
   TarifsClient,
+  TypeClient,
 } from './clients.ts';
 export { configurationSimulee, type ModeConnexion } from './configuration.ts';
 export {

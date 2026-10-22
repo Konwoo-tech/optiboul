@@ -23,6 +23,7 @@
     "format:check": "prettier --check .",
     "api-client": "orval --config orval.config.ts",
     "e2e": "playwright test -c e2e/playwright.config.ts",
+    "verifier:fuite": "node scripts/verifier-fuite.mjs",
     "e2e:visuel": "node e2e/visuel/lancer.ts",
     "e2e:navigateurs": "playwright install --with-deps chromium"
   },

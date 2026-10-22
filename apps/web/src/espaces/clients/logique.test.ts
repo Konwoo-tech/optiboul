@@ -18,7 +18,7 @@ const PLAFOND = 2000;
 const client = (id: string, solde: number): ClientSimule => ({
   id,
   nom: id,
-  type: 'Client livreur',
+  type: 'livreur',
   lieu: 'Etoudi',
   telephone: '6 00 00 00 00',
   tarifs: { BAG: 100, KO: 70, GC: 160 },

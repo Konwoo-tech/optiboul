@@ -182,6 +182,14 @@
     "jaugeTexte": "{{dette}} / {{plafond}} FCFA",
     "relancer": "Relancer",
     "relance": "Relancé",
+    "relancerNom": "Relancer {{nom}}",
+    "relanceNom": "Relancé : {{nom}}",
+    "toastRelanceErreur": "La relance a échoué : réessayez.",
+    "types": {
+      "livreur": "Client livreur",
+      "restaurant": "Restaurant",
+      "hotel": "Hôtel"
+    },
     "vide": "Aucun client dans cette liste.",
     "detailVide": "Sélectionnez un client pour voir son historique et son relevé.",
     "detail": "Détail du client",
@@ -189,7 +197,6 @@
     "rienARegler": "Aucune dette à régler",
     "tarifs": "Tarifs : BAG {{BAG}} · KO {{KO}} · GC 135 {{GC}} FCFA",
     "historique": "Historique",
-    "historiqueChargement": "Chargement de l’historique…",
     "livraison": "Livraison bon n° {{bon}}",
     "nuit": "nuit",
     "du": "Dû",

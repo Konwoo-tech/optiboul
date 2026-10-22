@@ -8,13 +8,15 @@ import { lireUtilisateurConnecte } from './session.ts';
  * Données littérales, sans appel de fonction : le paquet de production n'en embarque aucune.
  */
 
+export type TypeClient = 'livreur' | 'restaurant' | 'hotel';
+
 export type TarifsClient = { BAG: number; KO: number; GC: number };
 
 export type ClientSimule = {
   id: string;
   nom: string;
-  /** « Client livreur », « Restaurant », « Hôtel »… */
-  type: string;
+  /** Catégorie du client ; l'interface la traduit. */
+  type: TypeClient;
   lieu: string;
   telephone: string;
   /** Prix unitaire de chaque pain pour ce client, en FCFA. */
@@ -39,7 +41,7 @@ export type LigneHistoriqueClient = {
   bon: number;
   /** Jour de la session, `AAAA-MM-JJ`. */
   date: string;
-  /** Heure de la livraison (`21:41`) ou `nuit` pour une session passée. */
+  /** Heure de la livraison (`21:41`) ou `nuit` pour une session passée (traduit par l'interface). */
   moment: string;
   du: number;
   recu: number;
@@ -52,7 +54,7 @@ const CLIENTS: readonly ClientSimule[] = [
   {
     id: 'alain',
     nom: 'Alain',
-    type: 'Client livreur',
+    type: 'livreur',
     lieu: 'Marché Etoudi',
     telephone: '6 77 21 45 10',
     tarifs: B,
@@ -62,7 +64,7 @@ const CLIENTS: readonly ClientSimule[] = [
   {
     id: 'alex',
     nom: 'Alex',
-    type: 'Client livreur',
+    type: 'livreur',
     lieu: 'Carrefour Emana',
     telephone: '6 99 08 33 41',
     tarifs: A,
@@ -72,7 +74,7 @@ const CLIENTS: readonly ClientSimule[] = [
   {
     id: 'ebene',
     nom: 'Ebène',
-    type: 'Client livreur',
+    type: 'livreur',
     lieu: 'Lycée d’Etoudi',
     telephone: '6 55 72 19 08',
     tarifs: A,
@@ -82,7 +84,7 @@ const CLIENTS: readonly ClientSimule[] = [
   {
     id: 'white',
     nom: 'White',
-    type: 'Client livreur',
+    type: 'livreur',
     lieu: 'Olembé',
     telephone: '6 78 40 12 66',
     tarifs: B,
@@ -92,7 +94,7 @@ const CLIENTS: readonly ClientSimule[] = [
   {
     id: 'ngono',
     nom: 'Mama Ngono',
-    type: 'Client livreur',
+    type: 'livreur',
     lieu: 'Marché Etoudi',
     telephone: '6 94 15 70 22',
     tarifs: A,
@@ -102,7 +104,7 @@ const CLIENTS: readonly ClientSimule[] = [
   {
     id: 'junior',
     nom: 'Junior',
-    type: 'Client livreur',
+    type: 'livreur',
     lieu: 'Messassi',
     telephone: '6 70 66 01 93',
     tarifs: A,
@@ -112,7 +114,7 @@ const CLIENTS: readonly ClientSimule[] = [
   {
     id: 'brice',
     nom: 'Brice',
-    type: 'Client livreur',
+    type: 'livreur',
     lieu: 'Nkolondom',
     telephone: '6 51 38 27 74',
     tarifs: { BAG: 100, KO: 75, GC: 165 },
@@ -122,7 +124,7 @@ const CLIENTS: readonly ClientSimule[] = [
   {
     id: 'clarisse',
     nom: 'Clarisse',
-    type: 'Client livreur',
+    type: 'livreur',
     lieu: 'Emana',
     telephone: '6 97 82 64 05',
     tarifs: A,
@@ -132,7 +134,7 @@ const CLIENTS: readonly ClientSimule[] = [
   {
     id: 'herve',
     nom: 'Hervé',
-    type: 'Restaurant',
+    type: 'restaurant',
     lieu: 'Etoudi Château',
     telephone: '6 76 59 30 18',
     tarifs: B,
@@ -142,7 +144,7 @@ const CLIENTS: readonly ClientSimule[] = [
   {
     id: 'sandrine',
     nom: 'Sandrine',
-    type: 'Client livreur',
+    type: 'livreur',
     lieu: 'Olembé',
     telephone: '6 93 24 81 57',
     tarifs: A,
@@ -152,7 +154,7 @@ const CLIENTS: readonly ClientSimule[] = [
   {
     id: 'yannick',
     nom: 'Yannick',
-    type: 'Client livreur',
+    type: 'livreur',
     lieu: 'Messassi',
     telephone: '6 58 11 96 42',
     tarifs: A,
@@ -162,7 +164,7 @@ const CLIENTS: readonly ClientSimule[] = [
   {
     id: 'aicha',
     nom: 'Aïcha',
-    type: 'Hôtel',
+    type: 'hotel',
     lieu: 'Carrefour Emana',
     telephone: '6 90 47 05 36',
     tarifs: A,

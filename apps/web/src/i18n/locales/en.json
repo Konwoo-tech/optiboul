@@ -182,6 +182,14 @@
     "jaugeTexte": "{{dette}} / {{plafond}} FCFA",
     "relancer": "Remind",
     "relance": "Reminded",
+    "relancerNom": "Remind {{nom}}",
+    "relanceNom": "Reminded: {{nom}}",
+    "toastRelanceErreur": "The reminder failed: please try again.",
+    "types": {
+      "livreur": "Delivery customer",
+      "restaurant": "Restaurant",
+      "hotel": "Hotel"
+    },
     "vide": "No customers in this list.",
     "detailVide": "Select a customer to see their history and statement.",
     "detail": "Customer details",
@@ -189,7 +197,6 @@
     "rienARegler": "Nothing to settle",
     "tarifs": "Prices: BAG {{BAG}} · KO {{KO}} · GC 135 {{GC}} FCFA",
     "historique": "History",
-    "historiqueChargement": "Loading history…",
     "livraison": "Delivery slip #{{bon}}",
     "nuit": "night",
     "du": "Due",
