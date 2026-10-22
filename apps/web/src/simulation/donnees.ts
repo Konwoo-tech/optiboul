@@ -103,4 +103,8 @@ export type ContexteSimule = {
   semaine: { numero: number; du: string; au: string };
   /** Heure d'ouverture de la session en cours, « HH:MM ». */
   sessionOuverteDepuis: string;
+  /** Créneau de la session en cours ou de la dernière session ; absent : celui de l'horloge. */
+  sessionType?: 'jour' | 'nuit';
+  /** La session est ouverte (faux : clôturée). Absent : ouverte. */
+  sessionOuverte?: boolean;
 };

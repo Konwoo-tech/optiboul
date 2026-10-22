@@ -10,6 +10,7 @@ import {
   type ContexteSimule,
 } from './donnees.ts';
 import { reinitialiserClients, repondreClients } from './clients.ts';
+import { contexteCaisses, reinitialiserCaisses, repondreCaisses } from './caisses.ts';
 import { NOTIFICATIONS_PAR_PROFIL } from './notifications.ts';
 import { lireUtilisateurConnecte, memoriserUtilisateurConnecte } from './session.ts';
 
@@ -43,6 +44,7 @@ export function reinitialiserSimulation(): void {
   enAttente = null;
   lues.clear();
   reinitialiserClients();
+  reinitialiserCaisses();
   memoriserUtilisateurConnecte(null);
 }
 
@@ -155,7 +157,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
       return Response.json(UTILISATEURS_SIMULES);
 
     case 'GET /api/v1/simulation/contexte/':
-      return Response.json(CONTEXTE);
+      return Response.json({ ...CONTEXTE, ...contexteCaisses() });
 
     case 'POST /api/v1/simulation/identification/':
       return identifier(corps);
@@ -199,6 +201,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
     default:
       return (
         repondreClients(methode, chemin, corps) ??
+        repondreCaisses(chemin, methode, corps) ??
         probleme(404, 'non_simule', `Pas encore simulé : ${methode} ${chemin}`)
       );
   }

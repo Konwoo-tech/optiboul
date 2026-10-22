@@ -1,5 +1,6 @@
 import type { Scenario } from '../scenario.ts';
 
+import { scenariosCaisses } from './caisses.ts';
 import { scenariosCaissier } from './caissier.ts';
 import { scenariosClients } from './clients.ts';
 import { scenariosConnexion } from './connexion.ts';
@@ -9,4 +10,5 @@ export const scenarios: Scenario[] = [
   ...scenariosConnexion,
   ...scenariosCaissier,
   ...scenariosClients,
+  ...scenariosCaisses,
 ];

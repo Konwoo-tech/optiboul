@@ -4,7 +4,13 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const MARQUEURS = ['Mama Ngono', 'Nkolondom', 'Etoudi Château', 'optiboul-simulation'];
+const MARQUEURS = [
+  'Réouverture de la caisse du',
+  'Mama Ngono',
+  'Nkolondom',
+  'Etoudi Château',
+  'optiboul-simulation',
+];
 
 function fichiers(dossier) {
   return readdirSync(dossier).flatMap((nom) => {

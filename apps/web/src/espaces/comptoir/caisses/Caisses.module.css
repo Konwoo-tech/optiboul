@@ -1,0 +1,339 @@
+/*
+ * Comptoir › Caisses, repris valeur par valeur de la maquette « OptiBoul ERP v2 »
+ * (bloc `scr.caisses`, lignes 689-720). Les variables --ob-* sont celles de la maquette :
+ * --brand = marque, --surface = surface, --line = ligne, --fline = ligne-champ, --muted = discret,
+ * --ink = encre, --field = champ, --bg = fond.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.barre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filtres {
+  /* <fieldset> : neutralise ses marges et sa bordure. */
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filtre {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.filtreActif {
+  border-color: var(--ob-marque);
+  background: var(--ob-marque);
+  color: var(--ob-fond);
+}
+
+.ouverte {
+  /* Hauteur du bouton « Fermer la caisse » de la maquette, même quand il est absent (propriétaire). */
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Le vert est le même en clair et en sombre dans la maquette. */
+.ouverteTexte {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f6b3a;
+  background: #e2f1e5;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.fermer {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 10px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+/* Rappel du plafond, seulement quand les espèces le dépassent (US-041). Hors maquette. */
+.plafond {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ob-surveiller-texte);
+  background: var(--ob-surveiller-fond);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.groupe {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ouvrir {
+  min-height: 48px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: normal;
+  cursor: pointer;
+}
+
+/* Bouton de la maquette « Rouvrir la session » (ligne 174). */
+.rouvrir {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.cartes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.carte {
+  background: var(--ob-surface);
+  border: 2px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  font-family: inherit;
+  line-height: normal;
+  color: inherit;
+}
+
+button.carte {
+  cursor: pointer;
+}
+
+.carteActive {
+  border-color: #f2b705;
+}
+
+.identite {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  color: #2e1a10;
+  background: #f2b705;
+}
+
+.noms {
+  display: flex;
+  flex-direction: column;
+}
+
+.nom {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.sessions {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.ligneCarte {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.libelleCarte {
+  color: var(--ob-discret);
+}
+
+.valeurCarte {
+  font-weight: 800;
+  color: var(--ob-encre);
+  font-variant-numeric: tabular-nums;
+}
+
+.derniere {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.cadre {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow-x: auto;
+}
+
+.large {
+  min-width: 1060px;
+}
+
+/* Vrai tableau (en-têtes lus par les lecteurs d'écran), mis en grille comme dans la maquette. */
+.table {
+  display: block;
+  border-collapse: collapse;
+}
+
+.table :where(thead, tbody) {
+  display: block;
+}
+
+.table :where(th, td) {
+  padding: 0;
+  text-align: left;
+  font-weight: inherit;
+}
+
+.entete,
+.ligne {
+  display: grid;
+  grid-template-columns:
+    minmax(130px, 1.3fr) 70px minmax(110px, 1fr) minmax(120px, 1.1fr) minmax(120px, 1.1fr) 80px
+    90px 90px 90px 110px;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 20px;
+}
+
+.entete {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ob-discret);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--ob-champ);
+}
+
+.ligne {
+  border-top: 1px solid var(--ob-ligne);
+  font-size: 13px;
+  color: var(--ob-encre);
+  font-variant-numeric: tabular-nums;
+}
+
+.jour {
+  font-weight: 800;
+}
+
+.caissiere {
+  font-weight: 700;
+}
+
+.ecart {
+  font-weight: 800;
+}
+
+.ecartOk {
+  color: var(--ob-ok-texte);
+}
+
+.ecartBloquant {
+  color: var(--ob-bloquant-texte);
+}
+
+.ecartSurveiller {
+  color: var(--ob-surveiller-texte);
+}
+
+.ecartNeutre {
+  color: var(--ob-discret);
+}
+
+.statut {
+  justify-self: start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.statutOk {
+  background: var(--ob-ok-fond);
+  color: var(--ob-ok-texte);
+}
+
+.statutBloquant {
+  background: var(--ob-bloquant-fond);
+  color: var(--ob-bloquant-texte);
+}
+
+.statutSurveiller {
+  background: var(--ob-surveiller-fond);
+  color: var(--ob-surveiller-texte);
+}
+
+.vide {
+  padding: 20px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+.regle {
+  font-size: 13px;
+  color: var(--ob-discret);
+  line-height: 1.5;
+}
+
+.attente {
+  display: block;
+  padding: 20px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}
