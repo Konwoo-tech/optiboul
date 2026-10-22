@@ -25,16 +25,44 @@ export function PanneauNotifications({ ouvert, onFermer }: Props) {
   const { utilisateur } = useUtilisateurCourant();
   const { data: notifications = [] } = useNotificationsSimulees(utilisateur?.name);
   const boutonFermer = useRef<HTMLButtonElement>(null);
+  const panneau = useRef<HTMLDialogElement>(null);
+  // Le parent recrée `onFermer` à chaque rendu : on le lit par une référence pour que l'effet
+  // ne se relance (et ne rappelle focus()) qu'à l'ouverture et à la fermeture.
+  const fermer = useRef(onFermer);
+  useEffect(() => {
+    fermer.current = onFermer;
+  }, [onFermer]);
 
   useEffect(() => {
     if (!ouvert) return;
+    const declencheur =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     boutonFermer.current?.focus();
     const surTouche = (evenement: KeyboardEvent) => {
-      if (evenement.key === 'Escape') onFermer();
+      if (evenement.key === 'Escape') {
+        fermer.current();
+        return;
+      }
+      if (evenement.key !== 'Tab' || !panneau.current) return;
+      // Le focus reste dans le tiroir tant qu'il est ouvert.
+      const cibles = panneau.current.querySelectorAll<HTMLElement>('button:not([disabled])');
+      const premiere = cibles[0];
+      const derniere = cibles[cibles.length - 1];
+      if (!premiere || !derniere) return;
+      if (evenement.shiftKey && document.activeElement === premiere) {
+        evenement.preventDefault();
+        derniere.focus();
+      } else if (!evenement.shiftKey && document.activeElement === derniere) {
+        evenement.preventDefault();
+        premiere.focus();
+      }
     };
     window.addEventListener('keydown', surTouche);
-    return () => window.removeEventListener('keydown', surTouche);
-  }, [ouvert, onFermer]);
+    return () => {
+      window.removeEventListener('keydown', surTouche);
+      declencheur?.focus();
+    };
+  }, [ouvert]);
 
   if (!ouvert) return null;
 
@@ -55,7 +83,13 @@ export function PanneauNotifications({ ouvert, onFermer }: Props) {
   return (
     <>
       <div className={styles.voile} onClick={onFermer} aria-hidden />
-      <dialog open className={styles.panneau} aria-label={t('coque.notifications')}>
+      <dialog
+        open
+        ref={panneau}
+        aria-modal="true"
+        className={styles.panneau}
+        aria-label={t('coque.notifications')}
+      >
         <div className={styles.entete}>
           <div className={styles.titres}>
             <div className={styles.titre}>{t('coque.notifications')}</div>

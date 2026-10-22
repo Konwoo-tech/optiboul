@@ -1,4 +1,4 @@
-import { espacesDe, PROFILS, type Espace, type Profil } from './profils.ts';
+import { PROFILS, type Espace, type Profil } from './profils.ts';
 
 export type CleEcran =
   | 'session'
@@ -54,7 +54,8 @@ export const ECRANS: readonly Ecran[] = [
   { cle: 'utilisateurs', espace: 'gestion', profils: ['administrateur'], recit: 'US-020' },
   { cle: 'sauvegardes', espace: 'gestion', profils: ['administrateur'], recit: 'US-143' },
   { cle: 'journal', espace: 'gestion', profils: [...DIRECTION, 'administrateur'] },
-  { cle: 'parametres', espace: 'gestion', profils: [...DIRECTION, 'administrateur'] },
+  // CdC §3.3 « Paramètres métier » : propriétaire (modifie), administrateur (voit) ; pas le gérant.
+  { cle: 'parametres', espace: 'gestion', profils: ['proprietaire', 'administrateur'] },
 ];
 
 /** Écran d'arrivée dans un espace quand il n'est pas le premier du menu (O10). */
@@ -97,5 +98,3 @@ export function cheminAccueil(profil: Profil): string {
   const ecran = ecranAccueil(profil, espace);
   return ecran ? cheminEcran(ecran) : PROFILS[profil].accueil;
 }
-
-export { espacesDe };

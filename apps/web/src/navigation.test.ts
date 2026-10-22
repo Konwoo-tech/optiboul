@@ -37,6 +37,22 @@ describe('navigation', () => {
     expect(cles).toEqual(['utilisateurs', 'sauvegardes', 'journal', 'parametres']);
   });
 
+  it('le gérant n’a pas « Paramètres » (cahier des charges §3.3), le propriétaire l’a', () => {
+    const gerant = ecransDe('gerant', 'gestion').map((ecran) => ecran.cle);
+    const proprietaire = ecransDe('proprietaire', 'gestion').map((ecran) => ecran.cle);
+    expect(gerant).toEqual([
+      'tableau-de-bord',
+      'semaines',
+      'clients',
+      'fournisseurs',
+      'depenses',
+      'personnel',
+      'demandes',
+      'journal',
+    ]);
+    expect(proprietaire).toEqual([...gerant, 'parametres']);
+  });
+
   it('chaque profil arrive sur un écran qu’il peut ouvrir (O10)', () => {
     expect(cheminAccueil('caissier')).toBe('/comptoir/session');
     expect(cheminAccueil('production')).toBe('/atelier/production');
