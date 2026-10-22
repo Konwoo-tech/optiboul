@@ -36,6 +36,6 @@ describe('formaterNombreSigne', () => {
   it('met un plus devant un 茅cart positif seulement', () => {
     expect(formaterNombreSigne(500)).toBe('+500');
     expect(formaterNombreSigne(0)).toBe('0');
-    expect(formaterNombreSigne(-1000)).toBe('鈭𖢒00');
+    expect(formaterNombreSigne(-1000)).toBe('鈭�1聽000');
   });
 });
