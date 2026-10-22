@@ -3,15 +3,18 @@
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { chromium, type Page } from '@playwright/test';
+import { chromium, type Browser, type Page } from '@playwright/test';
 
 import {
   comparer,
   demarrerApplication,
   DOSSIER_SORTIE,
+  ECART_PAR_CANAL,
   INSTANT_FIGE,
   preparerPrototype,
   type Difference,
+  type PrototypeTemporaire,
+  type ServeurApplication,
 } from './outils.ts';
 import { scenarios } from './scenarios/index.ts';
 import type { Scenario, Zone } from './scenario.ts';
@@ -20,10 +23,17 @@ interface Ligne {
   nom: string;
   difference: Difference;
   seuil: number;
+  tolerance: number;
   reussi: boolean;
 }
 
-const demandes = process.argv.slice(2).filter((a) => !a.startsWith('-'));
+const arguments_ = process.argv.slice(2);
+const options = arguments_.filter((a) => a.startsWith('-'));
+if (options.length > 0) {
+  console.error(`Option inconnue : ${options.join(', ')} (le banc n'en accepte aucune)`);
+  process.exit(2);
+}
+const demandes = arguments_;
 const inconnus = demandes.filter((d) => !scenarios.some((s) => s.nom === d));
 if (inconnus.length > 0) {
   console.error(
@@ -31,23 +41,32 @@ if (inconnus.length > 0) {
   );
   process.exit(2);
 }
-const noms = scenarios.map((s) => s.nom);
-if (new Set(noms).size !== noms.length) {
-  console.error('Deux scénarios portent le même nom.');
+const retenus = scenarios.filter((s) => demandes.length === 0 || demandes.includes(s.nom));
+if (retenus.length === 0) {
+  console.error('Aucun scénario à jouer.');
   process.exit(2);
 }
-const retenus = scenarios.filter((s) => demandes.length === 0 || demandes.includes(s.nom));
+
+// Les noms de fichiers de sortie doivent être uniques, sinon deux scénarios s'écraseraient.
+const fichiers = scenarios.flatMap((s) =>
+  s.zones ? Object.keys(s.zones).map((z) => `${s.nom}-${z}`) : [s.nom],
+);
+if (new Set(fichiers).size !== fichiers.length) {
+  console.error('Deux scénarios ou zones produiraient les mêmes fichiers de sortie.');
+  process.exit(2);
+}
 
 rmSync(DOSSIER_SORTIE, { recursive: true, force: true });
 mkdirSync(DOSSIER_SORTIE, { recursive: true });
 
-const prototype = preparerPrototype();
-const application = await demarrerApplication();
-const navigateur = await chromium.launch();
+// Variables renseignées au fur et à mesure : le nettoyage final n'arrête que ce qui a démarré.
+let prototype: PrototypeTemporaire | undefined;
+let application: ServeurApplication | undefined;
+let navigateur: Browser | undefined;
 const lignes: Ligne[] = [];
 
 async function ouvrirPage(scenario: Scenario) {
-  const contexte = await navigateur.newContext({
+  const contexte = await navigateur!.newContext({
     viewport: scenario.viewport ?? { width: 1280, height: 800 },
     colorScheme: scenario.theme === 'sombre' ? 'dark' : 'light',
     locale: 'fr-FR',
@@ -73,12 +92,17 @@ async function capturer(page: Page, scenario: Scenario, cote: 'prototype' | 'app
     const suffixe = scenario.zones ? `${scenario.nom}-${zone}` : scenario.nom;
     await page.screenshot({
       path: join(DOSSIER_SORTIE, `${suffixe}-${cote}.png`),
+      animations: 'disabled',
       ...(clip ? { clip } : {}),
     });
   }
 }
 
 try {
+  prototype = preparerPrototype();
+  application = await demarrerApplication();
+  // OPTIBOUL_VISUEL_NAVIGATEUR : chemin d'un autre exécutable Chromium ou Chrome (facultatif).
+  navigateur = await chromium.launch({ executablePath: process.env.OPTIBOUL_VISUEL_NAVIGATEUR });
   for (const scenario of retenus) {
     const env = {
       urlPrototype: prototype.urls[scenario.variante],
@@ -115,6 +139,7 @@ try {
         join(DOSSIER_SORTIE, `${base}-prototype.png`),
         join(DOSSIER_SORTIE, `${base}-application.png`),
         join(DOSSIER_SORTIE, `${base}-difference.png`),
+        scenario.tolerance,
       );
       const seuil = scenario.seuil ?? 0;
       const memeTaille =
@@ -123,24 +148,28 @@ try {
         nom: zone ? `${scenario.nom} : ${zone}` : scenario.nom,
         difference,
         seuil,
+        tolerance: scenario.tolerance ?? ECART_PAR_CANAL,
         reussi: memeTaille && difference.differents <= seuil,
       });
     }
   }
 } finally {
-  await navigateur.close();
-  application.arreter();
-  prototype.supprimer();
+  await navigateur?.close().catch(() => {});
+  application?.arreter();
+  prototype?.supprimer();
 }
 
 const largeurNom = Math.max(8, ...lignes.map((l) => l.nom.length));
 console.log(
-  `\n${'Scénario'.padEnd(largeurNom)}  ${'Pixels'.padStart(8)}  ${'%'.padStart(7)}  ${'Seuil'.padStart(6)}  Résultat`,
+  `\nUn pixel compte comme différent au-delà de la tolérance par canal (par défaut ${ECART_PAR_CANAL}/255) : « 0 pixel » veut dire « 0 pixel au-dessus de la tolérance ».`,
+);
+console.log(
+  `${'Scénario'.padEnd(largeurNom)}  ${'Pixels'.padStart(8)}  ${'%'.padStart(7)}  ${'Seuil'.padStart(6)}  ${'Toler.'.padStart(6)}  ${'Ecart max'.padStart(9)}  Résultat`,
 );
 for (const l of lignes) {
   const pourcent = ((100 * l.difference.differents) / l.difference.total).toFixed(2);
   console.log(
-    `${l.nom.padEnd(largeurNom)}  ${String(l.difference.differents).padStart(8)}  ${pourcent.padStart(7)}  ${String(l.seuil).padStart(6)}  ${l.reussi ? 'OK' : 'ÉCART'}`,
+    `${l.nom.padEnd(largeurNom)}  ${String(l.difference.differents).padStart(8)}  ${pourcent.padStart(7)}  ${String(l.seuil).padStart(6)}  ${String(l.tolerance).padStart(6)}  ${`${l.difference.ecartMax}/255`.padStart(9)}  ${l.reussi ? 'OK' : 'ÉCART'}`,
   );
   if (!l.reussi) {
     const { tailles, lignes: bandesLignes, colonnes } = l.difference;

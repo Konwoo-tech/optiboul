@@ -23,7 +23,7 @@ Elles sont écrites dans `e2e/visuel/sortie/` (ignoré par git, vidé à chaque 
 - `<scénario>[-<zone>]-application.png` : l'application ;
 - `<scénario>[-<zone>]-difference.png` : fond gris tiré du prototype, **pixels différents en rouge** ; du magenta signale une zone hors image quand les tailles diffèrent.
 
-Un pixel est « différent » quand l'un de ses canaux R, V, B s'écarte de plus de 8 sur 255 (`ECART_PAR_CANAL` dans `outils.ts`) : cela absorbe le bruit d'anticrénelage sans masquer un changement de couleur. En cas d'écart, le tableau liste aussi les bandes de lignes et de colonnes touchées pour se repérer dans l'image. Pour regarder de près, agrandir la zone dans un visionneur d'images sans lissage.
+**« 0 pixel » veut dire « 0 pixel au-dessus de la tolérance ».** Un pixel est « différent » quand l'un de ses canaux R, V, B s'écarte de plus de la tolérance, 8 sur 255 par défaut (`ECART_PAR_CANAL` dans `outils.ts`, réglable par scénario avec `tolerance`, justification obligatoire si elle change). La colonne « Ecart max » du tableau donne l'écart réel le plus fort, tolérance comprise. Mesure actuelle : 0/255 partout (identique à l'octet près) sauf `deux-etapes-apres-envoi`, 5/255 sur quelques pixels d'anticrénelage ; c'est pourquoi le défaut reste 8 et non 4. En cas d'écart, le tableau liste aussi les bandes de lignes et de colonnes touchées pour se repérer dans l'image. Pour regarder de près, agrandir la zone dans un visionneur d'images sans lissage.
 
 ## Ajouter un scénario
 
@@ -43,7 +43,8 @@ export const monScenario = definirScenario({
   },
   zones: { entete: { x: 248, y: 0, width: 1032, height: 130 } }, // facultatif : sans zone, toute la fenêtre
   seuil: 0, // pixels tolérés, 0 par défaut
-  justification: '', // obligatoire si seuil > 0, sinon le scénario est refusé
+  tolerance: 8, // écart toléré par canal sur 255, 8 par défaut
+  justification: '', // obligatoire si seuil > 0 ou tolerance hors défaut, sinon le scénario est refusé
 });
 ```
 
@@ -63,6 +64,8 @@ Le prototype est piloté par ses `data-props` (mode de connexion, double authent
 - Découper les textes dynamiques en nœuds séparés, comme le prototype : le crénage change à la jonction de deux nœuds.
 - `position: absolute` et non `fixed` pour les toasts et les tiroirs, sinon l'anticrénelage passe en niveaux de gris.
 - `font-weight: 400` explicite sur les `input` placés dans un `label` gras.
-- Le prototype charge Manrope depuis Google Fonts : le banc demande un accès réseau.
+- Le prototype charge Manrope depuis Google Fonts, et React, ReactDOM et Babel depuis unpkg.com (`support.js`) : le banc exige un accès réseau pour les deux.
+- `OPTIBOUL_VISUEL_NAVIGATEUR` : chemin d'un autre exécutable Chromium ou Chrome, si celui de Playwright manque.
+- `coque-caissier` et `tiroir-caissier` ne comparent que les zones listées (menu de gauche, en-tête, tiroir), pas tout le contenu de la page : le contenu central n'est pas contrôlé.
 - Les toasts durent 3 s : capturer juste après le geste, sans attente superflue.
 - Le banc n'est pas branché sur la CI (il exige un navigateur et Google Fonts). Pour un job manuel (`workflow_dispatch`), reprendre les étapes de `.github/workflows/e2e.yml` (installation, `pnpm e2e:navigateurs`) puis `pnpm e2e:visuel` dans `apps/web`, et publier `apps/web/e2e/visuel/sortie/` avec `actions/upload-artifact`.

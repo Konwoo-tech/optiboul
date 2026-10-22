@@ -4,9 +4,9 @@ import { createServer } from 'node:net';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import type { Browser, Page } from '@playwright/test';
+import type { Browser, BrowserContext, Page } from '@playwright/test';
 
 import type { VarianteDuPrototype } from './scenario.ts';
 
@@ -15,7 +15,10 @@ export const RACINE_WEB = join(ici, '..', '..');
 const DOSSIER_PROTOTYPE = join(RACINE_WEB, '..', '..', 'docs', 'design', 'claude-design');
 export const DOSSIER_SORTIE = join(ici, 'sortie');
 
-/** Seuil d'écart par canal (sur 255) au-delà duquel un pixel compte comme différent. */
+/**
+ * Tolérance par défaut : écart par canal (sur 255) au-delà duquel un pixel compte comme différent.
+ * « 0 pixel » signifie donc « 0 pixel au-dessus de la tolérance » ; `ecartMax` donne l'écart réel.
+ */
 export const ECART_PAR_CANAL = 8;
 
 /** Instant figé pour le prototype comme pour l'application : 18 h 02 à Yaoundé. */
@@ -59,7 +62,7 @@ export async function demarrerApplication(): Promise<ServeurApplication> {
   for (;;) {
     if (sorti) throw new Error(`Vite s'est arrêté au démarrage :\n${journal}`);
     try {
-      const reponse = await fetch(url);
+      const reponse = await fetch(url, { signal: AbortSignal.timeout(5_000) });
       if (reponse.ok) break;
     } catch {
       // pas encore prêt
@@ -106,7 +109,7 @@ export function preparerPrototype(): PrototypeTemporaire {
             .replace(motif.mode, '&quot;default&quot;:&quot;Nom et code&quot;')
             .replace(motif.deuxFacteurs, motif.deuxFacteurs.replace('true', 'false'));
     writeFileSync(join(dossier, 'index.html'), html);
-    urls[variante] = `file:///${join(dossier, 'index.html').replaceAll('\\', '/')}`;
+    urls[variante] = pathToFileURL(join(dossier, 'index.html')).href;
   }
   return { urls, supprimer: () => rmSync(racine, { recursive: true, force: true }) };
 }
@@ -129,17 +132,39 @@ export async function comparer(
   cheminPrototype: string,
   cheminApplication: string,
   cheminDifference: string,
+  tolerance: number = ECART_PAR_CANAL,
 ): Promise<Difference> {
   const contexte = await navigateur.newContext();
+  try {
+    return await comparerDansUnContexte(
+      contexte,
+      cheminPrototype,
+      cheminApplication,
+      cheminDifference,
+      tolerance,
+    );
+  } finally {
+    await contexte.close();
+  }
+}
+
+async function comparerDansUnContexte(
+  contexte: BrowserContext,
+  cheminPrototype: string,
+  cheminApplication: string,
+  cheminDifference: string,
+  tolerance: number,
+): Promise<Difference> {
   const page: Page = await contexte.newPage();
   const a = readFileSync(cheminPrototype).toString('base64');
   const b = readFileSync(cheminApplication).toString('base64');
   const resultat = await page.evaluate(
     async ([a, b, ecartParCanal]) => {
       const charger = (b64: string) =>
-        new Promise<HTMLImageElement>((resoudre) => {
+        new Promise<HTMLImageElement>((resoudre, rejeter) => {
           const image = new Image();
           image.onload = () => resoudre(image);
+          image.onerror = () => rejeter(new Error('Image PNG illisible'));
           image.src = `data:image/png;base64,${b64}`;
         });
       const [ia, ib] = await Promise.all([charger(a!), charger(b!)]);
@@ -217,9 +242,8 @@ export async function comparer(
         png: sortie.toDataURL('image/png').split(',')[1]!,
       };
     },
-    [a, b, ECART_PAR_CANAL] as const,
+    [a, b, tolerance] as const,
   );
-  await contexte.close();
   writeFileSync(cheminDifference, Buffer.from(resultat.png, 'base64'));
   const { png: _png, ...difference } = resultat;
   return difference;

@@ -1,5 +1,7 @@
 import type { Page } from '@playwright/test';
 
+import { ECART_PAR_CANAL } from './outils.ts';
+
 /** Zone rectangulaire de la page, en pixels CSS (comme `clip` de Playwright). */
 export interface Zone {
   x: number;
@@ -43,15 +45,20 @@ export interface Scenario {
   zones?: Record<string, Zone>;
   /** Nombre de pixels différents toléré, 0 par défaut. */
   seuil?: number;
-  /** Obligatoire dès que `seuil` > 0 : pourquoi l'écart est accepté. */
+  /** Écart toléré par canal, sur 255 (défaut : `ECART_PAR_CANAL` de `outils.ts`). */
+  tolerance?: number;
+  /** Obligatoire dès que `seuil` > 0 ou que `tolerance` s'écarte du défaut : pourquoi. */
   justification?: string;
 }
 
 /** Vérifie la définition d'un scénario (une tolérance sans justification est refusée). */
 export function definirScenario(scenario: Scenario): Scenario {
-  if ((scenario.seuil ?? 0) > 0 && !scenario.justification?.trim()) {
+  const deroge =
+    (scenario.seuil ?? 0) > 0 ||
+    (scenario.tolerance !== undefined && scenario.tolerance !== ECART_PAR_CANAL);
+  if (deroge && !scenario.justification?.trim()) {
     throw new Error(
-      `Scénario « ${scenario.nom} » : un seuil non nul exige une justification écrite.`,
+      `Scénario « ${scenario.nom} » : un seuil ou une tolérance hors défaut exige une justification écrite.`,
     );
   }
   return scenario;
