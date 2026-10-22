@@ -62,7 +62,6 @@
     "quiEtesVous": "Who are you?",
     "quiEtesVousDetail": "Tap your name, then enter your code.",
     "changerPersonne": "← Someone else",
-    "codeDemo": "Demo code: {{code}} · the keyboard works too",
     "codeIncorrect": "Wrong code. Try again or ask the administrator to reset it.",
     "effacer": "Delete",
     "chiffresSaisis_one": "{{count}} digit entered out of {{total}}",
@@ -81,7 +80,6 @@
     "masquer": "Hide",
     "demoTitre": "Demo profiles",
     "demoAstuce": "Tap a profile to fill in the form",
-    "demoIdentifiants": "Password for every profile: optiboul · SMS / WhatsApp verification code: 123456",
     "googleTitre": "Choose an account",
     "googleSous": "to continue to OptiBoul ERP",
     "googleNote": "Only Google accounts added by the administrator can sign in.",
@@ -91,7 +89,6 @@
     "otpOu": "Where should we send your code?",
     "otpCode": "6-digit code",
     "otpVerifier": "Verify and sign in",
-    "otpDemo": "Demo code: 123456",
     "etape": "Step 2 of 2 · {{nom}}, signed in with {{via}}",
     "viaCode": "personal code",
     "viaGoogle": "Google ({{email}})",
@@ -109,7 +106,8 @@
     "votreAdresse": "your email address",
     "erreurChamps": "Enter your email and password.",
     "erreurIdentifiants": "Wrong email or password.",
-    "inactivite": "Signed out after {{minutes}} min of inactivity. Sign in again to continue."
+    "inactivite": "Signed out after {{minutes}} min of inactivity. Sign in again to continue.",
+    "googleRefuse": "This Google account is not allowed. Pick another one or use your email."
   },
   "navigation": {
     "espaces": "Areas",

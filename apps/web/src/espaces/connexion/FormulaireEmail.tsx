@@ -1,5 +1,10 @@
 import { useTranslation } from '@/i18n';
-import { MOT_DE_PASSE_DEMO, useUtilisateursSimules, type Identification } from '@/simulation';
+import {
+  MOT_DE_PASSE_DEMO,
+  texteDemo,
+  useUtilisateursSimules,
+  type Identification,
+} from '@/simulation';
 import { AvatarUtilisateur, LogoGoogle, useToast } from '@/ui';
 import { useState, type FormEvent } from 'react';
 
@@ -12,7 +17,7 @@ type Props = {
 
 /** Connexion par Google, ou par e-mail et mot de passe (maquette, lignes 64-86). */
 export function FormulaireEmail({ onGoogle, identifier }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const afficherToast = useToast();
   const { data: comptes } = useUtilisateursSimules();
   const [email, setEmail] = useState('');
@@ -138,7 +143,9 @@ export function FormulaireEmail({ onGoogle, identifier }: Props) {
             </button>
           ))}
         </div>
-        <div className={styles.demoIdentifiants}>{t('connexion.demoIdentifiants')}</div>
+        <div className={styles.demoIdentifiants}>
+          {texteDemo('demoIdentifiants', i18n.language)}
+        </div>
       </div>
     </div>
   );

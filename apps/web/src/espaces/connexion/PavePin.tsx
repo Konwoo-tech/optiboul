@@ -45,6 +45,7 @@ export function PavePin({ code, onChange, onComplet, onValider, onRetour, erreur
 
   useEffect(() => {
     const surTouche = (evenement: KeyboardEvent) => {
+      if (evenement.ctrlKey || evenement.altKey || evenement.metaKey) return;
       if (/^[0-9]$/.test(evenement.key)) presser(evenement.key as (typeof TOUCHES)[number]);
       else if (evenement.key === 'Backspace') presser('del');
       else if (evenement.key === 'Escape') onRetour();

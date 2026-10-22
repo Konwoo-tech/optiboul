@@ -104,7 +104,7 @@ describe('vérification en deux étapes', () => {
     expect(await screen.findByText(/Code envoyé par WhatsApp au/)).toBeTruthy();
   });
 
-  it('attend 30 secondes avant de renvoyer le code', async () => {
+  it('désactive le renvoi du code juste après l’envoi', async () => {
     await envoyerLeCode();
     const renvoyer = await screen.findByRole('button', { name: /Renvoyer le code dans \d+ s/ });
     expect((renvoyer as HTMLButtonElement).disabled).toBe(true);
@@ -113,5 +113,36 @@ describe('vérification en deux étapes', () => {
   it('revient à l’identification', () => {
     fireEvent.click(screen.getByRole('button', { name: '← Retour' }));
     expect(surRetour).toHaveBeenCalledTimes(1);
+  });
+
+  describe('courses', () => {
+    const attendre = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    it('valider tout de suite ne vérifie pas le code deux fois (un seul essai compté)', async () => {
+      const champ = await envoyerLeCode();
+      fireEvent.change(champ, { target: { value: '000000' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Vérifier et se connecter' }));
+      expect(await screen.findByText('Code incorrect. Encore 2 essai(s).')).toBeTruthy();
+      await attendre(400);
+      expect(screen.getByText('Code incorrect. Encore 2 essai(s).')).toBeTruthy();
+    });
+
+    it('le bon code validé tout de suite ouvre la session une seule fois', async () => {
+      const champ = await envoyerLeCode();
+      fireEvent.change(champ, { target: { value: CODE_OTP_DEMO } });
+      fireEvent.keyDown(champ, { key: 'Enter' });
+      await waitFor(() => expect(surTermine).toHaveBeenCalledTimes(1));
+      await attendre(400);
+      expect(surTermine).toHaveBeenCalledTimes(1);
+    });
+
+    it('« Retour » pendant le délai annule la vérification', async () => {
+      const champ = await envoyerLeCode();
+      fireEvent.change(champ, { target: { value: CODE_OTP_DEMO } });
+      fireEvent.click(screen.getByRole('button', { name: '← Retour' }));
+      await attendre(400);
+      expect(surRetour).toHaveBeenCalledTimes(1);
+      expect(surTermine).not.toHaveBeenCalled();
+    });
   });
 });

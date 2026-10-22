@@ -1,13 +1,13 @@
 import { ErreurApi } from '@/api';
 import { useTranslation } from '@/i18n';
 import {
-  CODE_DEMO,
+  texteDemo,
   useUtilisateursSimules,
   type Identification,
   type UtilisateurSimule,
 } from '@/simulation';
 import { AvatarUtilisateur } from '@/ui';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import styles from './Connexion.module.css';
 import { PavePin } from './PavePin.tsx';
@@ -27,14 +27,19 @@ type Props = {
  * Rend un fragment : les blocs sont les enfants directs de la colonne de droite.
  */
 export function ChoixUtilisateur({ identifier, onChoisi }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: utilisateurs } = useUtilisateursSimules();
   const [choisi, setChoisi] = useState<UtilisateurSimule | null>(null);
   const [code, setCode] = useState('');
   const [erreur, setErreur] = useState('');
   const [occupe, setOccupe] = useState(false);
+  // Vérification différée de 160 ms : annulée si on change de personne, quitte l'écran ou valide.
+  const differee = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const enCours = useRef(false);
+  useEffect(() => () => clearTimeout(differee.current), []);
 
   const revenir = useCallback(() => {
+    clearTimeout(differee.current);
     setChoisi(null);
     setCode('');
     setErreur('');
@@ -42,7 +47,9 @@ export function ChoixUtilisateur({ identifier, onChoisi }: Props) {
 
   const verifier = useCallback(
     async (saisi: string) => {
-      if (!choisi) return;
+      clearTimeout(differee.current);
+      if (!choisi || enCours.current) return;
+      enCours.current = true;
       setOccupe(true);
       try {
         await identifier({ methode: 'code', utilisateur: choisi.id, code: saisi });
@@ -50,6 +57,7 @@ export function ChoixUtilisateur({ identifier, onChoisi }: Props) {
         setErreur(e instanceof ErreurApi ? t('connexion.codeIncorrect') : t('erreur.injoignable'));
         setCode('');
       } finally {
+        enCours.current = false;
         setOccupe(false);
       }
     },
@@ -77,11 +85,14 @@ export function ChoixUtilisateur({ identifier, onChoisi }: Props) {
             setCode(suivant);
             setErreur('');
           }}
-          onComplet={(saisi) => setTimeout(() => void verifier(saisi), DELAI_VERIFICATION_MS)}
+          onComplet={(saisi) => {
+            clearTimeout(differee.current);
+            differee.current = setTimeout(() => void verifier(saisi), DELAI_VERIFICATION_MS);
+          }}
           onValider={(saisi) => void verifier(saisi)}
           onRetour={revenir}
         />
-        <div className={styles.demo}>{t('connexion.codeDemo', { code: CODE_DEMO })}</div>
+        <div className={styles.demo}>{texteDemo('codeDemo', i18n.language)}</div>
       </div>
     );
   }

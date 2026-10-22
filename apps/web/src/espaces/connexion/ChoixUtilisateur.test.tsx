@@ -76,4 +76,19 @@ describe('connexion par nom et code (simulation)', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(await screen.findByRole('heading', { name: 'Qui êtes-vous ?' })).toBeTruthy();
   });
+
+  it('quitter l’écran pendant le délai annule la vérification (personne n’est connecté)', async () => {
+    fireEvent.click(await screen.findByRole('button', { name: /Davy/ }));
+    await saisir('1234');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(lireUtilisateurConnecte()).toBeUndefined();
+  });
+
+  it('« Valider » juste après le 4ᵉ chiffre ne lance qu’une identification', async () => {
+    fireEvent.click(await screen.findByRole('button', { name: /Davy/ }));
+    await saisir('1234');
+    fireEvent.click(screen.getByRole('button', { name: 'Valider' }));
+    await waitFor(() => expect(lireUtilisateurConnecte()?.id).toBe('davy'));
+  });
 });

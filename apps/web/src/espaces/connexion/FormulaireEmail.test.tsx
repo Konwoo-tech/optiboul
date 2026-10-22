@@ -40,9 +40,7 @@ describe('connexion par Google ou e-mail', () => {
     expect(await screen.findByRole('heading', { name: 'Connexion' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continuer avec Google' })).toBeTruthy();
     expect(await screen.findByRole('button', { name: /Rachel/ })).toBeTruthy();
-    expect(
-      screen.getByText('PROFILS DE DÉMONSTRATION'.toLowerCase(), { exact: false }),
-    ).toBeTruthy();
+    expect(screen.getByText('Profils de démonstration')).toBeTruthy();
   });
 
   it('ouvre le choix du compte Google', () => {

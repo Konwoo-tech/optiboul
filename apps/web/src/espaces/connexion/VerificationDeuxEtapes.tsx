@@ -2,6 +2,7 @@ import { ErreurApi } from '@/api';
 import { useTranslation } from '@/i18n';
 import {
   envoyerCodeOtp,
+  texteDemo,
   verifierCodeOtp,
   type Canal,
   type ReponseIdentification,
@@ -29,9 +30,13 @@ const COULEUR_CANAL: Record<Canal, string> = { sms: '#F2B705', whatsapp: '#25D36
 
 /** Double authentification par SMS ou WhatsApp (maquette, lignes 97-118). */
 export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const afficherToast = useToast();
   const champ = useRef<HTMLInputElement>(null);
+  // Une seule requête à la fois, et la vérification différée de 150 ms s'annule (Entrée, bouton
+  // Vérifier, Retour ou démontage) au lieu d'envoyer le code une deuxième fois.
+  const enCours = useRef(false);
+  const differee = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [canal, setCanal] = useState<Canal>('sms');
   const [envoye, setEnvoye] = useState(false);
   const [heure, setHeure] = useState('');
@@ -57,9 +62,18 @@ export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) 
     if (envoye) champ.current?.focus();
   }, [envoye]);
 
+  useEffect(() => () => clearTimeout(differee.current), []);
+
   const envoyer = useCallback(
     async (choix: Canal) => {
-      const heureEnvoi = await envoyerCodeOtp(choix);
+      if (enCours.current) return;
+      enCours.current = true;
+      let heureEnvoi: string;
+      try {
+        heureEnvoi = await envoyerCodeOtp(choix);
+      } finally {
+        enCours.current = false;
+      }
       setCanal(choix);
       setEnvoye(true);
       setHeure(heureEnvoi);
@@ -75,11 +89,13 @@ export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) 
 
   const verifier = useCallback(
     async (saisi: string) => {
-      if (bloque) return;
+      clearTimeout(differee.current);
+      if (bloque || enCours.current) return;
       if (saisi.length < LONGUEUR_CODE) {
         setErreur(t('connexion.saisir6'));
         return;
       }
+      enCours.current = true;
       try {
         await verifierCodeOtp(saisi);
         onTermine();
@@ -92,6 +108,8 @@ export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) 
         } else {
           setErreur(t('connexion.codeFaux', { restants: details.essaisRestants ?? 0 }));
         }
+      } finally {
+        enCours.current = false;
       }
     },
     [bloque, onTermine, t],
@@ -108,7 +126,14 @@ export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) 
 
   return (
     <div className={styles.otp}>
-      <button type="button" className={styles.retour} onClick={onRetour}>
+      <button
+        type="button"
+        className={styles.retour}
+        onClick={() => {
+          clearTimeout(differee.current);
+          onRetour();
+        }}
+      >
         {t('connexion.retour')}
       </button>
       <div className={styles.otpEntete}>
@@ -175,7 +200,11 @@ export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) 
                 setCode(chiffres);
                 setErreur('');
                 if (chiffres.length === LONGUEUR_CODE) {
-                  setTimeout(() => void verifier(chiffres), DELAI_VERIFICATION_MS);
+                  clearTimeout(differee.current);
+                  differee.current = setTimeout(
+                    () => void verifier(chiffres),
+                    DELAI_VERIFICATION_MS,
+                  );
                 }
               }}
               onKeyDown={(e) => {
@@ -211,7 +240,7 @@ export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) 
           </div>
         </>
       )}
-      <div className={styles.otpDemo}>{t('connexion.otpDemo')}</div>
+      <div className={styles.otpDemo}>{texteDemo('otpDemo', i18n.language)}</div>
     </div>
   );
 }
