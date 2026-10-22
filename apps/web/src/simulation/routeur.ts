@@ -81,7 +81,7 @@ function identifier(corps: Corps): Response {
     }
   } else if (methode === 'google') {
     via = 'Google';
-    compte = COMPTES_SIMULES.find((c) => c.email === corps.email);
+    compte = COMPTES_SIMULES.find((c) => c.email === String(corps.email ?? '').toLowerCase());
     if (!compte) return probleme(400, 'compte_inconnu', 'Compte Google non autorisé.');
   } else {
     return probleme(400, 'methode_inconnue', 'Méthode de connexion inconnue.');
