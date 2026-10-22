@@ -2,6 +2,7 @@ import { Alert, Button, Center, Paper, Stack, Text, Title } from '@mantine/core'
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { COULEURS } from '@/ui';
+import { cheminSuivant } from '@/utils';
 import { Navigate, useSearchParams } from 'react-router';
 
 import { PROFILS } from '../../profils.ts';
@@ -14,7 +15,7 @@ export default function Connexion() {
   const { t } = useTranslation();
   const { utilisateur } = useUtilisateurCourant();
   const [parametres] = useSearchParams();
-  const suivant = parametres.get('suivant');
+  const suivant = cheminSuivant(parametres.get('suivant'));
 
   if (utilisateur?.profil) {
     return <Navigate to={suivant ?? PROFILS[utilisateur.profil].accueil} replace />;

@@ -1,22 +1,33 @@
-import { Center, Loader } from '@mantine/core';
 import { useUtilisateurCourant } from '@/auth';
+import { useTranslation } from '@/i18n';
+import { EcranChargement, EcranErreur } from '@/ui';
 import { Navigate, Outlet, useLocation } from 'react-router';
 
 import { PROFILS, peutOuvrir, type Espace } from '../profils.ts';
 
-/** Sans session, renvoie vers la connexion en gardant la page demandée. */
+/**
+ * Sans session, renvoie vers la connexion en gardant la page demandée.
+ * Si le serveur ne répond pas, on ne sait rien de la session : on propose de réessayer
+ * au lieu de déconnecter.
+ */
 export function RequiertConnexion() {
-  const { utilisateur, chargement } = useUtilisateurCourant();
-  const { pathname } = useLocation();
-  if (chargement) {
+  const { t } = useTranslation();
+  const { utilisateur, chargement, injoignable, reessayer } = useUtilisateurCourant();
+  const { pathname, search, hash } = useLocation();
+  if (chargement) return <EcranChargement />;
+  if (injoignable) {
     return (
-      <Center h="100vh">
-        <Loader />
-      </Center>
+      <EcranErreur
+        titre={t('erreur.injoignableTitre')}
+        message={t('erreur.injoignable')}
+        libelleAction={t('erreur.reessayer')}
+        onAction={reessayer}
+      />
     );
   }
   if (!utilisateur) {
-    return <Navigate to={`/connexion?suivant=${encodeURIComponent(pathname)}`} replace />;
+    const suivant = encodeURIComponent(`${pathname}${search}${hash}`);
+    return <Navigate to={`/connexion?suivant=${suivant}`} replace />;
   }
   return <Outlet />;
 }
