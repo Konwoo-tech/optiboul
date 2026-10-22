@@ -33,6 +33,12 @@
     "proprietaire": "Propriétaire",
     "administrateur": "Administrateur"
   },
+  "apparence": {
+    "langue": "Langue",
+    "theme": "Thème",
+    "clair": "Clair",
+    "sombre": "Sombre"
+  },
   "erreur": {
     "titre": "Un problème est survenu",
     "message": "L'écran n'a pas pu s'afficher. Rechargez la page ; si le problème revient, prévenez l'administrateur.",

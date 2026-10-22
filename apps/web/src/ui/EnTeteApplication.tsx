@@ -13,7 +13,7 @@ export function EnTeteApplication({ titre, actions }: { titre: string; actions?:
   const { online } = useNetwork();
   const creneau = useCreneau();
   return (
-    <Group justify="space-between" px="md" py="sm" bg={COULEURS.chocolat} c={COULEURS.creme}>
+    <Group justify="space-between" px="md" py="sm" bg="var(--ob-barre)" c={COULEURS.creme}>
       <Group gap="sm">
         <Title order={3} c={COULEURS.or}>
           OptiBoul

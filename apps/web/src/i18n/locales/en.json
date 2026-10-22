@@ -33,6 +33,12 @@
     "proprietaire": "Owner",
     "administrateur": "Administrator"
   },
+  "apparence": {
+    "langue": "Language",
+    "theme": "Theme",
+    "clair": "Light",
+    "sombre": "Dark"
+  },
   "erreur": {
     "titre": "Something went wrong",
     "message": "The screen could not be displayed. Reload the page; if the problem comes back, tell the administrator.",
