@@ -10,7 +10,11 @@ import {
   type ContexteSimule,
 } from './donnees.ts';
 import { reinitialiserClients, repondreClients } from './clients.ts';
-import { reinitialiserComptoir, repondreComptoir } from './comptoir.ts';
+import {
+  adapterNotificationsAuComptoir,
+  reinitialiserComptoir,
+  repondreComptoir,
+} from './comptoir.ts';
 import { contexteCaisses, reinitialiserCaisses, repondreCaisses } from './caisses.ts';
 import { NOTIFICATIONS_PAR_PROFIL } from './notifications.ts';
 import { lireUtilisateurConnecte, memoriserUtilisateurConnecte } from './session.ts';
@@ -179,7 +183,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
       if (!utilisateur) return probleme(403, 'non_authentifie', 'Connexion requise.');
       const vues = lues.get(utilisateur.id);
       return Response.json(
-        NOTIFICATIONS_PAR_PROFIL[utilisateur.profil].map((n) => ({
+        adapterNotificationsAuComptoir(NOTIFICATIONS_PAR_PROFIL[utilisateur.profil]).map((n) => ({
           ...n,
           lue: vues?.has(n.id) ?? false,
         })),

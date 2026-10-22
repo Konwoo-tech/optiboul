@@ -257,7 +257,7 @@ export const scenariosSession: Scenario[] = [
     nom: 'session-cloturee-livraisons',
     seuil: 6,
     justification:
-      'Six pixels (écart max 39/255) au bord du rond rouge du compteur de notifications, composant partagé de l’en-tête : anticrénelage de la forme, déterministe, sans effet sur le texte ni la mise en page. Le même compteur est identique à l’octet près dans les 23 autres scénarios.',
+      'Six pixels (écart max 39/255), lignes 112 et 129-130, colonnes 146-149 et 159 de la zone : le haut et le bas du rond rouge du compteur de notifications (mêmes position et taille que le prototype), composant partagé de l’en-tête : anticrénelage de la forme, déterministe, sans effet sur le texte ni la mise en page. Le même compteur est identique à l’octet près dans les 23 autres scénarios.',
     etapes: async (page) => {
       await cloture(page);
       await saisirChamp(page, 0, '22950');

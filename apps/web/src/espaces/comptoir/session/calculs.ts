@@ -1,4 +1,4 @@
-import type { NiveauStatut } from '@/utils';
+import { formaterNombre, type NiveauStatut } from '@/utils';
 
 import {
   CLES_PRODUIT,
@@ -45,19 +45,7 @@ export function lireEntier(texte: string | undefined): number {
   return Number.isNaN(lu) ? 0 : lu;
 }
 
-/** « 12 345 » (espace insécable) et « −500 » : le format de la maquette, sans « FCFA ». */
-export function formaterNombre(valeur: number): string {
-  const entier = Math.round(Number(valeur) || 0);
-  const texte = Math.abs(entier)
-    .toString()
-    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-  return (entier < 0 ? '−' : '') + texte;
-}
-
-/** Comme `formaterNombre`, avec « + » devant un montant positif. */
-export function formaterSigne(valeur: number): string {
-  return (valeur > 0 ? '+' : '') + formaterNombre(valeur);
-}
+export { formaterNombre, formaterNombreSigne as formaterSigne } from '@/utils';
 
 /** Niveau d'un solde client : au-delà du plafond bloquant, en dette à surveiller, sinon à jour. */
 export function niveauDuSolde(solde: number, plafond: number): NiveauStatut {

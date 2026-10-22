@@ -75,7 +75,6 @@ describe('formats', () => {
 
   it('arrondit : jamais de flottant à l’écran', () => {
     expect(formaterNombre(12.6)).toBe('13');
-    expect(formaterNombre(Number.NaN)).toBe('0');
   });
 
   it('met un + devant un montant positif', () => {

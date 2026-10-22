@@ -1,10 +1,10 @@
 import { useTranslation } from '@/i18n';
-import { useState } from 'react';
+import { FenetreModale } from '@/ui';
+import { useEffect, useRef, useState } from 'react';
 
 import { codeErreur, type ActionsSession } from './api.ts';
 import { formaterNombre } from './calculs.ts';
-import { Fenetre } from './Fenetre.tsx';
-import styles from './Fenetre.module.css';
+import styles from './Fenetres.module.css';
 import type { DemandePlafond } from './types.ts';
 
 type Props = {
@@ -20,6 +20,9 @@ export function ModaleAutorisation({ demande, actions, onFermer, onDecision }: P
   const { t } = useTranslation();
   const [code, setCode] = useState('');
   const [erreur, setErreur] = useState('');
+  const champCode = useRef<HTMLInputElement>(null);
+  // Comme la maquette (autoFocus) : on saisit le code sans toucher la souris.
+  useEffect(() => champCode.current?.focus(), []);
 
   const decider = async (accord: boolean) => {
     try {
@@ -35,7 +38,7 @@ export function ModaleAutorisation({ demande, actions, onFermer, onDecision }: P
   };
 
   return (
-    <Fenetre titre={t('comptoir.session.modales.autorisation.titre')} onFermer={onFermer}>
+    <FenetreModale titre={t('comptoir.session.modales.autorisation.titre')} onFermer={onFermer}>
       <div className={styles.information}>
         {t('comptoir.session.modales.autorisation.info', {
           client: demande.clientNom,
@@ -49,6 +52,7 @@ export function ModaleAutorisation({ demande, actions, onFermer, onDecision }: P
       <label className={styles.etiquette}>
         {t('comptoir.session.modales.autorisation.code')}
         <input
+          ref={champCode}
           type="password"
           className={styles.code}
           value={code}
@@ -80,6 +84,6 @@ export function ModaleAutorisation({ demande, actions, onFermer, onDecision }: P
           {t('comptoir.session.modales.autorisation.autoriser')}
         </button>
       </div>
-    </Fenetre>
+    </FenetreModale>
   );
 }

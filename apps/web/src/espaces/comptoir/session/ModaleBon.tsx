@@ -1,10 +1,9 @@
 import { useTranslation } from '@/i18n';
-import { useToast } from '@/ui';
+import { FenetreModale, useToast } from '@/ui';
 
 import { dateCourte, dateSansAnnee, libelleDuMode, nomDeSession } from './affichage.ts';
 import { formaterNombre, formaterSigne, PRODUITS } from './calculs.ts';
-import { Fenetre } from './Fenetre.tsx';
-import styles from './Fenetre.module.css';
+import styles from './Fenetres.module.css';
 import type { Livraison, SessionCaisse } from './types.ts';
 
 type Props = {
@@ -47,7 +46,11 @@ export function ModaleBon({ livraison, session, echeanceDettes, onFermer }: Prop
       : '');
 
   return (
-    <Fenetre titre={t('comptoir.session.modales.bon.titre')} largeur={420} onFermer={onFermer}>
+    <FenetreModale
+      titre={t('comptoir.session.modales.bon.titre')}
+      largeurMax={420}
+      onFermer={onFermer}
+    >
       <div className={styles.bon}>
         <div className={styles.bonEnseigne}>
           <div className={styles.bonNom}>Boulangerie du Faubourg</div>
@@ -113,6 +116,6 @@ export function ModaleBon({ livraison, session, echeanceDettes, onFermer }: Prop
           {t('comptoir.session.modales.bon.pdf')}
         </button>
       </div>
-    </Fenetre>
+    </FenetreModale>
   );
 }

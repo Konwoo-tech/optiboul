@@ -1,7 +1,7 @@
 import { useTranslation } from '@/i18n';
+import { FenetreModale } from '@/ui';
 
-import { Fenetre } from './Fenetre.tsx';
-import styles from './Fenetre.module.css';
+import styles from './Fenetres.module.css';
 import { ecartEnTexte, lignesDuRecapitulatif, motDeLEcart } from './recapitulatif.ts';
 import type { InstantaneSession } from './types.ts';
 
@@ -15,7 +15,7 @@ type Props = {
 export function ModaleCloture({ instantane, onFermer, onConfirmer }: Props) {
   const { t } = useTranslation();
   return (
-    <Fenetre titre={t('comptoir.session.modales.cloture.titre')} onFermer={onFermer}>
+    <FenetreModale titre={t('comptoir.session.modales.cloture.titre')} onFermer={onFermer}>
       <div className={styles.recap}>
         {lignesDuRecapitulatif(instantane, t)
           .slice(0, 6)
@@ -42,6 +42,6 @@ export function ModaleCloture({ instantane, onFermer, onConfirmer }: Props) {
           {t('comptoir.session.modales.cloture.confirmer')}
         </button>
       </div>
-    </Fenetre>
+    </FenetreModale>
   );
 }
