@@ -10,4 +10,5 @@ RUN pnpm build
 
 FROM docker.io/nginx:stable-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY securite.conf /etc/nginx/snippets/securite.conf
 COPY --from=build /app/dist /usr/share/nginx/html
