@@ -26,6 +26,7 @@ import type { Profil } from '../profils.ts';
 
 import { repercuterDepenseEnCaisse } from './caisses.ts';
 import {
+  abonnerChangementDeSession,
   dateDuJour,
   heureCourante,
   repercuterDepenseDeSession,
@@ -297,6 +298,12 @@ const etatInitial = (): Etat => ({
   // La levure et la glace de la maquette sont déjà dans les 31 000 FCFA de dépenses de la session.
   enCaisse: new Set(['e1', 'e2']),
 });
+
+/*
+ * Clôturer, rouvrir ou ouvrir la session fige les dépenses déjà payées en caisse : un refus
+ * ultérieur ne doit plus retirer d'argent d'une caisse qui a été comptée.
+ */
+abonnerChangementDeSession(() => courant?.enCaisse.clear());
 
 let courant: Etat | undefined;
 const lireEtat = (): Etat => (courant ??= etatInitial());

@@ -238,6 +238,15 @@ export function journalComptoir(): readonly Journal[] {
   return lireEtat().journal;
 }
 
+/** Écouteurs prévenus quand la session se clôture, se rouvre ou qu'une nouvelle s'ouvre. */
+const surChangementDeSession: Array<() => void> = [];
+
+export function abonnerChangementDeSession(ecouteur: () => void): void {
+  surChangementDeSession.push(ecouteur);
+}
+
+const changementDeSession = () => surChangementDeSession.forEach((ecouteur) => ecouteur());
+
 /** Session de production courante (cible du rattachement des dépenses) et son état. */
 export function sessionDeProduction(): { type: Creneau; date: string; ouverte: boolean } {
   const { type, date, statut } = lireEtat().session;
@@ -555,6 +564,7 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
       if (lireEtat().session.especesComptees === '') {
         return probleme(409, 'comptage_requis', 'Saisissez les espèces comptées.');
       }
+      changementDeSession();
       lireEtat().session.statut = 'cloturee';
       lireEtat().session.clotureeA = heureCourante();
       lireEtat().session.cloturePar = a.nom;
@@ -568,6 +578,7 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
     case 'POST rouvrir/': {
       if (!estDirection(a)) return refus();
       if (ouverte()) return probleme(409, 'session_ouverte', 'La session est déjà ouverte.');
+      changementDeSession();
       lireEtat().session.statut = 'ouverte';
       lireEtat().session.rouvertePar = a.nom;
       lireEtat().session.rouverteA = heureCourante();
@@ -602,6 +613,7 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
       lireEtat().relances = {};
       lireEtat().autorisations = {};
       lireEtat().depensesCaisse = 0;
+      changementDeSession();
       lireEtat().echeanceDettes = dimanche(date);
       tracer(a.nom, `Ouverture de la session de ${type} du ${date}`);
       return reponse();

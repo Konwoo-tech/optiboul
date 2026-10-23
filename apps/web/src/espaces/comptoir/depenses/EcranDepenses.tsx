@@ -90,6 +90,7 @@ export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
               enregistrement={enregistrer.isPending}
               erreurServeur={erreurServeur}
               onEnregistrer={surEnregistrer}
+              onModifier={() => setErreurServeur(null)}
             />
           )}
           <Liste

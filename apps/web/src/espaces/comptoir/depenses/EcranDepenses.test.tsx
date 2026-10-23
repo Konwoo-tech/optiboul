@@ -211,3 +211,54 @@ describe('Comptoir › Dépenses (anglais)', () => {
     expect(screen.getAllByText('Pending').length).toBeGreaterThan(0);
   });
 });
+
+describe('Comptoir › Dépenses (accès refusé)', () => {
+  it('affiche l’écran d’erreur quand le serveur répond 403', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    initI18n('fr');
+    configurerApi({ baseUrl: 'http://localhost' });
+    retablir = installerApiSimulee({ latenceMs: 0 });
+    reinitialiserSimulation();
+    memoriserUtilisateurConnecte('serge');
+    const ecran = ECRANS.find((e) => e.espace === 'comptoir' && e.cle === 'depenses')!;
+    render(
+      <OptiboulProvider>
+        <QueryClientProvider
+          client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+        >
+          <MemoryRouter>
+            <EcranDepenses ecran={ecran} />
+          </MemoryRouter>
+        </QueryClientProvider>
+      </OptiboulProvider>,
+    );
+    expect(await screen.findByText('Impossible de charger les dépenses.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Enregistrer la dépense' })).toBeNull();
+  });
+});
+
+describe('Comptoir › Dépenses (erreurs de saisie)', () => {
+  beforeEach(() => ouvrir());
+
+  it('place le focus sur le premier champ fautif', () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la dépense' }));
+    expect(document.activeElement).toBe(screen.getByLabelText('Libellé'));
+    saisir(screen.getByLabelText('Libellé'), 'Sel');
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la dépense' }));
+    expect(document.activeElement).toBe(screen.getByLabelText('Montant (FCFA)'));
+    saisir(screen.getByLabelText('Montant (FCFA)'), '3000');
+    fireEvent.click(screen.getByRole('button', { name: 'Entrée de stock' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la dépense' }));
+    expect(document.activeElement).toBe(screen.getByLabelText('Quantité entrée'));
+  });
+
+  it('efface l’erreur du serveur dès qu’on modifie un champ', async () => {
+    saisir(screen.getByLabelText('Libellé'), 'Sel');
+    saisir(screen.getByLabelText('Montant (FCFA)'), '1000');
+    memoriserUtilisateurConnecte('serge');
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la dépense' }));
+    await waitFor(() => expect(screen.getByRole('alert').textContent).not.toBe(''));
+    saisir(screen.getByLabelText('Libellé'), 'Sel fin');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+});

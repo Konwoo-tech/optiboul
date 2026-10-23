@@ -1,6 +1,6 @@
 import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import type { Profil } from '../../../profils.ts';
 import { dateCourte, libelleSession } from './affichage.ts';
@@ -33,6 +33,8 @@ type Props = {
   /** Code d'erreur renvoyé par le serveur pour la dernière saisie, s'il y en a un. */
   erreurServeur: string | null;
   onEnregistrer: (depense: NouvelleDepense) => Promise<boolean>;
+  /** Appelé dès qu'on modifie un champ : l'erreur du serveur n'a plus lieu d'être affichée. */
+  onModifier: () => void;
 };
 
 /** Saisie d'une dépense : catégorie, libellé, montant, rattachement, mode de paiement, justificatif. */
@@ -43,6 +45,7 @@ export function Formulaire({
   enregistrement,
   erreurServeur,
   onEnregistrer,
+  onModifier,
 }: Props) {
   const { t, i18n } = useTranslation();
   const idErreur = useId();
@@ -56,6 +59,15 @@ export function Formulaire({
   const [mode, setMode] = useState<ModeDepense>('caisse');
   const [photo, setPhoto] = useState(false);
   const [erreur, setErreur] = useState<ErreurSaisie | null>(null);
+  const champLibelle = useRef<HTMLInputElement>(null);
+  const champMontant = useRef<HTMLInputElement>(null);
+  const champQuantite = useRef<HTMLInputElement>(null);
+
+  /** Toute modification efface l'erreur affichée, qu'elle vienne de la saisie ou du serveur. */
+  const effacer = () => {
+    setErreur(null);
+    onModifier();
+  };
 
   const { semaineCourante, seuil, session } = instantane;
   const fournisseurs = instantane.fournisseurs.filter((f) => f.matieres.includes(matiere));
@@ -72,7 +84,14 @@ export function Formulaire({
   const valider = async () => {
     const trouvee = erreurDeSaisie({ libelle, montant, rattachement, quantite });
     setErreur(trouvee);
-    if (trouvee) return;
+    if (trouvee) {
+      // Le focus va au premier champ fautif : le clavier reprend là où il faut corriger.
+      const fautif = { libelle: champLibelle, montant: champMontant, quantite: champQuantite }[
+        trouvee
+      ];
+      fautif.current?.focus();
+      return;
+    }
     const enregistree = await onEnregistrer({
       categorie,
       libelle: libelle.trim(),
@@ -128,7 +147,10 @@ export function Formulaire({
         <select
           className={styles.champ}
           value={categorie}
-          onChange={(e) => setCategorie(e.target.value as Categorie)}
+          onChange={(e) => {
+            setCategorie(e.target.value as Categorie);
+            effacer();
+          }}
         >
           {CATEGORIES.map((cle) => (
             <option key={cle} value={cle}>
@@ -142,10 +164,11 @@ export function Formulaire({
         {t('comptoir.depenses.formulaire.libelle')}
         <input
           className={styles.champ}
+          ref={champLibelle}
           value={libelle}
           onChange={(e) => {
             setLibelle(e.target.value);
-            setErreur(null);
+            effacer();
           }}
           aria-invalid={erreur === 'libelle'}
           aria-describedby={idErreur}
@@ -156,10 +179,11 @@ export function Formulaire({
         {t('comptoir.depenses.formulaire.montant')}
         <input
           className={`${styles.champ} ${styles.montant}`}
+          ref={champMontant}
           value={montant}
           onChange={(e) => {
             setMontant(e.target.value.replace(/\D/g, ''));
-            setErreur(null);
+            effacer();
           }}
           inputMode="numeric"
           aria-invalid={erreur === 'montant'}
@@ -178,7 +202,7 @@ export function Formulaire({
               aria-pressed={rattachement === type}
               onClick={() => {
                 setRattachement(type);
-                setErreur(null);
+                effacer();
               }}
             >
               {t(`comptoir.depenses.formulaire.rattachements.${type}`, {
@@ -200,6 +224,7 @@ export function Formulaire({
               onChange={(e) => {
                 setMatiere(e.target.value as Matiere);
                 setFournisseur('');
+                effacer();
               }}
             >
               {MATIERES.map((cle) => (
@@ -213,10 +238,11 @@ export function Formulaire({
             {t('comptoir.depenses.formulaire.quantite')}
             <input
               className={styles.champ}
+              ref={champQuantite}
               value={quantite}
               onChange={(e) => {
                 setQuantite(e.target.value.replace(/[^\d.,]/g, ''));
-                setErreur(null);
+                effacer();
               }}
               inputMode="decimal"
               aria-invalid={erreur === 'quantite'}
@@ -228,7 +254,10 @@ export function Formulaire({
             <select
               className={styles.champ}
               value={fournisseur}
-              onChange={(e) => setFournisseur(e.target.value)}
+              onChange={(e) => {
+                setFournisseur(e.target.value);
+                effacer();
+              }}
             >
               <option value="">{t('comptoir.depenses.formulaire.marche')}</option>
               {fournisseurs.map((f) => (
@@ -250,7 +279,10 @@ export function Formulaire({
               key={cle}
               className={puce(mode === cle)}
               aria-pressed={mode === cle}
-              onClick={() => setMode(cle)}
+              onClick={() => {
+                setMode(cle);
+                effacer();
+              }}
             >
               {t(`comptoir.depenses.modes.${cle}`)}
             </button>
@@ -262,7 +294,10 @@ export function Formulaire({
         type="button"
         className={`${styles.photo} ${photo ? styles.photoJointe : ''}`}
         aria-pressed={photo}
-        onClick={() => setPhoto(!photo)}
+        onClick={() => {
+          setPhoto(!photo);
+          effacer();
+        }}
       >
         {t(
           photo ? 'comptoir.depenses.formulaire.photoJointe' : 'comptoir.depenses.formulaire.photo',

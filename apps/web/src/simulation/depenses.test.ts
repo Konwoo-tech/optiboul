@@ -233,3 +233,64 @@ describe('faux serveur des dépenses : décision', () => {
     );
   });
 });
+
+/** Espèces attendues de la caisse ouverte, lues comme l'écran des caisses les lit. */
+async function especesAttendues(): Promise<number> {
+  const reponse = repondre(new URL('http://x/api/v1/simulation/caisses/'), 'GET', {});
+  return ((await reponse.json()) as { detail: { attendu: number } }).detail.attendu;
+}
+
+const sessionApi = (methode: string, chemin: string, corps: Record<string, unknown> = {}) =>
+  repondre(new URL(`http://x/api/v1/simulation/comptoir/session/${chemin}`), methode, corps);
+
+const depensesDeLaSession = async () =>
+  ((await sessionApi('GET', '').json()) as { depensesCaisse: number }).depensesCaisse;
+
+function cloturerLaSession() {
+  memoriserUtilisateurConnecte('davy');
+  sessionApi('PUT', 'comptage/', { especes: '22950' });
+  expect(sessionApi('POST', 'cloturer/', {}).status).toBe(200);
+}
+
+describe('faux serveur des dépenses : espèces de la caisse', () => {
+  beforeEach(() => memoriserUtilisateurConnecte('davy'));
+
+  it('une dépense en caisse diminue les espèces attendues, son refus les rend', async () => {
+    expect(await especesAttendues()).toBe(22_950);
+    const cree = await appeler('POST', '', { ...SAISIE, montant: 60_000 });
+    expect(await especesAttendues()).toBe(-37_050);
+    memoriserUtilisateurConnecte('willy');
+    await appeler('POST', 'decision/', { demandeId: cree.json.demande.id, accord: false });
+    expect(await especesAttendues()).toBe(22_950);
+  });
+
+  it('une dépense par banque ne change pas les espèces attendues', async () => {
+    await appeler('POST', '', { ...SAISIE, mode: 'banque' });
+    expect(await especesAttendues()).toBe(22_950);
+  });
+
+  it('sans session ouverte, la dépense n’entre ni dans la clôture ni dans la caisse', async () => {
+    cloturerLaSession();
+    const { statut } = await appeler('POST', '', { ...SAISIE, montant: 8000 });
+    expect(statut).toBe(200);
+    expect(await especesAttendues()).toBe(22_950);
+    expect(await depensesDeLaSession()).toBe(31_000);
+  });
+
+  it('un refus après clôture ne retire plus rien de la caisse comptée', async () => {
+    const cree = await appeler('POST', '', { ...SAISIE, montant: 60_000 });
+    cloturerLaSession();
+    memoriserUtilisateurConnecte('willy');
+    await appeler('POST', 'decision/', { demandeId: cree.json.demande.id, accord: false });
+    expect(await depensesDeLaSession()).toBe(91_000);
+  });
+
+  it('un refus après réouverture ne retire rien non plus', async () => {
+    const cree = await appeler('POST', '', { ...SAISIE, montant: 60_000 });
+    cloturerLaSession();
+    memoriserUtilisateurConnecte('willy');
+    expect(sessionApi('POST', 'rouvrir/', {}).status).toBe(200);
+    await appeler('POST', 'decision/', { demandeId: cree.json.demande.id, accord: false });
+    expect(await depensesDeLaSession()).toBe(91_000);
+  });
+});
