@@ -11,6 +11,7 @@ import { numeroDepense } from '@/espaces/comptoir/depenses/regles.ts';
 import { demandesDePlafond, trancherDemandeDePlafond } from './comptoir.ts';
 import { demandesDeDepense, trancherDemandeDeDepense, type Acteur } from './depenses.ts';
 import { lireUtilisateurConnecte } from './session.ts';
+import { demandesDInventaire, trancherDemandeDInventaire } from './stocks.ts';
 
 /*
  * Faux serveur de « Comptoir › Demandes » (US-070, US-071) : la liste et les règles de la
@@ -28,6 +29,7 @@ const probleme = (status: number, code: string, detail: string) =>
 
 type DemandeDePlafond = ReturnType<typeof demandesDePlafond>[number];
 type DemandeDeDepense = ReturnType<typeof demandesDeDepense>[number];
+type DemandeDInventaire = ReturnType<typeof demandesDInventaire>[number];
 
 /** Demande de plafond de la session, au format commun ; une décision sans auteur ni heure est une erreur. */
 function duPlafond(d: DemandeDePlafond): Demande {
@@ -87,11 +89,44 @@ function deDepense({ demande, depense }: DemandeDeDepense): Demande {
   };
 }
 
+/** Demande de validation d'un inventaire dont l'écart dépasse 5 % (Stocks), au format commun. */
+function deInventaire({ demande, inventaire }: DemandeDInventaire): Demande {
+  const ecarts = inventaire.lignes
+    .filter((l) => l.compte !== l.theorique)
+    .map((l) => `${l.matiere} ${Math.round((l.compte - l.theorique) * 100) / 100}`)
+    .join(' · ');
+  const commun = {
+    id: demande.id,
+    numero: demande.numero,
+    type: 'inventaire',
+    titre: `Inventaire ${inventaire.id} : écarts au-delà de 5 %`,
+    titreEn: `Stock count ${inventaire.id}: gaps above 5%`,
+    detail: ecarts,
+    par: demande.par,
+    parProfil: demande.parProfil,
+    jour: demande.jour,
+    heure: demande.heure,
+    objet: { genre: 'inventaire', code: inventaire.id },
+  } as const;
+  if (demande.statut === 'en-attente') return { ...commun, statut: 'en-attente' };
+  if (!demande.decidePar || !demande.decideA) {
+    throw new Error(`Demande ${demande.id} décidée sans auteur ni heure.`);
+  }
+  return {
+    ...commun,
+    statut: demande.statut,
+    decidePar: demande.decidePar,
+    decideA: demande.decideA,
+  };
+}
+
 /** Toutes les demandes, plus récentes d'abord. */
 function toutes(): Demande[] {
-  return [...demandesDePlafond().map(duPlafond), ...demandesDeDepense().map(deDepense)].sort(
-    (x, y) => y.numero - x.numero,
-  );
+  return [
+    ...demandesDePlafond().map(duPlafond),
+    ...demandesDeDepense().map(deDepense),
+    ...demandesDInventaire().map(deInventaire),
+  ].sort((x, y) => y.numero - x.numero);
 }
 
 function acteur(): Acteur | undefined {
@@ -118,6 +153,12 @@ function decider(a: Acteur, id: string, accord: boolean): Response {
   if (demande.statut !== 'en-attente') return dejaDecidee();
   if (demande.type === 'plafond') {
     if (!trancherDemandeDePlafond(id, accord, a.nom)) return dejaDecidee();
+  } else if (demande.type === 'inventaire') {
+    const resultat = trancherDemandeDInventaire(a, id, accord);
+    if (resultat === 'interdit') {
+      return probleme(403, 'droit_insuffisant', 'Votre profil ne peut pas décider cette demande.');
+    }
+    if (resultat !== 'ok') return dejaDecidee();
   } else {
     const resultat = trancherDemandeDeDepense(a, id, accord);
     if (resultat === 'interdit') {

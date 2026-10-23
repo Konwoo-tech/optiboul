@@ -15,6 +15,9 @@ const MARQUEURS = [
   'Réparation du pétrin',
   'Facture ENEO de septembre',
   'Bacs de façonnage',
+  'Glacière d’Olembé',
+  'Grands Moulins du Centre',
+  'Mfoundi Levures & Sel',
 ];
 
 function fichiers(dossier) {

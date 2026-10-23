@@ -43,6 +43,8 @@ export function useDecider(utilisateur: string | undefined) {
         // Accorder ou refuser une dépense change son statut, le budget, la clôture et la caisse.
         client.invalidateQueries({ queryKey: ['simulation', 'comptoir', 'depenses'] }),
         client.invalidateQueries({ queryKey: ['comptoir', 'caisses'] }),
+        // Un inventaire accordé ajuste le stock et change de statut.
+        client.invalidateQueries({ queryKey: ['simulation', 'atelier', 'stocks'] }),
       ]),
   });
 }

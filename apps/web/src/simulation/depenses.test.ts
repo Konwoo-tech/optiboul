@@ -3,9 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InstantaneDepenses } from '@/espaces/comptoir/depenses/types.ts';
 
 import { journalComptoir } from './comptoir.ts';
-import { entreesDeStockDepenses, journalDepenses } from './depenses.ts';
+import { journalDepenses } from './depenses.ts';
 import { repondre, reinitialiserSimulation } from './routeur.ts';
 import { memoriserUtilisateurConnecte } from './session.ts';
+import { mouvementsDeStock } from './stocks.ts';
 
 const RACINE = '/api/v1/simulation/comptoir/depenses/';
 
@@ -143,11 +144,16 @@ describe('faux serveur des dépenses : saisie', () => {
       matiere: 'levure',
       quantite: 2.5,
     });
-    expect(entreesDeStockDepenses()[0]).toEqual({
+    expect(mouvementsDeStock()[0]).toMatchObject({
+      type: 'entree',
       matiere: 'levure',
       quantite: 2.5,
-      reference: 'DEP-0017',
-      fournisseur: 'f2',
+      origine: {
+        genre: 'depense',
+        code: 'DEP-0017',
+        achat: 'fournisseur',
+        fournisseur: 'Mfoundi Levures & Sel',
+      },
     });
   });
 
