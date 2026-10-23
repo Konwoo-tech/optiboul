@@ -1,0 +1,459 @@
+/*
+ * Fiche technique d'un produit, reprise valeur par valeur de la maquette « OptiBoul ERP v2 » (bloc
+ * `scr.produit`, lignes 886-937). Variables : --brand = marque, --surface = surface, --line = ligne,
+ * --fline = ligne-champ, --muted = discret, --ink = encre, --field = champ, --soft = doux.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.barre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.retour {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.puce {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 999px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.puceActive {
+  border-color: var(--ob-marque);
+  background: var(--ob-marque);
+  color: var(--ob-fond);
+}
+
+.entete {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.identite {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.code {
+  width: 76px;
+  height: 76px;
+  flex: none;
+  border-radius: 16px;
+  background: #f2b705;
+  color: #2e1a10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  font-weight: 900;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.noms {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.nom {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  margin: 0;
+}
+
+.version {
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+.boutons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.modifier {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.annuler {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.enregistrer {
+  min-height: 48px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.enregistrer:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.erreur {
+  font-size: 14px;
+  font-weight: 700;
+  color: #a2251b;
+  background: #fbe0dc;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 0;
+}
+
+.indicateurs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.indicateur {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.indicateurLibelle {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ob-discret);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.indicateurValeur {
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.indicateurSous {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.colonnes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.carte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow-x: auto;
+}
+
+.carteIngredients {
+  min-width: 540px;
+}
+
+.titre {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  margin: 0;
+}
+
+.titreIngredients {
+  padding: 16px 20px 4px;
+}
+
+.sousTitre {
+  padding: 0 20px 12px;
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.grille {
+  display: grid;
+  grid-template-columns: 1.5fr 1.3fr 0.8fr 1.2fr 1fr;
+  gap: 8px;
+}
+
+.titresGrille {
+  padding: 10px 20px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ob-discret);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--ob-champ);
+}
+
+.droite {
+  text-align: right;
+}
+
+.ligneIngredient {
+  align-items: center;
+  min-height: 46px;
+  padding: 4px 20px;
+  border-top: 1px solid var(--ob-ligne);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+}
+
+.ingredient {
+  font-weight: 800;
+}
+
+.discret {
+  color: var(--ob-discret);
+}
+
+.gras {
+  font-weight: 700;
+}
+
+.saisie {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.champ {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 10px;
+  padding: 0 10px;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+  box-sizing: border-box;
+}
+
+.champ:focus {
+  outline: none;
+  border-color: var(--ob-marque);
+}
+
+.uniteChamp {
+  font-size: 12px;
+  color: var(--ob-discret);
+  width: 44px;
+}
+
+.totaux {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.total {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 20px;
+  border-top: 1px solid var(--ob-ligne);
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+}
+
+.droiteColonne {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.carteTexte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.carteProcede {
+  gap: 12px;
+}
+
+.titreRendement {
+  margin-bottom: 6px;
+}
+
+.rendements {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rendement {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  border-top: 1px solid var(--ob-ligne);
+  font-size: 14px;
+  color: var(--ob-encre);
+}
+
+.rendementSaisie {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 150px;
+}
+
+.uniteRendement {
+  font-size: 12px;
+  color: var(--ob-discret);
+  width: 20px;
+}
+
+.rendementValeur {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.entetesProcede {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sousTitreProcede {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.procede {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.etape {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.numero {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ob-doux);
+  color: var(--ob-marque);
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.etapeTexte {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 4px;
+}
+
+.etapeNom {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.etapeDetail {
+  font-size: 13px;
+  color: var(--ob-discret);
+  text-wrap: pretty;
+}
+
+.regle {
+  font-size: 13px;
+  color: var(--ob-discret);
+  text-wrap: pretty;
+  margin: 0;
+}
+
+.message {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 20px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}

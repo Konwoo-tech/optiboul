@@ -23,6 +23,8 @@ type DemandeEmise = {
   /** Absent : le titre français s'affiche dans les deux langues. */
   titreEn?: string;
   detail: string;
+  /** Absent : le détail français s'affiche dans les deux langues. */
+  detailEn?: string;
   par: string;
   parProfil: Profil;
   /** Jour d'émission, « AAAA-MM-JJ ». */

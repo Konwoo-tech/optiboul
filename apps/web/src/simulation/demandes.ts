@@ -10,6 +10,7 @@ import { formaterNombre } from '@/utils';
 import { numeroDepense } from '@/espaces/comptoir/depenses/regles.ts';
 import { demandesDePlafond, trancherDemandeDePlafond } from './comptoir.ts';
 import { demandesDeDepense, trancherDemandeDeDepense, type Acteur } from './depenses.ts';
+import { demandesDeProduction, trancherDemandeDeProduction } from './production.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 import { demandesDInventaire, trancherDemandeDInventaire } from './stocks.ts';
 
@@ -30,6 +31,7 @@ const probleme = (status: number, code: string, detail: string) =>
 type DemandeDePlafond = ReturnType<typeof demandesDePlafond>[number];
 type DemandeDeDepense = ReturnType<typeof demandesDeDepense>[number];
 type DemandeDInventaire = ReturnType<typeof demandesDInventaire>[number];
+type DemandeDeProduction = ReturnType<typeof demandesDeProduction>[number];
 
 /** Demande de plafond de la session, au format commun ; une décision sans auteur ni heure est une erreur. */
 function duPlafond(d: DemandeDePlafond): Demande {
@@ -118,6 +120,24 @@ function deInventaire({ demande, inventaire }: DemandeDInventaire): Demande {
     decidePar: demande.decidePar,
     decideA: demande.decideA,
   };
+/** Demande d'augmentation de production (Atelier › Production), au format commun. */
+function deProduction(d: DemandeDeProduction): Demande {
+  const commun = {
+    id: d.id,
+    numero: d.numero,
+    type: 'production',
+    titre: `Augmentation de production : +${d.total} sac(s)`,
+    titreEn: `Production increase: +${d.total} sack(s)`,
+    detail: d.detail,
+    detailEn: d.detailEn,
+    par: d.par,
+    parProfil: 'production',
+    jour: d.jour,
+    heure: d.heure,
+    objet: { genre: 'production' },
+  } as const;
+  if (d.statut === 'en-attente') return { ...commun, statut: 'en-attente' };
+  return { ...commun, statut: d.statut, decidePar: d.decidePar, decideA: d.decideA };
 }
 
 /** Toutes les demandes, plus récentes d'abord. */
@@ -126,6 +146,7 @@ function toutes(): Demande[] {
     ...demandesDePlafond().map(duPlafond),
     ...demandesDeDepense().map(deDepense),
     ...demandesDInventaire().map(deInventaire),
+    ...demandesDeProduction().map(deProduction),
   ].sort((x, y) => y.numero - x.numero);
 }
 
@@ -159,6 +180,8 @@ function decider(a: Acteur, id: string, accord: boolean): Response {
       return probleme(403, 'droit_insuffisant', 'Votre profil ne peut pas décider cette demande.');
     }
     if (resultat !== 'ok') return dejaDecidee();
+  } else if (demande.type === 'production') {
+    if (trancherDemandeDeProduction(a.nom, id, accord) !== 'ok') return dejaDecidee();
   } else {
     const resultat = trancherDemandeDeDepense(a, id, accord);
     if (resultat === 'interdit') {

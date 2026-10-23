@@ -9,7 +9,14 @@ import { cleTitre, type Ecran } from '../navigation.ts';
  * En-tête d'un écran de l'espace : son titre et, en simulation, la ligne « semaine · gérant ·
  * production » (ou « ouverte à … par … » pour la session en cours), comme la maquette.
  */
-export function EnTeteEcran({ ecran }: { ecran: Pick<Ecran, 'cle' | 'espace'> }) {
+export function EnTeteEcran({
+  ecran,
+  titre,
+}: {
+  ecran: Pick<Ecran, 'cle' | 'espace'>;
+  /** Remplace le titre de l'écran (sous-vue : fiche technique d'un produit). */
+  titre?: string;
+}) {
   const { t, i18n } = useTranslation();
   const { data: contexte } = useContexteSimule();
   const creneau = useCreneau();
@@ -34,5 +41,5 @@ export function EnTeteEcran({ ecran }: { ecran: Pick<Ecran, 'cle' | 'espace'> })
           production: contexte.responsableProduction,
         });
 
-  return <EnTetePage kicker={kicker} titre={t(cleTitre(ecran), { session, date })} />;
+  return <EnTetePage kicker={kicker} titre={titre ?? t(cleTitre(ecran), { session, date })} />;
 }
