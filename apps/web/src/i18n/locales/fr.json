@@ -683,7 +683,7 @@
     "aValiderPar": "À valider par : {{qui}}",
     "validateur": {
       "gerant-ou-proprietaire": "Gérant de la semaine ({{gerant}}) ou propriétaire",
-      "gerant": "Gérant de la semaine ({{gerant}})",
+      "gerant": "Gérant de la semaine ({{gerant}}) ou propriétaire",
       "proprietaire": "Propriétaire ({{proprietaire}})"
     },
     "lien": {

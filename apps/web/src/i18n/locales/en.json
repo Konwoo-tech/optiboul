@@ -683,7 +683,7 @@
     "aValiderPar": "To be approved by: {{qui}}",
     "validateur": {
       "gerant-ou-proprietaire": "Manager of the week ({{gerant}}) or owner",
-      "gerant": "Manager of the week ({{gerant}})",
+      "gerant": "Manager of the week ({{gerant}}) or owner",
       "proprietaire": "Owner ({{proprietaire}})"
     },
     "lien": {

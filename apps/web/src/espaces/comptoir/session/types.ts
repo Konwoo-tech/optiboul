@@ -69,6 +69,8 @@ export type DemandePlafond = {
   soldeApres: number;
   plafond: number;
   par: string;
+  /** Jour de l'émission, « AAAA-MM-JJ » : figé, il ne suit pas l'horloge. */
+  jour: string;
   heure: string;
   statut: 'en-attente' | 'acceptee' | 'refusee';
   /** Qui a tranché, et à quelle heure (« HH:MM »), une fois la décision prise. */

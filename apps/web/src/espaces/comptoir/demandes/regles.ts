@@ -10,6 +10,7 @@ type Qui = Pick<Demande, 'type' | 'parProfil'>;
  * Qui valide une demande (cahier des charges §5.9) :
  * - plafond et augmentation de production : le gérant de la semaine ou le propriétaire ;
  * - dépense : le gérant si elle vient d'une caissière, sinon le propriétaire ;
+ *   (le propriétaire peut toujours décider à la place du gérant : le libellé le dit) ;
  * - état de paie et inventaire avec écart : le propriétaire.
  */
 export type Validateur = 'gerant-ou-proprietaire' | 'gerant' | 'proprietaire';

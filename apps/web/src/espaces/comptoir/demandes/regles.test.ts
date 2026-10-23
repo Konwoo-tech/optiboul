@@ -11,19 +11,21 @@ import {
 } from './regles.ts';
 import type { Demande, TypeDemande } from './types.ts';
 
-const demande = (numero: number, statut: Demande['statut'] = 'en-attente'): Demande => ({
-  id: `q${numero}`,
-  numero,
-  type: 'depense',
-  titre: `Demande ${numero}`,
-  detail: '',
-  par: 'Willy',
-  parProfil: 'gerant',
-  jour: '2026-10-13',
-  heure: '16:40',
-  statut,
-  objet: null,
-});
+const demande = (numero: number, statut: Demande['statut'] = 'en-attente'): Demande =>
+  ({
+    id: `q${numero}`,
+    numero,
+    type: 'depense',
+    titre: `Demande ${numero}`,
+    detail: '',
+    par: 'Willy',
+    parProfil: 'gerant',
+    jour: '2026-10-13',
+    heure: '16:40',
+    statut,
+    objet: null,
+    ...(statut === 'en-attente' ? {} : { decidePar: 'M. Fotso', decideA: '17:00' }),
+  }) as Demande;
 
 const PROFILS: Profil[] = ['caissier', 'gerant', 'production', 'proprietaire', 'administrateur'];
 

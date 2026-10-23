@@ -226,6 +226,7 @@ function etatInitial(): Etat {
 }
 
 let numeroMouvement = 1;
+let numeroDemande = 0;
 let courant: Etat | undefined;
 const lireEtat = (): Etat => (courant ??= etatInitial());
 
@@ -400,12 +401,13 @@ function demanderAutorisation(a: Acteur, corps: Corps): Response {
   );
   if (existante) return reponse({ demande: existante });
   const demande = {
-    id: `q${Date.now()}`,
+    id: `q${Date.now()}-${++numeroDemande}`,
     clientId: cible.id,
     clientNom: cible.nom,
     soldeApres,
     plafond: lireEtat().plafond,
     par: a.nom,
+    jour: dateDuJour(),
     heure: heureCourante(),
     statut: 'en-attente' as const,
   };

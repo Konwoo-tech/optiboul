@@ -14,7 +14,7 @@ export type ObjetLie =
   | { genre: 'inventaire'; code: string }
   | { genre: 'production' };
 
-export type Demande = {
+type DemandeEmise = {
   id: string;
   /** Numéro affiché « DEM-021 ». */
   numero: number;
@@ -29,12 +29,20 @@ export type Demande = {
   jour: string;
   /** Heure d'émission, « HH:MM ». */
   heure: string;
-  statut: StatutDemande;
-  decidePar?: string;
-  /** Heure de la décision, « HH:MM ». */
-  decideA?: string;
   objet: ObjetLie | null;
 };
+
+/** Une demande décidée porte toujours qui a décidé et quand : jamais de « par undefined ». */
+export type Demande = DemandeEmise &
+  (
+    | { statut: 'en-attente'; decidePar?: undefined; decideA?: undefined }
+    | {
+        statut: 'acceptee' | 'refusee';
+        decidePar: string;
+        /** Heure de la décision, « HH:MM ». */
+        decideA: string;
+      }
+  );
 
 export type ReponseDemandes = {
   /** Gérant de la semaine, cité dans « À valider par ». */

@@ -126,6 +126,69 @@ describe('API simulée des demandes', () => {
     });
   });
 
+  describe('plusieurs demandes de plafond', () => {
+    const demander = (clientId: string, soldeApres: number) =>
+      appeler('POST', '/api/v1/simulation/comptoir/session/autorisations/', {
+        clientId,
+        soldeApres,
+      });
+
+    it('se numérotent à la suite, dans l’ordre d’émission, sans changer après une décision', async () => {
+      await demanderLAutorisationDeBrice();
+      await demander('ebene', -3000);
+      await demander('sandrine', -4000);
+      const avant = (await lister()).corps.demandes;
+      expect(avant.map((d) => [d.numero, d.objet && 'nom' in d.objet ? d.objet.nom : ''])).toEqual([
+        [24, 'Sandrine'],
+        [23, 'Ebène'],
+        [22, 'Brice'],
+      ]);
+      memoriserUtilisateurConnecte('willy');
+      await decider(avant[1]!.id, true);
+      const apres = (await lister()).corps.demandes;
+      expect(apres.map((d) => [d.numero, d.statut])).toEqual([
+        [24, 'en-attente'],
+        [23, 'acceptee'],
+        [22, 'en-attente'],
+        [21, 'en-attente'],
+      ]);
+    });
+  });
+
+  describe('jour d’émission', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('est figé à l’émission : il ne suit pas l’horloge', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-10-14T17:00:00Z'));
+      await demanderLAutorisationDeBrice();
+      vi.setSystemTime(new Date('2026-10-16T17:00:00Z'));
+      const { corps } = await lister();
+      expect(corps.demandes[0]).toMatchObject({ jour: '2026-10-14', heure: '18:00' });
+    });
+  });
+
+  describe('décision prise dans la session, puis lue dans les demandes', () => {
+    it('affiche qui a décidé et à quelle heure', async () => {
+      await demanderLAutorisationDeBrice();
+      const id = (await lister()).corps.demandes[0]!.id;
+      const decision = await appeler(
+        'POST',
+        '/api/v1/simulation/comptoir/session/autorisations/decider/',
+        {
+          demandeId: id,
+          code: '1234',
+          accord: true,
+        },
+      );
+      expect(decision.status).toBe(200);
+      const demande = (await lister()).corps.demandes[0]!;
+      expect(demande.statut).toBe('acceptee');
+      expect(demande.decidePar).toBe('Willy');
+      expect(demande.decideA).toMatch(/^\d{2}:\d{2}$/);
+    });
+  });
+
   describe('demande de dépassement du plafond, émise dans la session', () => {
     it('apparaît pour sa caissière et pour la direction, numérotée à la suite', async () => {
       await demanderLAutorisationDeBrice();

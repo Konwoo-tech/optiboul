@@ -60,43 +60,43 @@ export function journalDemandes(): readonly Journal[] {
   return journal;
 }
 
-function accorderOuRefuser(demande: Demande, accord: boolean, par: string): Demande {
-  demande.statut = accord ? 'acceptee' : 'refusee';
-  demande.decidePar = par;
-  demande.decideA = formaterHeure(new Date());
-  return demande;
+function accorderOuRefuser(demande: Demande, accord: boolean, par: string): void {
+  Object.assign(demande, {
+    statut: accord ? 'acceptee' : 'refusee',
+    decidePar: par,
+    decideA: formaterHeure(new Date()),
+  });
 }
 
-/** Toutes les demandes, plus récentes d'abord : la maquette de départ, puis celles de la session. */
-function toutes(): Demande[] {
-  const base = lireDeparts();
-  const plafonds = [...demandesDePlafond()].reverse();
-  const duPlafond: Demande[] = plafonds.map((d, rang) => ({
+/** Demande de plafond de la session, au format commun ; une décision sans auteur ni heure est une erreur. */
+function enDemande(d: ReturnType<typeof demandesDePlafond>[number], numero: number): Demande {
+  const commun = {
     id: d.id,
-    numero: PREMIER_NUMERO + base.length + rang,
+    numero,
     type: 'plafond',
     titre: `Livraison au-delà du plafond : ${d.clientNom}`,
     titreEn: `Delivery over the limit: ${d.clientNom}`,
     detail: `${formaterNombre(d.soldeApres)} FCFA / ${formaterNombre(d.plafond)}`,
     par: d.par,
     parProfil: 'caissier',
-    jour: aujourdhui(),
+    jour: d.jour,
     heure: d.heure,
-    statut: d.statut,
-    ...(d.decidePar ? { decidePar: d.decidePar } : {}),
-    ...(d.decideA ? { decideA: d.decideA } : {}),
     objet: { genre: 'client', id: d.clientId, nom: d.clientNom, solde: d.soldeClient },
-  }));
-  return [...duPlafond, ...base].sort((a, b) => b.numero - a.numero);
+  } as const;
+  if (d.statut === 'en-attente') return { ...commun, statut: 'en-attente' };
+  if (!d.decidePar || !d.decideA) {
+    throw new Error(`Demande ${d.id} décidée sans auteur ni heure.`);
+  }
+  return { ...commun, statut: d.statut, decidePar: d.decidePar, decideA: d.decideA };
 }
 
-const aujourdhui = () =>
-  new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    timeZone: 'Africa/Douala',
-  }).format(new Date());
+/** Toutes les demandes, plus récentes d'abord : la maquette de départ, puis celles de la session. */
+function toutes(): Demande[] {
+  const base = lireDeparts();
+  const plafonds = [...demandesDePlafond()].reverse();
+  const duPlafond = plafonds.map((d, rang) => enDemande(d, PREMIER_NUMERO + base.length + rang));
+  return [...duPlafond, ...base].sort((x, y) => y.numero - x.numero);
+}
 
 type Acteur = { nom: string; profil: Profil };
 
