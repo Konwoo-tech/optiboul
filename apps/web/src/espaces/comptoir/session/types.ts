@@ -71,6 +71,9 @@ export type DemandePlafond = {
   par: string;
   heure: string;
   statut: 'en-attente' | 'acceptee' | 'refusee';
+  /** Qui a tranché, et à quelle heure (« HH:MM »), une fois la décision prise. */
+  decidePar?: string;
+  decideA?: string;
 };
 
 export type SessionCaisse = {

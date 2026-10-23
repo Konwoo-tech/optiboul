@@ -10,6 +10,7 @@ import {
   MODES_PAIEMENT,
   TYPES_MOUVEMENT,
   type Client,
+  type DemandePlafond,
   type InstantaneSession,
   type Livraison,
   type ModePaiement,
@@ -429,19 +430,49 @@ function deciderAutorisation(corps: Corps): Response {
       'Code incorrect : seul le gérant ou le propriétaire peut décider.',
     );
   }
-  const accord = corps.accord === true;
+  appliquerDecisionPlafond(demande, corps.accord === true, decideur.nom);
+  return reponse({ demande, decideur: decideur.nom });
+}
+
+function appliquerDecisionPlafond(demande: DemandePlafond, accord: boolean, decideur: string) {
   demande.statut = accord ? 'acceptee' : 'refusee';
-  if (accord)
+  demande.decidePar = decideur;
+  demande.decideA = heureCourante();
+  if (accord) {
     lireEtat().autorisations[demande.clientId] = {
-      par: decideur.nom,
-      heure: heureCourante(),
+      par: decideur,
+      heure: demande.decideA,
       soldeApres: demande.soldeApres,
     };
+  }
   tracer(
-    decideur.nom,
+    decideur,
     `${accord ? 'Accord' : 'Refus'} – Livraison au-delà du plafond : ${demande.clientNom}`,
   );
-  return reponse({ demande, decideur: decideur.nom });
+}
+
+/**
+ * Demandes d'autorisation de dépassement du plafond, plus récentes d'abord, avec le solde actuel
+ * du client : l'écran « Demandes » les range avec les autres demandes de validation.
+ */
+export function demandesDePlafond(): ReadonlyArray<DemandePlafond & { soldeClient: number }> {
+  const clients = lireEtat().clients;
+  return lireEtat().demandes.map((d) => ({
+    ...d,
+    soldeClient: clients.find((c) => c.id === d.clientId)?.solde ?? 0,
+  }));
+}
+
+/** Le gérant ou le propriétaire tranche depuis l'écran « Demandes » (sans code : il est connecté). */
+export function trancherDemandeDePlafond(
+  id: string,
+  accord: boolean,
+  decideur: string,
+): DemandePlafond | undefined {
+  const demande = lireEtat().demandes.find((d) => d.id === id);
+  if (!demande || demande.statut !== 'en-attente') return undefined;
+  appliquerDecisionPlafond(demande, accord, decideur);
+  return structuredClone(demande);
 }
 
 function ajouterMouvement(a: Acteur, corps: Corps): Response {

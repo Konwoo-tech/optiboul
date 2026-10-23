@@ -17,6 +17,7 @@ import {
 } from './comptoir.ts';
 import { reinitialiserDepenses, repondreDepenses } from './depenses.ts';
 import { contexteCaisses, reinitialiserCaisses, repondreCaisses } from './caisses.ts';
+import { reinitialiserDemandes, repondreDemandes } from './demandes.ts';
 import { NOTIFICATIONS_PAR_PROFIL } from './notifications.ts';
 import { lireUtilisateurConnecte, memoriserUtilisateurConnecte } from './session.ts';
 
@@ -53,6 +54,7 @@ export function reinitialiserSimulation(): void {
   reinitialiserCaisses();
   reinitialiserComptoir();
   reinitialiserDepenses();
+  reinitialiserDemandes();
   memoriserUtilisateurConnecte(null);
 }
 
@@ -212,6 +214,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
         repondreCaisses(chemin, methode, corps) ??
         repondreComptoir(url, methode, corps) ??
         repondreDepenses(url, methode, corps) ??
+        repondreDemandes(methode, chemin, corps) ??
         probleme(404, 'non_simule', `Pas encore simulé : ${methode} ${chemin}`)
       );
   }

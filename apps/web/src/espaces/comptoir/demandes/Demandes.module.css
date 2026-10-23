@@ -1,0 +1,177 @@
+/*
+ * Écran « Demandes », repris valeur par valeur de la maquette « OptiBoul ERP v2 »
+ * (bloc `scr.demandes`, lignes 415-420).
+ */
+.ecran {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+output.message {
+  display: block;
+}
+
+.message {
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+.regle {
+  max-width: 820px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ob-discret);
+}
+
+.bloc {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.titre {
+  margin: 0;
+  padding: 16px 20px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+/* Le titre reçoit le focus après une décision, sans cadre : la liste change sous les doigts. */
+.titre:focus {
+  outline: none;
+}
+
+.titre:focus-visible {
+  outline: 2px solid var(--ob-marque);
+  outline-offset: -2px;
+}
+
+.liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.texte {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.entete {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.code {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.pastille {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.intitule {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.detail {
+  font-size: 13px;
+  color: var(--ob-encre);
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.lien {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: normal;
+  color: var(--ob-marque);
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: left;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.refuser {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid #a2251b;
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: #c2453a;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.accorder {
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.refuser:disabled,
+.accorder:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.attente {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ob-discret);
+}
+
+.vide {
+  margin: 0;
+  padding: 20px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}

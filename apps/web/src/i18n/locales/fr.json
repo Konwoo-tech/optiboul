@@ -662,5 +662,49 @@
         "defaut": "L’action a échoué. Réessayez."
       }
     }
+  },
+  "demandes": {
+    "regle": "Les demandes sont émises automatiquement : livraison au-delà du plafond (caissière), dépense au-dessus du seuil (caissière ou gérant), état de paie (gérant), inventaire avec écart (gérant ou chef), augmentation de production après validation du plan (chef). Chaque demande reste rattachée à son objet.",
+    "enAttenteTitre": "En attente de décision",
+    "mesDemandesTitre": "Mes demandes en attente",
+    "aucuneEnAttente": "Aucune demande en attente.",
+    "decisionsTitre": "Décisions récentes",
+    "aucuneDecision": "Aucune décision pour l’instant.",
+    "chargement": "Chargement des demandes…",
+    "erreur": "Les demandes n’ont pas pu être chargées. Réessayez dans un instant.",
+    "types": {
+      "plafond": "Plafond client",
+      "depense": "Dépense",
+      "paie": "Paie",
+      "inventaire": "Inventaire",
+      "production": "Production"
+    },
+    "emisePar": "Émise par {{nom}} · {{role}} · {{date}}",
+    "aValiderPar": "À valider par : {{qui}}",
+    "validateur": {
+      "gerant-ou-proprietaire": "Gérant de la semaine ({{gerant}}) ou propriétaire",
+      "gerant": "Gérant de la semaine ({{gerant}})",
+      "proprietaire": "Propriétaire ({{proprietaire}})"
+    },
+    "lien": {
+      "client": "Client {{nom}} · solde {{solde}} FCFA",
+      "depense": "Dépense {{code}} · {{montant}} FCFA · semaine {{semaine}}",
+      "paie": "État de paie · {{mois}}",
+      "inventaire": "Inventaire {{code}}",
+      "production": "Plan de production"
+    },
+    "autoriser": "Autoriser",
+    "valider": "Valider",
+    "refuser": "Refuser",
+    "actionSur": "{{action}} {{code}}",
+    "enAttente": "En attente",
+    "accordee": "Accordée",
+    "refusee": "Refusée",
+    "accordeePar": "Accordée par {{nom}} · {{heure}}",
+    "refuseePar": "Refusée par {{nom}} · {{heure}}",
+    "toastAccorde": "Accordé · {{titre}}",
+    "toastRefuse": "Refusé · {{titre}}",
+    "toastErreur": "La décision n’a pas pu être enregistrée : réessayez.",
+    "toastDejaDecidee": "Cette demande a déjà reçu une réponse."
   }
 }
