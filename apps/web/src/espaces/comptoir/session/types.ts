@@ -64,6 +64,8 @@ export type Autorisation = { par: string; heure: string; soldeApres: number };
 
 export type DemandePlafond = {
   id: string;
+  /** Numéro affiché « DEM-022 » : suite commune à toutes les demandes. */
+  numero: number;
   clientId: string;
   clientNom: string;
   soldeApres: number;

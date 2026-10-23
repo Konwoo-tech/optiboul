@@ -40,6 +40,9 @@ export function useDecider(utilisateur: string | undefined) {
       Promise.all([
         client.invalidateQueries({ queryKey: cleDemandes(utilisateur) }),
         client.invalidateQueries({ queryKey: ['simulation', 'comptoir', 'session'] }),
+        // Accorder ou refuser une dépense change son statut, le budget, la clôture et la caisse.
+        client.invalidateQueries({ queryKey: ['simulation', 'comptoir', 'depenses'] }),
+        client.invalidateQueries({ queryKey: ['comptoir', 'caisses'] }),
       ]),
   });
 }

@@ -22,6 +22,7 @@ import { creneauDe, formaterHeure, FUSEAU_BOULANGERIE, type Creneau } from '@/ut
 
 import { CODE_DEMO, COMPTES_SIMULES } from './donnees.ts';
 import type { NotificationSimulee } from './notifications.ts';
+import { prochainNumeroDemande } from './numerosDemandes.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
 /*
@@ -401,7 +402,8 @@ function demanderAutorisation(a: Acteur, corps: Corps): Response {
   );
   if (existante) return reponse({ demande: existante });
   const demande = {
-    id: `q${Date.now()}-${++numeroDemande}`,
+    id: `pl${Date.now()}-${++numeroDemande}`,
+    numero: prochainNumeroDemande(),
     clientId: cible.id,
     clientNom: cible.nom,
     soldeApres,

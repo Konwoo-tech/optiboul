@@ -4,75 +4,36 @@ import type {
   ReponseDecision,
   ReponseDemandes,
 } from '@/espaces/comptoir/demandes/types.ts';
-import { formaterHeure, formaterNombre } from '@/utils';
+import { ressources } from '@/i18n';
+import { formaterNombre } from '@/utils';
 
-import type { Profil } from '../profils.ts';
+import { numeroDepense } from '@/espaces/comptoir/depenses/regles.ts';
 import { demandesDePlafond, trancherDemandeDePlafond } from './comptoir.ts';
+import { demandesDeDepense, trancherDemandeDeDepense, type Acteur } from './depenses.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
 /*
  * Faux serveur de « Comptoir › Demandes » (US-070, US-071) : la liste et les règles de la
- * maquette « OptiBoul ERP v2 » (fonctions decide, canDecide, vDemandes). Les demandes de plafond
- * viennent de la session en cours (`simulation/comptoir.ts`) ; la maquette n'en porte qu'une au
- * départ, la dépense de Willy. Tout vit en mémoire.
+ * maquette « OptiBoul ERP v2 » (fonctions decide, canDecide, vDemandes). Il ne garde aucune
+ * demande : il les lit à leur source, les demandes de plafond dans la session
+ * (`simulation/comptoir.ts`) et les demandes de dépense dans les dépenses
+ * (`simulation/depenses.ts`), et leur décision est déléguée à cette source. La numérotation
+ * DEM-xxx est commune (`numerosDemandes.ts`).
  */
 
 const RACINE = '/api/v1/simulation/demandes/';
 
-/** Numéro de la première demande : la maquette numérote à partir de DEM-021. */
-const PREMIER_NUMERO = 21;
-
 const probleme = (status: number, code: string, detail: string) =>
   Response.json({ detail, code }, { status });
 
-/** Fonction et non constante : aucun appel au chargement du module, donc rien dans le paquet de production. */
-const demandesDeDepart = (): Demande[] => [
-  {
-    id: 'q1',
-    numero: PREMIER_NUMERO,
-    type: 'depense',
-    titre: 'Dépense : Réparation du pétrin',
-    titreEn: 'Expense: Kneader repair',
-    detail: '65 000 FCFA · Technique · justificatif joint',
-    par: 'Willy',
-    parProfil: 'gerant',
-    jour: '2026-10-13',
-    heure: '16:40',
-    statut: 'en-attente',
-    objet: { genre: 'depense', code: 'DEP-0014', montant: 65000, semaine: 42 },
-  },
-];
-
-type Journal = { heure: string; qui: string; quoi: string };
-
-let departs: Demande[] | undefined;
-let journal: Journal[] = [];
-const lireDeparts = (): Demande[] => (departs ??= demandesDeDepart());
-
-/** Remet les demandes à leur état de départ (tests). */
-export function reinitialiserDemandes(): void {
-  departs = undefined;
-  journal = [];
-}
-
-/** Décisions tracées, plus récentes en premier (tests). */
-export function journalDemandes(): readonly Journal[] {
-  return journal;
-}
-
-function accorderOuRefuser(demande: Demande, accord: boolean, par: string): void {
-  Object.assign(demande, {
-    statut: accord ? 'acceptee' : 'refusee',
-    decidePar: par,
-    decideA: formaterHeure(new Date()),
-  });
-}
+type DemandeDePlafond = ReturnType<typeof demandesDePlafond>[number];
+type DemandeDeDepense = ReturnType<typeof demandesDeDepense>[number];
 
 /** Demande de plafond de la session, au format commun ; une décision sans auteur ni heure est une erreur. */
-function enDemande(d: ReturnType<typeof demandesDePlafond>[number], numero: number): Demande {
+function duPlafond(d: DemandeDePlafond): Demande {
   const commun = {
     id: d.id,
-    numero,
+    numero: d.numero,
     type: 'plafond',
     titre: `Livraison au-delà du plafond : ${d.clientNom}`,
     titreEn: `Delivery over the limit: ${d.clientNom}`,
@@ -90,15 +51,48 @@ function enDemande(d: ReturnType<typeof demandesDePlafond>[number], numero: numb
   return { ...commun, statut: d.statut, decidePar: d.decidePar, decideA: d.decideA };
 }
 
-/** Toutes les demandes, plus récentes d'abord : la maquette de départ, puis celles de la session. */
-function toutes(): Demande[] {
-  const base = lireDeparts();
-  const plafonds = [...demandesDePlafond()].reverse();
-  const duPlafond = plafonds.map((d, rang) => enDemande(d, PREMIER_NUMERO + base.length + rang));
-  return [...duPlafond, ...base].sort((x, y) => y.numero - x.numero);
+/** Demande de validation d'une dépense (Dépenses), au format commun. */
+function deDepense({ demande, depense }: DemandeDeDepense): Demande {
+  const categories: Record<string, string> = ressources.fr.translation.comptoir.depenses.categories;
+  const commun = {
+    id: demande.id,
+    numero: demande.numero,
+    type: 'depense',
+    titre: `Dépense : ${depense.libelle}`,
+    detail: [
+      `${formaterNombre(depense.montant)} FCFA`,
+      categories[depense.categorie] ?? depense.categorie,
+      depense.photo ? 'justificatif joint' : 'sans justificatif',
+    ].join(' · '),
+    par: demande.par,
+    parProfil: demande.parProfil,
+    jour: depense.date,
+    heure: demande.emiseA,
+    objet: {
+      genre: 'depense',
+      code: numeroDepense(depense.numero),
+      montant: depense.montant,
+      semaine: Number(depense.semaine.slice(1)),
+    },
+  } as const;
+  if (demande.statut === 'en-attente') return { ...commun, statut: 'en-attente' };
+  if (!demande.decideePar || !demande.decideeA) {
+    throw new Error(`Demande ${demande.id} décidée sans auteur ni heure.`);
+  }
+  return {
+    ...commun,
+    statut: demande.statut,
+    decidePar: demande.decideePar,
+    decideA: demande.decideeA,
+  };
 }
 
-type Acteur = { nom: string; profil: Profil };
+/** Toutes les demandes, plus récentes d'abord. */
+function toutes(): Demande[] {
+  return [...demandesDePlafond().map(duPlafond), ...demandesDeDepense().map(deDepense)].sort(
+    (x, y) => y.numero - x.numero,
+  );
+}
 
 function acteur(): Acteur | undefined {
   const utilisateur = lireUtilisateurConnecte();
@@ -113,36 +107,25 @@ function visibles(a: Acteur): Demande[] {
   return toutes().filter((d) => peutVoirToutes(a.profil) || d.par === a.nom);
 }
 
+const dejaDecidee = () => probleme(409, 'deja_decidee', 'Cette demande a déjà reçu une réponse.');
+
 function decider(a: Acteur, id: string, accord: boolean): Response {
   const demande = visibles(a).find((d) => d.id === id);
   if (!demande) return probleme(404, 'demande_inconnue', 'Demande inconnue.');
   if (!peutDecider(demande, a.profil)) {
     return probleme(403, 'droit_insuffisant', 'Votre profil ne peut pas décider cette demande.');
   }
-  if (demande.statut !== 'en-attente') {
-    return probleme(409, 'deja_decidee', 'Cette demande a déjà reçu une réponse.');
-  }
+  if (demande.statut !== 'en-attente') return dejaDecidee();
   if (demande.type === 'plafond') {
-    if (!trancherDemandeDePlafond(id, accord, a.nom)) {
-      return probleme(409, 'deja_decidee', 'Cette demande a déjà reçu une réponse.');
-    }
+    if (!trancherDemandeDePlafond(id, accord, a.nom)) return dejaDecidee();
   } else {
-    accorderOuRefuser(
-      lireDeparts().find((d) => d.id === id)!,
-      accord,
-      a.nom,
-    );
+    const resultat = trancherDemandeDeDepense(a, id, accord);
+    if (resultat === 'interdit') {
+      return probleme(403, 'droit_insuffisant', 'Votre profil ne peut pas décider cette demande.');
+    }
+    if (resultat !== 'ok') return dejaDecidee();
   }
-  journal = [
-    {
-      heure: formaterHeure(new Date()),
-      qui: a.nom,
-      quoi: `${accord ? 'Accord' : 'Refus'} – ${demande.titre}`,
-    },
-    ...journal,
-  ];
-  const decidee = toutes().find((d) => d.id === id)!;
-  const reponse: ReponseDecision = { demande: decidee };
+  const reponse: ReponseDecision = { demande: toutes().find((d) => d.id === id)! };
   return Response.json(reponse);
 }
 

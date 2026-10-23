@@ -17,7 +17,8 @@ import {
 } from './comptoir.ts';
 import { reinitialiserDepenses, repondreDepenses } from './depenses.ts';
 import { contexteCaisses, reinitialiserCaisses, repondreCaisses } from './caisses.ts';
-import { reinitialiserDemandes, repondreDemandes } from './demandes.ts';
+import { repondreDemandes } from './demandes.ts';
+import { reinitialiserNumerosDemandes } from './numerosDemandes.ts';
 import { NOTIFICATIONS_PAR_PROFIL } from './notifications.ts';
 import { lireUtilisateurConnecte, memoriserUtilisateurConnecte } from './session.ts';
 
@@ -54,7 +55,7 @@ export function reinitialiserSimulation(): void {
   reinitialiserCaisses();
   reinitialiserComptoir();
   reinitialiserDepenses();
-  reinitialiserDemandes();
+  reinitialiserNumerosDemandes();
   memoriserUtilisateurConnecte(null);
 }
 

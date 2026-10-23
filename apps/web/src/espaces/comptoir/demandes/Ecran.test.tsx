@@ -118,6 +118,17 @@ describe('Comptoir › Demandes', () => {
       );
     });
 
+    it('l’accord se retrouve dans les Dépenses : la dépense est validée', async () => {
+      await monter('fotso');
+      await attendreListe();
+      fireEvent.click(screen.getByRole('button', { name: 'Valider DEM-021' }));
+      await screen.findByText(/^Accordée par M\. Fotso/);
+      const reponse = await fetch('http://localhost/api/v1/simulation/comptoir/depenses/');
+      const { depenses, demandes } = await reponse.json();
+      expect(depenses.find((d: { id: string }) => d.id === 'e3').statut).toBe('validee');
+      expect(demandes[0].statut).toBe('acceptee');
+    });
+
     it('refuse : « Refusée par … »', async () => {
       await monter('fotso');
       await attendreListe();
@@ -280,7 +291,7 @@ describe('Comptoir › Demandes', () => {
     await i18n.changeLanguage('en');
     await monter('fotso');
     await screen.findByRole('heading', { name: 'Recent decisions' });
-    expect(screen.getByText('Expense: Kneader repair')).toBeTruthy();
+    expect(screen.getByText('Dépense : Réparation du pétrin')).toBeTruthy();
     expect(screen.getByText('Raised by Willy · Manager of the week · Oct 13 16:40')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Approve DEM-021' })).toBeTruthy();
     expect(screen.getByText('No decisions yet.')).toBeTruthy();

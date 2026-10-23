@@ -32,6 +32,7 @@ import {
   repercuterDepenseDeSession,
   sessionDeProduction,
 } from './comptoir.ts';
+import { prochainNumeroDemande } from './numerosDemandes.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
 /*
@@ -267,6 +268,7 @@ const demandesDeDepart = (): DemandeDepense[] => [
     par: 'Willy',
     parProfil: 'gerant',
     statut: 'en-attente',
+    emiseA: '16:40',
     decideePar: '',
     decideeLe: '',
     decideeA: '',
@@ -357,7 +359,7 @@ function instantane(): InstantaneDepenses {
   });
 }
 
-type Acteur = { nom: string; profil: 'caissier' | 'gerant' | 'proprietaire' };
+export type Acteur = { nom: string; profil: 'caissier' | 'gerant' | 'proprietaire' };
 
 function acteur(): Acteur | undefined {
   const utilisateur = lireUtilisateurConnecte();
@@ -450,11 +452,12 @@ function creerDepense(a: Acteur, corps: Corps): Response {
   if (attend) {
     demande = {
       id: `q${Date.now()}-${sequence}`,
-      numero: Math.max(20, ...etat.demandes.map((d) => d.numero)) + 1,
+      numero: prochainNumeroDemande(),
       depenseId: creee.id,
       par: a.nom,
       parProfil: a.profil,
       statut: 'en-attente',
+      emiseA: heureCourante(),
       decideePar: '',
       decideeLe: '',
       decideeA: '',
@@ -494,16 +497,28 @@ function creerDepense(a: Acteur, corps: Corps): Response {
   return Response.json({ instantane: instantane(), depense: creee, demande });
 }
 
-/** Accord ou refus d'une demande de dépense (appelé par l'écran des demandes). */
-function deciderDemande(a: Acteur, corps: Corps): Response {
+export type ResultatDecision = 'ok' | 'inconnue' | 'interdit' | 'deja-decidee';
+
+/** Demandes de validation de dépense avec leur dépense, plus récentes d'abord (écran « Demandes »). */
+export function demandesDeDepense(): ReadonlyArray<{ demande: DemandeDepense; depense: Depense }> {
   const etat = lireEtat();
-  const demande = etat.demandes.find((d) => d.id === corps.demandeId);
-  if (!demande) return probleme(404, 'demande_inconnue', 'Demande inconnue.');
-  if (!peutDecider(a.profil, demande.parProfil)) return refus();
-  if (demande.statut !== 'en-attente') {
-    return probleme(409, 'demande_deja_decidee', 'Cette demande a déjà reçu une réponse.');
-  }
-  const accord = corps.accord === true;
+  return etat.demandes.flatMap((demande) => {
+    const depense = etat.depenses.find((d) => d.id === demande.depenseId);
+    return depense ? [structuredClone({ demande, depense })] : [];
+  });
+}
+
+/**
+ * Accord ou refus d'une demande de dépense : statut de la dépense, budget (seules les dépenses
+ * validées comptent), clôture et caisse de la session (une dépense refusée en sort).
+ * Appelé par la route de décision d'ici et par l'écran « Demandes ».
+ */
+export function trancherDemandeDeDepense(a: Acteur, id: string, accord: boolean): ResultatDecision {
+  const etat = lireEtat();
+  const demande = etat.demandes.find((d) => d.id === id);
+  if (!demande) return 'inconnue';
+  if (!peutDecider(a.profil, demande.parProfil)) return 'interdit';
+  if (demande.statut !== 'en-attente') return 'deja-decidee';
   demande.statut = accord ? 'acceptee' : 'refusee';
   demande.decideePar = a.nom;
   demande.decideeLe = dateDuJour();
@@ -521,6 +536,18 @@ function deciderDemande(a: Acteur, corps: Corps): Response {
     a.nom,
     `${accord ? 'Accord' : 'Refus'} – Dépense ${cible ? numeroDepense(cible.numero) : demande.depenseId}`,
   );
+  return 'ok';
+}
+
+/** Accord ou refus d'une demande de dépense (appelé par l'écran des demandes). */
+function deciderDemande(a: Acteur, corps: Corps): Response {
+  const resultat = trancherDemandeDeDepense(a, String(corps.demandeId), corps.accord === true);
+  if (resultat === 'inconnue') return probleme(404, 'demande_inconnue', 'Demande inconnue.');
+  if (resultat === 'interdit') return refus();
+  if (resultat === 'deja-decidee') {
+    return probleme(409, 'demande_deja_decidee', 'Cette demande a déjà reçu une réponse.');
+  }
+  const demande = lireEtat().demandes.find((d) => d.id === corps.demandeId);
   return Response.json({ instantane: instantane(), demande });
 }
 

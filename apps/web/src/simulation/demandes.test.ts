@@ -1,8 +1,9 @@
 import type { Demande, ReponseDemandes } from '@/espaces/comptoir/demandes/types.ts';
+import type { InstantaneDepenses } from '@/espaces/comptoir/depenses/types.ts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { journalComptoir } from './comptoir.ts';
-import { journalDemandes } from './demandes.ts';
+import { journalDepenses } from './depenses.ts';
 import { installerApiSimulee, reinitialiserSimulation } from './routeur.ts';
 import { memoriserUtilisateurConnecte } from './session.ts';
 
@@ -104,9 +105,9 @@ describe('API simulée des demandes', () => {
       memoriserUtilisateurConnecte('fotso');
       const { corps } = await decider('q1', false);
       expect(corps.demande.statut).toBe('refusee');
-      expect(journalDemandes()[0]).toMatchObject({
+      expect(journalDepenses()[0]).toMatchObject({
         qui: 'M. Fotso',
-        quoi: 'Refus – Dépense : Réparation du pétrin',
+        quoi: 'Refus – Dépense DEP-0014',
       });
     });
 
@@ -123,6 +124,81 @@ describe('API simulée des demandes', () => {
       expect((await decider('inconnue', true)).status).toBe(404);
       const mal = await appeler('POST', '/api/v1/simulation/demandes/q1/decider/', {});
       expect(mal.status).toBe(400);
+    });
+  });
+
+  describe('demandes de dépense : une seule source avec les Dépenses', () => {
+    const depenses = () =>
+      appeler<InstantaneDepenses>('GET', '/api/v1/simulation/comptoir/depenses/');
+    const realise = (i: InstantaneDepenses) =>
+      i.budget.find((l) => l.categorie === 'technique')!.realise;
+
+    /** 60 000 FCFA de tôles payées en caisse : au-dessus du seuil de 50 000 FCFA. */
+    const depenseDeLaCaissiere = () =>
+      appeler('POST', '/api/v1/simulation/comptoir/depenses/', {
+        categorie: 'technique',
+        libelle: 'Tôles',
+        montant: 60000,
+        mode: 'caisse',
+        photo: false,
+        rattachement: 'semaine',
+      });
+
+    it('la demande de départ vient des Dépenses, avec le même numéro et le même état', async () => {
+      memoriserUtilisateurConnecte('fotso');
+      const { corps } = await depenses();
+      expect(corps.demandes[0]).toMatchObject({ id: 'q1', numero: 21, statut: 'en-attente' });
+      expect((await lister()).corps.demandes[0]).toMatchObject({
+        id: 'q1',
+        numero: 21,
+        titre: 'Dépense : Réparation du pétrin',
+        detail: '65\u00a0000 FCFA · Technique · justificatif joint',
+        jour: '2026-10-13',
+        heure: '16:40',
+        objet: { genre: 'depense', code: 'DEP-0014', montant: 65000, semaine: 42 },
+      });
+    });
+
+    it('un accord dans Demandes valide la dépense et entre dans le budget', async () => {
+      memoriserUtilisateurConnecte('fotso');
+      const avant = await depenses();
+      expect((await decider('q1', true)).status).toBe(200);
+      const apres = await depenses();
+      expect(apres.corps.depenses.find((d) => d.id === 'e3')?.statut).toBe('validee');
+      expect(apres.corps.demandes[0]).toMatchObject({
+        statut: 'acceptee',
+        decideePar: 'M. Fotso',
+      });
+      expect(realise(apres.corps)).toBe(realise(avant.corps) + 65000);
+    });
+
+    it('un refus dans Demandes refuse la dépense et laisse le budget intact', async () => {
+      memoriserUtilisateurConnecte('fotso');
+      const avant = await depenses();
+      expect((await decider('q1', false)).status).toBe(200);
+      const apres = await depenses();
+      expect(apres.corps.depenses.find((d) => d.id === 'e3')?.statut).toBe('refusee');
+      expect(apres.corps.demandes[0]?.statut).toBe('refusee');
+      expect(realise(apres.corps)).toBe(realise(avant.corps));
+    });
+
+    it('la dépense d’une caissière : numérotation commune avec les plafonds, décision par le gérant', async () => {
+      await depenseDeLaCaissiere();
+      await demanderLAutorisationDeBrice();
+      const { corps } = await lister();
+      expect(corps.demandes.map((d) => [d.numero, d.type])).toEqual([
+        [23, 'plafond'],
+        [22, 'depense'],
+      ]);
+      expect(corps.demandes[1]).toMatchObject({ par: 'Davy', parProfil: 'caissier' });
+
+      memoriserUtilisateurConnecte('willy');
+      expect((await decider(corps.demandes[1]!.id, false)).status).toBe(200);
+      const { corps: etat } = await depenses();
+      expect(etat.depenses[0]).toMatchObject({ libelle: 'Tôles', statut: 'refusee' });
+      expect(journalDepenses()[0]?.quoi).toMatch(/^Refus – Dépense DEP-/);
+      // Le gérant ne peut toujours pas trancher sa propre dépense : 403.
+      expect((await decider('q1', true)).status).toBe(403);
     });
   });
 
