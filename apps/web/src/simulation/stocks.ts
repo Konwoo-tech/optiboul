@@ -419,6 +419,31 @@ export function entrerEnStockDepuisDepense(entree: {
   );
 }
 
+/**
+ * Sorties de stock créées à la clôture d'une production (R5, US-091) : une sortie par matière
+ * consommée, rattachée à la session. Symétrique de `entrerEnStockDepuisDepense` ; la clôture de
+ * production (écran Production) l'appelle. Le stock ne descend jamais sous zéro.
+ */
+export function sortirDuStockDepuisProduction(sortie: {
+  creneau: 'jour' | 'nuit';
+  /** Jour de la session, « AAAA-MM-JJ ». */
+  date: string;
+  consommations: ReadonlyArray<{ matiere: Matiere; quantite: number }>;
+  par: string;
+}): Mouvement[] {
+  return sortie.consommations
+    .filter((c) => c.quantite > 0)
+    .map((c) =>
+      ajouterMouvement(
+        'sortie',
+        c.matiere,
+        c.quantite,
+        { genre: 'production', creneau: sortie.creneau, date: sortie.date },
+        sortie.par,
+      ),
+    );
+}
+
 const dans = <T extends string>(valeurs: readonly T[], valeur: unknown): valeur is T =>
   typeof valeur === 'string' && (valeurs as readonly string[]).includes(valeur);
 
@@ -463,6 +488,15 @@ function creerInventaire(a: ActeurStocks, corps: Corps): Response {
     return probleme(400, 'comptage_incomplet', 'Comptez toutes les matières avant de soumettre.');
   }
   const etat = lireEtat();
+  // Un seul inventaire à la fois attend le propriétaire : un second comptage serait calculé sur un stock
+  // que l'accord du premier va encore changer.
+  if (etat.inventaires.some((i) => i.statut === 'a-valider')) {
+    return probleme(
+      409,
+      'inventaire_en_attente',
+      'Un inventaire attend déjà la validation du propriétaire.',
+    );
+  }
   const lignes = [];
   for (const matiere of MATIERES) {
     const compte = (comptages as Record<string, unknown>)[matiere];

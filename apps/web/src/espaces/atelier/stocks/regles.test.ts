@@ -9,6 +9,7 @@ import {
   erreurDeMouvement,
   filtrerMouvements,
   joursDuSelecteur,
+  ligneHorsTolerance,
   niveauDuStock,
   quantiteSaisie,
   sessionsAffichees,
@@ -87,9 +88,17 @@ describe('inventaire : tolérance de 5 %', () => {
     );
   });
 
-  it('un théorique nul n’envoie jamais à validation', () => {
-    expect(ecartDepasseLaTolerance([{ matiere: 'farine', theorique: 0, compte: 3 }])).toBe(false);
+  it('un théorique nul avec un comptage positif est un écart ; avec zéro compté, non', () => {
+    expect(ecartDepasseLaTolerance([{ matiere: 'farine', theorique: 0, compte: 3 }])).toBe(true);
+    expect(ecartDepasseLaTolerance([{ matiere: 'farine', theorique: 0, compte: 0 }])).toBe(false);
     expect(ecartPourcent(0, 3)).toBe(0);
+  });
+
+  it('la frontière est exacte : 5 % pile dans la tolérance, un cheveu au-delà hors tolérance', () => {
+    expect(ligneHorsTolerance({ theorique: 30, compte: 28.5 })).toBe(false);
+    expect(ligneHorsTolerance({ theorique: 30, compte: 31.5 })).toBe(false);
+    expect(ligneHorsTolerance({ theorique: 30, compte: 28.49 })).toBe(true);
+    expect(ligneHorsTolerance({ theorique: 30, compte: 31.51 })).toBe(true);
   });
 
   it('une seule matière hors tolérance suffit', () => {

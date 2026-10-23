@@ -4,7 +4,12 @@ import type { InstantaneStocks } from '@/espaces/atelier/stocks/types.ts';
 
 import { repondre, reinitialiserSimulation } from './routeur.ts';
 import { memoriserUtilisateurConnecte } from './session.ts';
-import { controleDeStockAFaire, journalStocks, mouvementsDeStock } from './stocks.ts';
+import {
+  controleDeStockAFaire,
+  journalStocks,
+  mouvementsDeStock,
+  sortirDuStockDepuisProduction,
+} from './stocks.ts';
 
 const RACINE = '/api/v1/simulation/atelier/stocks/';
 
@@ -220,6 +225,41 @@ describe('faux serveur des stocks : inventaire', () => {
     expect(demande.objet).toEqual({ genre: 'inventaire', code: 'AUD-08' });
   });
 
+  it('5 % pile est ajusté tout de suite ; un cheveu au-delà attend le propriétaire', async () => {
+    const pile = await appeler('POST', 'inventaires/', {
+      comptages: { ...COMPTAGE_PROCHE, farine: 28.5 },
+    });
+    expect(pile.json.inventaire.statut).toBe('valide');
+    expect(await stockDe('farine')).toBe(28.5);
+    reinitialiserSimulation();
+    memoriserUtilisateurConnecte('willy');
+    const audela = await appeler('POST', 'inventaires/', {
+      comptages: { ...COMPTAGE_PROCHE, farine: 28.4 },
+    });
+    expect(audela.json.inventaire.statut).toBe('a-valider');
+  });
+
+  it('un théorique nul avec de la matière comptée attend le propriétaire', async () => {
+    await appeler('POST', 'mouvements/', {
+      type: 'perte',
+      matiere: 'farine',
+      quantite: 30,
+      motif: 'x',
+    });
+    const { json } = await appeler('POST', 'inventaires/', {
+      comptages: { ...COMPTAGE_PROCHE, farine: 1 },
+    });
+    expect(json.inventaire.statut).toBe('a-valider');
+  });
+
+  it('refuse un second inventaire tant que le premier attend le propriétaire (409)', async () => {
+    await appeler('POST', 'inventaires/', { comptages: { ...COMPTAGE_PROCHE, farine: 27 } });
+    const second = await appeler('POST', 'inventaires/', { comptages: COMPTAGE_PROCHE });
+    expect(second.statut).toBe(409);
+    expect(second.json.code).toBe('inventaire_en_attente');
+    expect((await lire()).inventaires).toHaveLength(3);
+  });
+
   it('exige le comptage de toutes les matières (400)', async () => {
     const { farine: _farine, ...incomplet } = COMPTAGE_PROCHE;
     expect((await appeler('POST', 'inventaires/', { comptages: incomplet })).json.code).toBe(
@@ -290,5 +330,106 @@ describe('faux serveur des stocks : décision du propriétaire', () => {
     expect((await decider(id, true)).status).toBe(200);
     expect((await decider(id, false)).status).toBe(409);
     expect((await decider('q-inv-99', true)).status).toBe(404);
+  });
+});
+
+describe('faux serveur des stocks : sorties de production', () => {
+  it('sortirDuStockDepuisProduction crée une sortie par matière consommée', async () => {
+    memoriserUtilisateurConnecte('serge');
+    const creees = sortirDuStockDepuisProduction({
+      creneau: 'nuit',
+      date: '2026-10-14',
+      consommations: [
+        { matiere: 'farine', quantite: 6 },
+        { matiere: 'levure', quantite: 2.7 },
+        { matiere: 'sel', quantite: 0 },
+      ],
+      par: 'Serge',
+    });
+    expect(creees).toHaveLength(2);
+    expect(mouvementsDeStock()[0]).toMatchObject({
+      type: 'sortie',
+      matiere: 'levure',
+      quantite: 2.7,
+      par: 'Serge',
+      origine: { genre: 'production', creneau: 'nuit', date: '2026-10-14' },
+    });
+    expect(await stockDe('farine')).toBe(24);
+    expect(await stockDe('levure')).toBe(0);
+    expect(await stockDe('sel')).toBe(14.4);
+  });
+
+  it('le stock ne descend jamais sous zéro', async () => {
+    memoriserUtilisateurConnecte('serge');
+    sortirDuStockDepuisProduction({
+      creneau: 'jour',
+      date: '2026-10-14',
+      consommations: [{ matiere: 'bois', quantite: 9 }],
+      par: 'Serge',
+    });
+    expect(await stockDe('bois')).toBe(0);
+  });
+});
+
+describe('dépenses rattachées au stock : l’entrée suit la validation', () => {
+  const DEPENSES = '/api/v1/simulation/comptoir/depenses/';
+  const saisieStock = {
+    categorie: 'matieres',
+    libelle: 'Farine – 10 sacs',
+    montant: 195_250,
+    mode: 'caisse',
+    photo: true,
+    rattachement: 'stock',
+    matiere: 'farine',
+    quantite: 10,
+  };
+  const entrees = () => mouvementsDeStock().filter((m) => m.origine.genre === 'depense');
+  const decider = (id: string, accord: boolean) =>
+    repondre(new URL(`http://x/api/v1/simulation/demandes/${id}/decider/`), 'POST', { accord });
+
+  async function depenseEnAttente() {
+    memoriserUtilisateurConnecte('willy');
+    const reponse = repondre(new URL(`http://x${DEPENSES}`), 'POST', saisieStock);
+    const json = (await reponse.json()) as Record<string, any>;
+    expect(json.demande).toBeDefined();
+    return json.demande.id as string;
+  }
+
+  it('au-dessus du seuil, rien n’entre en stock tant que le propriétaire n’a pas accordé', async () => {
+    await depenseEnAttente();
+    expect(entrees()).toHaveLength(1); // DEP-0016 de départ seulement
+    expect(await stockDe('farine')).toBe(30);
+  });
+
+  it('l’accord fait entrer la matière avec le numéro de la dépense', async () => {
+    const id = await depenseEnAttente();
+    memoriserUtilisateurConnecte('fotso');
+    expect((await decider(id, true)).status).toBe(200);
+    expect(entrees()[0]).toMatchObject({
+      type: 'entree',
+      matiere: 'farine',
+      quantite: 10,
+      par: 'Willy',
+      origine: { genre: 'depense', code: 'DEP-0017', achat: 'marche' },
+    });
+    expect(await stockDe('farine')).toBe(40);
+  });
+
+  it('le refus ne fait rien entrer : aucune contre-passation à faire', async () => {
+    const id = await depenseEnAttente();
+    memoriserUtilisateurConnecte('fotso');
+    expect((await decider(id, false)).status).toBe(200);
+    expect(entrees()).toHaveLength(1);
+    expect(await stockDe('farine')).toBe(30);
+  });
+
+  it('sous le seuil, l’entrée est immédiate', async () => {
+    memoriserUtilisateurConnecte('willy');
+    repondre(new URL(`http://x${DEPENSES}`), 'POST', {
+      ...saisieStock,
+      montant: 10_000,
+      quantite: 1,
+    });
+    expect(await stockDe('farine')).toBe(31);
   });
 });

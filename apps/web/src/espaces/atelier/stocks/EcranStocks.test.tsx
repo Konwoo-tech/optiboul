@@ -13,6 +13,7 @@ import { ECRANS } from '../../../navigation.ts';
 import EcranStocks from './EcranStocks.tsx';
 
 let retablir: () => void;
+let client: QueryClient;
 
 async function ouvrir(utilisateur = 'willy', langue: 'fr' | 'en' = 'fr', adresse = '') {
   vi.useFakeTimers({ toFake: ['Date'] });
@@ -23,11 +24,10 @@ async function ouvrir(utilisateur = 'willy', langue: 'fr' | 'en' = 'fr', adresse
   reinitialiserSimulation();
   memoriserUtilisateurConnecte(utilisateur);
   const ecran = ECRANS.find((e) => e.espace === 'atelier' && e.cle === 'stocks')!;
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <OptiboulProvider>
-      <QueryClientProvider
-        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-      >
+      <QueryClientProvider client={client}>
         <MemoryRouter initialEntries={[`/atelier/stocks${adresse}`]}>
           <EcranStocks ecran={ecran} />
         </MemoryRouter>
@@ -81,6 +81,22 @@ describe('Atelier › Stocks : état du stock', () => {
     fireEvent.keyDown(onglets[0]!, { key: 'ArrowRight' });
     await waitFor(() =>
       expect(screen.getByRole('tab', { name: 'Stock à date' }).getAttribute('aria-selected')).toBe(
+        'true',
+      ),
+    );
+  });
+
+  it('Origine et Fin sautent au premier et au dernier onglet', async () => {
+    await ouvrir();
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'État du stock' }), { key: 'End' });
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: 'Inventaires' }).getAttribute('aria-selected')).toBe(
+        'true',
+      ),
+    );
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Inventaires' }), { key: 'Home' });
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: 'État du stock' }).getAttribute('aria-selected')).toBe(
         'true',
       ),
     );
@@ -288,6 +304,25 @@ describe('Atelier › Stocks : inventaires', () => {
     expect(screen.getByText('Fait · à valider')).toBeTruthy();
     onglet('État du stock');
     expect(within(ligne('Farine')).getByText('30 sacs')).toBeTruthy();
+  });
+});
+
+describe('Atelier › Stocks : brouillon d’inventaire', () => {
+  it('est remis à zéro quand une autre personne se connecte', async () => {
+    await ouvrir('willy', 'fr', '?onglet=inventaires');
+    fireEvent.click(await screen.findByRole('button', { name: 'Démarrer un inventaire' }));
+    saisir(screen.getByLabelText('Comptage de Farine'), '12');
+    expect((screen.getByLabelText('Comptage de Farine') as HTMLInputElement).value).toBe('12');
+
+    memoriserUtilisateurConnecte('serge');
+    await client.invalidateQueries();
+    await screen.findByRole('button', { name: 'Démarrer un inventaire' });
+    expect(screen.queryByLabelText('Comptage de Farine')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Démarrer un inventaire' }));
+    expect((screen.getByLabelText('Comptage de Farine') as HTMLInputElement).value).toBe('');
+    expect(
+      screen.getByRole('heading', { name: 'Inventaire en cours · compté par Serge' }),
+    ).toBeTruthy();
   });
 });
 

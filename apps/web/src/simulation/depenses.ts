@@ -319,6 +319,24 @@ function tracer(qui: string, quoi: string) {
   lireEtat().journal = [{ heure: heureCourante(), qui, quoi }, ...lireEtat().journal];
 }
 
+/**
+ * Entrée de stock d'une dépense rattachée au stock. Le stock est tenu par `simulation/stocks.ts` :
+ * l'entrée y est créée avec le numéro de la dépense, au moment où la dépense est validée.
+ */
+function entrerEnStock(depense: Depense) {
+  const { rattachement } = depense;
+  if (rattachement.type !== 'stock') return;
+  entrerEnStockDepuisDepense({
+    matiere: rattachement.matiere,
+    quantite: rattachement.quantite,
+    code: numeroDepense(depense.numero),
+    fournisseur: depense.fournisseur
+      ? (fournisseurs().find((f) => f.id === depense.fournisseur)?.nom ?? null)
+      : null,
+    par: depense.par,
+  });
+}
+
 const budget = (): LigneBudget[] =>
   CATEGORIES.map((categorie) => {
     const [plafond, deja] = BUDGETS[categorie];
@@ -459,18 +477,8 @@ function creerDepense(a: Acteur, corps: Corps): Response {
     repercuterDepenseDeSession(montant);
     repercuterDepenseEnCaisse(montant);
   }
-  if (rattachement.type === 'stock') {
-    // Le stock est tenu par `simulation/stocks.ts` : l'entrée y est créée avec le numéro de la dépense.
-    entrerEnStockDepuisDepense({
-      matiere: rattachement.matiere,
-      quantite: rattachement.quantite,
-      code: numeroDepense(numero),
-      fournisseur: fournisseur
-        ? (fournisseurs().find((f) => f.id === fournisseur)?.nom ?? null)
-        : null,
-      par: a.nom,
-    });
-  }
+  // Une dépense qui attend une validation n'entre en stock qu'à l'accord (jamais de contre-passation).
+  if (!attend) entrerEnStock(creee);
 
   tracer(
     a.nom,
@@ -519,6 +527,8 @@ export function trancherDemandeDeDepense(a: Acteur, id: string, accord: boolean)
       repercuterDepenseDeSession(-cible.montant);
       repercuterDepenseEnCaisse(-cible.montant);
     }
+    // Accordée, la dépense rattachée au stock fait enfin entrer la matière ; refusée, rien n'entre.
+    if (accord) entrerEnStock(cible);
   }
   tracer(
     a.nom,

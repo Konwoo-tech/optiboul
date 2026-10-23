@@ -845,6 +845,7 @@
         "toasts": {
           "valide": "Inventaire validé · stock ajusté",
           "envoye": "Inventaire envoyé au propriétaire pour validation",
+          "enAttente": "Un inventaire attend déjà la validation du propriétaire.",
           "erreur": "L’inventaire n’a pas pu être enregistré. Réessayez."
         }
       }

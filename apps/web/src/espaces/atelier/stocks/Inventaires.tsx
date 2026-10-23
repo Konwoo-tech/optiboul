@@ -19,7 +19,7 @@ import {
   NIVEAU_CONTROLE,
   NIVEAU_INVENTAIRE,
   statutControle,
-  TOLERANCE_INVENTAIRE,
+  ligneHorsTolerance,
 } from './regles.ts';
 import styles from './Stocks.module.css';
 import { MATIERES, type InstantaneStocks, type Matiere, type NouvelInventaire } from './types.ts';
@@ -160,9 +160,9 @@ export function Inventaires({
             const niveau =
               compte === null
                 ? 'neutre'
-                : Math.abs(pourcent) <= TOLERANCE_INVENTAIRE
-                  ? 'ok'
-                  : 'bloquant';
+                : ligneHorsTolerance({ theorique: m.stock, compte })
+                  ? 'bloquant'
+                  : 'ok';
             const unite = uniteMatiere(t, m.cle);
             return (
               <div className={styles.comptageLigne} key={m.cle}>

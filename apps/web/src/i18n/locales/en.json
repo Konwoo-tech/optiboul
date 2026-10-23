@@ -845,6 +845,7 @@
         "toasts": {
           "valide": "Stock count approved · stock adjusted",
           "envoye": "Stock count sent to the owner for approval",
+          "enAttente": "A stock count is already waiting for the owner's approval.",
           "erreur": "The stock count could not be saved. Try again."
         }
       }

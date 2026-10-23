@@ -33,7 +33,12 @@ export default function EcranStocks({ ecran }: { ecran: Ecran }) {
   const requete = useStocks(nom);
   const mouvement = useEnregistrerMouvement(nom);
   const inventaire = useEnregistrerInventaire(nom);
-  const [brouillon, setBrouillon] = useState<BrouillonInventaire>(null);
+  // Le brouillon appartient à la personne qui compte : changer d'utilisateur le remet à zéro.
+  const [saisie, setSaisie] = useState<{ nom?: string; brouillon: BrouillonInventaire }>({
+    brouillon: null,
+  });
+  const brouillon = saisie.nom === nom ? saisie.brouillon : null;
+  const setBrouillon = (suivant: BrouillonInventaire) => setSaisie({ nom, brouillon: suivant });
 
   const [parametres, setParametres] = useSearchParams();
   const parametre = parametres.get('onglet');
@@ -67,8 +72,15 @@ export default function EcranStocks({ ecran }: { ecran: Ecran }) {
 
   const naviguerEntreOnglets = (evenement: KeyboardEvent<HTMLButtonElement>) => {
     const decalage = evenement.key === 'ArrowRight' ? 1 : evenement.key === 'ArrowLeft' ? -1 : 0;
-    if (!decalage) return;
-    const suivant = ONGLETS[(ONGLETS.indexOf(onglet) + decalage + ONGLETS.length) % ONGLETS.length];
+    const rang = ONGLETS.indexOf(onglet);
+    const suivant =
+      evenement.key === 'Home'
+        ? ONGLETS[0]
+        : evenement.key === 'End'
+          ? ONGLETS[ONGLETS.length - 1]
+          : decalage
+            ? ONGLETS[(rang + decalage + ONGLETS.length) % ONGLETS.length]
+            : undefined;
     if (!suivant) return;
     evenement.preventDefault();
     choisirOnglet(suivant);
@@ -97,8 +109,14 @@ export default function EcranStocks({ ecran }: { ecran: Ecran }) {
             : 'atelier.stocks.inventaires.toasts.valide',
         ),
       );
-    } catch {
-      afficher(t('atelier.stocks.inventaires.toasts.erreur'));
+    } catch (erreur) {
+      afficher(
+        t(
+          codeErreur(erreur) === 'inventaire_en_attente'
+            ? 'atelier.stocks.inventaires.toasts.enAttente'
+            : 'atelier.stocks.inventaires.toasts.erreur',
+        ),
+      );
     }
   };
 
