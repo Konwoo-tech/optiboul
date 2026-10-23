@@ -706,5 +706,148 @@
     "toastRefuse": "Refused · {{titre}}",
     "toastErreur": "The decision could not be saved: try again.",
     "toastDejaDecidee": "This request has already been answered."
+  },
+  "atelier": {
+    "stocks": {
+      "sections": "Stock sections",
+      "chargement": "Loading stock…",
+      "erreurChargement": "Stock could not be loaded. Try again in a moment.",
+      "onglets": {
+        "etat": "Stock status",
+        "date": "Stock by date",
+        "mouvements": "Ins & outs",
+        "inventaires": "Stock counts"
+      },
+      "etat": {
+        "titre": "Stock status by material",
+        "total": "Stock value: {{valeur}} FCFA · need based on {{sacs}} sacks per session",
+        "colonnes": {
+          "matiere": "Material",
+          "enStock": "In stock",
+          "parSession": "Per session",
+          "sessions": "Sessions",
+          "prochaine": "Next delivery",
+          "valeur": "Value (FCFA)",
+          "statut": "Status"
+        },
+        "niveaux": {
+          "suffisant": "Enough",
+          "a-commander": "Reorder",
+          "bas": "Low stock"
+        }
+      },
+      "date": {
+        "jours": "Stock day",
+        "titre": "Stock at end of {{jour}}",
+        "valeur": "Value: {{valeur}} FCFA",
+        "colonnes": {
+          "matiere": "Material",
+          "fin": "Stock at date",
+          "entrees": "Ins that day",
+          "sorties": "Outs that day",
+          "ajustements": "Adjustments",
+          "controle": "Last physical count",
+          "valeur": "Value (FCFA)"
+        },
+        "controle": "{{code}} · {{date}} · {{compte}}",
+        "regle": "Stock at a date is calculated from current stock and every movement recorded since. The two weekly physical counts (Wednesday and Sunday) reset system stock to the counted stock."
+      },
+      "mouvements": {
+        "liste": "Stock movements",
+        "filtre": "Movement type",
+        "filtres": {
+          "all": "All",
+          "entree": "Ins",
+          "sortie": "Outs",
+          "ajustement": "Adjustments",
+          "perte": "Losses"
+        },
+        "types": {
+          "entree": "In",
+          "sortie": "Out",
+          "ajustement": "Adjustment",
+          "perte": "Loss"
+        },
+        "regle": "Ins come from supplier deliveries and cash purchases linked to stock; outs from closing each production run; adjustments from approved stock counts.",
+        "vide": "—",
+        "manuel": {
+          "titre": "Manual movement",
+          "type": "Movement type",
+          "types": {
+            "perte": "Loss / damage",
+            "entree": "In (correction)"
+          },
+          "matiere": "Material",
+          "quantite": "Quantity",
+          "motif": "Reason (required)",
+          "enregistrer": "Save",
+          "toast": "Movement recorded"
+        },
+        "erreurs": {
+          "quantite": "Enter a quantity.",
+          "motif": "Reason required.",
+          "quantite_obligatoire": "Enter a quantity.",
+          "motif_obligatoire": "Reason required.",
+          "stock_insuffisant": "The loss is larger than the stock available.",
+          "defaut": "The movement could not be saved. Try again."
+        }
+      },
+      "origines": {
+        "achats": {
+          "caisse": "cash purchase",
+          "marche": "market purchase"
+        },
+        "depense": "{{code}} · {{achat}}",
+        "production": {
+          "jour": "Day production of {{date}}",
+          "nuit": "Night production of {{date}}"
+        },
+        "reception": "{{code}} · {{fournisseur}}",
+        "receptionPartielle": "{{code}} · {{fournisseur}} (partial)",
+        "inventaire": "{{code}} · stock count of {{date}}",
+        "manuel": "Manual · {{motif}}"
+      },
+      "inventaires": {
+        "titre": "Stock counts · twice a week",
+        "sousTitre": "Wednesday after the day production and Sunday at week closing. The manager of the week counts with the head of production; a gap above 5% goes to the owner.",
+        "aFaire": "Due today · {{date}}",
+        "semaine": "Wk {{numero}}",
+        "moments": {
+          "mercredi": "After the day production · around 14:00",
+          "dimanche": "At week closing · around 21:00"
+        },
+        "qui": "Manager {{gerant}} + head baker {{responsable}}",
+        "ecarts": "{{code}} · {{nombre}} gap(s)",
+        "statutsControle": {
+          "fait": "Done",
+          "a-valider": "Done · to approve",
+          "refuse": "Refused",
+          "manque": "Missed",
+          "aujourdhui": "Due today",
+          "prevu": "Planned"
+        },
+        "regle": "Mandatory count twice a week (Wednesday and Sunday). Physically count each material. A gap above 5% sends the count to the owner for approval; otherwise the stock is adjusted immediately.",
+        "demarrer": "Start a stock count",
+        "enCours": "Stock count in progress · counted by {{nom}}",
+        "comptage": "Count of {{matiere}}",
+        "soumettre": "Submit the count",
+        "annuler": "Cancel",
+        "incomplet": "Count every material before submitting",
+        "historique": "Stock count history",
+        "statuts": {
+          "valide": "Approved",
+          "a-valider": "To approve",
+          "refuse": "Refused"
+        },
+        "comptePar": "Counted by {{nom}}",
+        "validePar": " · approved by {{nom}}",
+        "resume": "{{nombre}} gap(s): {{liste}}",
+        "toasts": {
+          "valide": "Stock count approved · stock adjusted",
+          "envoye": "Stock count sent to the owner for approval",
+          "erreur": "The stock count could not be saved. Try again."
+        }
+      }
+    }
   }
 }

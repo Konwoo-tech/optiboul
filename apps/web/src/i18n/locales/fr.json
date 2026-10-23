@@ -706,5 +706,148 @@
     "toastRefuse": "Refusé · {{titre}}",
     "toastErreur": "La décision n’a pas pu être enregistrée : réessayez.",
     "toastDejaDecidee": "Cette demande a déjà reçu une réponse."
+  },
+  "atelier": {
+    "stocks": {
+      "sections": "Sections du stock",
+      "chargement": "Chargement du stock…",
+      "erreurChargement": "Le stock n’a pas pu être chargé. Réessayez dans un instant.",
+      "onglets": {
+        "etat": "État du stock",
+        "date": "Stock à date",
+        "mouvements": "Entrées et sorties",
+        "inventaires": "Inventaires"
+      },
+      "etat": {
+        "titre": "État du stock par matière",
+        "total": "Valeur du stock : {{valeur}} FCFA · besoin calculé sur {{sacs}} sacs par session",
+        "colonnes": {
+          "matiere": "Matière",
+          "enStock": "En stock",
+          "parSession": "Par session",
+          "sessions": "Sessions",
+          "prochaine": "Prochaine réception",
+          "valeur": "Valeur (FCFA)",
+          "statut": "Statut"
+        },
+        "niveaux": {
+          "suffisant": "Suffisant",
+          "a-commander": "À commander",
+          "bas": "Stock bas"
+        }
+      },
+      "date": {
+        "jours": "Jour du stock",
+        "titre": "Stock au soir du {{jour}}",
+        "valeur": "Valeur : {{valeur}} FCFA",
+        "colonnes": {
+          "matiere": "Matière",
+          "fin": "Stock à date",
+          "entrees": "Entrées du jour",
+          "sorties": "Sorties du jour",
+          "ajustements": "Ajustements",
+          "controle": "Dernier contrôle physique",
+          "valeur": "Valeur (FCFA)"
+        },
+        "controle": "{{code}} · {{date}} · {{compte}}",
+        "regle": "Le stock à date se calcule à partir du stock actuel et de tous les mouvements enregistrés depuis. Les deux contrôles physiques de la semaine (mercredi et dimanche) recalent le stock théorique sur le stock compté."
+      },
+      "mouvements": {
+        "liste": "Mouvements de stock",
+        "filtre": "Type de mouvement",
+        "filtres": {
+          "all": "Tous",
+          "entree": "Entrées",
+          "sortie": "Sorties",
+          "ajustement": "Ajustements",
+          "perte": "Pertes"
+        },
+        "types": {
+          "entree": "Entrée",
+          "sortie": "Sortie",
+          "ajustement": "Ajustement",
+          "perte": "Perte"
+        },
+        "regle": "Les entrées viennent des réceptions fournisseurs et des achats en caisse rattachés au stock ; les sorties, de la clôture de chaque production ; les ajustements, des inventaires validés.",
+        "vide": "—",
+        "manuel": {
+          "titre": "Mouvement manuel",
+          "type": "Type de mouvement",
+          "types": {
+            "perte": "Perte / casse",
+            "entree": "Entrée (correction)"
+          },
+          "matiere": "Matière",
+          "quantite": "Quantité",
+          "motif": "Motif (obligatoire)",
+          "enregistrer": "Enregistrer",
+          "toast": "Mouvement enregistré"
+        },
+        "erreurs": {
+          "quantite": "Indiquez une quantité.",
+          "motif": "Motif obligatoire.",
+          "quantite_obligatoire": "Indiquez une quantité.",
+          "motif_obligatoire": "Motif obligatoire.",
+          "stock_insuffisant": "La perte dépasse le stock disponible.",
+          "defaut": "Le mouvement n’a pas pu être enregistré. Réessayez."
+        }
+      },
+      "origines": {
+        "achats": {
+          "caisse": "achat en caisse",
+          "marche": "achat au marché"
+        },
+        "depense": "{{code}} · {{achat}}",
+        "production": {
+          "jour": "Production jour du {{date}}",
+          "nuit": "Production nuit du {{date}}"
+        },
+        "reception": "{{code}} · {{fournisseur}}",
+        "receptionPartielle": "{{code}} · {{fournisseur}} (partielle)",
+        "inventaire": "{{code}} · inventaire du {{date}}",
+        "manuel": "Manuel · {{motif}}"
+      },
+      "inventaires": {
+        "titre": "Contrôles de stock · deux fois par semaine",
+        "sousTitre": "Mercredi après la production de jour et dimanche à la clôture de la semaine. Le gérant de la semaine compte avec le responsable de production ; un écart de plus de 5 % part au propriétaire.",
+        "aFaire": "À faire aujourd’hui · {{date}}",
+        "semaine": "Sem. {{numero}}",
+        "moments": {
+          "mercredi": "Après la production de jour · vers 14:00",
+          "dimanche": "À la clôture de la semaine · vers 21:00"
+        },
+        "qui": "Gérant {{gerant}} + resp. production {{responsable}}",
+        "ecarts": "{{code}} · {{nombre}} écart(s)",
+        "statutsControle": {
+          "fait": "Fait",
+          "a-valider": "Fait · à valider",
+          "refuse": "Refusé",
+          "manque": "Manqué",
+          "aujourdhui": "À faire aujourd’hui",
+          "prevu": "Prévu"
+        },
+        "regle": "Contrôle obligatoire deux fois par semaine (mercredi et dimanche). Comptez physiquement chaque matière. Un écart de plus de 5 % envoie l’inventaire au propriétaire pour validation ; sinon le stock est ajusté tout de suite.",
+        "demarrer": "Démarrer un inventaire",
+        "enCours": "Inventaire en cours · compté par {{nom}}",
+        "comptage": "Comptage de {{matiere}}",
+        "soumettre": "Soumettre l’inventaire",
+        "annuler": "Annuler",
+        "incomplet": "Comptez toutes les matières avant de soumettre",
+        "historique": "Historique des inventaires",
+        "statuts": {
+          "valide": "Validé",
+          "a-valider": "À valider",
+          "refuse": "Refusé"
+        },
+        "comptePar": "Compté par {{nom}}",
+        "validePar": " · validé par {{nom}}",
+        "resume": "{{nombre}} écart(s) : {{liste}}",
+        "toasts": {
+          "valide": "Inventaire validé · stock ajusté",
+          "envoye": "Inventaire envoyé au propriétaire pour validation",
+          "erreur": "L’inventaire n’a pas pu être enregistré. Réessayez."
+        }
+      }
+    }
   }
 }

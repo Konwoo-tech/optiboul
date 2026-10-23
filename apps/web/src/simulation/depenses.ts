@@ -16,7 +16,6 @@ import {
   type Fournisseur,
   type InstantaneDepenses,
   type LigneBudget,
-  type Matiere,
   type ModeDepense,
   type Rattachement,
   type Semaine,
@@ -34,6 +33,7 @@ import {
 } from './comptoir.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
 import { lireUtilisateurConnecte } from './session.ts';
+import { entrerEnStockDepuisDepense } from './stocks.ts';
 
 /*
  * Faux serveur de « Comptoir › Dépenses » (US-168, récits US-110 à US-113) : les données et les
@@ -276,18 +276,11 @@ const demandesDeDepart = (): DemandeDepense[] => [
 ];
 
 type Journal = { heure: string; qui: string; quoi: string };
-type EntreeStock = {
-  matiere: Matiere;
-  quantite: number;
-  reference: string;
-  fournisseur: string | null;
-};
 
 type Etat = {
   depenses: Depense[];
   demandes: DemandeDepense[];
   journal: Journal[];
-  entreesStock: EntreeStock[];
   /** Dépenses déjà répercutées sur la caisse de la session (pour annuler un refus). */
   enCaisse: Set<string>;
 };
@@ -296,7 +289,6 @@ const etatInitial = (): Etat => ({
   depenses: depensesDeDepart(),
   demandes: demandesDeDepart(),
   journal: [],
-  entreesStock: [],
   // La levure et la glace de la maquette sont déjà dans les 31 000 FCFA de dépenses de la session.
   enCaisse: new Set(['e1', 'e2']),
 });
@@ -321,11 +313,6 @@ export function reinitialiserDepenses(): void {
 /** Actions tracées dans le journal, plus récentes en premier (tests). */
 export function journalDepenses(): readonly Journal[] {
   return lireEtat().journal;
-}
-
-/** Entrées de stock créées par des dépenses rattachées au stock (tests). */
-export function entreesDeStockDepenses(): readonly EntreeStock[] {
-  return lireEtat().entreesStock;
 }
 
 function tracer(qui: string, quoi: string) {
@@ -473,15 +460,16 @@ function creerDepense(a: Acteur, corps: Corps): Response {
     repercuterDepenseEnCaisse(montant);
   }
   if (rattachement.type === 'stock') {
-    etat.entreesStock = [
-      {
-        matiere: rattachement.matiere,
-        quantite: rattachement.quantite,
-        reference: numeroDepense(numero),
-        fournisseur: fournisseur ?? null,
-      },
-      ...etat.entreesStock,
-    ];
+    // Le stock est tenu par `simulation/stocks.ts` : l'entrée y est créée avec le numéro de la dépense.
+    entrerEnStockDepuisDepense({
+      matiere: rattachement.matiere,
+      quantite: rattachement.quantite,
+      code: numeroDepense(numero),
+      fournisseur: fournisseur
+        ? (fournisseurs().find((f) => f.id === fournisseur)?.nom ?? null)
+        : null,
+      par: a.nom,
+    });
   }
 
   tracer(
