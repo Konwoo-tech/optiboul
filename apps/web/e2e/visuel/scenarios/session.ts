@@ -17,7 +17,7 @@ const CONTENU: Zone = { x: 248, y: 0, width: 1032, height: 800 };
 type Etapes = (page: Page) => Promise<void>;
 
 // Le bandeau « simulation » n'existe pas dans le prototype.
-const masquerLeBandeauDeSimulation = (page: Page) =>
+export const masquerLeBandeauDeSimulation = (page: Page) =>
   page.addStyleTag({ content: '[data-simulation]{display:none!important}' });
 
 const echapper = (texte: string) => texte.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -28,7 +28,7 @@ const bouton = (page: Page, texte: string | RegExp) =>
     hasText: typeof texte === 'string' ? new RegExp(`^\\s*${echapper(texte)}\\s*$`) : texte,
   });
 
-const cliquerTexte = async (page: Page, texte: string | RegExp) => {
+export const cliquerTexte = async (page: Page, texte: string | RegExp) => {
   await bouton(page, texte).first().click();
   await page.waitForTimeout(250);
 };
@@ -49,9 +49,9 @@ const defiler = async (page: Page) => {
 };
 
 /** Les toasts durent 3 s : on attend qu'ils disparaissent pour ne comparer que l'écran. */
-const attendreFinDuToast = (page: Page) => page.waitForTimeout(3400);
+export const attendreFinDuToast = (page: Page) => page.waitForTimeout(3400);
 
-const connecterLePrototype = async (page: Page, adresse: string, profil: RegExp) => {
+export const connecterLePrototype = async (page: Page, adresse: string, profil: RegExp) => {
   await page.goto(adresse);
   await attendrePolices(page);
   await cliquer(page, profil);
@@ -59,7 +59,7 @@ const connecterLePrototype = async (page: Page, adresse: string, profil: RegExp)
   await page.waitForTimeout(700);
 };
 
-const connecterLApplication = async (page: Page, adresse: string, profil: RegExp) => {
+export const connecterLApplication = async (page: Page, adresse: string, profil: RegExp) => {
   await page.goto(`${adresse}/connexion?mode=code&deuxFacteurs=0`);
   await page.getByRole('heading', { name: 'Qui êtes-vous ?' }).waitFor();
   await cliquer(page, 'Clair');

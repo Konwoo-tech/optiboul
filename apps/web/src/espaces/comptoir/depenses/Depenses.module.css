@@ -1,0 +1,369 @@
+/*
+ * Comptoir › Dépenses, repris valeur par valeur de la maquette « OptiBoul ERP v2 » (bloc
+ * `scr.depenses`, lignes 387-428). Variables : --brand = marque, --surface = surface,
+ * --line = ligne, --fline = ligne-champ, --muted = discret, --ink = encre, --field = champ,
+ * --soft = doux, --bg = fond.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.carte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.budgetEntete {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.titre {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  margin: 0;
+}
+
+.budgetLigne {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-discret);
+  font-variant-numeric: tabular-nums;
+}
+
+.categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.categorie {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--ob-ligne);
+  border-radius: 12px;
+  background: var(--ob-champ);
+}
+
+.categorieHaut {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.categorieNom {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.mot {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.piste {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--ob-doux);
+  overflow: hidden;
+  display: block;
+}
+
+.remplissage {
+  display: block;
+  height: 100%;
+}
+
+.categorieLigne {
+  font-size: 12px;
+  color: var(--ob-discret);
+  font-variant-numeric: tabular-nums;
+}
+
+.bas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.formulaire {
+  flex: 1 1 340px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.qui {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.etiquette {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.champ {
+  height: 48px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.champ:focus-visible {
+  outline: none;
+  border-color: var(--ob-marque);
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.montant {
+  font-size: 20px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.groupe {
+  /* <fieldset> : neutralise ses marges et sa bordure. */
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.libelle {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  padding: 0;
+  /* Une légende ne prend pas part au `gap` du fieldset : l'écart de 8 px est ici. */
+  margin-bottom: 8px;
+}
+
+.puces {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.puce {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.sansCadre {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.puceActive {
+  border-color: var(--ob-marque);
+  background: var(--ob-marque);
+  color: var(--ob-fond);
+}
+
+.stock {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--ob-doux);
+}
+
+.photo {
+  min-height: 60px;
+  border: 1.5px dashed var(--ob-ligne-champ);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+  background: var(--ob-champ);
+  color: var(--ob-discret);
+}
+
+.photoJointe {
+  background: var(--ob-ok-fond);
+  color: var(--ob-ok-texte);
+}
+
+.note {
+  font-size: 12px;
+  color: var(--ob-discret);
+  line-height: 1.5;
+}
+
+.erreur {
+  font-size: 13px;
+  font-weight: 600;
+  color: #c2453a;
+}
+
+.enregistrer {
+  align-self: flex-end;
+  min-height: 48px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.liste {
+  flex: 2 1 440px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.filtres {
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.total {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ob-discret);
+}
+
+.lignes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: flex-start;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.ligneTexte {
+  flex: 1 1 240px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ligneTitre {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.ligneRattache {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ob-marque);
+}
+
+.ligneQui {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.demande {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ob-marque);
+  text-decoration: underline;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ligneDroite {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.ligneMontant {
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+}
+
+.statut {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.vide {
+  padding: 20px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}

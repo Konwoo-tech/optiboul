@@ -320,6 +320,147 @@
         "receveur_inconnu": "Choose the manager who receives the cash."
       }
     },
+    "depenses": {
+      "erreurChargement": "Could not load the expenses.",
+      "refSession": "{{type}} of {{date}}",
+      "budget": {
+        "titre": "{{mois}} budget by category",
+        "ligne": "{{realise}} / {{budget}} FCFA · {{pourcent}} %",
+        "niveaux": {
+          "ok": "OK",
+          "surveiller": "Watch",
+          "bloquant": "Over"
+        }
+      },
+      "categories": {
+        "matieres": "Raw materials",
+        "salaires": "Salaries",
+        "electricite": "Electricity",
+        "eau": "Water",
+        "administration": "Administration",
+        "technique": "Maintenance",
+        "petit-materiel": "Small equipment",
+        "lait": "Milk allowance",
+        "extra": "Extra"
+      },
+      "matieres": {
+        "farine": {
+          "nom": "Flour",
+          "unite": "sacks"
+        },
+        "sel": {
+          "nom": "Salt",
+          "unite": "kg"
+        },
+        "levure": {
+          "nom": "Yeast",
+          "unite": "kg"
+        },
+        "ameliorant": {
+          "nom": "Improver",
+          "unite": "kg"
+        },
+        "glace": {
+          "nom": "Ice",
+          "unite": "bags"
+        },
+        "bois": {
+          "nom": "Firewood",
+          "unite": "loads"
+        },
+        "huile": {
+          "nom": "Oil",
+          "unite": "litres"
+        }
+      },
+      "modes": {
+        "caisse": "Cash desk",
+        "banque": "Bank",
+        "mobile": "Mobile money"
+      },
+      "modesLigne": {
+        "caisse": "cash desk",
+        "banque": "Bank",
+        "mobile": "Mobile money"
+      },
+      "formulaire": {
+        "titre": "New expense",
+        "qui": "Entered by {{nom}} · {{role}} · {{semaine}}",
+        "categorie": "Category",
+        "libelle": "Description",
+        "montant": "Amount (FCFA)",
+        "rattacher": "Link to",
+        "rattachements": {
+          "production": "Production · {{session}}",
+          "semaine": "Week {{numero}} (overheads)",
+          "stock": "Stock entry"
+        },
+        "matiere": "Material",
+        "quantite": "Quantity in",
+        "fournisseur": "Supplier",
+        "marche": "Market purchase",
+        "payePar": "Paid from",
+        "photo": "Photograph the receipt",
+        "photoJointe": "Receipt attached · retake",
+        "note": "From {{seuil}} FCFA, an approval request is sent: to the manager if it comes from a cashier, to the owner if it comes from the manager.",
+        "enregistrer": "Save expense"
+      },
+      "erreurs": {
+        "libelle": "Enter a description.",
+        "montant": "Enter an amount in FCFA.",
+        "quantite": "Enter the quantity added to stock.",
+        "libelle_obligatoire": "Enter a description.",
+        "montant_invalide": "Enter an amount in FCFA.",
+        "quantite_obligatoire": "Enter the quantity added to stock.",
+        "fournisseur_invalide": "This supplier does not sell this material.",
+        "droit_insuffisant": "Your profile cannot record an expense.",
+        "defaut": "The expense could not be saved. Try again."
+      },
+      "toasts": {
+        "enregistree": "{{numero}} saved",
+        "enregistreeAvecDemande": "{{numero}} saved · approval request sent"
+      },
+      "liste": {
+        "titre": "Expenses list",
+        "filtreSemaine": "Filter by week",
+        "filtreRattachement": "Filter by link",
+        "toutesLesSemaines": "All weeks",
+        "semaine": "Week {{numero}}",
+        "rattachements": {
+          "all": "All",
+          "production": "Production",
+          "semaine": "Week",
+          "stock": "Stock"
+        },
+        "total": "{{nombre}} expenses · {{montant}} FCFA",
+        "totalUne": "{{nombre}} expense · {{montant}} FCFA",
+        "vide": "No expenses for this filter."
+      },
+      "statuts": {
+        "validee": "Approved",
+        "en-attente": "Pending",
+        "refusee": "Refused"
+      },
+      "rattache": {
+        "production": "Production · {{session}}",
+        "stock": "Stock · {{matiere}} +{{quantite}} {{unite}}",
+        "semaine": "Week {{numero}}"
+      },
+      "ligne": {
+        "qui": "By {{nom}} · {{role}} · {{date}} · {{mode}} · {{justificatif}}",
+        "joint": "receipt attached",
+        "sansJustificatif": "no receipt"
+      },
+      "validateurs": {
+        "gerant": "manager of the week ({{nom}})",
+        "proprietaire": "owner"
+      },
+      "demande": {
+        "attente": "{{numero}} · awaiting the {{validateur}}",
+        "acceptee": "{{numero}} · approved by {{nom}} · {{date}} {{heure}}",
+        "refusee": "{{numero}} · refused by {{nom}} · {{date}} {{heure}}"
+      }
+    },
     "session": {
       "titre": "Current session",
       "onglets": {

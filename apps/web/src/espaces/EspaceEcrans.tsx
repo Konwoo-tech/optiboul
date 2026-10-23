@@ -24,10 +24,16 @@ const EN_SIMULATION = import.meta.env.MODE === 'simulation';
 const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
   'comptoir/caisses': EN_SIMULATION ? lazy(() => import('./comptoir/caisses/Ecran.tsx')) : null,
   'comptoir/clients': EN_SIMULATION ? lazy(() => import('./clients/EcranClients.tsx')) : null,
+  'comptoir/depenses': EN_SIMULATION
+    ? lazy(() => import('./comptoir/depenses/EcranDepenses.tsx'))
+    : null,
   'comptoir/session': EN_SIMULATION
     ? lazy(() => import('./comptoir/session/SessionComptoir.tsx'))
     : null,
   'gestion/clients': EN_SIMULATION ? lazy(() => import('./clients/EcranClients.tsx')) : null,
+  'gestion/depenses': EN_SIMULATION
+    ? lazy(() => import('./comptoir/depenses/EcranDepenses.tsx'))
+    : null,
 };
 
 /**

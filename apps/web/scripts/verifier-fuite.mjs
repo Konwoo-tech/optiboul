@@ -12,6 +12,9 @@ const MARQUEURS = [
   'optiboul-simulation',
   'Carrefour Emana',
   'Ration de l’équipe de nuit',
+  'Réparation du pétrin',
+  'Facture ENEO de septembre',
+  'Bacs de façonnage',
 ];
 
 function fichiers(dossier) {
