@@ -117,11 +117,14 @@ class Projet:
         if len(self.mutations) >= 10:  # noqa: PLR2004
             self.envoyer()
 
-    def envoyer(self) -> None:
+    def envoyer(self) -> dict:
+        """Envoie les mutations en attente et renvoie leurs résultats par alias."""
+        resultat: dict = {}
         if self.mutations and self.appliquer:
             alias = "\n".join(f"m{i}: {m}" for i, m in enumerate(self.mutations))
-            graphql(f"mutation {{\n{alias}\n}}")
+            resultat = graphql(f"mutation {{\n{alias}\n}}")
         self.mutations.clear()
+        return resultat
 
     # ---------- projet ----------
     def trouver_ou_creer(self) -> None:
@@ -352,16 +355,34 @@ class Projet:
         print(f"Éléments : {len(presents)} dans le projet, {len(nouveaux)} à ajouter")
         if not self.appliquer:
             return
-        for noeud, _, _ in nouveaux:
-            self.mutation(f'addProjectV2ItemById(input: {{projectId: "{self.id}", contentId: "{noeud}"}}) {{ item {{ id }} }}')
-        self.envoyer()
-        presents = self.elements()
+        # L'identifiant d'élément renvoyé par l'ajout est utilisé directement : la liste
+        # des éléments du projet met quelques instants à référencer un ajout récent, et
+        # une relecture immédiate ferait croire que rien n'a été ajouté.
+        for debut in range(0, len(nouveaux), 10):
+            lot = nouveaux[debut : debut + 10]
+            # File alimentée directement : `mutation()` viderait le lot au 10ᵉ ajout
+            # et la réponse, qui porte les identifiants d'éléments, serait perdue.
+            self.mutations.extend(
+                f'addProjectV2ItemById(input: {{projectId: "{self.id}", contentId: "{noeud}"}}) {{ item {{ id }} }}'
+                for noeud, _, _ in lot
+            )
+            reponse = self.envoyer()
+            for rang, (noeud, _, _) in enumerate(lot):
+                ajoute = (reponse.get(f"m{rang}") or {}).get("item")
+                if ajoute:
+                    presents[noeud] = {"id": ajoute["id"], "valeurs": {}}
 
         modifications = 0
+        absents = []
         for noeud, contenu, est_pr in contenus:
             if est_pr:
                 contenu = {**contenu, **prs.get(noeud, {})}  # noqa: PLW2901
-            element = presents[noeud]
+            # GitHub peut refuser un contenu (élément archivé, dépôt d'origine
+            # inaccessible) : on le signale au lieu d'interrompre la synchronisation.
+            element = presents.get(noeud)
+            if element is None:
+                absents.append(contenu.get("number"))
+                continue
             voulues = self.valeurs_voulues(contenu, est_pr)
             # GitHub range tout nouvel élément dans « Backlog » : ce statut compte comme non posé.
             # Un statut choisi à la main (Prêt, En cours…) n'est jamais écrasé.
@@ -383,6 +404,8 @@ class Projet:
                 modifications += 1
         self.envoyer()
         print(f"Valeurs de champs écrites : {modifications}")
+        if absents:
+            print(f"  ! non ajoutés au tableau : {', '.join(f'#{n}' for n in absents if n)}")
 
     # ---------- vues ----------
     def vues(self) -> None:
