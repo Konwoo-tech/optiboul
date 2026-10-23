@@ -320,6 +320,147 @@
         "receveur_inconnu": "Choisissez le gérant qui reçoit la remise."
       }
     },
+    "depenses": {
+      "erreurChargement": "Impossible de charger les dépenses.",
+      "refSession": "{{type}} du {{date}}",
+      "budget": {
+        "titre": "Budget {{mois}} par catégorie",
+        "ligne": "{{realise}} / {{budget}} FCFA · {{pourcent}} %",
+        "niveaux": {
+          "ok": "OK",
+          "surveiller": "À surveiller",
+          "bloquant": "Dépassé"
+        }
+      },
+      "categories": {
+        "matieres": "Matières premières",
+        "salaires": "Salaires",
+        "electricite": "Électricité",
+        "eau": "Eau",
+        "administration": "Administration",
+        "technique": "Technique",
+        "petit-materiel": "Petit matériel",
+        "lait": "Lait supplément salaire",
+        "extra": "Extra"
+      },
+      "matieres": {
+        "farine": {
+          "nom": "Farine",
+          "unite": "sacs"
+        },
+        "sel": {
+          "nom": "Sel",
+          "unite": "kg"
+        },
+        "levure": {
+          "nom": "Levure",
+          "unite": "kg"
+        },
+        "ameliorant": {
+          "nom": "Améliorant",
+          "unite": "kg"
+        },
+        "glace": {
+          "nom": "Glace",
+          "unite": "sachets"
+        },
+        "bois": {
+          "nom": "Bois",
+          "unite": "chargements"
+        },
+        "huile": {
+          "nom": "Huile",
+          "unite": "litres"
+        }
+      },
+      "modes": {
+        "caisse": "Caisse",
+        "banque": "Banque",
+        "mobile": "Mobile money"
+      },
+      "modesLigne": {
+        "caisse": "caisse",
+        "banque": "Banque",
+        "mobile": "Mobile money"
+      },
+      "formulaire": {
+        "titre": "Nouvelle dépense",
+        "qui": "Saisie par {{nom}} · {{role}} · {{semaine}}",
+        "categorie": "Catégorie",
+        "libelle": "Libellé",
+        "montant": "Montant (FCFA)",
+        "rattacher": "Rattacher à",
+        "rattachements": {
+          "production": "Production · {{session}}",
+          "semaine": "Semaine {{numero}} (frais généraux)",
+          "stock": "Entrée de stock"
+        },
+        "matiere": "Matière",
+        "quantite": "Quantité entrée",
+        "fournisseur": "Fournisseur",
+        "marche": "Achat au marché",
+        "payePar": "Payé par",
+        "photo": "Prendre le justificatif en photo",
+        "photoJointe": "Justificatif joint · reprendre",
+        "note": "À partir de {{seuil}} FCFA, une demande de validation est envoyée : au gérant si la dépense vient d’une caissière, au propriétaire si elle vient du gérant.",
+        "enregistrer": "Enregistrer la dépense"
+      },
+      "erreurs": {
+        "libelle": "Indiquez le libellé de la dépense.",
+        "montant": "Indiquez un montant en FCFA.",
+        "quantite": "Indiquez la quantité entrée en stock.",
+        "libelle_obligatoire": "Indiquez le libellé de la dépense.",
+        "montant_invalide": "Indiquez un montant en FCFA.",
+        "quantite_obligatoire": "Indiquez la quantité entrée en stock.",
+        "fournisseur_invalide": "Ce fournisseur ne vend pas cette matière.",
+        "droit_insuffisant": "Votre profil ne permet pas d’enregistrer une dépense.",
+        "defaut": "La dépense n’a pas pu être enregistrée. Réessayez."
+      },
+      "toasts": {
+        "enregistree": "{{numero}} enregistrée",
+        "enregistreeAvecDemande": "{{numero}} enregistrée · demande envoyée pour validation"
+      },
+      "liste": {
+        "titre": "Liste des dépenses",
+        "filtreSemaine": "Filtrer par semaine",
+        "filtreRattachement": "Filtrer par rattachement",
+        "toutesLesSemaines": "Toutes les semaines",
+        "semaine": "Semaine {{numero}}",
+        "rattachements": {
+          "all": "Tout",
+          "production": "Production",
+          "semaine": "Semaine",
+          "stock": "Stock"
+        },
+        "total": "{{nombre}} dépenses · {{montant}} FCFA",
+        "totalUne": "{{nombre}} dépense · {{montant}} FCFA",
+        "vide": "Aucune dépense pour ce filtre."
+      },
+      "statuts": {
+        "validee": "Validée",
+        "en-attente": "En attente",
+        "refusee": "Refusée"
+      },
+      "rattache": {
+        "production": "Production · {{session}}",
+        "stock": "Stock · {{matiere}} +{{quantite}} {{unite}}",
+        "semaine": "Semaine {{numero}}"
+      },
+      "ligne": {
+        "qui": "Saisie par {{nom}} · {{role}} · {{date}} · {{mode}} · {{justificatif}}",
+        "joint": "justificatif joint",
+        "sansJustificatif": "sans justificatif"
+      },
+      "validateurs": {
+        "gerant": "gérant de la semaine ({{nom}})",
+        "proprietaire": "propriétaire"
+      },
+      "demande": {
+        "attente": "{{numero}} · en attente du {{validateur}}",
+        "acceptee": "{{numero}} · validée par {{nom}} · {{date}} {{heure}}",
+        "refusee": "{{numero}} · refusée par {{nom}} · {{date}} {{heure}}"
+      }
+    },
     "session": {
       "titre": "Session en cours",
       "onglets": {

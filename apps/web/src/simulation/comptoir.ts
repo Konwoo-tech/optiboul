@@ -17,7 +17,7 @@ import {
   type Saisies,
   type TypeMouvement,
 } from '@/espaces/comptoir/session/types.ts';
-import { creneauDe, formaterHeure, FUSEAU_BOULANGERIE } from '@/utils';
+import { creneauDe, formaterHeure, FUSEAU_BOULANGERIE, type Creneau } from '@/utils';
 
 import { CODE_DEMO, COMPTES_SIMULES } from './donnees.ts';
 import type { NotificationSimulee } from './notifications.ts';
@@ -134,9 +134,9 @@ type Journal = { heure: string; qui: string; quoi: string };
 
 type Etat = InstantaneSession & { journal: Journal[] };
 
-const heureCourante = () => formaterHeure(new Date());
+export const heureCourante = () => formaterHeure(new Date());
 
-const dateDuJour = () =>
+export const dateDuJour = () =>
   new Intl.DateTimeFormat('en-CA', {
     year: 'numeric',
     month: '2-digit',
@@ -236,6 +236,21 @@ export function reinitialiserComptoir(): void {
 /** Actions tracées dans le journal, plus récentes en premier (tests). */
 export function journalComptoir(): readonly Journal[] {
   return lireEtat().journal;
+}
+
+/** Session de production courante (cible du rattachement des dépenses) et son état. */
+export function sessionDeProduction(): { type: Creneau; date: string; ouverte: boolean } {
+  const { type, date, statut } = lireEtat().session;
+  return { type, date, ouverte: statut === 'ouverte' };
+}
+
+/**
+ * Dépense payée en caisse par la caissière pendant la session : elle entre dans la clôture
+ * (« Dépenses payées en caisse »). Un montant négatif annule une dépense refusée.
+ */
+export function repercuterDepenseDeSession(montant: number): void {
+  const etat = lireEtat();
+  etat.depensesCaisse = Math.max(0, etat.depensesCaisse + montant);
 }
 
 const instantane = (): InstantaneSession => {

@@ -340,6 +340,15 @@ function remettre(acteur: Acteur, corps: Corps): Response {
   return Response.json({ attendu: attenduDeCaisse(courante), receveur: receveur.nom, heure });
 }
 
+/**
+ * Dépense payée en caisse depuis « Comptoir › Dépenses » : elle diminue les espèces attendues de
+ * la caisse ouverte (un montant négatif annule une dépense refusée). Sans caisse ouverte, rien.
+ */
+export function repercuterDepenseEnCaisse(montant: number): void {
+  if (courante.statut !== 'ouverte') return;
+  courante = { ...courante, depenses: Math.max(0, courante.depenses + montant) };
+}
+
 /** Aide de démonstration : ajoute des espèces, des dépenses ou de la recette à la caisse ouverte. */
 function encaisser(corps: Corps): Response {
   if (courante.statut !== 'ouverte') {
