@@ -85,6 +85,8 @@ export type DemandeDepense = {
   par: string;
   parProfil: Profil;
   statut: StatutDemande;
+  /** Heure de l'émission, « HH:MM » (le jour est celui de la dépense). */
+  emiseA: string;
   decideePar: string;
   decideeLe: string;
   decideeA: string;

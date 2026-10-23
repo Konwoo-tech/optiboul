@@ -64,13 +64,20 @@ export type Autorisation = { par: string; heure: string; soldeApres: number };
 
 export type DemandePlafond = {
   id: string;
+  /** Numéro affiché « DEM-022 » : suite commune à toutes les demandes. */
+  numero: number;
   clientId: string;
   clientNom: string;
   soldeApres: number;
   plafond: number;
   par: string;
+  /** Jour de l'émission, « AAAA-MM-JJ » : figé, il ne suit pas l'horloge. */
+  jour: string;
   heure: string;
   statut: 'en-attente' | 'acceptee' | 'refusee';
+  /** Qui a tranché, et à quelle heure (« HH:MM »), une fois la décision prise. */
+  decidePar?: string;
+  decideA?: string;
 };
 
 export type SessionCaisse = {

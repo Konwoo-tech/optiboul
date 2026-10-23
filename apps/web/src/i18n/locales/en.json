@@ -662,5 +662,49 @@
         "defaut": "The action failed. Try again."
       }
     }
+  },
+  "demandes": {
+    "regle": "Requests are raised automatically: delivery over the limit (cashier), expense above the threshold (cashier or manager), payroll (manager), stock count with gaps (manager or head baker). Each request stays linked to its item.",
+    "enAttenteTitre": "Awaiting decision",
+    "mesDemandesTitre": "My pending requests",
+    "aucuneEnAttente": "No pending requests.",
+    "decisionsTitre": "Recent decisions",
+    "aucuneDecision": "No decisions yet.",
+    "chargement": "Loading requests…",
+    "erreur": "The requests could not be loaded. Try again in a moment.",
+    "types": {
+      "plafond": "Customer limit",
+      "depense": "Expense",
+      "paie": "Payroll",
+      "inventaire": "Stock count",
+      "production": "Production"
+    },
+    "emisePar": "Raised by {{nom}} · {{role}} · {{date}}",
+    "aValiderPar": "To be approved by: {{qui}}",
+    "validateur": {
+      "gerant-ou-proprietaire": "Manager of the week ({{gerant}}) or owner",
+      "gerant": "Manager of the week ({{gerant}}) or owner",
+      "proprietaire": "Owner ({{proprietaire}})"
+    },
+    "lien": {
+      "client": "Customer {{nom}} · balance {{solde}} FCFA",
+      "depense": "Expense {{code}} · {{montant}} FCFA · week {{semaine}}",
+      "paie": "Payroll · {{mois}}",
+      "inventaire": "Stock count {{code}}",
+      "production": "Production plan"
+    },
+    "autoriser": "Authorise",
+    "valider": "Approve",
+    "refuser": "Refuse",
+    "actionSur": "{{action}} {{code}}",
+    "enAttente": "Pending",
+    "accordee": "Approved",
+    "refusee": "Refused",
+    "accordeePar": "Approved by {{nom}} · {{heure}}",
+    "refuseePar": "Refused by {{nom}} · {{heure}}",
+    "toastAccorde": "Approved · {{titre}}",
+    "toastRefuse": "Refused · {{titre}}",
+    "toastErreur": "The decision could not be saved: try again.",
+    "toastDejaDecidee": "This request has already been answered."
   }
 }
