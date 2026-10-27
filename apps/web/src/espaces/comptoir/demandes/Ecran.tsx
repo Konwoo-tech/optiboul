@@ -122,7 +122,9 @@ function LigneDemande({ demande, contexte, profil, espaceOuvert, onDecider, occu
           )}
         </span>
         <span className={styles.intitule}>{titre}</span>
-        <span className={styles.detail}>{demande.detail}</span>
+        <span className={styles.detail}>
+          {langue === 'en' && demande.detailEn ? demande.detailEn : demande.detail}
+        </span>
         <span className={styles.meta}>
           {t('demandes.emisePar', {
             nom: demande.par,

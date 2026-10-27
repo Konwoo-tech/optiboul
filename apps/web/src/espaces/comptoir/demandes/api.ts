@@ -45,6 +45,9 @@ export function useDecider(utilisateur: string | undefined) {
         client.invalidateQueries({ queryKey: ['comptoir', 'caisses'] }),
         // Un inventaire accordé ajuste le stock et change de statut.
         client.invalidateQueries({ queryKey: ['simulation', 'atelier', 'stocks'] }),
+        // Une augmentation de production accordée s'ajoute au plan, et ses notifications partent.
+        client.invalidateQueries({ queryKey: ['simulation', 'atelier', 'production'] }),
+        client.invalidateQueries({ queryKey: ['simulation', 'notifications'] }),
       ]),
   });
 }

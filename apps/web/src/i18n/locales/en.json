@@ -849,6 +849,327 @@
           "erreur": "The stock count could not be saved. Try again."
         }
       }
+    },
+    "production": {
+      "erreurChargement": "Production could not be loaded. Try again in a moment.",
+      "sections": "Production sections",
+      "onglets": {
+        "plan": "Plan",
+        "realise": "Actual",
+        "consommation": "Material use"
+      },
+      "cycle": {
+        "titre": "Production cycle · {{session}} {{date}}",
+        "sousTitre": "{{semaine}} · head: {{responsable}} · manager: {{gerant}}",
+        "etapes": "Cycle steps",
+        "noms": {
+          "commandes": "Orders",
+          "planPropose": "Plan proposed",
+          "planValide": "Plan approved",
+          "ouverte": "Production opened",
+          "cloturee": "Production closed"
+        },
+        "quiCommandes": "Session cashier · {{nom}}",
+        "quiResponsable": "Head of production · {{nom}}",
+        "quiGerant": "Manager of the week · {{nom}}",
+        "jusquaNuit": "until 18:30",
+        "jusquaJour": "until 05:30",
+        "detailCommandes": "{{clients}} customers · {{pains}} loaves",
+        "versPlanNuit": "around 18:45",
+        "versPlanJour": "around 05:45",
+        "a": "at {{heure}}",
+        "avantPetrissage": "before kneading",
+        "aPetrissage": "at {{heure}} · kneading",
+        "versOuvertureNuit": "around 19:00",
+        "versOuvertureJour": "around 06:30",
+        "versClotureNuit": "around 05:00, after baking",
+        "versClotureJour": "around 13:30",
+        "detailPlan": "{{sacs}} sacks calculated from orders",
+        "detailCloture": "Output and material use entered · stock issues generated",
+        "attentePlan": "Waiting for the plan from {{nom}}",
+        "attenteValidation": "Waiting for approval from {{nom}}",
+        "attenteOuverture": "To be opened by {{nom}}",
+        "attenteCloture": "To be closed by {{nom}}",
+        "cloturePar": "Production closed by {{nom}} · {{heure}}",
+        "actions": {
+          "proposer": "Propose plan · {{sacs}} sacks",
+          "valider": "Approve the plan",
+          "ouvrir": "Open production",
+          "cloturer": "Close production"
+        },
+        "etatFaite": "Done",
+        "etatCourante": "Current step",
+        "etatAVenir": "Upcoming",
+        "regle": "The head of production of the week proposes the plan from the orders, the manager approves it, then the head opens production at kneading and closes it after baking. Closing records the stock issues."
+      },
+      "reste": {
+        "titre": "Left to produce",
+        "sous": "Updated each time output is entered. The cash desk and manager see it live.",
+        "sur": "of {{prevus}}",
+        "saisir": "Enter a batch"
+      },
+      "produits": {
+        "BAG": "Baguette",
+        "KO": "Kirikou",
+        "GC": "Short loaf"
+      },
+      "plan": {
+        "origineTitre": "Where production demand comes from",
+        "origineSous": "The plan adds up three sources. Only orders are typed in; estimated demand is calculated; the extra is decided by the head baker.",
+        "pains": "loaves",
+        "sacsCourt": "sack(s)",
+        "sources": {
+          "commandes": "Customer orders",
+          "commandesDetail": "Entered by the cashier in Session → Orders, until 18:30 for night and 05:30 for day.",
+          "voirCommandes": "See orders ›",
+          "estimee": "Estimated demand",
+          "estimeeDetail": "Regulars without an order ({{habituels}}) and counter sales, average of the last 4 sessions of the same type ({{guichet}}).",
+          "supplement": "Head baker extra",
+          "supplementDetail": "Added by the head of production. Approved with the plan, or through a request to the manager once the plan is approved."
+        },
+        "demandeTitre": "Demand and production increase",
+        "demandeSousDemande": "The plan is approved: the increase goes to the manager as a request and is added once approved.",
+        "demandeSousAjout": "The extra is added to the plan and approved with it by the manager.",
+        "demandeSousLecture": "Only the head of production adjusts quantities.",
+        "reprendreSuggestion": "Use suggestion",
+        "colonnes": {
+          "produit": "Product",
+          "commande": "Ordered",
+          "habituels": "Regulars, no order",
+          "guichet": "Counter (avg)",
+          "estimee": "Estimated demand",
+          "prevu": "In the plan",
+          "suggestion": "Suggestion",
+          "supplement": "Extra"
+        },
+        "sacs": "sacks",
+        "sac": "sack",
+        "couvert": "Covered",
+        "moins": "Remove one sack of {{produit}}",
+        "plus": "Add one sack of {{produit}}",
+        "supplementDe": "Extra for {{produit}}",
+        "motifLibelle": "Reason (required)",
+        "motifs": {
+          "habituels": "Regulars without an order",
+          "guichet": "Counter sales",
+          "marche": "Market or event",
+          "tardive": "Late order"
+        },
+        "farine": "Flour in stock: {{stock}} sacks · needed for the session: {{besoin}} sacks",
+        "demanderAuGerant": "Ask the manager for +{{sacs}} sack(s)",
+        "ajouterAuPlan": "Add to the plan · +{{sacs}} sack(s)",
+        "demandeEnAttente": "Pending request: Production increase: +{{total}} sack(s) · {{produits}} · reason: {{motif}} · to be approved by {{gerant}}",
+        "cloturee": "Production closed: no more additions for this session.",
+        "cartesTitre": "Plan by product",
+        "aPetrir": "to knead",
+        "sacsDe50": "50 kg sacks",
+        "commandes": "Loaves ordered",
+        "prevus": "Loaves planned",
+        "dontSupplement": "incl. extra",
+        "boules": "Dough balls",
+        "fiche": "Technical sheet ›",
+        "totalSession": "Session total",
+        "farineLibelle": "Flour"
+      },
+      "realise": {
+        "titre": "Actual production",
+        "sous": "Enter the loaves actually produced; the gap is shown in loaves and percent.",
+        "prevu": "Planned",
+        "realise": "Actual",
+        "champ": "Actual {{produit}}",
+        "enregistrer": "Save production",
+        "lecture": {
+          "proprietaire": "Read-only for the owner.",
+          "responsable": "Read-only: the head of production of the week enters the figures.",
+          "ouverture": "Entry opens with production.",
+          "cloturee": "Production closed: entry locked."
+        }
+      },
+      "mots": {
+        "ok": "On target",
+        "surveiller": "Watch",
+        "bloquant": "Out of range"
+      },
+      "consommation": {
+        "titre": "Actual material use",
+        "sous": "The recipe-based expected value is shown next to each field.",
+        "prevu": "Expected",
+        "champ": "{{matiere}}, quantity used in {{unite}}",
+        "unites": {
+          "farine": "kg",
+          "sel": "g",
+          "levure": "g",
+          "ameliorant": "g",
+          "glace": "bags",
+          "bois": "load",
+          "huile": "litres"
+        },
+        "conforme": "Gap of {{ecart}} kg: below the {{limite}} kg threshold.",
+        "alerte": "Gap of {{ecart}} kg on weighed materials, above the {{seuil}} kg per sack threshold ({{limite}} kg for {{sacs}} sacks).",
+        "justifier": "Explain the gap",
+        "motifs": {
+          "perte": "Loss",
+          "rate": "Failed batch",
+          "brule": "Burnt",
+          "pesee": "Weighing error",
+          "autre": "Other"
+        },
+        "precisez": "Details (optional)",
+        "envoyer": "Send to manager",
+        "envoyee": "Explanation sent to the manager: {{motif}}",
+        "enregistrer": "Save material use"
+      },
+      "cloture": {
+        "titre": "Close production",
+        "ligne": "Actual: {{realise}} loaves of {{prevus}} planned",
+        "sorties": "Stock issues generated",
+        "reste": "left {{stock}}",
+        "annuler": "Cancel",
+        "confirmer": "Close and record",
+        "insuffisant": "not enough stock"
+      },
+      "historique": {
+        "titre": "Production runs by week",
+        "colonnes": {
+          "jour": "Day",
+          "session": "Session",
+          "responsable": "Head",
+          "validePar": "Plan approved by",
+          "ouverture": "Opened",
+          "cloture": "Closed",
+          "sacs": "Sacks",
+          "prevu": "Planned",
+          "realise": "Actual",
+          "ecart": "Gap",
+          "ecartMatieres": "Material gap",
+          "statut": "Status"
+        },
+        "statuts": {
+          "en-cours": "In progress",
+          "cloturee": "Closed",
+          "non-cloturee": "Not closed"
+        }
+      },
+      "toasts": {
+        "planPropose": "Plan sent to the manager for approval",
+        "planValide": "Plan approved",
+        "ouverte": "Production open · kneading in progress",
+        "clotureImpossible": "Enter actual output and material use before closing",
+        "realiseEnregistre": "Production saved · the manager sees planned vs actual",
+        "consommationEnregistree": "Material use saved",
+        "motifObligatoire": "Choose a reason",
+        "gerantInforme": "The manager has been notified",
+        "supplementVide": "Add at least one sack",
+        "demandeEnvoyee": "Request sent to {{gerant}}",
+        "supplementAjoute": "Extra added to the plan",
+        "cloturee": "Production closed · stock issues recorded",
+        "justificationRequise": "Explain the material gap before closing"
+      },
+      "erreurs": {
+        "defaut": "The action could not be saved: try again.",
+        "droit_insuffisant": "Your profile does not allow this action.",
+        "etape_invalide": "This action is not possible at this step of the cycle.",
+        "saisie_fermee": "Entry is open during production, for the person in charge.",
+        "valeur_invalide": "Enter whole numbers, zero or more.",
+        "realise_requis": "Enter actual output before closing.",
+        "consommation_requise": "Enter actual material use before closing.",
+        "pas_d_ecart": "The material gap is below the threshold: nothing to explain.",
+        "motif_obligatoire": "Choose a reason.",
+        "production_cloturee": "Production is closed: no more additions.",
+        "demande_en_attente": "An increase request is already waiting for the manager.",
+        "supplement_invalide": "Add between 0 and 10 sacks per product.",
+        "supplement_vide": "Add at least one sack.",
+        "justification_requise": "The material gap is above the threshold: explain it before closing."
+      },
+      "fiche": {
+        "titre": "Product technical sheet",
+        "erreurChargement": "Technical sheets could not be loaded. Try again in a moment.",
+        "retour": "‹ Back to production",
+        "produits": "Products",
+        "version": "Version {{version}} · edited {{date}} by {{par}}",
+        "modifier": "Edit sheet",
+        "annuler": "Cancel",
+        "enregistrer": "Save · version {{version}}",
+        "erreurQuantites": "All quantities must be above zero (except water and ice).",
+        "erreurEnregistrement": "The sheet could not be saved: try again.",
+        "toastEnregistree": "Sheet {{code}} saved · version {{version}}",
+        "kpi": {
+          "cout": "Cost per loaf",
+          "coutSous": "Materials and baking, excl. labour",
+          "prix": "Observed prices",
+          "prixSous": "Reseller / retail",
+          "prixAucun": "No price recorded",
+          "marge": "Margin per loaf",
+          "margeSous": "Price minus cost",
+          "margePerte": "Sold at a loss at the low price",
+          "octobre": "Produced · October",
+          "octobreSous": "loaves"
+        },
+        "ingredients": {
+          "titre": "Ingredients per 50 kg sack of flour",
+          "sous": "Unit prices taken from the latest stock purchases.",
+          "colIngredient": "Ingredient",
+          "colQuantite": "Quantity",
+          "colPourcent": "% flour",
+          "colPrix": "Unit price",
+          "colCout": "Cost (FCFA)",
+          "noms": {
+            "farine": "Flour",
+            "eau": "Water",
+            "sel": "Salt",
+            "levure": "Yeast",
+            "ameliorant": "Improver",
+            "glace": "Ice"
+          }
+        },
+        "unites": {
+          "kg": "kg",
+          "L": "L",
+          "sachets": "bags"
+        },
+        "totaux": {
+          "matieres": "Materials subtotal",
+          "cuisson": "Baking (firewood + oil) spread over {{sacs}} sacks per session",
+          "sac": "Cost per sack",
+          "pain": "Cost per loaf · {{sac}} ÷ {{pains}} loaves"
+        },
+        "rendement": {
+          "titre": "Yield",
+          "pate": "Dough per sack",
+          "boule": "Ball weight",
+          "pb": "Loaves per ball",
+          "piece": "Dough per loaf",
+          "boulesParSac": "Balls per sack",
+          "painsParSac": "Loaves per sack"
+        },
+        "procede": {
+          "titre": "Method",
+          "sous": "Indicative times, to be confirmed by the head baker.",
+          "petrissage": {
+            "nom": "Mixing",
+            "detail": "5 min slow then 10 min fast. Ice cools the water so the dough comes out near 25 °C."
+          },
+          "pointage": {
+            "nom": "Bulk rest",
+            "detail": "20 min, covered."
+          },
+          "division": {
+            "nom": "Dividing & shaping",
+            "detail": "Balls of {{boule}} g divided into {{pieces}} pieces of {{poids}} g, then shaped."
+          },
+          "appret": {
+            "nom": "Proofing",
+            "detail": "60 to 90 min depending on bakehouse heat."
+          },
+          "cuisson": {
+            "nom": "Baking",
+            "detail": "{{minutes}} min in the wood oven, about 230 °C."
+          }
+        },
+        "regleModifiable": "Each edit creates a new version, recorded in the activity log. Unit prices follow stock purchases.",
+        "regleLecture": "Read-only. Only the owner and the administrator edit technical sheets.",
+        "regleChef": "Quantities and baking times are the kneading reference."
+      }
     }
   }
 }

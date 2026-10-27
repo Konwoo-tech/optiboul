@@ -21,6 +21,11 @@ import { contexteCaisses, reinitialiserCaisses, repondreCaisses } from './caisse
 import { repondreDemandes } from './demandes.ts';
 import { reinitialiserNumerosDemandes } from './numerosDemandes.ts';
 import { NOTIFICATIONS_PAR_PROFIL } from './notifications.ts';
+import {
+  adapterNotificationsALaProduction,
+  reinitialiserProduction,
+  repondreProduction,
+} from './production.ts';
 import { lireUtilisateurConnecte, memoriserUtilisateurConnecte } from './session.ts';
 
 /** La session « s'ouvre » au chargement de la page, comme dans la maquette. */
@@ -57,6 +62,7 @@ export function reinitialiserSimulation(): void {
   reinitialiserComptoir();
   reinitialiserDepenses();
   reinitialiserStocks();
+  reinitialiserProduction();
   reinitialiserNumerosDemandes();
   memoriserUtilisateurConnecte(null);
 }
@@ -190,7 +196,12 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
       if (!utilisateur) return probleme(403, 'non_authentifie', 'Connexion requise.');
       const vues = lues.get(utilisateur.id);
       return Response.json(
-        adapterNotificationsAuComptoir(NOTIFICATIONS_PAR_PROFIL[utilisateur.profil])
+        adapterNotificationsAuComptoir(
+          adapterNotificationsALaProduction(
+            utilisateur.profil,
+            NOTIFICATIONS_PAR_PROFIL[utilisateur.profil],
+          ),
+        )
           // Le contrôle de stock du jour est fait : son rappel en direct disparaît.
           .filter((n) => !(n.enDirect && n.fr.type === 'Stock' && !controleDeStockAFaire()))
           .map((n) => ({
@@ -222,6 +233,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
         repondreDepenses(url, methode, corps) ??
         repondreStocks(url, methode, corps) ??
         repondreDemandes(methode, chemin, corps) ??
+        repondreProduction(methode, chemin, corps) ??
         probleme(404, 'non_simule', `Pas encore simulé : ${methode} ${chemin}`)
       );
   }

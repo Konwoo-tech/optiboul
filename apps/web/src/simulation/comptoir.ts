@@ -3,6 +3,8 @@ import {
   chiffres,
   clientsSansCommande,
   FONDS_DE_CAISSE,
+  lireEntier,
+  planDeSacs,
   PLAFOND_PAR_DEFAUT,
 } from '@/espaces/comptoir/session/calculs.ts';
 import {
@@ -249,6 +251,43 @@ export function abonnerChangementDeSession(ecouteur: () => void): void {
 }
 
 const changementDeSession = () => surChangementDeSession.forEach((ecouteur) => ecouteur());
+
+/**
+ * Écouteurs prévenus quand une nouvelle session s'ouvre, avec la session qui se termine : la
+ * production non clôturée de celle-ci est archivée.
+ */
+const surOuvertureDeSession: Array<(precedente: { type: Creneau; date: string }) => void> = [];
+
+export function abonnerOuvertureDeSession(
+  ecouteur: (precedente: { type: Creneau; date: string }) => void,
+): void {
+  surOuvertureDeSession.push(ecouteur);
+}
+
+/**
+ * Ce que le plan de production lit des commandes de la session : pains commandés par produit,
+ * pains habituels des clients qui n'ont pas encore commandé, et qui a commandé.
+ */
+export function commandesDeLaSession() {
+  const { clients, commandes, habituelles, session } = lireEtat();
+  const manquants = clientsSansCommande(clients, commandes, habituelles);
+  const pains = planDeSacs(clients, commandes);
+  const habituels = { BAG: 0, KO: 0, GC: 0 };
+  for (const manquant of manquants) {
+    for (const cle of CLES_PRODUIT) habituels[cle] += habituelles[manquant.id]?.[cle] ?? 0;
+  }
+  return {
+    type: session.type,
+    date: session.date,
+    ouverte: session.statut === 'ouverte',
+    caissiere: session.ouvertePar,
+    pains: { BAG: pains.BAG.pains, KO: pains.KO.pains, GC: pains.GC.pains },
+    habituelsSansCommande: habituels,
+    clientsAyantCommande: clients.filter((c) =>
+      CLES_PRODUIT.some((cle) => lireEntier(commandes[c.id]?.[cle]) > 0),
+    ).length,
+  };
+}
 
 /** Session de production courante (cible du rattachement des dépenses) et son état. */
 export function sessionDeProduction(): { type: Creneau; date: string; ouverte: boolean } {
@@ -628,6 +667,8 @@ export function repondreComptoir(url: URL, methode: string, corps: Corps): Respo
       if (a.profil === 'proprietaire') return refus();
       if (ouverte()) return probleme(409, 'session_ouverte', 'La session est déjà ouverte.');
       const { type, date } = prochaineSession();
+      const precedente = { type: lireEtat().session.type, date: lireEtat().session.date };
+      surOuvertureDeSession.forEach((ecouteur) => ecouteur(precedente));
       lireEtat().session = {
         type,
         date,
