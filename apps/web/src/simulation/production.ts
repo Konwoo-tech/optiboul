@@ -52,7 +52,7 @@ import {
 import type { NotificationSimulee } from './notifications.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
 import { lireUtilisateurConnecte } from './session.ts';
-import { prixDesMatieres, sortirDuStock, stockDesMatieres } from './stock.ts';
+import { prixDesMatieres, sortirDuStockDepuisProduction, stockDesMatieres } from './stocks.ts';
 
 /*
  * Faux serveur de « Atelier › Production » (US-169, récits US-080 à US-089) : les données et les
@@ -532,9 +532,13 @@ function cloturer(a: Acteur, corps: Corps): Response {
 
   const plan = calculerPlan(commandesDeLaSession().pains, etat.supplement);
   const jalon = { par: a.nom, a: heureCourante() };
-  const reference = `Production ${libelleSession(etat.session, 'fr').toLowerCase()}`;
   const sorties = sortiesDeStock(consommation);
-  for (const sortie of sorties) sortirDuStock(sortie.matiere, sortie.quantite, reference, a.nom);
+  sortirDuStockDepuisProduction({
+    creneau: etat.session.type,
+    date: etat.session.date,
+    consommations: sorties.map(({ matiere, quantite }) => ({ matiere, quantite })),
+    par: a.nom,
+  });
 
   const total = CLES_PRODUIT.reduce((somme, cle) => somme + (realise[cle] ?? 0), 0);
   etat.etape = 'cloturee';

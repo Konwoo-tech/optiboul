@@ -5,7 +5,7 @@ import type { InstantaneProduction } from '@/espaces/atelier/production/types.ts
 import { repondre, reinitialiserSimulation } from './routeur.ts';
 import { memoriserUtilisateurConnecte } from './session.ts';
 import { journalProduction, placerLeCycle } from './production.ts';
-import { mouvementsDeStock, stockDesMatieres } from './stock.ts';
+import { mouvementsDeStock, stockDesMatieres } from './stocks.ts';
 
 const RACINE = '/api/v1/simulation/atelier/production/';
 
@@ -117,12 +117,13 @@ describe('faux serveur de la production : saisie et clôture', () => {
   });
 
   it('clôture : sorties de stock, historique, plus de saisie', async () => {
+    const avant = mouvementsDeStock().length;
     const reponse = await appeler('POST', 'cloturer/', { realise: REALISE, consommation: JUSTE });
     expect(reponse.statut).toBe(200);
     expect(reponse.json.sorties).toHaveLength(7);
     expect(stockDesMatieres().farine).toBe(24);
     expect(stockDesMatieres().levure).toBeCloseTo(0, 5);
-    expect(mouvementsDeStock().filter((m) => m.type === 'sortie')).toHaveLength(7);
+    expect(mouvementsDeStock().length - avant).toBe(7);
     const p = reponse.json.instantane as InstantaneProduction;
     expect(p.etape).toBe('cloturee');
     const derniere = p.historique.at(-1)!;

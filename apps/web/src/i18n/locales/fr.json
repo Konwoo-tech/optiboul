@@ -849,6 +849,324 @@
           "erreur": "L’inventaire n’a pas pu être enregistré. Réessayez."
         }
       }
+    },
+    "production": {
+      "erreurChargement": "La production n’a pas pu être chargée. Réessayez dans un instant.",
+      "sections": "Sections de la production",
+      "onglets": {
+        "plan": "Plan",
+        "realise": "Réalisé",
+        "consommation": "Consommation"
+      },
+      "cycle": {
+        "titre": "Cycle de production · {{session}} {{date}}",
+        "sousTitre": "{{semaine}} · responsable : {{responsable}} · gérant : {{gerant}}",
+        "etapes": "Étapes du cycle",
+        "noms": {
+          "commandes": "Commandes",
+          "planPropose": "Plan proposé",
+          "planValide": "Plan validé",
+          "ouverte": "Production ouverte",
+          "cloturee": "Production clôturée"
+        },
+        "quiCommandes": "Caissière de la session · {{nom}}",
+        "quiResponsable": "Resp. production · {{nom}}",
+        "quiGerant": "Gérant de la semaine · {{nom}}",
+        "jusquaNuit": "jusqu’à 18:30",
+        "jusquaJour": "jusqu’à 05:30",
+        "detailCommandes": "{{clients}} clients · {{pains}} pains",
+        "versPlanNuit": "vers 18:45",
+        "versPlanJour": "vers 05:45",
+        "a": "à {{heure}}",
+        "avantPetrissage": "avant le pétrissage",
+        "aPetrissage": "à {{heure}} · pétrissage",
+        "versOuvertureNuit": "vers 19:00",
+        "versOuvertureJour": "vers 06:30",
+        "versClotureNuit": "vers 05:00, après cuisson",
+        "versClotureJour": "vers 13:30",
+        "detailPlan": "{{sacs}} sacs calculés depuis les commandes",
+        "detailCloture": "Réalisé et consommation saisis · sorties de stock générées",
+        "attentePlan": "En attente du plan de {{nom}}",
+        "attenteValidation": "En attente de la validation de {{nom}}",
+        "attenteOuverture": "Ouverture par {{nom}}",
+        "attenteCloture": "Clôture par {{nom}}",
+        "cloturePar": "Production clôturée par {{nom}} · {{heure}}",
+        "actions": {
+          "proposer": "Proposer le plan · {{sacs}} sacs",
+          "valider": "Valider le plan",
+          "ouvrir": "Ouvrir la production",
+          "cloturer": "Clôturer la production"
+        },
+        "etatFaite": "Faite",
+        "etatCourante": "Étape en cours",
+        "etatAVenir": "À venir",
+        "regle": "Le responsable de production de la semaine propose le plan à partir des commandes, le gérant le valide, puis le responsable ouvre la production au pétrissage et la clôture après la cuisson. La clôture enregistre les sorties de stock."
+      },
+      "reste": {
+        "titre": "Reste à produire",
+        "sous": "Mis à jour à chaque saisie du réalisé. La caisse et le gérant reçoivent le reste en direct.",
+        "sur": "sur {{prevus}}",
+        "saisir": "Saisir une fournée"
+      },
+      "produits": {
+        "BAG": "Baguette",
+        "KO": "Kirikou",
+        "GC": "Gros court"
+      },
+      "plan": {
+        "origineTitre": "D’où vient la demande de production",
+        "origineSous": "Le plan additionne trois sources. Seules les commandes sont saisies à la main ; la demande estimée est calculée ; le supplément est décidé par le chef.",
+        "pains": "pains",
+        "sacsCourt": "sac(s)",
+        "sources": {
+          "commandes": "Commandes clients",
+          "commandesDetail": "Saisies par la caissière dans Session → Commandes, jusqu’à 18:30 pour la nuit et 05:30 pour le jour.",
+          "voirCommandes": "Voir les commandes ›",
+          "estimee": "Demande estimée",
+          "estimeeDetail": "Clients habituels sans commande ({{habituels}}) et ventes au guichet, moyenne des 4 dernières sessions du même type ({{guichet}}).",
+          "supplement": "Supplément du chef",
+          "supplementDetail": "Ajouté par le responsable de production. Validé avec le plan, ou par une demande au gérant si le plan est déjà validé."
+        },
+        "demandeTitre": "Demande et augmentation de production",
+        "demandeSousDemande": "Le plan est validé : l’augmentation part en demande au gérant et s’ajoute au plan dès son accord.",
+        "demandeSousAjout": "Le supplément s’ajoute au plan et sera validé avec lui par le gérant.",
+        "demandeSousLecture": "Seul le responsable de production ajuste les quantités.",
+        "reprendreSuggestion": "Reprendre la suggestion",
+        "colonnes": {
+          "produit": "Produit",
+          "commande": "Commandé",
+          "habituels": "Habituels sans cde",
+          "guichet": "Guichet (moy.)",
+          "estimee": "Demande estimée",
+          "prevu": "Prévu au plan",
+          "suggestion": "Suggestion",
+          "supplement": "Supplément"
+        },
+        "sacs": "sacs",
+        "sac": "sac",
+        "couvert": "Couvert",
+        "moins": "Retirer un sac de {{produit}}",
+        "plus": "Ajouter un sac de {{produit}}",
+        "supplementDe": "Supplément de {{produit}}",
+        "motifLibelle": "Motif (obligatoire)",
+        "motifs": {
+          "habituels": "Clients habituels sans commande",
+          "guichet": "Ventes au guichet",
+          "marche": "Marché ou événement",
+          "tardive": "Commande tardive"
+        },
+        "farine": "Farine en stock : {{stock}} sacs · besoin pour la session : {{besoin}} sacs",
+        "demanderAuGerant": "Demander +{{sacs}} sac(s) au gérant",
+        "ajouterAuPlan": "Ajouter au plan · +{{sacs}} sac(s)",
+        "demandeEnAttente": "Demande en attente : Augmentation de production : +{{total}} sac(s) · {{produits}} · motif : {{motif}} · à valider par {{gerant}}",
+        "cloturee": "Production clôturée : plus d’ajout possible sur cette session.",
+        "cartesTitre": "Plan par produit",
+        "aPetrir": "à pétrir",
+        "sacsDe50": "sacs de 50 kg",
+        "commandes": "Pains commandés",
+        "prevus": "Pains prévus",
+        "dontSupplement": "dont supplément",
+        "boules": "Boules",
+        "fiche": "Fiche technique ›",
+        "totalSession": "Total de la session",
+        "farineLibelle": "Farine"
+      },
+      "realise": {
+        "titre": "Production réalisée",
+        "sous": "Saisissez les pains réellement produits ; l’écart se calcule en pains et en pourcentage.",
+        "prevu": "Prévu",
+        "realise": "Réalisé",
+        "champ": "Réalisé {{produit}}",
+        "enregistrer": "Enregistrer la production",
+        "lecture": {
+          "proprietaire": "Lecture seule pour le propriétaire.",
+          "responsable": "Lecture seule : la saisie revient au responsable de production de la semaine.",
+          "ouverture": "La saisie s’ouvre avec la production.",
+          "cloturee": "Production clôturée : saisie verrouillée."
+        }
+      },
+      "mots": {
+        "ok": "Conforme",
+        "surveiller": "À surveiller",
+        "bloquant": "Hors seuil"
+      },
+      "consommation": {
+        "titre": "Consommation réelle des matières",
+        "sous": "La valeur prévue d’après la recette est rappelée à côté de chaque champ.",
+        "prevu": "Prévu",
+        "champ": "{{matiere}}, quantité utilisée en {{unite}}",
+        "unites": {
+          "farine": "kg",
+          "sel": "g",
+          "levure": "g",
+          "ameliorant": "g",
+          "glace": "sachets",
+          "bois": "chargement",
+          "huile": "litres"
+        },
+        "conforme": "Écart de {{ecart}} kg : sous le seuil de {{limite}} kg.",
+        "alerte": "Écart de {{ecart}} kg sur les matières pesées, au-delà du seuil de {{seuil}} kg par sac travaillé ({{limite}} kg pour {{sacs}} sacs).",
+        "justifier": "Justifier l’écart",
+        "motifs": {
+          "perte": "Perte",
+          "rate": "Raté",
+          "brule": "Brûlé",
+          "pesee": "Erreur de pesée",
+          "autre": "Autre"
+        },
+        "precisez": "Précisez (facultatif)",
+        "envoyer": "Envoyer au gérant",
+        "envoyee": "Justification envoyée au gérant : {{motif}}",
+        "enregistrer": "Enregistrer la consommation"
+      },
+      "cloture": {
+        "titre": "Clôturer la production",
+        "ligne": "Réalisé : {{realise}} pains sur {{prevus}} prévus",
+        "sorties": "Sorties de stock générées",
+        "reste": "reste {{stock}}",
+        "annuler": "Annuler",
+        "confirmer": "Clôturer et enregistrer"
+      },
+      "historique": {
+        "titre": "Productions rattachées aux semaines",
+        "colonnes": {
+          "jour": "Jour",
+          "session": "Session",
+          "responsable": "Responsable",
+          "validePar": "Plan validé par",
+          "ouverture": "Ouverture",
+          "cloture": "Clôture",
+          "sacs": "Sacs",
+          "prevu": "Prévu",
+          "realise": "Réalisé",
+          "ecart": "Écart",
+          "ecartMatieres": "Écart matières",
+          "statut": "Statut"
+        },
+        "statuts": {
+          "en-cours": "En cours",
+          "cloturee": "Clôturée",
+          "non-cloturee": "Non clôturée"
+        }
+      },
+      "toasts": {
+        "planPropose": "Plan envoyé au gérant pour validation",
+        "planValide": "Plan validé",
+        "ouverte": "Production ouverte · pétrissage en cours",
+        "clotureImpossible": "Saisissez la production réalisée et la consommation réelle avant de clôturer",
+        "realiseEnregistre": "Production enregistrée · le gérant voit le prévu/réalisé",
+        "consommationEnregistree": "Consommation enregistrée",
+        "motifObligatoire": "Choisissez un motif",
+        "gerantInforme": "Le gérant est informé de l’écart",
+        "supplementVide": "Ajoutez au moins un sac",
+        "demandeEnvoyee": "Demande envoyée à {{gerant}}",
+        "supplementAjoute": "Supplément ajouté au plan",
+        "cloturee": "Production clôturée · sorties de stock enregistrées"
+      },
+      "erreurs": {
+        "defaut": "L’action n’a pas pu être enregistrée : réessayez.",
+        "droit_insuffisant": "Votre profil ne permet pas cette action.",
+        "etape_invalide": "Cette action n’est pas possible à cette étape du cycle.",
+        "saisie_fermee": "La saisie est ouverte pendant la production, par son responsable.",
+        "valeur_invalide": "Saisissez des nombres entiers positifs ou nuls.",
+        "realise_requis": "Saisissez la production réalisée avant de clôturer.",
+        "consommation_requise": "Saisissez la consommation réelle avant de clôturer.",
+        "pas_d_ecart": "L’écart de matières est sous le seuil : rien à justifier.",
+        "motif_obligatoire": "Choisissez un motif.",
+        "production_cloturee": "La production est clôturée : plus d’ajout.",
+        "demande_en_attente": "Une demande d’augmentation attend déjà la réponse du gérant.",
+        "supplement_invalide": "Ajoutez entre 0 et 10 sacs par produit.",
+        "supplement_vide": "Ajoutez au moins un sac."
+      },
+      "fiche": {
+        "titre": "Fiche technique produit",
+        "erreurChargement": "Les fiches techniques n’ont pas pu être chargées. Réessayez dans un instant.",
+        "retour": "‹ Retour à la production",
+        "produits": "Produits",
+        "version": "Version {{version}} · modifiée le {{date}} par {{par}}",
+        "modifier": "Modifier la fiche",
+        "annuler": "Annuler",
+        "enregistrer": "Enregistrer · version {{version}}",
+        "erreurQuantites": "Toutes les quantités doivent être supérieures à zéro (sauf l’eau et la glace).",
+        "erreurEnregistrement": "La fiche n’a pas pu être enregistrée : réessayez.",
+        "toastEnregistree": "Fiche {{code}} enregistrée · version {{version}}",
+        "kpi": {
+          "cout": "Coût de revient / pain",
+          "coutSous": "Matières et cuisson, hors main-d’œuvre",
+          "prix": "Prix observés",
+          "prixSous": "Revendeur / détail",
+          "prixAucun": "Pas de prix relevé",
+          "marge": "Marge / pain",
+          "margeSous": "Prix moins coût de revient",
+          "margePerte": "Vendu à perte au prix bas",
+          "octobre": "Produits · octobre",
+          "octobreSous": "pains"
+        },
+        "ingredients": {
+          "titre": "Ingrédients pour 1 sac de farine (50 kg)",
+          "sous": "Prix unitaires repris des derniers achats en stock.",
+          "colIngredient": "Ingrédient",
+          "colQuantite": "Quantité",
+          "colPourcent": "% farine",
+          "colPrix": "Prix unitaire",
+          "colCout": "Coût (FCFA)",
+          "noms": {
+            "farine": "Farine",
+            "eau": "Eau",
+            "sel": "Sel",
+            "levure": "Levure",
+            "ameliorant": "Améliorant",
+            "glace": "Glace"
+          }
+        },
+        "unites": {
+          "kg": "kg",
+          "L": "L",
+          "sachets": "sachets"
+        },
+        "totaux": {
+          "matieres": "Sous-total matières",
+          "cuisson": "Cuisson (bois + huile) répartie sur {{sacs}} sacs par session",
+          "sac": "Coût d’un sac",
+          "pain": "Coût par pain · {{sac}} ÷ {{pains}} pains"
+        },
+        "rendement": {
+          "titre": "Rendement",
+          "pate": "Pâte obtenue par sac",
+          "boule": "Poids de la boule",
+          "pb": "Pains par boule",
+          "piece": "Poids de pâte par pain",
+          "boulesParSac": "Boules par sac",
+          "painsParSac": "Pains par sac"
+        },
+        "procede": {
+          "titre": "Procédé de fabrication",
+          "sous": "Temps indicatifs, à confirmer par le chef de production.",
+          "petrissage": {
+            "nom": "Pétrissage",
+            "detail": "5 min en 1re vitesse puis 10 min en 2e. La glace refroidit l’eau pour sortir la pâte vers 25 °C."
+          },
+          "pointage": {
+            "nom": "Pointage",
+            "detail": "20 min, pâte couverte."
+          },
+          "division": {
+            "nom": "Division et façonnage",
+            "detail": "Boules de {{boule}} g divisées en {{pieces}} pièces de {{poids}} g, puis façonnées."
+          },
+          "appret": {
+            "nom": "Apprêt",
+            "detail": "60 à 90 min selon la chaleur du fournil."
+          },
+          "cuisson": {
+            "nom": "Cuisson",
+            "detail": "{{minutes}} min au four à bois, environ 230 °C."
+          }
+        },
+        "regleModifiable": "Chaque modification crée une nouvelle version, enregistrée dans le journal des actions. Les prix unitaires suivent les achats en stock.",
+        "regleLecture": "Lecture seule. Seuls le propriétaire et l’administrateur modifient les fiches techniques.",
+        "regleChef": "Les quantités et les temps de cuisson servent de référence au pétrissage."
+      }
     }
   }
 }

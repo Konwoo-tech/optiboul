@@ -323,6 +323,19 @@ export function mouvementsDeStock(): readonly Mouvement[] {
   return lireEtat().mouvements;
 }
 
+/** Stock actuel de chaque matière, dans l'unité du stock (farine en sacs) : lu par la production. */
+export function stockDesMatieres(): Record<Matiere, number> {
+  return { ...lireEtat().stock };
+}
+
+/** Prix unitaire de chaque matière, relevé des derniers achats (FCFA) : lu par les fiches techniques. */
+export function prixDesMatieres(): Record<Matiere, number> {
+  return Object.fromEntries(MATIERES.map((cle) => [cle, FICHES[cle].prix])) as Record<
+    Matiere,
+    number
+  >;
+}
+
 function tracer(qui: string, quoi: string) {
   lireEtat().journal = [{ heure: heureCourante(), qui, quoi }, ...lireEtat().journal];
 }

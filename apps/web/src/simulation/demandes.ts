@@ -120,6 +120,8 @@ function deInventaire({ demande, inventaire }: DemandeDInventaire): Demande {
     decidePar: demande.decidePar,
     decideA: demande.decideA,
   };
+}
+
 /** Demande d'augmentation de production (Atelier › Production), au format commun. */
 function deProduction(d: DemandeDeProduction): Demande {
   const commun = {
