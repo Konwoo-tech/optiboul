@@ -40,10 +40,9 @@ export const SACS_PAR_SESSION = 8;
 /** Un supplément se règle par pas d'un sac, entre 0 et 10 par produit (maquette). */
 export const SUPPLEMENT_MAX_PAR_PRODUIT = 10;
 
-const PAINS_PAR_SAC = Object.fromEntries(PRODUITS.map((p) => [p.cle, p.painsParSac])) as Record<
-  CleProduit,
-  number
->;
+const PAINS_PAR_SAC = /* @__PURE__ */ Object.fromEntries(
+  PRODUITS.map((p) => [p.cle, p.painsParSac]),
+) as Record<CleProduit, number>;
 
 /** Un entier saisi : on ne garde que les chiffres, comme la maquette. Vide : rien de saisi. */
 export const chiffresSaisis = (texte: string): string => texte.replace(/\D/g, '');
@@ -53,7 +52,8 @@ export function lireSaisie(texte: string): number | null {
   return chiffres === '' ? null : Number.parseInt(chiffres, 10);
 }
 
-export const texteDeSaisie = (valeur: number | null): string => (valeur === null ? '' : String(valeur));
+export const texteDeSaisie = (valeur: number | null): string =>
+  valeur === null ? '' : String(valeur);
 
 // ───────────────────────────── plan et demande ─────────────────────────────
 
@@ -158,7 +158,7 @@ export const MATIERES_PESEES: Record<Matiere, ReglageMatiere> = {
   huile: { unite: 'litres', fixe: 3, kgParUnite: 0, stockParUnite: 1 },
 };
 
-export const MATIERES_CONSOMMEES = Object.keys(MATIERES_PESEES) as Matiere[];
+export const MATIERES_CONSOMMEES = /* @__PURE__ */ Object.keys(MATIERES_PESEES) as Matiere[];
 
 /** Valeur théorique d'une matière pour ce nombre de sacs. */
 export function theorique(matiere: Matiere, sacs: number): number {
@@ -365,9 +365,7 @@ export function calculerFiche(
     cuisson,
     coutDuSac,
     coutParPain,
-    marges: prixDeVente
-      ? [prixDeVente[0] - coutParPain, prixDeVente[1] - coutParPain]
-      : null,
+    marges: prixDeVente ? [prixDeVente[0] - coutParPain, prixDeVente[1] - coutParPain] : null,
   };
 }
 

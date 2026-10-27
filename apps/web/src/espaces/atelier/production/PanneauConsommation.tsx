@@ -150,7 +150,11 @@ export function PanneauConsommation({
               <p className={styles.alerteTitre} id="titre-justification">
                 {tc('justifier')}
               </p>
-              <div className={styles.alerteSaisie} role="group" aria-labelledby="titre-justification">
+              <div
+                className={styles.alerteSaisie}
+                role="group"
+                aria-labelledby="titre-justification"
+              >
                 {MOTIFS_ECART.map((m) => (
                   <button
                     type="button"
@@ -172,7 +176,12 @@ export function PanneauConsommation({
                   placeholder={tc('precisez')}
                   aria-label={tc('precisez')}
                 />
-                <button type="button" className={styles.envoyer} disabled={occupe} onClick={onEnvoyer}>
+                <button
+                  type="button"
+                  className={styles.envoyer}
+                  disabled={occupe}
+                  onClick={onEnvoyer}
+                >
                   {tc('envoyer')}
                 </button>
               </div>
@@ -185,9 +194,18 @@ export function PanneauConsommation({
           )}
         </div>
       )}
-      {lectureSeule && <p className={styles.lectureSeule}>{t(`atelier.production.realise.lecture.${lectureSeule}`)}</p>}
+      {lectureSeule && (
+        <p className={styles.lectureSeule}>
+          {t(`atelier.production.realise.lecture.${lectureSeule}`)}
+        </p>
+      )}
       {lectureSeule === null && (
-        <button type="button" className={styles.enregistrer} disabled={occupe} onClick={onEnregistrer}>
+        <button
+          type="button"
+          className={styles.enregistrer}
+          disabled={occupe}
+          onClick={onEnregistrer}
+        >
           {tc('enregistrer')}
         </button>
       )}

@@ -348,7 +348,11 @@
   margin-bottom: 6px;
 }
 
+/* Dans la maquette les lignes sont les enfants de la carte (écart de 4 px entre elles). */
 .rendements {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   list-style: none;
   margin: 0;
   padding: 0;

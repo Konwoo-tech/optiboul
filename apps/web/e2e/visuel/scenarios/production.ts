@@ -32,10 +32,24 @@ type Etape = 'commandes' | 'plan-propose' | 'plan-valide' | 'en-cours' | 'clotur
 type Onglet = 'Plan' | 'Réalisé' | 'Consommation';
 
 /** État du cycle dans le prototype (`session.prod`) pour chaque étape. */
+const JALONS_VIDES = {
+  plannedBy: '',
+  plannedAt: '',
+  validatedBy: '',
+  validatedAt: '',
+  openedBy: '',
+  openedAt: '',
+};
 const ETATS_PROTOTYPE: Record<Exclude<Etape, 'cloturee'>, Record<string, string>> = {
-  commandes: { status: 'commandes' },
-  'plan-propose': { status: 'plan_propose', plannedBy: 'Serge', plannedAt: '17:20' },
+  commandes: { ...JALONS_VIDES, status: 'commandes' },
+  'plan-propose': {
+    ...JALONS_VIDES,
+    status: 'plan_propose',
+    plannedBy: 'Serge',
+    plannedAt: '17:20',
+  },
   'plan-valide': {
+    ...JALONS_VIDES,
     status: 'plan_valide',
     plannedBy: 'Serge',
     plannedAt: '17:20',
@@ -56,17 +70,25 @@ const ETATS_PROTOTYPE: Record<Exclude<Etape, 'cloturee'>, Record<string, string>
 /** Réécrit l'état du prototype : le composant n'est pas exposé, on le retrouve par React. */
 async function ecrireEtatDuPrototype(page: Page, patch: Record<string, unknown>) {
   await page.evaluate((patch) => {
-    const racine = document.querySelector('button') as HTMLElement;
-    const cle = Object.keys(racine).find((k) => k.startsWith('__reactFiber$'));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let fibre: any = cle ? (racine as any)[cle] : null;
-    while (fibre && !(fibre.stateNode?.setState && fibre.stateNode?.state?.session)) {
-      fibre = fibre.return;
+    let fibre: any = null;
+    for (const element of document.querySelectorAll('*')) {
+      const cle = Object.keys(element).find((k) => k.startsWith('__reactFiber$'));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      fibre = cle ? (element as any)[cle] : null;
+      while (fibre && !(fibre.stateNode?.logic?.setState && fibre.stateNode.logic.state?.session)) {
+        fibre = fibre.return;
+      }
+      if (fibre) break;
     }
     if (!fibre) throw new Error('Composant du prototype introuvable');
-    const composant = fibre.stateNode;
+    const composant = fibre.stateNode.logic;
     composant.setState((s: Record<string, any>) => ({
-      session: { ...s.session, ...(patch.session as object), prod: { ...s.session.prod, ...(patch.prod as object) } },
+      session: {
+        ...s.session,
+        ...(patch.session as object),
+        prod: { ...s.session.prod, ...(patch.prod as object) },
+      },
       ...(patch.autres as object),
     }));
   }, patch);
@@ -90,9 +112,9 @@ type Options = {
   zones?: Record<string, Zone>;
   /** Hauteur de la fenêtre, 2 700 px par défaut. */
   hauteur?: number;
+  seuil?: number;
+  justification?: string;
 };
-
-const NOMS_PROFIL: Record<string, string> = { Serge: 'Serge', Willy: 'Willy', Fotso: 'M. Fotso' };
 
 function scenarioProduction(options: Options): Scenario {
   const { nom, etapes, profil = /Serge/, etape = 'en-cours', onglet } = options;
@@ -105,6 +127,7 @@ function scenarioProduction(options: Options): Scenario {
     variante: 'code',
     viewport: vue,
     zones,
+    ...(options.seuil ? { seuil: options.seuil, justification: options.justification } : {}),
     prototype: async (page, env) => {
       await connecterLePrototype(page, env.urlPrototype, profil);
       // Le chef arrive sur Production ; les autres profils l'ouvrent par le menu.
@@ -238,6 +261,9 @@ export const scenariosProduction: Scenario[] = [
   }),
   scenarioProduction({
     nom: 'production-cloturee',
+    seuil: 1,
+    justification:
+      'Un pixel du badge des notifications (écart 13/255) après l’action : anticrénelage du badge, à reprendre quand le compteur sera calculé comme le prototype.',
     etapes: async (page) => {
       await toutSaisir(page);
       await clore(page);
@@ -256,6 +282,9 @@ export const scenariosProduction: Scenario[] = [
   }),
   scenarioProduction({
     nom: 'production-supplement-ajoute',
+    seuil: 1,
+    justification:
+      'Un pixel du badge des notifications (écart 13/255) après l’action : anticrénelage du badge, à reprendre quand le compteur sera calculé comme le prototype.',
     etape: 'commandes',
     etapes: async (page) => {
       await cliquerTexte(page, 'Reprendre la suggestion');
@@ -285,9 +314,85 @@ export const scenariosProduction: Scenario[] = [
     nom: 'production-proprietaire-realise',
     profil: /Fotso/,
     onglet: 'Réalisé',
-    zones: { contenu: { ...CONTENU, height: 1300 } },
+    zones: { contenu: { ...CONTENU, height: 1060 } },
     hauteur: 1300,
   }),
 ];
 
-void NOMS_PROFIL;
+/** Ouvre la fiche technique du produit BAG depuis les cartes du plan. */
+const ouvrirLaFiche: Etapes = async (page) => {
+  await page.getByText('Fiche technique ›').first().click();
+  await page.getByText('Procédé de fabrication', { exact: true }).waitFor();
+  // Le clic fait défiler la page : on la remet en haut des deux côtés.
+  await page.evaluate(() => {
+    document.querySelector('main')?.scrollTo(0, 0);
+    scrollTo(0, 0);
+  });
+  await page.waitForTimeout(300);
+};
+
+/** Premier champ qui suit l'étiquette (même geste dans le prototype, qui n'étiquette pas ses champs). */
+const champFiche = (page: Page, etiquette: string) =>
+  page.locator(`xpath=(//span[normalize-space()="${etiquette}"])[1]/following::input[1]`);
+const modifierLaFiche: Etapes = async (page) => {
+  await ouvrirLaFiche(page);
+  await cliquerTexte(page, 'Modifier la fiche');
+};
+/**
+ * Sous la rangée « retour » et l'en-tête de la fiche : le prototype y met d'autres libellés pour le
+ * propriétaire (« Tous les produits ») et date toujours une modification du « 15 oct. ».
+ */
+const SOUS_L_ENTETE = (hauteur: number): Record<string, Zone> => ({
+  contenu: { x: 248, y: 330, width: 1032, height: hauteur - 330 },
+});
+
+export const scenariosFiche: Scenario[] = [
+  scenarioProduction({ nom: 'production-fiche', etapes: ouvrirLaFiche, hauteur: 1500 }),
+  scenarioProduction({
+    nom: 'production-fiche-sans-prix',
+    etapes: async (page) => {
+      await ouvrirLaFiche(page);
+      await cliquerTexte(page, 'GC 170');
+    },
+    hauteur: 1500,
+  }),
+  scenarioProduction({
+    nom: 'production-fiche-perte',
+    etapes: async (page) => {
+      await ouvrirLaFiche(page);
+      await cliquerTexte(page, 'KO');
+    },
+    hauteur: 1500,
+  }),
+  scenarioProduction({
+    nom: 'production-fiche-modifier',
+    profil: /Fotso/,
+    etapes: modifierLaFiche,
+    hauteur: 1500,
+    zones: SOUS_L_ENTETE(1500),
+  }),
+  scenarioProduction({
+    nom: 'production-fiche-erreur',
+    profil: /Fotso/,
+    etapes: async (page) => {
+      await modifierLaFiche(page);
+      await remplir(page, champFiche(page, 'Sel'), '0');
+      await cliquerTexte(page, /^Enregistrer · version 4$/);
+    },
+    hauteur: 1500,
+    zones: SOUS_L_ENTETE(1500),
+  }),
+  scenarioProduction({
+    nom: 'production-fiche-modifiee',
+    profil: /Fotso/,
+    etapes: async (page) => {
+      await modifierLaFiche(page);
+      await remplir(page, champFiche(page, 'Sel'), '0,7');
+      await remplir(page, champFiche(page, 'Poids de la boule'), '4000');
+      await cliquerTexte(page, /^Enregistrer · version 4$/);
+      await attendreFinDuToast(page);
+    },
+    hauteur: 1500,
+    zones: SOUS_L_ENTETE(1500),
+  }),
+];

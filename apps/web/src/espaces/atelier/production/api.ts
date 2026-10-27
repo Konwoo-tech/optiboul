@@ -84,11 +84,8 @@ function actionsDe(client: QueryClient, utilisateur: string | undefined) {
       ranger(envoyer<AvecInstantane>('PUT', 'realise/', realise)),
     enregistrerLaConsommation: (consommation: Consommation) =>
       ranger(envoyer<AvecInstantane>('PUT', 'consommation/', consommation)),
-    justifier: (justification: {
-      motif: MotifEcart;
-      texte: string;
-      consommation: Consommation;
-    }) => ranger(envoyer<AvecInstantane>('POST', 'justification/', justification)),
+    justifier: (justification: { motif: MotifEcart; texte: string; consommation: Consommation }) =>
+      ranger(envoyer<AvecInstantane>('POST', 'justification/', justification)),
     cloturer: (valeurs: { realise: Realise; consommation: Consommation }) =>
       ranger(envoyer<ReponseCloture>('POST', 'cloturer/', valeurs)),
     ajouterUnSupplement: (supplement: NouveauSupplement) =>

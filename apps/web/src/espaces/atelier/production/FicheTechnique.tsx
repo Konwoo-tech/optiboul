@@ -9,12 +9,7 @@ import type { Ecran } from '../../../navigation.ts';
 import { codeErreur, useFiches, useModifierFiche } from './api.ts';
 import { dateCourte } from './affichage.ts';
 import styles from './Fiche.module.css';
-import {
-  calculerFiche,
-  champInvalide,
-  decimal,
-  nombreSaisi,
-} from './regles.ts';
+import { calculerFiche, champInvalide, decimal, nombreSaisi } from './regles.ts';
 import { INGREDIENTS, type FicheProduit, type Ingredient, type Recette } from './types.ts';
 
 type Props = {
@@ -140,7 +135,11 @@ export function FicheTechnique({
           afficher(tf('toastEnregistree', { code: fiche.code, version: apres?.version ?? '' }));
         },
         onError: (e) =>
-          setErreur(codeErreur(e) === 'quantites_invalides' ? tf('erreurQuantites') : tf('erreurEnregistrement')),
+          setErreur(
+            codeErreur(e) === 'quantites_invalides'
+              ? tf('erreurQuantites')
+              : tf('erreurEnregistrement'),
+          ),
       },
     );
   };
@@ -233,7 +232,11 @@ export function FicheTechnique({
     },
     { cle: 'pb', libelle: tf('rendement.pb'), valeur: String(pains), champ: 'pb', unite: '' },
     { cle: 'piece', libelle: tf('rendement.piece'), valeur: `${dec(calcul.piece, 1)} g` },
-    { cle: 'boulesParSac', libelle: tf('rendement.boulesParSac'), valeur: dec(calcul.boulesParSac, 2) },
+    {
+      cle: 'boulesParSac',
+      libelle: tf('rendement.boulesParSac'),
+      valeur: dec(calcul.boulesParSac, 2),
+    },
     {
       cle: 'painsParSac',
       libelle: tf('rendement.painsParSac'),
@@ -428,7 +431,11 @@ export function FicheTechnique({
                   <li
                     className={styles.total}
                     key={total.libelle}
-                    style={{ fontSize: total.taille, fontWeight: total.graisse, background: total.fond }}
+                    style={{
+                      fontSize: total.taille,
+                      fontWeight: total.graisse,
+                      background: total.fond,
+                    }}
                   >
                     <span>{total.libelle}</span>
                     <span style={{ whiteSpace: 'nowrap' }}>{total.valeur}</span>
@@ -476,7 +483,10 @@ export function FicheTechnique({
                 ))}
               </ul>
             </section>
-            <section className={`${styles.carteTexte} ${styles.carteProcede}`} aria-labelledby="titre-procede">
+            <section
+              className={`${styles.carteTexte} ${styles.carteProcede}`}
+              aria-labelledby="titre-procede"
+            >
               <div className={styles.entetesProcede}>
                 <h3 className={styles.titre} id="titre-procede">
                   {tf('procede.titre')}

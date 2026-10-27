@@ -76,7 +76,8 @@ export function Historique({ instantane }: { instantane: InstantaneProduction })
     : [];
 
   const archivees: Ligne[] = [...instantane.historique].reverse().map((ligne) => {
-    const ecart = ligne.realise === null ? 0 : pourcentDEcart(ligne.realise - ligne.prevus, ligne.prevus);
+    const ecart =
+      ligne.realise === null ? 0 : pourcentDEcart(ligne.realise - ligne.prevus, ligne.prevus);
     return {
       cle: ligne.id,
       jour: jourComplet(ligne.date, langue),
@@ -118,10 +119,7 @@ export function Historique({ instantane }: { instantane: InstantaneProduction })
           </div>
           {[...enCours, ...archivees].map((ligne) => (
             <div className={styles.ligneHistorique} key={ligne.cle}>
-              <div
-                className={`${styles.grilleHistorique} ${styles.celluleHistorique}`}
-                role="row"
-              >
+              <div className={`${styles.grilleHistorique} ${styles.celluleHistorique}`} role="row">
                 <span style={{ fontWeight: 800 }} role="rowheader">
                   {ligne.jour}
                 </span>

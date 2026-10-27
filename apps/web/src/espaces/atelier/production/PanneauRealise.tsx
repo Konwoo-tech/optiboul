@@ -78,7 +78,12 @@ export function PanneauRealise({
       })}
       {lectureSeule && <p className={styles.lectureSeule}>{tr(`lecture.${lectureSeule}`)}</p>}
       {lectureSeule === null && (
-        <button type="button" className={styles.enregistrer} disabled={occupe} onClick={onEnregistrer}>
+        <button
+          type="button"
+          className={styles.enregistrer}
+          disabled={occupe}
+          onClick={onEnregistrer}
+        >
           {tr('enregistrer')}
         </button>
       )}

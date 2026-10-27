@@ -913,7 +913,9 @@
 
 .grilleHistorique {
   display: grid;
-  grid-template-columns: minmax(120px, 1.2fr) 60px 90px 100px 70px 70px 50px 70px 70px 70px 90px 100px;
+  grid-template-columns:
+    minmax(120px, 1.2fr)
+    60px 90px 100px 70px 70px 50px 70px 70px 70px 90px 100px;
   gap: 8px;
   align-items: center;
 }

@@ -442,7 +442,11 @@ const valeurInvalide = () =>
   probleme(400, 'valeur_invalide', 'Saisissez des nombres entiers positifs ou nuls.');
 
 const saisieFermee = () =>
-  probleme(409, 'saisie_fermee', 'La saisie est ouverte pendant la production, par son responsable.');
+  probleme(
+    409,
+    'saisie_fermee',
+    'La saisie est ouverte pendant la production, par son responsable.',
+  );
 
 function saisir(a: Acteur, corps: Corps, quoi: 'realise' | 'consommation'): Response {
   const etat = lireEtat();
@@ -477,7 +481,11 @@ function justifier(a: Acteur, corps: Corps): Response {
   const plan = calculerPlan(commandesDeLaSession().pains, etat.supplement);
   const kg = ecartEnKg(consommation, plan.sacs);
   if (!ecartAJustifier(kg, limiteEcartKg(SEUIL_ECART_KG_PAR_SAC, plan.sacs))) {
-    return probleme(409, 'pas_d_ecart', 'L’écart de matières est sous le seuil : rien à justifier.');
+    return probleme(
+      409,
+      'pas_d_ecart',
+      'L’écart de matières est sous le seuil : rien à justifier.',
+    );
   }
   const texte = typeof corps.texte === 'string' ? corps.texte.trim() : '';
   etat.consommation = consommation;
@@ -575,7 +583,13 @@ function ajouterSupplement(a: Acteur, corps: Corps): Response {
   if (etat.etape === 'cloturee') {
     return probleme(409, 'production_cloturee', 'La production est clôturée : plus d’ajout.');
   }
-  if (!supplementPossible(etat.etape, a.droits, etat.demandes.some((d) => d.statut === 'en-attente'))) {
+  if (
+    !supplementPossible(
+      etat.etape,
+      a.droits,
+      etat.demandes.some((d) => d.statut === 'en-attente'),
+    )
+  ) {
     return probleme(
       409,
       'demande_en_attente',
@@ -738,11 +752,13 @@ function passerALaSessionSuivante(precedente: { type: Creneau; date: string }) {
       ['gerant', 'proprietaire'],
       {
         titre: `Production non clôturée · ${libelleSession(precedente, 'fr').toLowerCase()}`,
-        detail: 'Archivée « non clôturée » à l’ouverture de la session suivante. À vérifier avant la clôture de la semaine.',
+        detail:
+          'Archivée « non clôturée » à l’ouverture de la session suivante. À vérifier avant la clôture de la semaine.',
       },
       {
         titre: `Production not closed · ${libelleSession(precedente, 'en').toLowerCase()}`,
-        detail: 'Archived as “not closed” when the next session opened. Check before closing the week.',
+        detail:
+          'Archived as “not closed” when the next session opened. Check before closing the week.',
       },
     );
   }
@@ -752,9 +768,10 @@ function passerALaSessionSuivante(precedente: { type: Creneau; date: string }) {
     demande.decidePar = 'Système';
     demande.decideA = heureCourante();
   }
-  const { type, date } = precedente.type === 'nuit'
-    ? { type: 'jour' as const, date: lendemain(precedente.date) }
-    : { type: 'nuit' as const, date: precedente.date };
+  const { type, date } =
+    precedente.type === 'nuit'
+      ? { type: 'jour' as const, date: lendemain(precedente.date) }
+      : { type: 'nuit' as const, date: precedente.date };
   etat.session = { type, date };
   etat.etape = 'commandes';
   etat.planPropose = null;
@@ -767,13 +784,23 @@ function passerALaSessionSuivante(precedente: { type: Creneau; date: string }) {
   etat.justification = null;
 }
 
+let abonne = false;
+/**
+ * S'abonne à l'ouverture de la session suivante, à la première requête (et non au chargement du
+ * module, ni depuis `lireEtat` : un appel au chargement garderait la simulation dans le paquet de
+ * production, et un cycle de références entre fonctions inutilisées empêche de les retirer).
+ */
+function sAbonner() {
+  if (abonne) return;
+  abonne = true;
+  abonnerOuvertureDeSession(passerALaSessionSuivante);
+}
+
 function lendemain(iso: string): string {
   const jour = new Date(`${iso}T12:00:00Z`);
   jour.setUTCDate(jour.getUTCDate() + 1);
   return jour.toISOString().slice(0, 10);
 }
-
-abonnerOuvertureDeSession(passerALaSessionSuivante);
 
 // ───────────────────────────── fiches techniques ─────────────────────────────
 
@@ -853,6 +880,7 @@ export function adapterNotificationsALaProduction(
   profil: Profil,
   notifications: readonly NotificationSimulee[],
 ): NotificationSimulee[] {
+  sAbonner();
   const etat = lireEtat();
   const commandes = commandesDeLaSession();
   const plan = calculerPlan(commandes.pains, etat.supplement);
@@ -935,11 +963,12 @@ export function adapterNotificationsALaProduction(
           heure: `${formaterDateCourte(new Date(evenement.jour), 'en')} ${evenement.heure}`,
           ...evenement.en,
         },
-        destination: versLesDemandes && gestion
-          ? { espace: 'gestion', cle: 'demandes' }
-          : peutOuvrir
-            ? { espace: 'atelier', cle: 'production' }
-            : null,
+        destination:
+          versLesDemandes && gestion
+            ? { espace: 'gestion', cle: 'demandes' }
+            : peutOuvrir
+              ? { espace: 'atelier', cle: 'production' }
+              : null,
       };
     });
   return [...adaptees, ...evenements, ...pasEnDirect];
@@ -968,6 +997,7 @@ export function repondreProduction(
   if (!lireUtilisateurConnecte()) return probleme(403, 'non_authentifie', 'Connexion requise.');
   const a = acteur();
   if (!a) return probleme(403, 'droit_insuffisant', 'Votre profil ne voit pas la production.');
+  sAbonner();
   const reste = chemin.slice(RACINE.length);
   const appel = `${methode} ${reste}`;
 

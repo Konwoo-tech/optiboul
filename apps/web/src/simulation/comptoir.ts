@@ -283,8 +283,9 @@ export function commandesDeLaSession() {
     caissiere: session.ouvertePar,
     pains: { BAG: pains.BAG.pains, KO: pains.KO.pains, GC: pains.GC.pains },
     habituelsSansCommande: habituels,
-    clientsAyantCommande: clients.filter((c) => CLES_PRODUIT.some((cle) => lireEntier(commandes[c.id]?.[cle]) > 0))
-      .length,
+    clientsAyantCommande: clients.filter((c) =>
+      CLES_PRODUIT.some((cle) => lireEntier(commandes[c.id]?.[cle]) > 0),
+    ).length,
   };
 }
 

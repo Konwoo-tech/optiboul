@@ -4,12 +4,7 @@ import { Link } from 'react-router';
 
 import { libelleProduit } from './affichage.ts';
 import styles from './Production.module.css';
-import {
-  besoinEnFarine,
-  bornerSupplement,
-  supplementEnDemande,
-  totalSacs,
-} from './regles.ts';
+import { besoinEnFarine, bornerSupplement, supplementEnDemande, totalSacs } from './regles.ts';
 import {
   CLES_PRODUIT,
   MOTIFS_SUPPLEMENT,
@@ -119,9 +114,7 @@ export function PanneauPlan({
               <span className={styles.sourceNumero}>3</span>
               <h3 className={styles.sourceNom}>{tp('sources.supplement')}</h3>
             </div>
-            <span className={styles.sourceValeur}>
-              {`+${plan.supplement} ${tp('sacsCourt')}`}
-            </span>
+            <span className={styles.sourceValeur}>{`+${plan.supplement} ${tp('sacsCourt')}`}</span>
             <span className={styles.sourceDetail}>{tp('sources.supplementDetail')}</span>
           </li>
         </ol>
@@ -169,7 +162,11 @@ export function PanneauPlan({
               const ligne = demande[cle];
               const saisi = supplement[cle];
               return (
-                <div className={`${styles.ligneTableau} ${styles.corpsTableau}`} role="row" key={cle}>
+                <div
+                  className={`${styles.ligneTableau} ${styles.corpsTableau}`}
+                  role="row"
+                  key={cle}
+                >
                   <span className={styles.produitTableau} role="rowheader">
                     {libelleProduit(cle)}
                   </span>
@@ -256,8 +253,15 @@ export function PanneauPlan({
               >
                 {tp('farine', { stock: arrondi(farine), besoin })}
               </span>
-              <button type="button" className={styles.principal} disabled={occupe} onClick={onAjouter}>
-                {enDemande ? tp('demanderAuGerant', { sacs: saisis }) : tp('ajouterAuPlan', { sacs: saisis })}
+              <button
+                type="button"
+                className={styles.principal}
+                disabled={occupe}
+                onClick={onAjouter}
+              >
+                {enDemande
+                  ? tp('demanderAuGerant', { sacs: saisis })
+                  : tp('ajouterAuPlan', { sacs: saisis })}
               </button>
             </div>
           </div>
@@ -268,7 +272,10 @@ export function PanneauPlan({
               ? tp('demandeEnAttente', {
                   total: demandeEnAttente.total,
                   produits: CLES_PRODUIT.filter((c) => demandeEnAttente.supplement[c] > 0)
-                    .map((c) => `${libelleProduit(c)} +${demandeEnAttente.supplement[c]} ${tp('sacsCourt')}`)
+                    .map(
+                      (c) =>
+                        `${libelleProduit(c)} +${demandeEnAttente.supplement[c]} ${tp('sacsCourt')}`,
+                    )
                     .join(' · '),
                   motif: tp(`motifs.${demandeEnAttente.motif}`).toLocaleLowerCase(),
                   gerant: instantane.gerant,
@@ -285,7 +292,9 @@ export function PanneauPlan({
             <li className={styles.cartePlan} key={cle}>
               <div className={styles.cartePlanHaut}>
                 <h3 className={styles.cartePlanCode}>{libelleProduit(cle)}</h3>
-                <span className={styles.cartePlanNom}>{t(`atelier.production.produits.${cle}`)}</span>
+                <span className={styles.cartePlanNom}>
+                  {t(`atelier.production.produits.${cle}`)}
+                </span>
               </div>
               <div className={styles.aPetrir}>{tp('aPetrir')}</div>
               <div className={styles.sacsGeants}>{String(ligne.sacs)}</div>

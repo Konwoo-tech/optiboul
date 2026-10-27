@@ -28,8 +28,7 @@ export function ModaleCloture({
   const { t, i18n } = useTranslation();
   const langue = i18n.language;
   const total = (realise.BAG ?? 0) + (realise.KO ?? 0) + (realise.GC ?? 0);
-  const virgule = (valeur: number) =>
-    String(valeur).replace('.', langue === 'en' ? '.' : ',');
+  const virgule = (valeur: number) => String(valeur).replace('.', langue === 'en' ? '.' : ',');
 
   return (
     <FenetreModale titre={t('atelier.production.cloture.titre')} onFermer={onFermer}>
@@ -42,14 +41,15 @@ export function ModaleCloture({
       <p className={styles.titreModale}>{t('atelier.production.cloture.sorties')}</p>
       <ul className={styles.sorties}>
         {sortiesDeStock(consommation).map((sortie) => {
-          const restant = Math.round((instantane.stock[sortie.matiere] - sortie.quantite) * 100) / 100;
+          const restant =
+            Math.round((instantane.stock[sortie.matiere] - sortie.quantite) * 100) / 100;
           return (
             <li className={styles.sortie} key={sortie.matiere}>
               <span>{nomDeMatiere(t, sortie.matiere)}</span>
               <span className={styles.sortieValeur}>
                 {`−${virgule(sortie.quantite)} ${t(`comptoir.depenses.matieres.${sortie.matiere}.unite`)}`}{' '}
                 <span className={styles.sortieReste}>
-                  {`· ${t('atelier.production.cloture.reste', { stock: virgule(restant) })}`}
+                  · {t('atelier.production.cloture.reste', { stock: virgule(restant) })}
                 </span>
               </span>
             </li>

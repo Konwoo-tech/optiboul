@@ -7,17 +7,16 @@ import { useSearchParams } from 'react-router';
 import { cheminEcran, ECRANS, type Ecran } from '../../../navigation.ts';
 import type { Profil } from '../../../profils.ts';
 import { EnTeteEcran } from '../../EnTeteEcran.tsx';
-import {
-  codeErreur,
-  useActionsProduction,
-  useProduction,
-  type ActionsProduction,
-} from './api.ts';
+import { codeErreur, useActionsProduction, useProduction, type ActionsProduction } from './api.ts';
 import { Cycle } from './Cycle.tsx';
 import { FicheTechnique } from './FicheTechnique.tsx';
 import { Historique } from './Historique.tsx';
 import { ModaleCloture } from './ModaleCloture.tsx';
-import { brouillonDeConsommation, consommationSaisie, PanneauConsommation } from './PanneauConsommation.tsx';
+import {
+  brouillonDeConsommation,
+  consommationSaisie,
+  PanneauConsommation,
+} from './PanneauConsommation.tsx';
 import { PanneauPlan } from './PanneauPlan.tsx';
 import { PanneauRealise, type Brouillon } from './PanneauRealise.tsx';
 import styles from './Production.module.css';
@@ -80,7 +79,10 @@ export default function EcranProduction({ ecran }: { ecran: Ecran }) {
         ecran={ecran}
         ficheId={fiche}
         utilisateur={utilisateur.name}
-        peutModifier={droitsProduction(utilisateur.profil, utilisateur.name, { responsable: '', gerant: '' }).modifierFiches}
+        peutModifier={
+          droitsProduction(utilisateur.profil, utilisateur.name, { responsable: '', gerant: '' })
+            .modifierFiches
+        }
         estChef={utilisateur.profil === 'production'}
         cheminRetour={cheminEcran(ecran)}
       />
@@ -161,8 +163,9 @@ function Contenu({ ecran, instantane, nom, profil, actions }: ContenuProps) {
   const [aFocaliser, setAFocaliser] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!aFocaliser) return;
-    document.getElementById(aFocaliser)?.focus();
+    const champ = aFocaliser ? document.getElementById(aFocaliser) : null;
+    if (!champ) return;
+    champ.focus();
     setAFocaliser(null);
   }, [aFocaliser, onglet]);
 
@@ -193,7 +196,9 @@ function Contenu({ ecran, instantane, nom, profil, actions }: ContenuProps) {
     (erreur: unknown) => {
       const code = codeErreur(erreur);
       const connu = code && i18n.exists(`atelier.production.erreurs.${code}`);
-      afficher(t(connu ? `atelier.production.erreurs.${code}` : 'atelier.production.erreurs.defaut'));
+      afficher(
+        t(connu ? `atelier.production.erreurs.${code}` : 'atelier.production.erreurs.defaut'),
+      );
     },
     [afficher, i18n, t],
   );
@@ -339,12 +344,18 @@ function Contenu({ ecran, instantane, nom, profil, actions }: ContenuProps) {
             plan={instantane.plan}
             realise={realiseNumerique}
             onSaisir={
-              droits.responsable && onglet !== 'realise' ? () => choisirOnglet('realise') : undefined
+              droits.responsable && onglet !== 'realise'
+                ? () => choisirOnglet('realise')
+                : undefined
             }
           />
         )}
 
-        <div className={styles.onglets} role="tablist" aria-label={t('atelier.production.sections')}>
+        <div
+          className={styles.onglets}
+          role="tablist"
+          aria-label={t('atelier.production.sections')}
+        >
           {ONGLETS.map((cle) => (
             <button
               type="button"
