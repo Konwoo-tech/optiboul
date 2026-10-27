@@ -1025,7 +1025,8 @@
         "sorties": "Stock issues generated",
         "reste": "left {{stock}}",
         "annuler": "Cancel",
-        "confirmer": "Close and record"
+        "confirmer": "Close and record",
+        "insuffisant": "not enough stock"
       },
       "historique": {
         "titre": "Production runs by week",
@@ -1061,7 +1062,8 @@
         "supplementVide": "Add at least one sack",
         "demandeEnvoyee": "Request sent to {{gerant}}",
         "supplementAjoute": "Extra added to the plan",
-        "cloturee": "Production closed · stock issues recorded"
+        "cloturee": "Production closed · stock issues recorded",
+        "justificationRequise": "Explain the material gap before closing"
       },
       "erreurs": {
         "defaut": "The action could not be saved: try again.",
@@ -1076,7 +1078,8 @@
         "production_cloturee": "Production is closed: no more additions.",
         "demande_en_attente": "An increase request is already waiting for the manager.",
         "supplement_invalide": "Add between 0 and 10 sacks per product.",
-        "supplement_vide": "Add at least one sack."
+        "supplement_vide": "Add at least one sack.",
+        "justification_requise": "The material gap is above the threshold: explain it before closing."
       },
       "fiche": {
         "titre": "Product technical sheet",

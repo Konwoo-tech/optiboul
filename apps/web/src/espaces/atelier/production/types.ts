@@ -173,3 +173,6 @@ export type InstantaneFiches = {
 };
 
 export type ModificationFiche = Recette;
+
+/** Valeurs en cours de saisie : le texte tapé, vide tant que rien n'est saisi. */
+export type Brouillon<K extends string> = Record<K, string>;

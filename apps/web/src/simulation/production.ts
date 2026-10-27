@@ -527,6 +527,21 @@ function cloturer(a: Acteur, corps: Corps): Response {
       'Saisissez la consommation réelle avant de clôturer.',
     );
   }
+  // R10 : un écart de matières au-delà du seuil se justifie avant la clôture.
+  const sacsDuPlan = calculerPlan(commandesDeLaSession().pains, etat.supplement).sacs;
+  if (
+    !etat.justification &&
+    ecartAJustifier(
+      ecartEnKg(consommation, sacsDuPlan),
+      limiteEcartKg(SEUIL_ECART_KG_PAR_SAC, sacsDuPlan),
+    )
+  ) {
+    return probleme(
+      409,
+      'justification_requise',
+      'L’écart de matières dépasse le seuil : justifiez-le avant de clôturer.',
+    );
+  }
   etat.realise = realise;
   etat.consommation = consommation;
 

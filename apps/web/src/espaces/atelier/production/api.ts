@@ -86,8 +86,12 @@ function actionsDe(client: QueryClient, utilisateur: string | undefined) {
       ranger(envoyer<AvecInstantane>('PUT', 'consommation/', consommation)),
     justifier: (justification: { motif: MotifEcart; texte: string; consommation: Consommation }) =>
       ranger(envoyer<AvecInstantane>('POST', 'justification/', justification)),
-    cloturer: (valeurs: { realise: Realise; consommation: Consommation }) =>
-      ranger(envoyer<ReponseCloture>('POST', 'cloturer/', valeurs)),
+    cloturer: async (valeurs: { realise: Realise; consommation: Consommation }) => {
+      const reponse = await ranger(envoyer<ReponseCloture>('POST', 'cloturer/', valeurs));
+      // La clôture crée les sorties de stock : l'écran Stocks les relit à l'ouverture.
+      void client.invalidateQueries({ queryKey: ['simulation', 'atelier', 'stocks'] });
+      return reponse;
+    },
     ajouterUnSupplement: (supplement: NouveauSupplement) =>
       ranger(
         envoyer<AvecInstantane & { demande?: { id: string; numero: number } }>(

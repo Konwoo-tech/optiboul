@@ -1,7 +1,7 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { EcranChargement, EcranErreur, useToast } from '@/ui';
-import { useCallback, useEffect, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { cheminEcran, ECRANS, type Ecran } from '../../../navigation.ts';
@@ -12,28 +12,29 @@ import { Cycle } from './Cycle.tsx';
 import { FicheTechnique } from './FicheTechnique.tsx';
 import { Historique } from './Historique.tsx';
 import { ModaleCloture } from './ModaleCloture.tsx';
-import {
-  brouillonDeConsommation,
-  consommationSaisie,
-  PanneauConsommation,
-} from './PanneauConsommation.tsx';
+import { PanneauConsommation } from './PanneauConsommation.tsx';
 import { PanneauPlan } from './PanneauPlan.tsx';
-import { PanneauRealise, type Brouillon } from './PanneauRealise.tsx';
+import { PanneauRealise } from './PanneauRealise.tsx';
 import styles from './Production.module.css';
 import { ResteAProduire } from './ResteAProduire.tsx';
 import {
   actionDuCycle,
+  brouillonDeConsommation,
+  brouillonDuRealise,
+  consommationSaisie,
+  realiseSaisi,
+  ecartAJustifier,
+  ecartEnKg,
+  limiteEcartKg,
   bornerSupplement,
   consommationComplete,
   droitsProduction,
-  lireSaisie,
   MATIERES_CONSOMMEES,
   peutSaisir,
   realiseComplet,
   supplementEnDemande,
   supplementPossible,
   supplementVide,
-  texteDeSaisie,
   totalSacs,
   type ActionCycle,
 } from './regles.ts';
@@ -46,22 +47,9 @@ import {
   type MotifSupplement,
   type Onglet,
   type Quantites,
-  type Realise,
 } from './types.ts';
 
 const ONGLET_PAR_DEFAUT: Onglet = 'plan';
-
-const brouillonDuRealise = (realise: Realise): Brouillon<CleProduit> => ({
-  BAG: texteDeSaisie(realise.BAG),
-  KO: texteDeSaisie(realise.KO),
-  GC: texteDeSaisie(realise.GC),
-});
-
-const realiseSaisi = (brouillon: Brouillon<CleProduit>): Realise => ({
-  BAG: lireSaisie(brouillon.BAG),
-  KO: lireSaisie(brouillon.KO),
-  GC: lireSaisie(brouillon.GC),
-});
 
 /**
  * Atelier › Production (US-080 à US-089) : le cycle de la session, le plan et d'où vient la demande,
@@ -160,14 +148,23 @@ function Contenu({ ecran, instantane, nom, profil, actions }: ContenuProps) {
   const [fenetre, setFenetre] = useState(false);
   const [occupe, setOccupe] = useState(false);
   // Champ à focaliser une fois l'onglet affiché (clôture refusée : on mène à ce qui manque).
-  const [aFocaliser, setAFocaliser] = useState<string | null>(null);
+  const aFocaliser = useRef<string | null>(null);
 
   useEffect(() => {
-    const champ = aFocaliser ? document.getElementById(aFocaliser) : null;
+    const champ = aFocaliser.current ? document.getElementById(aFocaliser.current) : null;
     if (!champ) return;
     champ.focus();
-    setAFocaliser(null);
-  }, [aFocaliser, onglet]);
+    aFocaliser.current = null;
+  }, [onglet]);
+
+  const mener = (suivant: Onglet, champ: string) => {
+    if (suivant === onglet) {
+      document.getElementById(champ)?.focus();
+      return;
+    }
+    aFocaliser.current = champ;
+    choisirOnglet(suivant);
+  };
 
   const droits = droitsProduction(profil, nom, {
     responsable: instantane.responsable,
@@ -226,14 +223,27 @@ function Contenu({ ecran, instantane, nom, profil, actions }: ContenuProps) {
       void agir(() => actions.ouvrir(), t('atelier.production.toasts.ouverte'));
     } else {
       const reel = realiseSaisi(realise);
-      if (!realiseComplet(reel) || !consommationComplete(consommationSaisie(consommation))) {
+      const conso = consommationSaisie(consommation);
+      if (!realiseComplet(reel) || !consommationComplete(conso)) {
         afficher(t('atelier.production.toasts.clotureImpossible'));
         const manqueLeRealise = !realiseComplet(reel);
         const premier = manqueLeRealise
           ? CLES_PRODUIT.find((cle) => realise[cle] === '')
           : MATIERES_CONSOMMEES.find((m) => consommation[m] === '');
-        choisirOnglet(manqueLeRealise ? 'realise' : 'consommation');
-        setAFocaliser(`${manqueLeRealise ? 'realise' : 'conso'}-${premier}`);
+        mener(
+          manqueLeRealise ? 'realise' : 'consommation',
+          `${manqueLeRealise ? 'realise' : 'conso'}-${premier}`,
+        );
+        return;
+      }
+      // R10 : un écart au-delà du seuil se justifie avant de clôturer.
+      const sacs = instantane.plan.sacs;
+      if (
+        !instantane.justification &&
+        ecartAJustifier(ecartEnKg(conso, sacs), limiteEcartKg(instantane.seuilEcartKg, sacs))
+      ) {
+        afficher(t('atelier.production.toasts.justificationRequise'));
+        mener('consommation', 'justification-motif-perte');
         return;
       }
       setFenetre(true);

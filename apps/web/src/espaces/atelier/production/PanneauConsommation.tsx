@@ -1,11 +1,12 @@
+/* oxlint-disable jsx-a11y/prefer-tag-over-role -- Groupe de puces de la maquette : un <fieldset> changerait la mise en page au pixel près ; role=group et aria-labelledby portent la sémantique. */
 import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
 
 import { nomDeMatiere, uniteDeSaisie } from './affichage.ts';
 import styles from './Production.module.css';
-import type { Brouillon } from './PanneauRealise.tsx';
 import {
   chiffresSaisis,
+  consommationSaisie,
   ecartAJustifier,
   ecartDeMatiere,
   ecartEnKg,
@@ -13,13 +14,12 @@ import {
   limiteEcartKg,
   MATIERES_CONSOMMEES,
   motDEcart,
-  texteDeSaisie,
   theorique,
   unChiffre,
 } from './regles.ts';
 import {
   MOTIFS_ECART,
-  type Consommation,
+  type Brouillon,
   type InstantaneProduction,
   type Matiere,
   type MotifEcart,
@@ -38,18 +38,6 @@ type Props = {
   onTexte: (texte: string) => void;
   onEnvoyer: () => void;
 };
-
-/** Valeurs saisies sous forme de consommation : `null` pour un champ vide. */
-export function consommationSaisie(valeurs: Brouillon<Matiere>): Consommation {
-  return Object.fromEntries(
-    MATIERES_CONSOMMEES.map((matiere) => [matiere, lireSaisie(valeurs[matiere])]),
-  ) as Consommation;
-}
-
-export const brouillonDeConsommation = (consommation: Consommation): Brouillon<Matiere> =>
-  Object.fromEntries(
-    MATIERES_CONSOMMEES.map((matiere) => [matiere, texteDeSaisie(consommation[matiere])]),
-  ) as Brouillon<Matiere>;
 
 /**
  * Onglet « Consommation » : la valeur de la recette à côté de chaque champ, l'écart par matière,

@@ -134,6 +134,39 @@ describe('faux serveur de la production : saisie et clôture', () => {
     ).toBe(409);
   });
 
+  it('refuse la clôture d’un écart au-delà du seuil sans justification (R10), puis l’accepte justifié', async () => {
+    const enEcart = { ...JUSTE, farine: 320 };
+    const refus = await appeler('POST', 'cloturer/', { realise: REALISE, consommation: enEcart });
+    expect(refus.statut).toBe(409);
+    expect(refus.json.code).toBe('justification_requise');
+    expect((await lire()).etape).toBe('en-cours');
+    expect(stockDesMatieres().farine).toBe(30);
+    await appeler('POST', 'justification/', { motif: 'brule', consommation: enEcart });
+    expect(
+      (await appeler('POST', 'cloturer/', { realise: REALISE, consommation: enEcart })).statut,
+    ).toBe(200);
+  });
+
+  it('une double clôture est refusée (409) et ne sort pas le stock deux fois', async () => {
+    await appeler('POST', 'cloturer/', { realise: REALISE, consommation: JUSTE });
+    const apres = stockDesMatieres();
+    const mouvements = mouvementsDeStock().length;
+    expect(
+      (await appeler('POST', 'cloturer/', { realise: REALISE, consommation: JUSTE })).statut,
+    ).toBe(409);
+    expect(stockDesMatieres()).toEqual(apres);
+    expect(mouvementsDeStock().length).toBe(mouvements);
+  });
+
+  it('un stock insuffisant ne descend jamais sous zéro', async () => {
+    const trop = { ...JUSTE, sel: 20000 };
+    await appeler('POST', 'justification/', { motif: 'perte', consommation: trop });
+    expect(
+      (await appeler('POST', 'cloturer/', { realise: REALISE, consommation: trop })).statut,
+    ).toBe(200);
+    expect(stockDesMatieres().sel).toBe(0);
+  });
+
   it('justification : seulement en cas d’écart au-delà du seuil, motif obligatoire', async () => {
     const pasEcart = await appeler('POST', 'justification/', {
       motif: 'perte',
@@ -200,6 +233,29 @@ describe('faux serveur de la production : supplément (R15)', () => {
     const p = await lire();
     expect(p.plan.sacs).toBe(7);
     expect(p.demandeEnAttente).toBeNull();
+  });
+
+  it('droits de décision : un autre gérant et le propriétaire décident, la caissière et le chef non', async () => {
+    await appeler('POST', 'supplement/', { sacs: { BAG: 1 }, motif: 'guichet' });
+    const liste = async () =>
+      (await repondre(new URL('http://x/api/v1/simulation/demandes/'), 'GET', {}).json()) as {
+        demandes: Array<{ id: string; type: string }>;
+      };
+    memoriserUtilisateurConnecte('davy');
+    expect((await liste()).demandes.some((d) => d.type === 'production')).toBe(false);
+    memoriserUtilisateurConnecte('patrick');
+    const id = (await liste()).demandes.find((d) => d.type === 'production')!.id;
+    const decider = (accord: boolean) =>
+      repondre(new URL(`http://x/api/v1/simulation/demandes/${id}/decider/`), 'POST', { accord });
+    memoriserUtilisateurConnecte('davy');
+    expect(decider(true).status).toBe(404);
+    memoriserUtilisateurConnecte('serge');
+    expect(decider(true).status).toBe(403);
+    memoriserUtilisateurConnecte('patrick');
+    expect(decider(true).status).toBe(200);
+    memoriserUtilisateurConnecte('fotso');
+    expect(decider(false).status).toBe(409);
+    expect((await lire()).plan.sacs).toBe(7);
   });
 
   it('une demande refusée n’ajoute rien', async () => {

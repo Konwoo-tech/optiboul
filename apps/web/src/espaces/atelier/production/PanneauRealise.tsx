@@ -4,9 +4,7 @@ import { formaterNombre } from '@/utils';
 import { ecartEnPains, libelleProduit } from './affichage.ts';
 import styles from './Production.module.css';
 import { chiffresSaisis, lireSaisie, motDEcart, pourcentDEcart } from './regles.ts';
-import { CLES_PRODUIT, type CleProduit, type Plan } from './types.ts';
-
-export type Brouillon<K extends string> = Record<K, string>;
+import { CLES_PRODUIT, type Brouillon, type CleProduit, type Plan } from './types.ts';
 
 type Props = {
   plan: Plan;

@@ -1025,7 +1025,8 @@
         "sorties": "Sorties de stock générées",
         "reste": "reste {{stock}}",
         "annuler": "Annuler",
-        "confirmer": "Clôturer et enregistrer"
+        "confirmer": "Clôturer et enregistrer",
+        "insuffisant": "stock insuffisant"
       },
       "historique": {
         "titre": "Productions rattachées aux semaines",
@@ -1061,7 +1062,8 @@
         "supplementVide": "Ajoutez au moins un sac",
         "demandeEnvoyee": "Demande envoyée à {{gerant}}",
         "supplementAjoute": "Supplément ajouté au plan",
-        "cloturee": "Production clôturée · sorties de stock enregistrées"
+        "cloturee": "Production clôturée · sorties de stock enregistrées",
+        "justificationRequise": "Justifiez l’écart de matières avant de clôturer"
       },
       "erreurs": {
         "defaut": "L’action n’a pas pu être enregistrée : réessayez.",
@@ -1076,7 +1078,8 @@
         "production_cloturee": "La production est clôturée : plus d’ajout.",
         "demande_en_attente": "Une demande d’augmentation attend déjà la réponse du gérant.",
         "supplement_invalide": "Ajoutez entre 0 et 10 sacs par produit.",
-        "supplement_vide": "Ajoutez au moins un sac."
+        "supplement_vide": "Ajoutez au moins un sac.",
+        "justification_requise": "L’écart de matières dépasse le seuil : justifiez-le avant de clôturer."
       },
       "fiche": {
         "titre": "Fiche technique produit",

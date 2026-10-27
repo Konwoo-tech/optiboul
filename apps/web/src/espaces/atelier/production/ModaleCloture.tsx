@@ -41,8 +41,10 @@ export function ModaleCloture({
       <p className={styles.titreModale}>{t('atelier.production.cloture.sorties')}</p>
       <ul className={styles.sorties}>
         {sortiesDeStock(consommation).map((sortie) => {
-          const restant =
-            Math.round((instantane.stock[sortie.matiere] - sortie.quantite) * 100) / 100;
+          const disponible = instantane.stock[sortie.matiere];
+          const insuffisant = sortie.quantite > disponible;
+          // Le stock ne descend jamais sous zéro : on le dit plutôt que d'afficher un reste négatif.
+          const restant = Math.max(0, Math.round((disponible - sortie.quantite) * 100) / 100);
           return (
             <li className={styles.sortie} key={sortie.matiere}>
               <span>{nomDeMatiere(t, sortie.matiere)}</span>
@@ -50,6 +52,14 @@ export function ModaleCloture({
                 {`−${virgule(sortie.quantite)} ${t(`comptoir.depenses.matieres.${sortie.matiere}.unite`)}`}{' '}
                 <span className={styles.sortieReste}>
                   · {t('atelier.production.cloture.reste', { stock: virgule(restant) })}
+                  {insuffisant && (
+                    <>
+                      {' · '}
+                      <span style={{ color: 'var(--ob-bloquant-texte)' }}>
+                        {t('atelier.production.cloture.insuffisant')}
+                      </span>
+                    </>
+                  )}
                 </span>
               </span>
             </li>

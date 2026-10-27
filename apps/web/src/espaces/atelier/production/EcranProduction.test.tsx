@@ -148,6 +148,32 @@ describe('Atelier › Production (responsable de production)', () => {
     expect(screen.getAllByText('Clôturée').length).toBeGreaterThan(0);
   });
 
+  it('écart au-delà du seuil : clôture refusée tant qu’il n’est pas justifié, puis stock insuffisant signalé', async () => {
+    await ouvrir();
+    fireEvent.click(screen.getByRole('tab', { name: 'Réalisé' }));
+    saisir(screen.getByLabelText('Réalisé BAG'), '940');
+    saisir(screen.getByLabelText('Réalisé KO'), '760');
+    saisir(screen.getByLabelText('Réalisé GC 135'), '100');
+    fireEvent.click(screen.getByRole('tab', { name: 'Consommation' }));
+    const valeurs = ['300', '20000', '2700', '1800', '30', '1', '3'];
+    const champs = screen.getAllByPlaceholderText('0');
+    valeurs.forEach((v, i) => saisir(champs[i]!, v));
+    fireEvent.click(bouton('Clôturer la production'));
+    expect(await screen.findByText('Justifiez l’écart de matières avant de clôturer')).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await waitFor(() =>
+      expect(document.activeElement).toBe(document.getElementById('justification-motif-perte')),
+    );
+    fireEvent.click(bouton('Perte'));
+    fireEvent.click(bouton('Envoyer au gérant'));
+    await screen.findByText('Justification envoyée au gérant : Perte');
+    fireEvent.click(bouton('Clôturer la production'));
+    const fenetre = await screen.findByRole('dialog');
+    expect(within(fenetre).getByText(/stock insuffisant/)).toBeTruthy();
+    expect(within(fenetre).getByText(/−20 kg/)).toBeTruthy();
+    expect(within(fenetre).getAllByText(/reste 0/).length).toBeGreaterThan(0);
+  });
+
   it('supplément après validation : demande au gérant, motif obligatoire', async () => {
     await ouvrir();
     fireEvent.click(bouton('Reprendre la suggestion'));

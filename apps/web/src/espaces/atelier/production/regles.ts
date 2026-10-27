@@ -4,6 +4,7 @@ import type { Profil } from '../../../profils.ts';
 import { PRODUITS } from '../../comptoir/session/calculs.ts';
 import { CLES_PRODUIT } from '../../comptoir/session/types.ts';
 import type {
+  Brouillon,
   CleProduit,
   Consommation,
   DemandeEstimee,
@@ -390,3 +391,27 @@ export function decimal(valeur: number, chiffres: number, langue: string): strin
 /** Un chiffre après la virgule, signe moins simple comme la maquette (`toFixed`). */
 export const unChiffre = (valeur: number, langue: string): string =>
   valeur.toFixed(1).replace('.', langue === 'en' ? '.' : ',');
+
+/** Valeurs saisies sous forme de consommation : `null` pour un champ vide. */
+export function consommationSaisie(valeurs: Brouillon<Matiere>): Consommation {
+  return Object.fromEntries(
+    MATIERES_CONSOMMEES.map((matiere) => [matiere, lireSaisie(valeurs[matiere])]),
+  ) as Consommation;
+}
+
+export const brouillonDeConsommation = (consommation: Consommation): Brouillon<Matiere> =>
+  Object.fromEntries(
+    MATIERES_CONSOMMEES.map((matiere) => [matiere, texteDeSaisie(consommation[matiere])]),
+  ) as Brouillon<Matiere>;
+
+export const brouillonDuRealise = (realise: Realise): Brouillon<CleProduit> => ({
+  BAG: texteDeSaisie(realise.BAG),
+  KO: texteDeSaisie(realise.KO),
+  GC: texteDeSaisie(realise.GC),
+});
+
+export const realiseSaisi = (brouillon: Brouillon<CleProduit>): Realise => ({
+  BAG: lireSaisie(brouillon.BAG),
+  KO: lireSaisie(brouillon.KO),
+  GC: lireSaisie(brouillon.GC),
+});
