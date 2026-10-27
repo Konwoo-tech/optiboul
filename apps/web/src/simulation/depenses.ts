@@ -64,6 +64,7 @@ const BUDGETS: Record<Categorie, readonly [budget: number, deja: number]> = {
 };
 
 const SEMAINE_COURANTE = 'S42';
+const MOIS_DU_BUDGET = '2026-10';
 
 /** Fonctions et non constantes : aucun appel au chargement du module, rien dans le paquet de production. */
 const semaines = (): Semaine[] => [
@@ -346,12 +347,17 @@ const budget = (): LigneBudget[] =>
     return { categorie, budget: plafond, realise: deja + validees };
   });
 
+/** Budget du mois par catégorie, tel que l'écran « Dépenses » le montre (tableau de bord). */
+export function budgetDuMois(): { mois: string; lignes: LigneBudget[] } {
+  return { mois: MOIS_DU_BUDGET, lignes: budget() };
+}
+
 function instantane(): InstantaneDepenses {
   const toutes = semaines();
   const courante = toutes.find((s) => s.id === SEMAINE_COURANTE)!;
   const { type, date } = sessionDeProduction();
   return structuredClone({
-    mois: '2026-10',
+    mois: MOIS_DU_BUDGET,
     seuil: SEUIL_PAR_DEFAUT,
     semaineCourante: courante,
     semaines: toutes,

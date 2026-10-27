@@ -340,6 +340,19 @@ function remettre(acteur: Acteur, corps: Corps): Response {
   return Response.json({ attendu: attenduDeCaisse(courante), receveur: receveur.nom, heure });
 }
 
+/** Caisses fermées avec moins d'espèces que prévu, dans l'ordre de l'historique (tableau de bord). */
+export function manquesDeCaisse(): Array<{
+  jour: string;
+  type: TypeSession;
+  caissiere: string;
+  ecart: number;
+}> {
+  return archives.flatMap((s) => {
+    const ecart = s.compte === null ? 0 : s.compte - s.attendu;
+    return ecart < 0 ? [{ jour: s.jour, type: s.type, caissiere: s.caissiere.nom, ecart }] : [];
+  });
+}
+
 /**
  * Dépense payée en caisse depuis « Comptoir › Dépenses » : elle diminue les espèces attendues de
  * la caisse ouverte (un montant négatif annule une dépense refusée). Sans caisse ouverte, rien.

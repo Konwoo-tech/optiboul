@@ -313,6 +313,18 @@ export function controleDeStockAFaire(): boolean {
   return controleDuJour(controles(aujourdhui), inventaires, aujourdhui) !== undefined;
 }
 
+/**
+ * Matières dont le stock ne couvre pas le besoin d'une session de `sacs` sacs de farine, c'est-à-dire
+ * moins d'une session (tableau de bord : alerte « stock bas »).
+ */
+export function matieresSousLeBesoin(sacs: number): Matiere[] {
+  const { stock } = lireEtat();
+  return MATIERES.filter((cle) => {
+    const { parSac, fixe } = FICHES[cle];
+    return stock[cle] < (fixe ?? arrondir((parSac ?? 0) * sacs));
+  });
+}
+
 /** Actions tracées dans le journal, plus récentes en premier (tests). */
 export function journalStocks(): readonly Journal[] {
   return lireEtat().journal;

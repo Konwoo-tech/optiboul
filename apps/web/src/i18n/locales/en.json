@@ -707,6 +707,47 @@
     "toastErreur": "The decision could not be saved: try again.",
     "toastDejaDecidee": "This request has already been answered."
   },
+  "gestion": {
+    "tableauDeBord": {
+      "erreurChargement": "Could not load the dashboard.",
+      "interdit": "The full dashboard is reserved for the manager and the owner.",
+      "indicateurs": "Key figures of the month",
+      "recette": "Takings · {{mois}}",
+      "tauxEncaissement": "Collection rate {{taux}} %",
+      "dettesClients": "Customer debts",
+      "dettesClientsDetail": "{{clients}} customers · {{plafond}} over the limit",
+      "dettesFournisseurs": "Supplier debts",
+      "dettesFournisseursDetail": "{{retard}} overdue invoice(s)",
+      "production": "Production: {{nom}}",
+      "creneaux": {
+        "jour": "day",
+        "nuit": "night"
+      },
+      "graphique": {
+        "titre": "Takings per night · {{mois}}",
+        "note": "The {{jour}} (yellow) is the current session: {{montant}} FCFA",
+        "barre": "{{jour}}: {{montant}}"
+      },
+      "productionTitre": "Production by product · {{mois}}",
+      "alertes": {
+        "titre": "Alerts",
+        "urgent": "Urgent",
+        "aVoir": "Check",
+        "aucune": "No alerts.",
+        "types": {
+          "facture-en-retard": "Overdue invoice: {{numero}} · {{montant}} FCFA",
+          "stock-bas": "{{matiere}}: stock for less than one session",
+          "clients-au-dela-du-plafond": "{{clients}} customers over the {{plafond}} FCFA limit",
+          "budget-depasse": "{{categorie}} over budget",
+          "production-non-cloturee": "Production not closed: {{date}} {{creneau}}",
+          "manquant-fournisseur": "Supplier shortfall: {{commande}} · {{manque}}",
+          "manque-de-caisse": "Cash shortfall {{date}} {{creneau}} · {{caissiere}} · {{ecart}} FCFA",
+          "demandes-en-attente": "{{nombre}} pending request(s)",
+          "ecart-matiere": "Material gap reported by {{par}}: {{motif}}"
+        }
+      }
+    }
+  },
   "atelier": {
     "stocks": {
       "sections": "Stock sections",

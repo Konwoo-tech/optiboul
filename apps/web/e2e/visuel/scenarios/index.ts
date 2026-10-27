@@ -9,6 +9,7 @@ import { scenariosDemandes } from './demandes.ts';
 import { scenariosFiche, scenariosProduction } from './production.ts';
 import { scenariosSession } from './session.ts';
 import { scenariosStocks } from './stocks.ts';
+import { scenariosTableauDeBord } from './tableauDeBord.ts';
 
 /** Tous les scénarios du banc. Pour en ajouter un : l'exporter depuis un fichier ici et l'ajouter à cette liste. */
 export const scenarios: Scenario[] = [
@@ -22,4 +23,5 @@ export const scenarios: Scenario[] = [
   ...scenariosStocks,
   ...scenariosProduction,
   ...scenariosFiche,
+  ...scenariosTableauDeBord,
 ];

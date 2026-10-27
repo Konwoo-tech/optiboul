@@ -20,6 +20,8 @@ const MARQUEURS = [
   'Mfoundi Levures & Sel',
   'Brûlés (four 2), justifié par Serge',
   'Gros court 170',
+  'FAC-0198',
+  'gestion/tableau-de-bord/',
 ];
 
 function fichiers(dossier) {

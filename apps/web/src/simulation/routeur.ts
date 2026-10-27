@@ -27,6 +27,7 @@ import {
   repondreProduction,
 } from './production.ts';
 import { lireUtilisateurConnecte, memoriserUtilisateurConnecte } from './session.ts';
+import { repondreTableauDeBord } from './tableauDeBord.ts';
 
 /** La session « s'ouvre » au chargement de la page, comme dans la maquette. */
 const OUVERTE_A = formaterHeure(new Date());
@@ -234,6 +235,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
         repondreStocks(url, methode, corps) ??
         repondreDemandes(methode, chemin, corps) ??
         repondreProduction(methode, chemin, corps) ??
+        repondreTableauDeBord(url, methode, corps, CONTEXTE) ??
         probleme(404, 'non_simule', `Pas encore simulé : ${methode} ${chemin}`)
       );
   }
