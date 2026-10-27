@@ -21,30 +21,22 @@ import {
  * fermeture de caisse) : le tableau de bord ne se modifie pas lui-même.
  */
 
-const HAUTEUR = 1100;
+const HAUTEUR = 1200;
 const VUE = { width: 1280, height: HAUTEUR };
-// Le titre de la carte « Production par produit » est hors zone : le prototype y affiche par erreur
-// « Produits et fiches techniques » (le titre d'un autre écran, `T.prodTitle` écrasé), alors que
-// sa fonction `vDashboard` et le cahier des charges §5.11 disent « Production par produit ». Écart
-// assumé : l'application garde le titre voulu. Tout le reste de la carte est comparé.
+const CONTENU: Zone = { x: 248, y: 0, width: 1032, height: HAUTEUR };
 /**
- * `decalage` : hauteur gagnée (ou perdue, négative) par la rangée des alertes quand une alerte
- * s'ajoute ou disparaît ; il descend la carte « Production » d'autant. `sansBadge` : le badge des
- * notifications (x 280-425, y 100-130) suit l'état de la session dans le prototype et reste
- * statique en simulation, comme dans les scénarios des caisses : il est laissé hors zone.
+ * `sansBadge` : le badge des notifications (x 280-425, y 100-130) suit l'état de la session dans le
+ * prototype et reste statique en simulation, comme dans les scénarios des caisses : il est laissé
+ * hors zone. Le reste de l'écran, production comprise, est comparé.
  */
-function zones(decalage = 0, sansBadge = false): Record<string, Zone> {
-  const haut = 794 + decalage;
-  const bas = 822 + decalage;
-  const production = { x: 248, y: bas, width: 1032, height: HAUTEUR - bas };
+function zones(sansBadge = false): Record<string, Zone> {
   return sansBadge
     ? {
         titre: { x: 248, y: 0, width: 1032, height: 95 },
         pastilles: { x: 428, y: 96, width: 852, height: 48 },
-        contenu: { x: 248, y: 145, width: 1032, height: haut - 145 },
-        production,
+        contenu: { x: 248, y: 145, width: 1032, height: HAUTEUR - 145 },
       }
-    : { haut: { x: 248, y: 0, width: 1032, height: haut }, production };
+    : { contenu: CONTENU };
 }
 
 type Etapes = (page: Page) => Promise<void>;
@@ -57,13 +49,47 @@ type Options = {
   etapes?: Etapes;
   /** Profil qui se connecte (Willy, le gérant, par défaut). */
   profil?: RegExp;
-  decalage?: number;
   sansBadge?: boolean;
-  seuil?: number;
-  justification?: string;
 };
 
 const rien: Etapes = async () => {};
+
+/**
+ * Textes du prototype que l'application écrit mieux, remplacés dans la page du prototype avant la
+ * capture : la mise en page, les polices et les couleurs restent comparées au pixel, seul le texte
+ * de ces quelques mots diffère (écarts assumés, listés ici) :
+ * - pluriel : « 1 demande(s) en attente », « 2 facture(s) en retard » (et leurs équivalents anglais) ;
+ * - unité du manquant fournisseur : « BC-032 · 4 » devient « BC-032 · 4 kg » ;
+ * - titre de la carte de production : le prototype y affiche par erreur « Produits et fiches
+ *   techniques » (le titre d'un autre écran écrase `T.prodTitle`), l'application garde le titre
+ *   voulu, « Production par produit » (cahier des charges §5.11) ;
+ * - en anglais, le prototype laisse « Technique » et « nuit » en français dans les alertes ;
+ *   l'application dit « Maintenance » et « night ».
+ */
+const TEXTES_CORRIGES: ReadonlyArray<readonly [string, string]> = [
+  ['1 demande(s) en attente', '1 demande en attente'],
+  ['2 facture(s) en retard', '2 factures en retard'],
+  ['1 pending request(s)', '1 pending request'],
+  ['2 overdue invoice(s)', '2 overdue invoices'],
+  ['Manquant fournisseur : BC-032 · 4', 'Manquant fournisseur : BC-032 · 4 kg'],
+  ['Supplier shortfall: BC-032 · 4', 'Supplier shortfall: BC-032 · 4 kg'],
+  ['Technique over budget', 'Maintenance over budget'],
+  ['Produits et fiches techniques', 'Production par produit · octobre'],
+  ['Products & technical sheets', 'Production by product · October'],
+  ['Cash shortfall Oct 12 nuit', 'Cash shortfall Oct 12 night'],
+  ['Cash shortfall Oct 14 nuit', 'Cash shortfall Oct 14 night'],
+];
+
+const corrigerLesTextesDuPrototype = (page: Page) =>
+  page.evaluate((corrections) => {
+    const parcours = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let noeud = parcours.nextNode(); noeud; noeud = parcours.nextNode()) {
+      const texte = noeud.nodeValue ?? '';
+      for (const [avant, apres] of corrections) {
+        if (texte.includes(avant)) noeud.nodeValue = texte.replace(avant, apres);
+      }
+    }
+  }, TEXTES_CORRIGES);
 
 const ouvrirDansLePrototype = async (page: Page) => {
   await cliquerTexte(page, /^\s*Tableau de bord\s*$/);
@@ -77,18 +103,18 @@ const ouvrirDansLApplication = async (page: Page) => {
 };
 
 function scenarioTableauDeBord(options: Options): Scenario {
-  const { nom, etapes = rien, profil = /Willy/, avant, decalage, sansBadge } = options;
+  const { nom, etapes = rien, profil = /Willy/, avant, sansBadge } = options;
   return definirScenario({
     nom,
     variante: 'code',
     viewport: VUE,
-    zones: zones(decalage, sansBadge),
-    ...(options.seuil ? { seuil: options.seuil, justification: options.justification } : {}),
+    zones: zones(sansBadge),
     prototype: async (page, env) => {
       await connecterLePrototype(page, env.urlPrototype, profil);
       await avant?.prototype(page);
       await ouvrirDansLePrototype(page);
       await etapes(page);
+      await corrigerLesTextesDuPrototype(page);
       await page.waitForTimeout(300);
     },
     application: async (page, env) => {
@@ -187,15 +213,9 @@ export const scenariosTableauDeBord: Scenario[] = [
   // Le gérant et le propriétaire voient le même tableau de bord complet (CdC §3.3).
   scenarioTableauDeBord({ nom: 'tableau-de-bord-gerant' }),
   scenarioTableauDeBord({ nom: 'tableau-de-bord-proprietaire', profil: /Fotso/ }),
-  // Deux libellés du prototype restent en français en anglais (« Technique over budget », « Oct 12
-  // nuit ») : l'application les traduit (« Maintenance », « night »). Écart assumé, borné à ces
-  // deux lignes d'alertes (1 890 px).
   scenarioTableauDeBord({
     nom: 'tableau-de-bord-en',
     etapes: basculerEn,
-    seuil: 1900,
-    justification:
-      'Le prototype laisse « Technique » et « nuit » en français dans les alertes anglaises ; l’application les traduit.',
   }),
   scenarioTableauDeBord({ nom: 'tableau-de-bord-sombre', etapes: basculerSombre }),
   // Une livraison à crédit : recette, taux, dettes et dernière barre changent.
@@ -206,14 +226,12 @@ export const scenariosTableauDeBord: Scenario[] = [
   // Une caisse fermée avec un manque : la nouvelle alerte « À voir » s'ajoute.
   scenarioTableauDeBord({
     nom: 'tableau-de-bord-apres-fermeture',
-    decalage: 63,
     sansBadge: true,
     avant: { prototype: fermetureDansLePrototype, application: fermetureDansLApplication },
   }),
   // Le propriétaire valide la dépense du gérant : l'alerte « demande en attente » disparaît.
   scenarioTableauDeBord({
     nom: 'tableau-de-bord-apres-decision',
-    decalage: -47,
     profil: /Fotso/,
     avant: {
       prototype: accordDuProprietairePrototype,

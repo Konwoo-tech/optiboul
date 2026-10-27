@@ -2,6 +2,7 @@ import type { Creneau } from '@/utils';
 
 import type { CleEcran } from '../../../navigation.ts';
 import type { Espace } from '../../../profils.ts';
+import type { MotifEcart } from '../../atelier/production/types.ts';
 import type { Categorie, Matiere } from '../../comptoir/depenses/types.ts';
 
 /** Urgent (rouge) ou à voir (ambre) : le mot est toujours écrit, jamais la couleur seule. */
@@ -14,7 +15,7 @@ export type DestinationAlerte = {
   parametres?: Record<string, string>;
 };
 
-/** Les neuf types d'alertes de la maquette (cahier des charges §5.11). */
+/** Les neuf types d'alertes de la maquette (cahier des charges §5.11), tous émis par le faux serveur. */
 export type Alerte = {
   id: string;
   niveau: NiveauAlerte;
@@ -25,10 +26,10 @@ export type Alerte = {
   | { type: 'clients-au-dela-du-plafond'; clients: number; plafond: number }
   | { type: 'budget-depasse'; categorie: Categorie }
   | { type: 'production-non-cloturee'; jour: string; creneau: Creneau }
-  | { type: 'manquant-fournisseur'; commande: string; manque: number }
+  | { type: 'manquant-fournisseur'; commande: string; matiere: Matiere; manque: number }
   | { type: 'manque-de-caisse'; jour: string; creneau: Creneau; caissiere: string; ecart: number }
   | { type: 'demandes-en-attente'; nombre: number }
-  | { type: 'ecart-matiere'; par: string; motif: string }
+  | { type: 'ecart-matiere'; par: string; motif: MotifEcart }
 );
 
 export type TypeAlerte = Alerte['type'];

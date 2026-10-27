@@ -21,16 +21,18 @@ import styles from './TableauDeBord.module.css';
  */
 export default function EcranTableauDeBord({ ecran }: { ecran: Ecran }) {
   const { t } = useTranslation();
-  const { utilisateur } = useUtilisateurCourant();
+  const { utilisateur, chargement, injoignable, reessayer } = useUtilisateurCourant();
   const nom = utilisateur?.name;
   const profil = utilisateur?.profil;
   const requete = useTableauDeBord(nom);
 
   const instantane = requete.data;
   if (!instantane || !profil || !nom) {
+    // Sans personne connectée (la session a pris fin), rien ne se charge : le message le dit.
     const interdit =
-      Boolean(profil) &&
-      (!peutVoirTableauDeBord(profil) || codeErreur(requete.error) === 'droit_insuffisant');
+      (!chargement && !injoignable && !utilisateur) ||
+      (Boolean(profil) &&
+        (!peutVoirTableauDeBord(profil) || codeErreur(requete.error) === 'droit_insuffisant'));
     let contenu;
     if (interdit) {
       contenu = (
@@ -38,13 +40,13 @@ export default function EcranTableauDeBord({ ecran }: { ecran: Ecran }) {
           <Text>{t('gestion.tableauDeBord.interdit')}</Text>
         </Carte>
       );
-    } else if (requete.isError) {
+    } else if (requete.isError || injoignable) {
       contenu = (
         <EcranErreur
           titre={t('erreur.titre')}
           message={t('gestion.tableauDeBord.erreurChargement')}
           libelleAction={t('erreur.reessayer')}
-          onAction={() => void requete.refetch()}
+          onAction={() => (injoignable ? reessayer() : void requete.refetch())}
         />
       );
     } else {

@@ -297,29 +297,21 @@ export function sessionDeProduction(): { type: Creneau; date: string; ouverte: b
 }
 
 /**
- * Ce que le tableau de bord lit de la session (US-130 à US-134) : sa recette et ce qui était dû,
- * les soldes des clients (négatif : le client doit de l'argent) avec le plafond, et les sacs du
- * plan de production. Lecture seule : la session reste la seule source de ces chiffres.
+ * Ce que le tableau de bord lit de la session (US-130 à US-134) : son jour, sa recette et ce qui
+ * était dû. Lecture seule : la session reste la seule source de ces chiffres.
  */
-export function syntheseDeSession(): {
-  jour: string;
-  du: number;
-  recu: number;
-  plafond: number;
-  soldes: number[];
-  sacs: number;
-} {
+export function syntheseDeSession(): { jour: string; du: number; recu: number } {
   const etat = lireEtat();
   const { du, recu } = totauxDesLivraisons(etat.livraisons);
-  const plan = Object.values(planDeSacs(etat.clients, etat.commandes));
-  return {
-    jour: etat.session.date,
-    du,
-    recu,
-    plafond: etat.plafond,
-    soldes: etat.clients.map((c) => c.solde),
-    sacs: plan.reduce((somme, { sacs }) => somme + sacs, 0),
-  };
+  return { jour: etat.session.date, du, recu };
+}
+
+/**
+ * Solde de chaque client dans la session (négatif : le client doit de l'argent). Une livraison à
+ * crédit ou un règlement le change : l'écran « Clients et dettes » le lit ici (`clients.ts`).
+ */
+export function soldesDesClientsDeSession(): Record<string, number> {
+  return Object.fromEntries(lireEtat().clients.map((c) => [c.id, c.solde]));
 }
 
 /**

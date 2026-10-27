@@ -136,9 +136,15 @@ describe('phrases des alertes', () => {
     expect(
       phrase({ ...base, type: 'production-non-cloturee', jour: '2026-10-13', creneau: 'nuit' }),
     ).toBe('Production non clôturée : 13 oct. nuit');
-    expect(phrase({ ...base, type: 'manquant-fournisseur', commande: 'BC-032', manque: 4 })).toBe(
-      'Manquant fournisseur : BC-032 · 4',
-    );
+    expect(
+      phrase({
+        ...base,
+        type: 'manquant-fournisseur',
+        commande: 'BC-032',
+        matiere: 'levure',
+        manque: 4,
+      }),
+    ).toBe('Manquant fournisseur : BC-032 · 4 kg');
     expect(
       phrase({
         ...base,
@@ -150,10 +156,13 @@ describe('phrases des alertes', () => {
       }),
     ).toBe('Manque de caisse 12 oct. nuit · Davy · −500 FCFA');
     expect(phrase({ ...base, type: 'demandes-en-attente', nombre: 1 })).toBe(
-      '1 demande(s) en attente',
+      '1 demande en attente',
     );
-    expect(phrase({ ...base, type: 'ecart-matiere', par: 'Serge', motif: 'Brûlés' })).toBe(
-      'Écart matière signalé par Serge : Brûlés',
+    expect(phrase({ ...base, type: 'demandes-en-attente', nombre: 3 })).toBe(
+      '3 demandes en attente',
+    );
+    expect(phrase({ ...base, type: 'ecart-matiere', par: 'Serge', motif: 'brule' })).toBe(
+      'Écart matière signalé par Serge : Brûlé',
     );
   });
 
@@ -175,8 +184,7 @@ describe('phrases des alertes', () => {
     expect(phrase({ ...base, type: 'stock-bas', matiere: 'levure' })).toBe(
       'Yeast: stock for less than one session',
     );
-    expect(phrase({ ...base, type: 'demandes-en-attente', nombre: 2 })).toBe(
-      '2 pending request(s)',
-    );
+    expect(phrase({ ...base, type: 'demandes-en-attente', nombre: 1 })).toBe('1 pending request');
+    expect(phrase({ ...base, type: 'demandes-en-attente', nombre: 2 })).toBe('2 pending requests');
   });
 });

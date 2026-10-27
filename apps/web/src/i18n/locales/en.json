@@ -717,7 +717,8 @@
       "dettesClients": "Customer debts",
       "dettesClientsDetail": "{{clients}} customers · {{plafond}} over the limit",
       "dettesFournisseurs": "Supplier debts",
-      "dettesFournisseursDetail": "{{retard}} overdue invoice(s)",
+      "dettesFournisseursDetail_one": "{{count}} overdue invoice",
+      "dettesFournisseursDetail_other": "{{count}} overdue invoices",
       "production": "Production: {{nom}}",
       "creneaux": {
         "jour": "day",
@@ -740,9 +741,10 @@
           "clients-au-dela-du-plafond": "{{clients}} customers over the {{plafond}} FCFA limit",
           "budget-depasse": "{{categorie}} over budget",
           "production-non-cloturee": "Production not closed: {{date}} {{creneau}}",
-          "manquant-fournisseur": "Supplier shortfall: {{commande}} · {{manque}}",
+          "manquant-fournisseur": "Supplier shortfall: {{commande}} · {{manque}} {{unite}}",
           "manque-de-caisse": "Cash shortfall {{date}} {{creneau}} · {{caissiere}} · {{ecart}} FCFA",
-          "demandes-en-attente": "{{nombre}} pending request(s)",
+          "demandes-en-attente_one": "{{count}} pending request",
+          "demandes-en-attente_other": "{{count}} pending requests",
           "ecart-matiere": "Material gap reported by {{par}}: {{motif}}"
         }
       }

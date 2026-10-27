@@ -6,6 +6,7 @@ import {
   ecartDepasseLaTolerance,
   effet,
   lignesEnEcart,
+  niveauDuStock,
   numeroInventaire,
 } from '@/espaces/atelier/stocks/regles.ts';
 import {
@@ -314,15 +315,12 @@ export function controleDeStockAFaire(): boolean {
 }
 
 /**
- * Matières dont le stock ne couvre pas le besoin d'une session de `sacs` sacs de farine, c'est-à-dire
- * moins d'une session (tableau de bord : alerte « stock bas »).
+ * Matières au niveau « stock bas » de l'écran Stocks (moins d'une session, avec le même besoin par
+ * session) : l'alerte du tableau de bord.
  */
-export function matieresSousLeBesoin(sacs: number): Matiere[] {
+export function matieresEnStockBas(): Matiere[] {
   const { stock } = lireEtat();
-  return MATIERES.filter((cle) => {
-    const { parSac, fixe } = FICHES[cle];
-    return stock[cle] < (fixe ?? arrondir((parSac ?? 0) * sacs));
-  });
+  return MATIERES.filter((cle) => niveauDuStock(stock[cle], besoin(cle)) === 'bas');
 }
 
 /** Actions tracées dans le journal, plus récentes en premier (tests). */

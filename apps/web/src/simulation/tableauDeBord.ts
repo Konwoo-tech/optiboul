@@ -6,18 +6,22 @@ import type {
 } from '@/espaces/gestion/tableau-de-bord/types.ts';
 
 import { manquesDeCaisse } from './caisses.ts';
+import { clientsSimules, PLAFOND } from './clients.ts';
 import { demandesDePlafond, syntheseDeSession } from './comptoir.ts';
 import { budgetDuMois, demandesDeDepense } from './depenses.ts';
+import { signauxDeProduction } from './production.ts';
 import { lireUtilisateurConnecte } from './session.ts';
-import { demandesDInventaire, matieresSousLeBesoin } from './stocks.ts';
+import { demandesDInventaire, matieresEnStockBas } from './stocks.ts';
 
 /*
- * Faux serveur de « Gestion › Tableau de bord » (US-170, récits US-130 à US-134) : les données et
+ * Faux serveur de « Gestion › Tableau de bord » (US-171, récits US-130 à US-134) : les données et
  * les règles de la maquette « OptiBoul ERP v2 » (fonction `vDashboard`). Il ne garde rien : il lit
- * les chiffres à leur source, la session (recette, dettes clients, plan), les caisses (manques),
- * les dépenses (budget), les stocks, les demandes. Ne sont pas encore simulés ailleurs, donc
- * portés ici en données de départ : le cumul du mois avant la session, les recettes des nuits
- * passées, les factures fournisseurs, les réceptions partielles et la production du mois.
+ * les chiffres à leur source : la session (recette), les clients (dettes, la même source que
+ * l'écran Clients), les caisses (manques), les dépenses (budget), les stocks (stock bas, le même
+ * niveau que l'écran Stocks), la production (non clôturée, écart de matières), les demandes. Ne
+ * sont pas encore simulés ailleurs, donc portés ici en données de départ : le cumul du mois avant
+ * la session, les recettes des nuits passées, les factures fournisseurs, les réceptions partielles
+ * et la production du mois.
  */
 
 type Corps = Record<string, unknown>;
@@ -50,7 +54,9 @@ const factures = (): Facture[] => [
 ];
 
 /** Réceptions partielles (`orders` au statut « partielle ») : BC-032, 6 kg de levure sur 10. */
-const receptionsPartielles = () => [{ commande: 'BC-032', commandee: 10, recue: 6 }];
+const receptionsPartielles = () => [
+  { commande: 'BC-032', matiere: 'levure', commandee: 10, recue: 6 } as const,
+];
 
 /** Production du mois par produit, en pains (maquette : `prodBars`). */
 const production = (): ProductionDuProduit[] => [
@@ -74,10 +80,10 @@ function joursPrecedents(jour: string, nombre: number): string[] {
 
 /** Les alertes, dans l'ordre de la maquette : les urgentes (rouges), puis les « à voir » (ambre). */
 function alertes(): Alerte[] {
-  const session = syntheseDeSession();
   const enRetard = factures().filter((f) => !f.payee && f.enRetard);
-  const bas = matieresSousLeBesoin(session.sacs || 8);
-  const auDela = session.soldes.filter((solde) => solde < -session.plafond).length;
+  const bas = matieresEnStockBas();
+  const auDela = clientsSimules().filter((c) => c.solde < -PLAFOND).length;
+  const signaux = signauxDeProduction();
   const budgets = budgetDuMois().lignes.filter((ligne) => ligne.realise > ligne.budget);
   const enAttente =
     demandesDePlafond().filter((d) => d.statut === 'en-attente').length +
@@ -107,7 +113,7 @@ function alertes(): Alerte[] {
       niveau: 'bloquant',
       type: 'clients-au-dela-du-plafond',
       clients: auDela,
-      plafond: session.plafond,
+      plafond: PLAFOND,
       destination: { espace: 'gestion', ecran: 'clients', parametres: { filtre: 'depasse' } },
     });
   }
@@ -120,12 +126,23 @@ function alertes(): Alerte[] {
       destination: { espace: 'gestion', ecran: 'depenses' },
     });
   }
+  for (const p of signaux.nonCloturees) {
+    liste.push({
+      id: `production-${p.jour}-${p.creneau}`,
+      niveau: 'bloquant',
+      type: 'production-non-cloturee',
+      jour: p.jour,
+      creneau: p.creneau,
+      destination: { espace: 'atelier', ecran: 'production' },
+    });
+  }
   for (const r of receptionsPartielles()) {
     liste.push({
       id: `manquant-${r.commande}`,
       niveau: 'surveiller',
       type: 'manquant-fournisseur',
       commande: r.commande,
+      matiere: r.matiere,
       manque: r.commandee - r.recue,
       destination: {
         espace: 'gestion',
@@ -155,6 +172,20 @@ function alertes(): Alerte[] {
       destination: { espace: 'gestion', ecran: 'demandes' },
     });
   }
+  for (const e of signaux.ecartsMatiere) {
+    liste.push({
+      id: `ecart-matiere-${e.motif}`,
+      niveau: 'surveiller',
+      type: 'ecart-matiere',
+      par: e.par,
+      motif: e.motif,
+      destination: {
+        espace: 'atelier',
+        ecran: 'production',
+        parametres: { onglet: 'consommation' },
+      },
+    });
+  }
   return liste;
 }
 
@@ -167,7 +198,7 @@ export type SemaineEnCours = {
 
 function instantane(contexte: SemaineEnCours): InstantaneTableauDeBord {
   const session = syntheseDeSession();
-  const enDette = session.soldes.filter((solde) => solde < 0);
+  const enDette = clientsSimules().filter((c) => c.solde < 0);
   const impayees = factures().filter((f) => !f.payee);
   const jours = [...joursPrecedents(session.jour, RECETTES_DES_NUITS.length), session.jour];
   const montants = [...RECETTES_DES_NUITS, session.recu];
@@ -179,9 +210,9 @@ function instantane(contexte: SemaineEnCours): InstantaneTableauDeBord {
       due: CUMUL_AVANT_SESSION.du + session.du,
     },
     dettesClients: {
-      montant: -enDette.reduce((somme, solde) => somme + solde, 0),
+      montant: -enDette.reduce((somme, c) => somme + c.solde, 0),
       clients: enDette.length,
-      auDessusDuPlafond: session.soldes.filter((solde) => solde < -session.plafond).length,
+      auDessusDuPlafond: enDette.filter((c) => c.solde < -PLAFOND).length,
     },
     dettesFournisseurs: {
       montant: impayees.reduce((somme, f) => somme + f.montant, 0),

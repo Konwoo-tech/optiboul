@@ -56,7 +56,7 @@ export function Indicateurs({ instantane }: { instantane: InstantaneTableauDeBor
       valeur: formaterNombre(dettesFournisseurs.montant),
       unite: 'FCFA',
       detail: t('gestion.tableauDeBord.dettesFournisseursDetail', {
-        retard: dettesFournisseurs.facturesEnRetard,
+        count: dettesFournisseurs.facturesEnRetard,
       }),
       alerte: dettesFournisseurs.facturesEnRetard > 0,
     },

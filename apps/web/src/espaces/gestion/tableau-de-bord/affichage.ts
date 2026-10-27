@@ -49,7 +49,11 @@ export function texteAlerte(t: TFunction, alerte: Alerte, langue: string): strin
         creneau: t(`${CLE}.creneaux.${alerte.creneau}`),
       });
     case 'manquant-fournisseur':
-      return t(cle, { commande: alerte.commande, manque: formaterNombre(alerte.manque) });
+      return t(cle, {
+        commande: alerte.commande,
+        manque: formaterNombre(alerte.manque),
+        unite: t(`comptoir.depenses.matieres.${alerte.matiere}.unite`),
+      });
     case 'manque-de-caisse':
       return t(cle, {
         date: dateCourte(alerte.jour, langue),
@@ -58,9 +62,12 @@ export function texteAlerte(t: TFunction, alerte: Alerte, langue: string): strin
         ecart: formaterNombre(alerte.ecart),
       });
     case 'demandes-en-attente':
-      return t(cle, { nombre: alerte.nombre });
+      return t(cle, { count: alerte.nombre });
     case 'ecart-matiere':
-      return t(cle, { par: alerte.par, motif: alerte.motif });
+      return t(cle, {
+        par: alerte.par,
+        motif: t(`atelier.production.consommation.motifs.${alerte.motif}`),
+      });
   }
 }
 

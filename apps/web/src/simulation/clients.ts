@@ -1,4 +1,5 @@
 import type { Profil } from '../profils.ts';
+import { soldesDesClientsDeSession } from './comptoir.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
 /*
@@ -182,7 +183,7 @@ const LIVRAISONS_DU_JOUR: Record<string, LigneHistoriqueClient> = {
   alex: { bon: 142, date: '2026-10-14', moment: '20:51', du: 12200, recu: 12200 },
 };
 
-const PLAFOND = 2000;
+export const PLAFOND = 2000;
 const ECHEANCE = '2026-10-18';
 
 /** Clients ayant déjà reçu une relance pendant cette démonstration. */
@@ -198,9 +199,17 @@ const PEUT_RELANCER: readonly Profil[] = ['gerant', 'proprietaire'];
 
 const PEUT_VOIR: readonly Profil[] = ['caissier', 'gerant', 'proprietaire'];
 
-/** Clients tels que la route les sert (avec l'état des relances). */
+/**
+ * Clients tels que la route les sert (avec l'état des relances). Le solde est celui de la session
+ * du comptoir : une livraison à crédit y change aussi l'écran « Clients et dettes ».
+ */
 export function clientsSimules(): ClientSimule[] {
-  return CLIENTS.map((client) => ({ ...client, relance: relances.has(client.id) }));
+  const soldes = soldesDesClientsDeSession();
+  return CLIENTS.map((client) => ({
+    ...client,
+    solde: soldes[client.id] ?? client.solde,
+    relance: relances.has(client.id),
+  }));
 }
 
 function historiqueDe(client: ClientSimule): LigneHistoriqueClient[] {

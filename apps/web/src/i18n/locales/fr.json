@@ -717,7 +717,8 @@
       "dettesClients": "Dettes clients",
       "dettesClientsDetail": "{{clients}} clients · {{plafond}} au-delà du plafond",
       "dettesFournisseurs": "Dettes fournisseurs",
-      "dettesFournisseursDetail": "{{retard}} facture(s) en retard",
+      "dettesFournisseursDetail_one": "{{count}} facture en retard",
+      "dettesFournisseursDetail_other": "{{count}} factures en retard",
       "production": "Production : {{nom}}",
       "creneaux": {
         "jour": "jour",
@@ -740,9 +741,10 @@
           "clients-au-dela-du-plafond": "{{clients}} clients au-delà du plafond de {{plafond}} FCFA",
           "budget-depasse": "{{categorie}} au-dessus du budget",
           "production-non-cloturee": "Production non clôturée : {{date}} {{creneau}}",
-          "manquant-fournisseur": "Manquant fournisseur : {{commande}} · {{manque}}",
+          "manquant-fournisseur": "Manquant fournisseur : {{commande}} · {{manque}} {{unite}}",
           "manque-de-caisse": "Manque de caisse {{date}} {{creneau}} · {{caissiere}} · {{ecart}} FCFA",
-          "demandes-en-attente": "{{nombre}} demande(s) en attente",
+          "demandes-en-attente_one": "{{count}} demande en attente",
+          "demandes-en-attente_other": "{{count}} demandes en attente",
           "ecart-matiere": "Écart matière signalé par {{par}} : {{motif}}"
         }
       }

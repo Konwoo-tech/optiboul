@@ -20,7 +20,7 @@ function Adresse() {
 }
 
 async function ouvrir(
-  utilisateur = 'willy',
+  utilisateur: string | null = 'willy',
   langue: 'fr' | 'en' = 'fr',
   /** Gestes joués sur le faux serveur avant l'ouverture de l'écran. */
   avant?: () => Promise<void>,
@@ -70,7 +70,7 @@ describe('Gestion › Tableau de bord (gérant)', () => {
     const [recette, dettes, fournisseurs, semaine] = within(liste).getAllByRole('listitem');
     expect(lu(recette)).toBe('Recette encaissée · octobre4 231 400 FCFATaux d’encaissement 96,2 %');
     expect(lu(dettes)).toBe('Dettes clients−14 050 FCFA8 clients · 3 au-delà du plafond');
-    expect(lu(fournisseurs)).toBe('Dettes fournisseurs2 334 900 FCFA2 facture(s) en retard');
+    expect(lu(fournisseurs)).toBe('Dettes fournisseurs2 334 900 FCFA2 factures en retard');
     expect(lu(semaine)).toBe('Semaine 42 · 12 oct. → 18 oct.Willy Production : Serge');
   });
 
@@ -132,9 +132,9 @@ describe('Gestion › Tableau de bord (gérant)', () => {
       'UrgentFacture en retard : FAC-0198 · 40 000 FCFA›',
       'Urgent3 clients au-delà du plafond de 2 000 FCFA›',
       'UrgentTechnique au-dessus du budget›',
-      'À voirManquant fournisseur : BC-032 · 4›',
+      'À voirManquant fournisseur : BC-032 · 4 kg›',
       'À voirManque de caisse 12 oct. nuit · Davy · −500 FCFA›',
-      'À voir1 demande(s) en attente›',
+      'À voir1 demande en attente›',
     ]);
   });
 
@@ -213,6 +213,15 @@ describe('Gestion › Tableau de bord (droits)', () => {
   });
 });
 
+describe('Gestion › Tableau de bord (sans session)', () => {
+  it('ne reste pas en chargement quand personne n’est connecté : le message le dit', async () => {
+    await ouvrir(null);
+    const alerte = await screen.findByRole('alert');
+    expect(lu(alerte)).toBe('Le tableau de bord complet est réservé au gérant et au propriétaire.');
+    expect(screen.queryByText('Chargement…')).toBeNull();
+  });
+});
+
 describe('Gestion › Tableau de bord (erreur)', () => {
   it('propose de réessayer quand le serveur ne répond pas, puis affiche les chiffres', async () => {
     await ouvrir('willy', 'fr', async () => {
@@ -239,7 +248,7 @@ describe('Gestion › Tableau de bord (anglais)', () => {
     const [recette, dettes, fournisseurs, semaine] = within(liste).getAllByRole('listitem');
     expect(lu(recette)).toBe('Takings · October4 231 400 FCFACollection rate 96.2 %');
     expect(lu(dettes)).toBe('Customer debts−14 050 FCFA8 customers · 3 over the limit');
-    expect(lu(fournisseurs)).toBe('Supplier debts2 334 900 FCFA2 overdue invoice(s)');
+    expect(lu(fournisseurs)).toBe('Supplier debts2 334 900 FCFA2 overdue invoices');
     expect(lu(semaine)).toBe('Week 42 · Oct 12 → Oct 18Willy Production: Serge');
     expect(screen.getByText('The 14th (yellow) is the current session: 58 450 FCFA')).toBeTruthy();
     const alertes = screen.getByRole('region', { name: 'Alerts' });
@@ -248,8 +257,8 @@ describe('Gestion › Tableau de bord (anglais)', () => {
       .map((lien) => lu(lien));
     expect(liens[0]).toBe('UrgentOverdue invoice: FAC-41 · 1 405 800 FCFA›');
     expect(liens[3]).toBe('UrgentMaintenance over budget›');
-    expect(liens[4]).toBe('CheckSupplier shortfall: BC-032 · 4›');
-    expect(liens[6]).toBe('Check1 pending request(s)›');
+    expect(liens[4]).toBe('CheckSupplier shortfall: BC-032 · 4 kg›');
+    expect(liens[6]).toBe('Check1 pending request›');
     expect(screen.getByRole('region', { name: 'Production by product · October' })).toBeTruthy();
   });
 });
