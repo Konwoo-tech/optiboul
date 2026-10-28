@@ -11,7 +11,7 @@ import {
 } from './session.ts';
 
 /*
- * Gestion › Semaines (US-169), comparé au bloc `scr.semaines` du prototype : chaque semaine
+ * Gestion › Semaines (US-172), comparé au bloc `scr.semaines` du prototype : chaque semaine
  * (ouverte, planifiée affectée ou non, clôturée), chaque profil (gérant de la semaine, autre gérant,
  * propriétaire, responsable de production), les fenêtres d'ouverture et de clôture, et la bascule
  * en anglais et en sombre. Toute la zone de contenu est comparée, en-tête compris ; le menu de
@@ -228,9 +228,9 @@ export const scenariosSemaines: Scenario[] = [
   scenarioSemaines({
     nom: 'semaines-ouverte-en',
     etapes: basculerEn,
-    seuil: 250,
+    seuil: 400,
     justification:
-      'Incident « Production 13 oct. nuit » : le prototype laisse « nuit » en français en anglais ; l’application écrit « night » (une ligne de 25 px, 210 pixels).',
+      'Incident « Production 13 oct. nuit » : le prototype laisse « nuit » en français en anglais ; l’application écrit « night » (une ligne de 25 px, 210 pixels), plus le bruit de rendu du signe « − » et des parenthèses (une centaine de pixels, présent aussi sur des écrans non touchés).',
   }),
   scenarioSemaines({ nom: 'semaines-ouverte-sombre', theme: 'sombre' }),
   scenarioSemaines({

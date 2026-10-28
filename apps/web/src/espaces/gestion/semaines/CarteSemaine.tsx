@@ -25,6 +25,8 @@ type Props = {
   gerants: readonly Personne[];
   responsables: readonly Personne[];
   cloture: Cloture | undefined;
+  /** Une modification est en cours d'envoi : les listes attendent sa réponse. */
+  occupe: boolean;
   onAffecter: (role: RoleAffecte, personne: string) => void;
   onOuvrir: () => void;
   onCloturer: () => void;
@@ -41,10 +43,12 @@ type ChampEquipe = {
 function Equipier({
   champ,
   modifiable,
+  occupe,
   onChoisir,
 }: {
   champ: ChampEquipe;
   modifiable: boolean;
+  occupe: boolean;
   onChoisir: (personne: string) => void;
 }) {
   const { t } = useTranslation();
@@ -58,6 +62,7 @@ function Equipier({
         <select
           className={styles.choix}
           aria-labelledby={idEtiquette}
+          disabled={occupe}
           value={champ.valeur?.id ?? ''}
           onChange={(evenement) => onChoisir(evenement.target.value)}
         >
@@ -102,11 +107,13 @@ export function CarteSemaine({
   gerants,
   responsables,
   cloture,
+  occupe,
   onAffecter,
   onOuvrir,
   onCloturer,
 }: Props) {
   const { t, i18n } = useTranslation();
+  const idNote = useId();
   const langue = i18n.language;
   const controles = cloture?.controles ?? [];
   const modifiable = peutAffecter(profil, semaine);
@@ -162,6 +169,7 @@ export function CarteSemaine({
             options: gerants,
           }}
           modifiable={modifiable}
+          occupe={occupe}
           onChoisir={(id) => onAffecter('gerant', id)}
         />
         <Equipier
@@ -172,6 +180,7 @@ export function CarteSemaine({
             options: responsables,
           }}
           modifiable={modifiable}
+          occupe={occupe}
           onChoisir={(id) => onAffecter('production', id)}
         />
       </div>
@@ -198,13 +207,14 @@ export function CarteSemaine({
             type="button"
             className={`${styles.cloturer} ${peutFermer ? '' : styles.cloturerBloque}`}
             aria-disabled={!peutFermer}
+            aria-describedby={peutFermer ? undefined : idNote}
             onClick={() => {
               if (peutFermer) onCloturer();
             }}
           >
             {t('gestion.semaines.carte.cloturer', { numero: semaine.numero })}
           </button>
-          <div className={styles.note}>
+          <div className={styles.note} id={idNote}>
             {t(`gestion.semaines.notesCloture.${note}`, {
               gerant: semaine.gerant?.nom ?? '—',
               jour: jourSemaine(semaine.au, langue),

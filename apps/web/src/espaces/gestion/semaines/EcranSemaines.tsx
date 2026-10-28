@@ -71,6 +71,7 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
   }
 
   const { semaines, planning, creneaux } = instantane;
+  const occupe = affecter.isPending || planifier.isPending;
   const langue = i18n.language;
   const demandee = parametres.get(PARAMETRE);
   const choisie = semaines.find((s) => s.id === demandee) ?? semaineCourante(semaines);
@@ -188,6 +189,7 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
             gerants={instantane.gerants}
             responsables={instantane.responsables}
             cloture={cloture}
+            occupe={occupe}
             onAffecter={surAffecter}
             onOuvrir={() => setFenetre({ type: 'ouvrir', heure: formaterHeure(new Date()) })}
             onCloturer={() => setFenetre({ type: 'cloturer' })}
@@ -207,6 +209,7 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
           creneaux={creneaux}
           caissieres={instantane.caissieres}
           modifiable={peutPlanifier(profil, choisie, nom)}
+          occupe={occupe}
           onChoisir={surPlanifier}
         />
 

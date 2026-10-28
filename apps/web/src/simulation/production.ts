@@ -51,6 +51,7 @@ import {
   heureCourante,
 } from './comptoir.ts';
 import type { NotificationSimulee } from './notifications.ts';
+import { contexteSemaines } from './planning.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 import { prixDesMatieres, sortirDuStockDepuisProduction, stockDesMatieres } from './stocks.ts';
@@ -75,7 +76,12 @@ const refus = () => probleme(403, 'droit_insuffisant', 'Votre profil ne permet p
 /** Gérant et responsable de production de la semaine 42 (maquette). */
 const GERANT = 'Willy';
 const RESPONSABLE = 'Serge';
-const SEMAINE = { numero: 42, du: '2026-10-12', au: '2026-10-18' } as const;
+
+/** Semaine courante, gérant et responsable : ils suivent l'écran des semaines (`planning.ts`). */
+function equipeDeLaSemaine() {
+  const { semaine, gerantDeLaSemaine, responsableProduction } = contexteSemaines();
+  return { semaine, gerant: gerantDeLaSemaine, responsable: responsableProduction };
+}
 
 type Journal = { heure: string; qui: string; quoi: string };
 
@@ -354,9 +360,7 @@ function instantane(): InstantaneProduction {
   const attente = etat.demandes.find((d) => d.statut === 'en-attente');
   return structuredClone({
     session: etat.session,
-    semaine: SEMAINE,
-    gerant: GERANT,
-    responsable: RESPONSABLE,
+    ...equipeDeLaSemaine(),
     caissiere: commandes.caissiere,
     etape: etat.etape,
     planPropose: etat.planPropose,
@@ -393,10 +397,8 @@ type Acteur = { nom: string; profil: Profil; droits: DroitsProduction };
 function acteur(): Acteur | undefined {
   const utilisateur = lireUtilisateurConnecte();
   if (!utilisateur) return undefined;
-  const droits = droitsProduction(utilisateur.profil, utilisateur.nom, {
-    responsable: RESPONSABLE,
-    gerant: GERANT,
-  });
+  const { responsable, gerant } = equipeDeLaSemaine();
+  const droits = droitsProduction(utilisateur.profil, utilisateur.nom, { responsable, gerant });
   return droits.voir ? { nom: utilisateur.nom, profil: utilisateur.profil, droits } : undefined;
 }
 

@@ -263,3 +263,37 @@ describe('faux serveur des semaines : ouverture et clôture', () => {
     expect((await appeler('POST', 'ouvrir/', { semaine: 'S43' })).statut).toBe(200);
   });
 });
+
+describe('faux serveur des semaines : enchaînement avec les autres écrans', () => {
+  it('après clôture de S42 et ouverture de S43, dépenses et production suivent la nouvelle semaine', async () => {
+    await toutFermer();
+    memoriserUtilisateurConnecte('fotso');
+    await appeler('POST', 'cloturer/', { semaine: 'S42' });
+    await appeler('POST', 'ouvrir/', { semaine: 'S43' });
+
+    memoriserUtilisateurConnecte('patrick');
+    const depenses = '/api/v1/simulation/comptoir/depenses/';
+    const avant = await appeler('GET', '', {}, depenses);
+    expect(avant.json.semaineCourante.id).toBe('S43');
+    expect(avant.json.gerantDeLaSemaine).toBe('Patrick');
+    const saisie = await appeler(
+      'POST',
+      '',
+      {
+        categorie: 'technique',
+        libelle: 'Joint de porte',
+        montant: 8000,
+        mode: 'banque',
+        photo: true,
+        rattachement: 'semaine',
+      },
+      depenses,
+    );
+    expect(saisie.statut).toBe(200);
+    expect(saisie.json.depense.semaine).toBe('S43');
+
+    const production = await appeler('GET', '', {}, '/api/v1/simulation/atelier/production/');
+    expect(production.json.semaine.numero).toBe(43);
+    expect([production.json.gerant, production.json.responsable]).toEqual(['Patrick', 'Ignace']);
+  });
+});

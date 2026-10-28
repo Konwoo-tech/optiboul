@@ -20,6 +20,8 @@ type Props = {
   creneaux: readonly CreneauReel[];
   caissieres: readonly Personne[];
   modifiable: boolean;
+  /** Une modification est en cours d'envoi : les listes attendent sa réponse. */
+  occupe: boolean;
   onChoisir: (jour: string, creneau: Creneau, caissiere: string) => void;
 };
 
@@ -37,9 +39,11 @@ function CelluleCreneau({
   cellule,
   nom,
   caissieres,
+  occupe,
   onChoisir,
 }: {
   libelle: string;
+  occupe: boolean;
   cellule: Cellule;
   nom: string;
   caissieres: readonly Personne[];
@@ -58,6 +62,7 @@ function CelluleCreneau({
           aria-label={nom}
           aria-describedby={idEtiquette}
           value={cellule.valeur}
+          disabled={occupe}
           onChange={(evenement) => onChoisir(evenement.target.value)}
         >
           <option value="">{t('gestion.semaines.planning.aAffecter')}</option>
@@ -85,6 +90,7 @@ export function PlanningCaisses({
   creneaux,
   caissieres,
   modifiable,
+  occupe,
   onChoisir,
 }: Props) {
   const { t, i18n } = useTranslation();
@@ -180,6 +186,7 @@ export function PlanningCaisses({
               })}
               cellule={cellule(jour, type)}
               caissieres={caissieres}
+              occupe={occupe}
               onChoisir={(caissiere) => onChoisir(jour, type, caissiere)}
             />
           ))}

@@ -45,7 +45,7 @@ import { lireUtilisateurConnecte } from './session.ts';
 import { matieresSousLeBesoin } from './stocks.ts';
 
 /*
- * Faux serveur de « Gestion › Semaines » (US-169, récits US-030 à US-035) : les règles de la
+ * Faux serveur de « Gestion › Semaines » (US-172, récits US-030 à US-035) : les règles de la
  * maquette « OptiBoul ERP v2 » (fonction `vSemaines`, états `weeks`, `planning`). Les semaines et
  * le planning vivent dans `planning.ts` ; les caisses, les dépenses, les demandes, les clients et
  * le stock sont lus à leur source. La production est lue dans `production.ts`. Les réceptions et les factures
