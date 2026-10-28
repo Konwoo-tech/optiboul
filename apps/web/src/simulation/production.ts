@@ -23,6 +23,7 @@ import {
   ETAPES,
   INGREDIENTS,
   MOTIFS_ECART,
+  type MotifEcart,
   MOTIFS_SUPPLEMENT,
   type Consommation,
   type DemandeProduction,
@@ -109,6 +110,8 @@ type Etat = {
   realise: Realise;
   consommation: Consommation;
   justification: Justification | null;
+  /** Qui a justifié l'écart de matières (tableau de bord). */
+  justifiePar: string | null;
   demandes: DemandeDeProduction[];
   historique: LigneHistorique[];
   evenements: Evenement[];
@@ -235,6 +238,7 @@ function etatInitial(): Etat {
     realise: realiseVide(),
     consommation: consommationVide(),
     justification: null,
+    justifiePar: null,
     demandes: [],
     historique: historiqueDeDepart(),
     evenements: [],
@@ -260,6 +264,25 @@ export function journalProduction(): readonly Journal[] {
 
 function tracer(qui: string, quoi: string) {
   lireEtat().journal = [{ heure: heureCourante(), qui, quoi }, ...lireEtat().journal];
+}
+
+/**
+ * Ce que le tableau de bord signale de la production : les productions archivées « non clôturées »
+ * (US-085) et l'écart de matières justifié de la session en cours (R10, US-084).
+ */
+export function signauxDeProduction(): {
+  nonCloturees: Array<{ jour: string; creneau: Creneau }>;
+  ecartsMatiere: Array<{ par: string; motif: MotifEcart }>;
+} {
+  sAbonner();
+  const { historique, justification, justifiePar } = lireEtat();
+  return {
+    nonCloturees: historique
+      .filter((ligne) => ligne.statut === 'non-cloturee')
+      .map((ligne) => ({ jour: ligne.date, creneau: ligne.type })),
+    ecartsMatiere:
+      justification && justifiePar ? [{ par: justifiePar, motif: justification.motif }] : [],
+  };
 }
 
 /** Une production est en cours ou son plan attend : la semaine ne peut pas se clôturer (R3). */
@@ -490,6 +513,7 @@ function justifier(a: Acteur, corps: Corps): Response {
   const texte = typeof corps.texte === 'string' ? corps.texte.trim() : '';
   etat.consommation = consommation;
   etat.justification = { motif: corps.motif, texte };
+  etat.justifiePar = a.nom;
   tracer(
     a.nom,
     `Écart matière justifié : ${corps.motif}${texte ? ` – ${texte}` : ''} (${kg.toFixed(1)} kg)`,
@@ -801,6 +825,7 @@ function passerALaSessionSuivante(precedente: { type: Creneau; date: string }) {
   etat.realise = realiseVide();
   etat.consommation = consommationVide();
   etat.justification = null;
+  etat.justifiePar = null;
 }
 
 let abonne = false;
@@ -884,6 +909,7 @@ export function placerLeCycle(etape: Etape): void {
   etat.realise = realiseVide();
   etat.consommation = consommationVide();
   etat.justification = null;
+  etat.justifiePar = null;
 }
 
 // ───────────────────────────── notifications ─────────────────────────────

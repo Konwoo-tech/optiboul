@@ -6,6 +6,7 @@ import {
   lireEntier,
   planDeSacs,
   PLAFOND_PAR_DEFAUT,
+  totauxDesLivraisons,
 } from '@/espaces/comptoir/session/calculs.ts';
 import {
   CLES_PRODUIT,
@@ -293,6 +294,24 @@ export function commandesDeLaSession() {
 export function sessionDeProduction(): { type: Creneau; date: string; ouverte: boolean } {
   const { type, date, statut } = lireEtat().session;
   return { type, date, ouverte: statut === 'ouverte' };
+}
+
+/**
+ * Ce que le tableau de bord lit de la session (US-130 à US-134) : son jour, sa recette et ce qui
+ * était dû. Lecture seule : la session reste la seule source de ces chiffres.
+ */
+export function syntheseDeSession(): { jour: string; du: number; recu: number } {
+  const etat = lireEtat();
+  const { du, recu } = totauxDesLivraisons(etat.livraisons);
+  return { jour: etat.session.date, du, recu };
+}
+
+/**
+ * Solde de chaque client dans la session (négatif : le client doit de l'argent). Une livraison à
+ * crédit ou un règlement le change : l'écran « Clients et dettes » le lit ici (`clients.ts`).
+ */
+export function soldesDesClientsDeSession(): Record<string, number> {
+  return Object.fromEntries(lireEtat().clients.map((c) => [c.id, c.solde]));
 }
 
 /**

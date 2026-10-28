@@ -1,0 +1,249 @@
+/*
+ * Gestion › Tableau de bord, repris valeur par valeur de la maquette « OptiBoul ERP v2 » (bloc
+ * `scr.dashboard`, lignes 707-742). Variables : --brand = marque, --surface = surface,
+ * --line = ligne, --muted = discret, --ink = encre, --field = champ, --soft = doux.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.indicateurs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.indicateur {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.indicateurLibelle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ob-discret);
+}
+
+.indicateurValeur {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+}
+
+.indicateurAlerte {
+  color: var(--ob-bloquant-texte);
+}
+
+.unite {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-discret);
+}
+
+.indicateurDetail {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.rangee {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.carte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  min-width: 0;
+}
+
+.graphique {
+  flex: 2 1 420px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.titre {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  margin: 0;
+}
+
+.barres {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 200px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.colonne {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+
+.barre {
+  width: 100%;
+  border-radius: 6px 6px 2px 2px;
+  background: var(--ob-marque);
+}
+
+.barreCourante {
+  background: #f2b705;
+}
+
+.jour {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ob-discret);
+}
+
+.note {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.alertes {
+  flex: 1 1 300px;
+  padding: 8px 0;
+}
+
+.alertesTitre {
+  padding: 12px 20px;
+}
+
+.listeAlertes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.alerte {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 20px;
+  border: none;
+  border-top: 1px solid var(--ob-ligne);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.alerte:hover {
+  background: var(--ob-champ);
+}
+
+.alerte:focus-visible {
+  outline: 2px solid var(--ob-marque);
+  outline-offset: -2px;
+}
+
+.mot {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.alerteTexte {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ob-encre);
+}
+
+.chevron {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ob-discret);
+}
+
+.aucuneAlerte {
+  padding: 12px 20px;
+  border-top: 1px solid var(--ob-ligne);
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+.production {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.produits {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.produit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.produitNom {
+  width: 64px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.piste {
+  flex: 1;
+  height: 14px;
+  border-radius: 7px;
+  background: var(--ob-doux);
+  overflow: hidden;
+}
+
+.remplissage {
+  height: 100%;
+  border-radius: 7px;
+  background: #f2b705;
+}
+
+.produitValeur {
+  width: 90px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+}

@@ -6,6 +6,7 @@ import {
   ecartDepasseLaTolerance,
   effet,
   lignesEnEcart,
+  niveauDuStock,
   numeroInventaire,
 } from '@/espaces/atelier/stocks/regles.ts';
 import {
@@ -311,6 +312,15 @@ export function reinitialiserStocks(): void {
 export function controleDeStockAFaire(): boolean {
   const { aujourdhui, inventaires } = lireEtat();
   return controleDuJour(controles(aujourdhui), inventaires, aujourdhui) !== undefined;
+}
+
+/**
+ * Matières au niveau « stock bas » de l'écran Stocks (moins d'une session, avec le même besoin par
+ * session) : l'alerte du tableau de bord.
+ */
+export function matieresEnStockBas(): Matiere[] {
+  const { stock } = lireEtat();
+  return MATIERES.filter((cle) => niveauDuStock(stock[cle], besoin(cle)) === 'bas');
 }
 
 /** Actions tracées dans le journal, plus récentes en premier (tests). */

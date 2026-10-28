@@ -707,6 +707,49 @@
     "toastErreur": "La décision n’a pas pu être enregistrée : réessayez.",
     "toastDejaDecidee": "Cette demande a déjà reçu une réponse."
   },
+  "gestion": {
+    "tableauDeBord": {
+      "erreurChargement": "Impossible de charger le tableau de bord.",
+      "interdit": "Le tableau de bord complet est réservé au gérant et au propriétaire.",
+      "indicateurs": "Indicateurs du mois",
+      "recette": "Recette encaissée · {{mois}}",
+      "tauxEncaissement": "Taux d’encaissement {{taux}} %",
+      "dettesClients": "Dettes clients",
+      "dettesClientsDetail": "{{clients}} clients · {{plafond}} au-delà du plafond",
+      "dettesFournisseurs": "Dettes fournisseurs",
+      "dettesFournisseursDetail_one": "{{count}} facture en retard",
+      "dettesFournisseursDetail_other": "{{count}} factures en retard",
+      "production": "Production : {{nom}}",
+      "creneaux": {
+        "jour": "jour",
+        "nuit": "nuit"
+      },
+      "graphique": {
+        "titre": "Recette encaissée par nuit · {{mois}}",
+        "note": "Le {{jour}} (jaune) est la session en cours : {{montant}} FCFA",
+        "barre": "{{jour}} : {{montant}}"
+      },
+      "productionTitre": "Production par produit · {{mois}}",
+      "alertes": {
+        "titre": "Alertes",
+        "urgent": "Urgent",
+        "aVoir": "À voir",
+        "aucune": "Aucune alerte.",
+        "types": {
+          "facture-en-retard": "Facture en retard : {{numero}} · {{montant}} FCFA",
+          "stock-bas": "{{matiere}} : stock pour moins d’une session",
+          "clients-au-dela-du-plafond": "{{clients}} clients au-delà du plafond de {{plafond}} FCFA",
+          "budget-depasse": "{{categorie}} au-dessus du budget",
+          "production-non-cloturee": "Production non clôturée : {{date}} {{creneau}}",
+          "manquant-fournisseur": "Manquant fournisseur : {{commande}} · {{manque}} {{unite}}",
+          "manque-de-caisse": "Manque de caisse {{date}} {{creneau}} · {{caissiere}} · {{ecart}} FCFA",
+          "demandes-en-attente_one": "{{count}} demande en attente",
+          "demandes-en-attente_other": "{{count}} demandes en attente",
+          "ecart-matiere": "Écart matière signalé par {{par}} : {{motif}}"
+        }
+      }
+    }
+  },
   "atelier": {
     "stocks": {
       "sections": "Sections du stock",
