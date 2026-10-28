@@ -61,10 +61,21 @@ const attendre = attendreFinDuToast;
 const ouvrirLePrototype = (page: Page) => cliquerTexte(page, /^\s*Semaines\s*$/);
 
 /** Change de personne : le bouton du bas du menu, puis la personne et son code. */
-const changerDePersonne = async (page: Page, profil: RegExp) => {
+const changerDePersonne = async (page: Page, profil: RegExp, application = false) => {
   await cliquer(page, 'Changer d’utilisateur');
   // Dans le prototype « Qui êtes-vous ? » n'est pas un titre : on laisse l'écran de connexion venir.
   await page.waitForTimeout(800);
+  if (application) {
+    // L'application rouvre la connexion par e-mail (le réglage « nom et code » vient de l'adresse du
+    // premier chargement, et recharger la page remettrait la simulation à zéro) : profil de
+    // démonstration, e-mail, code reçu par SMS.
+    await cliquer(page, profil);
+    await cliquer(page, 'Se connecter');
+    await cliquer(page, /Envoyer le code par SMS/);
+    await page.getByLabel('Code à 6 chiffres').fill('123456');
+    await page.waitForTimeout(1200);
+    return;
+  }
   await cliquer(page, profil);
   for (const chiffre of '1234') await cliquer(page, chiffre);
   await page.waitForTimeout(700);
@@ -100,7 +111,7 @@ function scenarioSemaines(options: Options): Scenario {
       await masquerLeBandeauDeSimulation(page);
       if (options.avantApplication) {
         await options.avantApplication(page);
-        if (apres) await changerDePersonne(page, apres);
+        if (apres) await changerDePersonne(page, apres, true);
         // Quitter l'écran puis y revenir relit les semaines.
         else {
           await page.getByRole('link', { name: 'Demandes', exact: true }).first().click();
