@@ -1214,5 +1214,177 @@
         "regleChef": "Les quantités et les temps de cuisson servent de référence au pétrissage."
       }
     }
+  },
+  "gestion": {
+    "semaines": {
+      "sections": "Semaines de travail",
+      "erreurChargement": "Les semaines n’ont pas pu être chargées. Réessayez dans un instant.",
+      "libelle": "Semaine {{numero}} · {{du}} → {{au}}",
+      "statuts": {
+        "ouverte": "Ouverte",
+        "cloturee": "Clôturée",
+        "planifiee": "Planifiée"
+      },
+      "puce": {
+        "titre": "Semaine {{numero}}",
+        "sous": "{{statut}} · {{du}} → {{au}}"
+      },
+      "carte": {
+        "titre": "Semaine {{numero}}",
+        "dates": "{{du}} → {{au}}",
+        "gerant": "Gérant de la semaine",
+        "production": "Responsable de production",
+        "choisir": "— Choisir —",
+        "nonAffecte": "Non affecté",
+        "planifieePar": "Planifiée par",
+        "ouverte": "Ouverte",
+        "cloturee": "Clôturée",
+        "ouvrir": "Ouvrir la semaine {{numero}}",
+        "cloturer": "Clôturer la semaine {{numero}}",
+        "regle": "Le propriétaire planifie les semaines et affecte le gérant et le responsable de production. La semaine est ouverte par le propriétaire ou le gérant affecté, puis clôturée par le gérant de la semaine avec le rapport de passation."
+      },
+      "raisons": {
+        "affecter": "Affectez le gérant et le responsable de production avant l’ouverture.",
+        "autreOuverte": "La semaine {{numero}} doit d’abord être clôturée.",
+        "precedente": "La semaine précédente n’est pas encore clôturée.",
+        "droit": "Ouverture par le propriétaire ou par le gérant affecté."
+      },
+      "notesCloture": {
+        "bloquants": "Fermez la caisse et clôturez la production en cours avant de clôturer la semaine.",
+        "droit": "Seul le gérant de la semaine ({{gerant}}) ou le propriétaire peut clôturer.",
+        "prevue": "Clôture prévue le {{jour}} ; possible dès que les contrôles sont au vert."
+      },
+      "indicateurs": {
+        "recette": "Recette encaissée",
+        "depenses": "Dépenses rattachées",
+        "productions": "Productions",
+        "productionsValeur": "{{nombre}} · {{sacs}} sacs",
+        "ecart": "Écart de caisse cumulé"
+      },
+      "liens": {
+        "titre": "Rattaché à cette semaine",
+        "caisses": "Ouvertures et fermetures de caisse",
+        "productions": "Productions",
+        "depenses": "Dépenses",
+        "receptions": "Réceptions fournisseurs"
+      },
+      "planning": {
+        "titre": "Planning des caisses",
+        "sous": "{{n}} créneaux affectés sur {{total}}",
+        "noteModifiable": "Choisissez la caissière de chaque créneau. Les créneaux passés affichent l’ouverture et la fermeture réelles.",
+        "noteLecture": "Les créneaux passés affichent l’ouverture et la fermeture réelles.",
+        "aAffecter": "— À affecter —",
+        "libelleChamp": "Caissière · {{jour}} · {{creneau}}",
+        "sous_aAffecter": "À affecter",
+        "sous_planifiee": "Planifiée",
+        "sous_fermee": "Fermée",
+        "nonAffectee": "Non affectée",
+        "ouverteA": "Ouverte à {{heure}}",
+        "enCours": "En cours",
+        "juste": "Juste",
+        "horaires": "{{ouverture}} → {{fermeture}}"
+      },
+      "controles": {
+        "titre": "Contrôles avant clôture",
+        "mots": {
+          "ok": "OK",
+          "bloquant": "Bloquant",
+          "surveiller": "À voir"
+        },
+        "caisse": {
+          "ok": "Toutes les caisses de la semaine sont fermées",
+          "bloquant": "Caisse ouverte : {{session}} · {{jour}}",
+          "detail": "Ouverte par {{par}} à {{heure}}.",
+          "action": "Fermer la caisse"
+        },
+        "production": {
+          "ok": "Productions clôturées",
+          "bloquant": "Production en cours non clôturée",
+          "detail": "Responsable : {{nom}}",
+          "action": "Voir la production"
+        },
+        "dettes": {
+          "ok": "Aucune dette client",
+          "surveiller_one": "{{count}} client doit encore {{montant}} FCFA",
+          "surveiller_other": "{{count}} clients doivent encore {{montant}} FCFA",
+          "detail": "Règle : toute dette est réglée au plus tard le dimanche.",
+          "action": "Voir les dettes"
+        },
+        "factures": {
+          "ok": "Aucune facture fournisseur en retard",
+          "surveiller": "{{count}} facture(s) fournisseur en retard",
+          "action": "Voir les dettes"
+        },
+        "demandes": {
+          "ok": "Aucune demande en attente",
+          "surveiller": "{{count}} demande(s) en attente",
+          "action": "Traiter"
+        }
+      },
+      "passation": {
+        "titre": "Rapport de passation",
+        "destinataire": "Destinataire : {{nom}}, gérant de la semaine {{numero}}",
+        "pdf": "Exporter en PDF",
+        "toastPdf": "Rapport de passation exporté en PDF",
+        "caisses": "Caisses",
+        "derniereCaisse": "Dernière caisse fermée",
+        "derniereValeur": "{{jour}} · {{par}} · {{montant}} FCFA",
+        "ecartCumule": "Écart cumulé de la semaine",
+        "dettes": "Dettes",
+        "clients": "Clients",
+        "fournisseurs": "Fournisseurs (non payé)",
+        "stock": "Stock",
+        "stockBas": "stock bas",
+        "aucunStockBas": "Aucun stock bas",
+        "incidents": "Incidents",
+        "aucunIncident": "Aucun incident",
+        "creneaux": {
+          "jour": "jour",
+          "nuit": "nuit"
+        },
+        "incident": {
+          "ecartMatiere": "Écart matière signalé par {{par}}",
+          "production": "Production {{jour}} {{creneau}}",
+          "demande": "{{code}} · {{titre}}",
+          "enAttente": "en attente",
+          "reouverture": "Caisse rouverte par {{par}}"
+        }
+      },
+      "historique": {
+        "titre": "Historique des semaines",
+        "equipe": "Gérant : {{gerant}} · Production : {{production}}",
+        "ouvertePar": "Ouverte par {{par}} · {{quand}}",
+        "pasOuverte": "Pas encore ouverte",
+        "cloturePar": "Clôturée par {{par}} · {{quand}}"
+      },
+      "modales": {
+        "annuler": "Annuler",
+        "ouvrir": {
+          "titre": "Ouvrir la semaine {{numero}}",
+          "periode": "Période",
+          "gerant": "Gérant de la semaine",
+          "production": "Responsable de production",
+          "caisses": "Caisses planifiées",
+          "par": "Ouverture par",
+          "parValeur": "{{nom}} · {{heure}}",
+          "note": "Les caisses, productions, dépenses et réceptions saisies à partir de maintenant seront rattachées à cette semaine.",
+          "confirmer": "Ouvrir la semaine"
+        },
+        "cloturer": {
+          "titre": "Clôturer la semaine",
+          "info": "Clôture de la {{semaine}}. Le rapport de passation (caisses, dettes, stock, incidents) sera transmis à {{nom}}, gérant de la semaine suivante.",
+          "confirmer": "Clôturer et générer la passation"
+        }
+      },
+      "toasts": {
+        "ouverte": "Semaine {{numero}} ouverte",
+        "cloturee": "Semaine {{numero}} clôturée",
+        "clotureeAvecPassation": "Semaine {{numero}} clôturée · passation envoyée à {{nom}}",
+        "erreur": "L’action n’a pas pu être enregistrée. Réessayez.",
+        "bloquants": "Fermez la caisse et clôturez la production avant de clôturer la semaine.",
+        "impossible": "Cette semaine ne peut plus être ouverte ou clôturée : l’écran vient d’être actualisé.",
+        "droit": "Votre profil ne permet pas cette action."
+      }
+    }
   }
 }

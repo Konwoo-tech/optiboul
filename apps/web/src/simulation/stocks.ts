@@ -323,6 +323,18 @@ export function matieresEnStockBas(): Matiere[] {
   return MATIERES.filter((cle) => niveauDuStock(stock[cle], besoin(cle)) === 'bas');
 }
 
+/**
+ * Matières dont le stock ne couvre pas une session de `sacs` sacs de farine (passation : « stock
+ * bas »). Sans plan de production, la maquette compte 8 sacs.
+ */
+export function matieresSousLeBesoin(sacs: number = SACS_PAR_SESSION): Matiere[] {
+  const { stock } = lireEtat();
+  return MATIERES.filter((cle) => {
+    const { parSac, fixe } = FICHES[cle];
+    return stock[cle] < (fixe ?? arrondir((parSac ?? 0) * sacs));
+  });
+}
+
 /** Actions tracées dans le journal, plus récentes en premier (tests). */
 export function journalStocks(): readonly Journal[] {
   return lireEtat().journal;

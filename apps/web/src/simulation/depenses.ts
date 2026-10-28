@@ -499,6 +499,14 @@ function creerDepense(a: Acteur, corps: Corps): Response {
   return Response.json({ instantane: instantane(), depense: creee, demande });
 }
 
+/** Dépenses rattachées à une semaine, hors refusées (indicateurs de l'écran des semaines). */
+export function depensesDeSemaine(semaine: string): { nombre: number; montant: number } {
+  const retenues = lireEtat().depenses.filter(
+    (d) => d.semaine === semaine && d.statut !== 'refusee',
+  );
+  return { nombre: retenues.length, montant: retenues.reduce((somme, d) => somme + d.montant, 0) };
+}
+
 export type ResultatDecision = 'ok' | 'inconnue' | 'interdit' | 'deja-decidee';
 
 /** Demandes de validation de dépense avec leur dépense, plus récentes d'abord (écran « Demandes »). */
