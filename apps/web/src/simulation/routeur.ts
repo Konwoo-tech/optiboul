@@ -26,6 +26,8 @@ import {
   reinitialiserProduction,
   repondreProduction,
 } from './production.ts';
+import { contexteSemaines, reinitialiserPlanning } from './planning.ts';
+import { reinitialiserSemaines, repondreSemaines } from './semaines.ts';
 import { lireUtilisateurConnecte, memoriserUtilisateurConnecte } from './session.ts';
 import { repondreTableauDeBord } from './tableauDeBord.ts';
 
@@ -64,6 +66,8 @@ export function reinitialiserSimulation(): void {
   reinitialiserDepenses();
   reinitialiserStocks();
   reinitialiserProduction();
+  reinitialiserPlanning();
+  reinitialiserSemaines();
   reinitialiserNumerosDemandes();
   memoriserUtilisateurConnecte(null);
 }
@@ -177,7 +181,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
       return Response.json(UTILISATEURS_SIMULES);
 
     case 'GET /api/v1/simulation/contexte/':
-      return Response.json({ ...CONTEXTE, ...contexteCaisses() });
+      return Response.json({ ...CONTEXTE, ...contexteCaisses(), ...contexteSemaines() });
 
     case 'POST /api/v1/simulation/identification/':
       return identifier(corps);
@@ -233,6 +237,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
         repondreComptoir(url, methode, corps) ??
         repondreDepenses(url, methode, corps) ??
         repondreStocks(url, methode, corps) ??
+        repondreSemaines(url, methode, corps) ??
         repondreDemandes(methode, chemin, corps) ??
         repondreProduction(methode, chemin, corps) ??
         repondreTableauDeBord(url, methode, corps, CONTEXTE) ??

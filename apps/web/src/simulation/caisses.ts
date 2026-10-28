@@ -15,6 +15,7 @@ import type {
 } from '../espaces/comptoir/caisses/types.ts';
 import type { Profil } from '../profils.ts';
 import { COMPTES_SIMULES, type ContexteSimule } from './donnees.ts';
+import { caissierePrevue } from './planning.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
 /*
@@ -107,12 +108,32 @@ const COURANTE_INITIALE = (): Courante => ({
 let archives = /* @__PURE__ */ ARCHIVES_INITIALES();
 let courante = /* @__PURE__ */ COURANTE_INITIALE();
 let journal: EntreeJournal[] = [];
+/** Dernière réouverture de la caisse, effacée à l'ouverture suivante (passation, incidents). */
+let reouverture: { par: string; heure: string } | null = null;
 
 /** Remet les caisses à l'état de la maquette (tests). */
 export function reinitialiserCaisses(): void {
   archives = ARCHIVES_INITIALES();
   courante = COURANTE_INITIALE();
   journal = [];
+  reouverture = null;
+}
+
+/**
+ * Ce que l'écran des semaines lit des caisses : les caisses fermées puis la caisse ouverte, et la
+ * dernière réouverture. Lecture seule : les caisses restent tenues ici.
+ */
+export function lectureCaisses(): {
+  sessions: SessionCaisse[];
+  ouverte: boolean;
+  reouverture: { par: string; heure: string } | null;
+} {
+  const ouverte = courante.statut === 'ouverte';
+  return {
+    sessions: structuredClone([...archives, ...(ouverte ? [enSession(courante)] : [])]),
+    ouverte,
+    reouverture,
+  };
 }
 
 /** Ce que la coque sait de la session : elle suit l'état de la caisse (ouverture, fermeture). */
@@ -168,13 +189,12 @@ function creneauSuivant(c: Courante): { type: TypeSession; jour: string } {
 }
 
 /**
- * Planning des caisses (maquette : `planning`). Semaines 41 à 43 : Rachel le jour, Davy la nuit,
- * sauf la nuit du 25 octobre qui n'est pas affectée ; au-delà, rien n'est planifié.
+ * Caissière que le planning des semaines (`planning.ts`, écran Gestion › Semaines) a prévue sur
+ * un créneau ; `null` quand personne n'est affecté.
  */
 function planifieePour(jour: string, type: TypeSession): Personne | null {
-  if (jour < '2026-10-05' || jour > '2026-10-25') return null;
-  if (jour === '2026-10-25' && type === 'nuit') return null;
-  return personne(type === 'jour' ? 'rachel' : 'davy');
+  const id = caissierePrevue(jour, type);
+  return id ? personne(id) : null;
 }
 
 const maintenant = () => formaterHeure(new Date());
@@ -249,6 +269,7 @@ function ouvrir(acteur: Acteur, corps: Corps): Response {
     fermeture: null,
     compte: null,
   };
+  reouverture = null;
   const hors = planifiee && planifiee.id !== acteur.id ? ` (planifiée : ${planifiee.nom})` : '';
   tracer(
     acteur,
@@ -304,6 +325,7 @@ function rouvrir(acteur: Acteur, corps: Corps): Response {
   if (!motif)
     return probleme(400, 'motif_obligatoire', 'Le motif de la réouverture est obligatoire.');
   courante = { ...courante, statut: 'ouverte', fermeture: null, compte: null };
+  reouverture = { par: acteur.nom, heure: maintenant() };
   tracer(
     acteur,
     `Réouverture de la caisse du ${courante.jour} (${courante.type}) · motif : ${motif} · propriétaire informé`,

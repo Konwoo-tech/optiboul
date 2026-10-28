@@ -152,6 +152,11 @@ function toutes(): Demande[] {
   ].sort((x, y) => y.numero - x.numero);
 }
 
+/** Demandes qui attendent une décision, plus récentes d'abord (contrôles avant clôture d'une semaine). */
+export function demandesEnAttente(): Demande[] {
+  return toutes().filter((d) => d.statut === 'en-attente');
+}
+
 function acteur(): Acteur | undefined {
   const utilisateur = lireUtilisateurConnecte();
   if (!utilisateur) return undefined;

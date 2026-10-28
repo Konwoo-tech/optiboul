@@ -22,6 +22,7 @@ const MARQUEURS = [
   'Gros court 170',
   'FAC-0198',
   'gestion/tableau-de-bord/',
+  'Bois · 2 chargements (BC-027)',
 ];
 
 function fichiers(dossier) {

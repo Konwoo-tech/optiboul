@@ -296,6 +296,23 @@ export function sessionDeProduction(): { type: Creneau; date: string; ouverte: b
   return { type, date, ouverte: statut === 'ouverte' };
 }
 
+/** La session du comptoir quand elle est ouverte : créneau, jour, qui l'a ouverte et à quelle heure. */
+export function sessionOuverteDuComptoir(): {
+  type: Creneau;
+  jour: string;
+  par: string;
+  heure: string;
+} | null {
+  const { type, date, statut, ouvertePar, ouverteA } = lireEtat().session;
+  return statut === 'ouverte' ? { type, jour: date, par: ouvertePar, heure: ouverteA } : null;
+}
+
+/** Dernière réouverture de la session après clôture, s'il y en a une (passation de la semaine). */
+export function reouvertureDeSession(): { par: string; heure: string } | null {
+  const { rouvertePar, rouverteA } = lireEtat().session;
+  return rouvertePar ? { par: rouvertePar, heure: rouverteA } : null;
+}
+
 /**
  * Ce que le tableau de bord lit de la session (US-130 à US-134) : son jour, sa recette et ce qui
  * était dû. Lecture seule : la session reste la seule source de ces chiffres.

@@ -32,6 +32,7 @@ import {
   sessionDeProduction,
 } from './comptoir.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
+import { semaineCouranteSimulee } from './planning.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 import { entrerEnStockDepuisDepense } from './stocks.ts';
 
@@ -63,7 +64,8 @@ const BUDGETS: Record<Categorie, readonly [budget: number, deja: number]> = {
   extra: [30_000, 5_000],
 };
 
-const SEMAINE_COURANTE = 'S42';
+/** La semaine courante suit les ouvertures et clôtures de l'écran des semaines (`planning.ts`). */
+const semaineCourante = () => semaineCouranteSimulee().id;
 const MOIS_DU_BUDGET = '2026-10';
 
 /** Fonctions et non constantes : aucun appel au chargement du module, rien dans le paquet de production. */
@@ -354,14 +356,14 @@ export function budgetDuMois(): { mois: string; lignes: LigneBudget[] } {
 
 function instantane(): InstantaneDepenses {
   const toutes = semaines();
-  const courante = toutes.find((s) => s.id === SEMAINE_COURANTE)!;
+  const courante = toutes.find((s) => s.id === semaineCourante())!;
   const { type, date } = sessionDeProduction();
   return structuredClone({
     mois: MOIS_DU_BUDGET,
     seuil: SEUIL_PAR_DEFAUT,
     semaineCourante: courante,
     semaines: toutes,
-    gerantDeLaSemaine: 'Willy',
+    gerantDeLaSemaine: semaineCouranteSimulee().gerant?.nom ?? '—',
     session: { type, date },
     budget: budget(),
     depenses: lireEtat().depenses,
@@ -445,7 +447,7 @@ function creerDepense(a: Acteur, corps: Corps): Response {
     id: `e${Date.now()}-${++sequence}`,
     numero,
     date: dateDuJour(),
-    semaine: SEMAINE_COURANTE,
+    semaine: semaineCourante(),
     categorie,
     libelle,
     montant,
@@ -493,10 +495,18 @@ function creerDepense(a: Acteur, corps: Corps): Response {
         ? `stock (${rattachement.matiere} +${rattachement.quantite})`
         : rattachement.type === 'production'
           ? `la production ${creneau} du ${jourSession}`
-          : `la semaine ${SEMAINE_COURANTE}`
+          : `la semaine ${semaineCourante()}`
     }${attend ? ` · demande de validation au ${a.profil === 'caissier' ? 'gérant' : 'propriétaire'}` : ''}`,
   );
   return Response.json({ instantane: instantane(), depense: creee, demande });
+}
+
+/** Dépenses rattachées à une semaine, hors refusées (indicateurs de l'écran des semaines). */
+export function depensesDeSemaine(semaine: string): { nombre: number; montant: number } {
+  const retenues = lireEtat().depenses.filter(
+    (d) => d.semaine === semaine && d.statut !== 'refusee',
+  );
+  return { nombre: retenues.length, montant: retenues.reduce((somme, d) => somme + d.montant, 0) };
 }
 
 export type ResultatDecision = 'ok' | 'inconnue' | 'interdit' | 'deja-decidee';

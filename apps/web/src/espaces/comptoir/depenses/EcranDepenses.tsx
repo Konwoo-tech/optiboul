@@ -2,6 +2,7 @@ import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { EcranChargement, EcranErreur, useToast } from '@/ui';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router';
 
 import type { Ecran } from '../../../navigation.ts';
 import { EnTeteEcran } from '../../EnTeteEcran.tsx';
@@ -31,7 +32,11 @@ export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
   const profil = utilisateur?.profil;
   const requete = useDepenses(nom);
   const enregistrer = useEnregistrerDepense(nom);
-  const [semaine, setSemaine] = useState<FiltreSemaine>('all');
+  // La semaine peut venir de l'adresse : l'écran des semaines y renvoie (« Dépenses · 4 »).
+  const [parametres] = useSearchParams();
+  const [semaine, setSemaine] = useState<FiltreSemaine>(() =>
+    /^S\d+$/.test(parametres.get('semaine') ?? '') ? parametres.get('semaine')! : 'all',
+  );
   const [rattachement, setRattachement] = useState<FiltreRattachement>('all');
   const [erreurServeur, setErreurServeur] = useState<string | null>(null);
 
