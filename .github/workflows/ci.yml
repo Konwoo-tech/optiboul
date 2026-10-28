@@ -60,8 +60,30 @@ jobs:
       - name: Migrations à jour
         run: $COMPOSE run --rm django python manage.py makemigrations --check
 
-      - name: Tests (pytest)
-        run: $COMPOSE run --rm django pytest
+      - name: Tests (pytest) avec couverture
+        run: $COMPOSE run --rm django coverage run -m pytest
+
+      - name: Couverture publiée (échec sous 90 % pour le domaine)
+        run: |
+          {
+            echo "## Couverture de l'API"
+            $COMPOSE run --rm -T django coverage report --format=markdown
+            echo "### Domaine (seuil 90 %)"
+            $COMPOSE run --rm -T django coverage report --format=markdown --include='optiboul/*/domain/*'
+          } >> "$GITHUB_STEP_SUMMARY"
+          $COMPOSE run --rm django coverage html
+          $COMPOSE run --rm django coverage report --include='optiboul/*/domain/*' --fail-under=90
+
+      - name: Rapport de couverture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: couverture-api
+          path: apps/api/htmlcov
+          if-no-files-found: ignore
+
+      - name: Types (mypy)
+        run: $COMPOSE run --rm django mypy optiboul
 
       - name: Règle de dépendance (import-linter)
         run: $COMPOSE run --rm django lint-imports
@@ -113,3 +135,6 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Image de production (Nginx)
+        run: docker build --tag optiboul_production_web .

@@ -3,7 +3,7 @@ API_COMPOSE := docker compose -f apps/api/docker-compose.local.yml
 DJANGO := $(API_COMPOSE) run --rm django
 WEB := pnpm --dir apps/web
 
-.PHONY: help envs install up down logs dev migrate superuser test test-api test-web lint lint-api lint-web typecheck schema api-client certs e2e prod-build
+.PHONY: help envs install up down logs dev migrate superuser test test-api couverture-api test-web lint lint-api lint-web typecheck schema api-client certs e2e prod-build
 
 help: ## Affiche cette aide
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[33m%-14s\033[0m %s\n", $$1, $$2}'
@@ -38,6 +38,11 @@ test: test-api test-web ## Lance tous les tests
 test-api: ## Tests Django (pytest) et règles d'import (import-linter)
 	$(DJANGO) pytest
 	$(DJANGO) lint-imports
+
+couverture-api: ## Couverture des tests de l'API ; échec sous 90 % pour le domaine (htmlcov/)
+	$(DJANGO) coverage run -m pytest
+	$(DJANGO) coverage html
+	$(DJANGO) coverage report --include='optiboul/*/domain/*' --fail-under=90
 
 test-web: ## Tests de l'application web (Vitest)
 	$(WEB) test
