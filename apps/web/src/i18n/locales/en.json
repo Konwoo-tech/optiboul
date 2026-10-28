@@ -748,6 +748,176 @@
           "ecart-matiere": "Material gap reported by {{par}}: {{motif}}"
         }
       }
+    },
+    "semaines": {
+      "sections": "Work weeks",
+      "erreurChargement": "The weeks could not be loaded. Try again in a moment.",
+      "libelle": "Week {{numero}} · {{du}} → {{au}}",
+      "statuts": {
+        "ouverte": "Open",
+        "cloturee": "Closed",
+        "planifiee": "Planned"
+      },
+      "puce": {
+        "titre": "Week {{numero}}",
+        "sous": "{{statut}} · {{du}} → {{au}}"
+      },
+      "carte": {
+        "titre": "Week {{numero}}",
+        "dates": "{{du}} → {{au}}",
+        "gerant": "Manager of the week",
+        "production": "Head of production",
+        "choisir": "— Choose —",
+        "nonAffecte": "Unassigned",
+        "planifieePar": "Planned by",
+        "ouverte": "Opened",
+        "cloturee": "Closed",
+        "ouvrir": "Open week {{numero}}",
+        "cloturer": "Close week {{numero}}",
+        "regle": "The owner plans the weeks and assigns the manager and head of production. The week is opened by the owner or the assigned manager, then closed by the manager of the week with the handover report."
+      },
+      "raisons": {
+        "affecter": "Assign the manager and the head of production before opening.",
+        "autreOuverte": "Week {{numero}} must be closed first.",
+        "precedente": "The previous week is not closed yet.",
+        "droit": "Opened by the owner or the assigned manager."
+      },
+      "notesCloture": {
+        "bloquants": "Close the cash desk and the current production before closing the week.",
+        "droit": "Only the manager of the week ({{gerant}}) or the owner can close it.",
+        "prevue": "Closing planned for {{jour}}; possible as soon as the checks are green."
+      },
+      "indicateurs": {
+        "recette": "Takings collected",
+        "depenses": "Linked expenses",
+        "productions": "Production runs",
+        "productionsValeur": "{{nombre}} · {{sacs}} sacks",
+        "ecart": "Cumulative cash gap"
+      },
+      "liens": {
+        "titre": "Linked to this week",
+        "caisses": "Cash desk sessions",
+        "productions": "Production runs",
+        "depenses": "Expenses",
+        "receptions": "Supplier deliveries"
+      },
+      "planning": {
+        "titre": "Cash desk schedule",
+        "sous": "{{n}} of {{total}} slots assigned",
+        "noteModifiable": "Choose the cashier for each slot. Past slots show the actual opening and closing.",
+        "noteLecture": "Past slots show the actual opening and closing.",
+        "aAffecter": "— To assign —",
+        "libelleChamp": "Cashier · {{jour}} · {{creneau}}",
+        "sous_aAffecter": "To assign",
+        "sous_planifiee": "Planned",
+        "sous_fermee": "Closed",
+        "nonAffectee": "Unassigned",
+        "ouverteA": "Opened at {{heure}}",
+        "enCours": "Open",
+        "juste": "Balanced",
+        "horaires": "{{ouverture}} → {{fermeture}}"
+      },
+      "controles": {
+        "titre": "Pre-closing checks",
+        "mots": {
+          "ok": "OK",
+          "bloquant": "Blocking",
+          "surveiller": "Check"
+        },
+        "caisse": {
+          "ok": "All cash desks of the week are closed",
+          "bloquant": "Cash desk open: {{session}} · {{jour}}",
+          "detail": "Opened by {{par}} at {{heure}}.",
+          "action": "Close the cash desk"
+        },
+        "production": {
+          "ok": "Production runs closed",
+          "bloquant": "Current production not closed",
+          "detail": "Head: {{nom}}",
+          "action": "See production"
+        },
+        "dettes": {
+          "ok": "No customer debt",
+          "surveiller_one": "{{count}} customer still owes {{montant}} FCFA",
+          "surveiller_other": "{{count}} customers still owe {{montant}} FCFA",
+          "detail": "Rule: every debt is settled by Sunday.",
+          "action": "See debts"
+        },
+        "factures": {
+          "ok": "No overdue supplier invoice",
+          "surveiller": "{{count}} overdue supplier invoice(s)",
+          "action": "See debts"
+        },
+        "demandes": {
+          "ok": "No pending requests",
+          "surveiller": "{{count}} pending request(s)",
+          "action": "Handle"
+        }
+      },
+      "passation": {
+        "titre": "Handover report",
+        "destinataire": "Recipient: {{nom}}, manager of week {{numero}}",
+        "pdf": "Export PDF",
+        "toastPdf": "Handover report exported to PDF",
+        "caisses": "Cash desks",
+        "derniereCaisse": "Last closed cash desk",
+        "derniereValeur": "{{jour}} · {{par}} · {{montant}} FCFA",
+        "ecartCumule": "Cumulative gap this week",
+        "dettes": "Debts",
+        "clients": "Customers",
+        "fournisseurs": "Suppliers (unpaid)",
+        "stock": "Stock",
+        "stockBas": "low stock",
+        "aucunStockBas": "No low stock",
+        "incidents": "Incidents",
+        "aucunIncident": "No incidents",
+        "creneaux": {
+          "jour": "day",
+          "nuit": "night"
+        },
+        "incident": {
+          "ecartMatiere": "Material gap reported by {{par}}",
+          "production": "Production {{jour}} {{creneau}}",
+          "demande": "{{code}} · {{titre}}",
+          "enAttente": "pending",
+          "reouverture": "Cash desk reopened by {{par}}"
+        }
+      },
+      "historique": {
+        "titre": "Week history",
+        "equipe": "Manager: {{gerant}} · Production: {{production}}",
+        "ouvertePar": "Opened by {{par}} · {{quand}}",
+        "pasOuverte": "Not opened yet",
+        "cloturePar": "Closed by {{par}} · {{quand}}"
+      },
+      "modales": {
+        "annuler": "Cancel",
+        "ouvrir": {
+          "titre": "Open week {{numero}}",
+          "periode": "Period",
+          "gerant": "Manager of the week",
+          "production": "Head of production",
+          "caisses": "Planned cash desks",
+          "par": "Opened by",
+          "parValeur": "{{nom}} · {{heure}}",
+          "note": "Cash desks, production runs, expenses and deliveries entered from now on will be linked to this week.",
+          "confirmer": "Open the week"
+        },
+        "cloturer": {
+          "titre": "Close the week",
+          "info": "Closing {{semaine}}. The handover report (cash desks, debts, stock, incidents) will be sent to {{nom}}, next week’s manager.",
+          "confirmer": "Close and generate handover"
+        }
+      },
+      "toasts": {
+        "ouverte": "Week {{numero}} opened",
+        "cloturee": "Week {{numero}} closed",
+        "clotureeAvecPassation": "Week {{numero}} closed · handover sent to {{nom}}",
+        "erreur": "The action could not be saved. Try again.",
+        "bloquants": "Close the cash desk and the production before closing the week.",
+        "impossible": "This week can no longer be opened or closed: the screen has just been refreshed.",
+        "droit": "Your profile does not allow this action."
+      }
     }
   },
   "atelier": {
@@ -1212,178 +1382,6 @@
         "regleModifiable": "Each edit creates a new version, recorded in the activity log. Unit prices follow stock purchases.",
         "regleLecture": "Read-only. Only the owner and the administrator edit technical sheets.",
         "regleChef": "Quantities and baking times are the kneading reference."
-      }
-    }
-  },
-  "gestion": {
-    "semaines": {
-      "sections": "Work weeks",
-      "erreurChargement": "The weeks could not be loaded. Try again in a moment.",
-      "libelle": "Week {{numero}} · {{du}} → {{au}}",
-      "statuts": {
-        "ouverte": "Open",
-        "cloturee": "Closed",
-        "planifiee": "Planned"
-      },
-      "puce": {
-        "titre": "Week {{numero}}",
-        "sous": "{{statut}} · {{du}} → {{au}}"
-      },
-      "carte": {
-        "titre": "Week {{numero}}",
-        "dates": "{{du}} → {{au}}",
-        "gerant": "Manager of the week",
-        "production": "Head of production",
-        "choisir": "— Choose —",
-        "nonAffecte": "Unassigned",
-        "planifieePar": "Planned by",
-        "ouverte": "Opened",
-        "cloturee": "Closed",
-        "ouvrir": "Open week {{numero}}",
-        "cloturer": "Close week {{numero}}",
-        "regle": "The owner plans the weeks and assigns the manager and head of production. The week is opened by the owner or the assigned manager, then closed by the manager of the week with the handover report."
-      },
-      "raisons": {
-        "affecter": "Assign the manager and the head of production before opening.",
-        "autreOuverte": "Week {{numero}} must be closed first.",
-        "precedente": "The previous week is not closed yet.",
-        "droit": "Opened by the owner or the assigned manager."
-      },
-      "notesCloture": {
-        "bloquants": "Close the cash desk and the current production before closing the week.",
-        "droit": "Only the manager of the week ({{gerant}}) or the owner can close it.",
-        "prevue": "Closing planned for {{jour}}; possible as soon as the checks are green."
-      },
-      "indicateurs": {
-        "recette": "Takings collected",
-        "depenses": "Linked expenses",
-        "productions": "Production runs",
-        "productionsValeur": "{{nombre}} · {{sacs}} sacks",
-        "ecart": "Cumulative cash gap"
-      },
-      "liens": {
-        "titre": "Linked to this week",
-        "caisses": "Cash desk sessions",
-        "productions": "Production runs",
-        "depenses": "Expenses",
-        "receptions": "Supplier deliveries"
-      },
-      "planning": {
-        "titre": "Cash desk schedule",
-        "sous": "{{n}} of {{total}} slots assigned",
-        "noteModifiable": "Choose the cashier for each slot. Past slots show the actual opening and closing.",
-        "noteLecture": "Past slots show the actual opening and closing.",
-        "aAffecter": "— To assign —",
-        "libelleChamp": "Cashier · {{jour}} · {{creneau}}",
-        "sous_aAffecter": "To assign",
-        "sous_planifiee": "Planned",
-        "sous_fermee": "Closed",
-        "nonAffectee": "Unassigned",
-        "ouverteA": "Opened at {{heure}}",
-        "enCours": "Open",
-        "juste": "Balanced",
-        "horaires": "{{ouverture}} → {{fermeture}}"
-      },
-      "controles": {
-        "titre": "Pre-closing checks",
-        "mots": {
-          "ok": "OK",
-          "bloquant": "Blocking",
-          "surveiller": "Check"
-        },
-        "caisse": {
-          "ok": "All cash desks of the week are closed",
-          "bloquant": "Cash desk open: {{session}} · {{jour}}",
-          "detail": "Opened by {{par}} at {{heure}}.",
-          "action": "Close the cash desk"
-        },
-        "production": {
-          "ok": "Production runs closed",
-          "bloquant": "Current production not closed",
-          "detail": "Head: {{nom}}",
-          "action": "See production"
-        },
-        "dettes": {
-          "ok": "No customer debt",
-          "surveiller_one": "{{count}} customer still owes {{montant}} FCFA",
-          "surveiller_other": "{{count}} customers still owe {{montant}} FCFA",
-          "detail": "Rule: every debt is settled by Sunday.",
-          "action": "See debts"
-        },
-        "factures": {
-          "ok": "No overdue supplier invoice",
-          "surveiller": "{{count}} overdue supplier invoice(s)",
-          "action": "See debts"
-        },
-        "demandes": {
-          "ok": "No pending requests",
-          "surveiller": "{{count}} pending request(s)",
-          "action": "Handle"
-        }
-      },
-      "passation": {
-        "titre": "Handover report",
-        "destinataire": "Recipient: {{nom}}, manager of week {{numero}}",
-        "pdf": "Export PDF",
-        "toastPdf": "Handover report exported to PDF",
-        "caisses": "Cash desks",
-        "derniereCaisse": "Last closed cash desk",
-        "derniereValeur": "{{jour}} · {{par}} · {{montant}} FCFA",
-        "ecartCumule": "Cumulative gap this week",
-        "dettes": "Debts",
-        "clients": "Customers",
-        "fournisseurs": "Suppliers (unpaid)",
-        "stock": "Stock",
-        "stockBas": "low stock",
-        "aucunStockBas": "No low stock",
-        "incidents": "Incidents",
-        "aucunIncident": "No incidents",
-        "creneaux": {
-          "jour": "day",
-          "nuit": "night"
-        },
-        "incident": {
-          "ecartMatiere": "Material gap reported by {{par}}",
-          "production": "Production {{jour}} {{creneau}}",
-          "demande": "{{code}} · {{titre}}",
-          "enAttente": "pending",
-          "reouverture": "Cash desk reopened by {{par}}"
-        }
-      },
-      "historique": {
-        "titre": "Week history",
-        "equipe": "Manager: {{gerant}} · Production: {{production}}",
-        "ouvertePar": "Opened by {{par}} · {{quand}}",
-        "pasOuverte": "Not opened yet",
-        "cloturePar": "Closed by {{par}} · {{quand}}"
-      },
-      "modales": {
-        "annuler": "Cancel",
-        "ouvrir": {
-          "titre": "Open week {{numero}}",
-          "periode": "Period",
-          "gerant": "Manager of the week",
-          "production": "Head of production",
-          "caisses": "Planned cash desks",
-          "par": "Opened by",
-          "parValeur": "{{nom}} · {{heure}}",
-          "note": "Cash desks, production runs, expenses and deliveries entered from now on will be linked to this week.",
-          "confirmer": "Open the week"
-        },
-        "cloturer": {
-          "titre": "Close the week",
-          "info": "Closing {{semaine}}. The handover report (cash desks, debts, stock, incidents) will be sent to {{nom}}, next week’s manager.",
-          "confirmer": "Close and generate handover"
-        }
-      },
-      "toasts": {
-        "ouverte": "Week {{numero}} opened",
-        "cloturee": "Week {{numero}} closed",
-        "clotureeAvecPassation": "Week {{numero}} closed · handover sent to {{nom}}",
-        "erreur": "The action could not be saved. Try again.",
-        "bloquants": "Close the cash desk and the production before closing the week.",
-        "impossible": "This week can no longer be opened or closed: the screen has just been refreshed.",
-        "droit": "Your profile does not allow this action."
       }
     }
   }
