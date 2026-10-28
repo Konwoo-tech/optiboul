@@ -66,8 +66,7 @@ const changerDePersonne = async (page: Page, profil: RegExp) => {
   // Dans le prototype « Qui êtes-vous ? » n'est pas un titre : on laisse l'écran de connexion venir.
   await page.waitForTimeout(800);
   await cliquer(page, profil);
-  for (const chiffre of '1234')
-    await page.getByRole('button', { name: chiffre, exact: true }).click();
+  for (const chiffre of '1234') await cliquer(page, chiffre);
   await page.waitForTimeout(700);
 };
 
@@ -189,7 +188,6 @@ const pretALaClotureDansLApplication: Etapes = async (page) => {
       await appel(page, `${session}ouvrir-suivante/`, 'POST');
     }
   }
-  await appel(page, '/api/v1/simulation/gestion/semaines/production/cloturer/', 'POST');
 };
 
 const pret = {

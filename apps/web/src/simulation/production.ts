@@ -290,6 +290,34 @@ export function productionEnCours(): boolean {
   return ['plan-propose', 'plan-valide', 'en-cours'].includes(lireEtat().etape);
 }
 
+/**
+ * Ce que l'écran des semaines lit de la production : les productions rattachées aux semaines (celles
+ * de l'historique) et, tant que le cycle n'est pas clôturé, celle de la session en cours.
+ */
+export function productionsRattachees(): {
+  historique: ReadonlyArray<
+    Pick<LigneHistorique, 'date' | 'type' | 'sacs' | 'note' | 'motif' | 'responsable'>
+  >;
+  enCours: { date: string; type: Creneau; sacs: number } | null;
+} {
+  sAbonner();
+  const etat = lireEtat();
+  const plan = calculerPlan(commandesDeLaSession().pains, etat.supplement);
+  return {
+    historique: etat.historique.map(({ date, type, sacs, note, motif, responsable }) => ({
+      date,
+      type,
+      sacs,
+      responsable,
+      ...(note ? { note } : {}),
+      ...(motif ? { motif } : {}),
+    })),
+    enCours: productionEnCours()
+      ? { date: etat.session.date, type: etat.session.type, sacs: plan.sacs }
+      : null,
+  };
+}
+
 // ───────────────────────────── notifications ─────────────────────────────
 
 const libelleSession = ({ type, date }: { type: Creneau; date: string }, langue: 'fr' | 'en') =>

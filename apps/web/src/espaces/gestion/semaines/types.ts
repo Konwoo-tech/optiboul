@@ -1,6 +1,7 @@
 import type { Creneau } from '@/utils';
 
 import type { Profil } from '../../../profils.ts';
+import type { MotifEcart } from '../../atelier/production/types.ts';
 import type { Matiere } from '../../comptoir/depenses/types.ts';
 
 export type { Creneau } from '@/utils';
@@ -80,7 +81,7 @@ export type Controle =
   | { cle: 'demandes'; niveau: 'ok' | 'surveiller'; numeros: number[] };
 
 export type Incident =
-  | { genre: 'ecart-matiere'; par: string; motif: string }
+  | { genre: 'ecart-matiere'; par: string; motif: MotifEcart }
   | { genre: 'production'; jour: string; creneau: Creneau; note: string }
   | { genre: 'demande'; numero: number; titre: string; titreEn?: string }
   | { genre: 'reouverture'; par: string; heure: string };

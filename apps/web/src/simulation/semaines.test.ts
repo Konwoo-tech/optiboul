@@ -22,11 +22,13 @@ async function appeler(
 const lire = async () => (await appeler('GET')).json as unknown as InstantaneSemaines;
 const semaine = async (id: string) => (await lire()).semaines.find((s) => s.id === id)!;
 
-/** Ferme la caisse et la session, ouvre et ferme la suivante, lève la production en cours. */
+/** Ferme la caisse et la session, ouvre et ferme la suivante (la production non clôturée est archivée). */
 async function toutFermer() {
   const session = '/api/v1/simulation/comptoir/session/';
   const caisses = '/api/v1/simulation/caisses/';
   memoriserUtilisateurConnecte('willy');
+  // Lire les semaines abonne la production à l'ouverture de la session suivante.
+  await appeler('GET');
   for (const tour of [1, 2]) {
     await appeler('PUT', 'comptage/', { especes: '22450' }, session);
     await appeler('POST', 'cloturer/', {}, session);
@@ -36,7 +38,6 @@ async function toutFermer() {
       await appeler('POST', 'ouvrir-suivante/', {}, session);
     }
   }
-  await appeler('POST', 'production/cloturer/');
 }
 
 beforeEach(() => {

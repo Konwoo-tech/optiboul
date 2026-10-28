@@ -25,7 +25,6 @@ import {
   dateDuJour,
   heureCourante,
   reouvertureDeSession,
-  sessionDeProduction,
   sessionOuverteDuComptoir,
 } from './comptoir.ts';
 import { demandesEnAttente } from './demandes.ts';
@@ -41,6 +40,7 @@ import {
   personne,
   planifierCreneau,
 } from './planning.ts';
+import { productionsRattachees } from './production.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 import { matieresSousLeBesoin } from './stocks.ts';
 
@@ -48,9 +48,9 @@ import { matieresSousLeBesoin } from './stocks.ts';
  * Faux serveur de « Gestion › Semaines » (US-169, récits US-030 à US-035) : les règles de la
  * maquette « OptiBoul ERP v2 » (fonction `vSemaines`, états `weeks`, `planning`). Les semaines et
  * le planning vivent dans `planning.ts` ; les caisses, les dépenses, les demandes, les clients et
- * le stock sont lus à leur source. Les productions, les réceptions et les factures fournisseurs
- * n'ont pas encore de faux serveur : leurs chiffres sont ceux de la maquette, ici, en attendant
- * leurs écrans (Atelier › Production, Gestion › Fournisseurs).
+ * le stock sont lus à leur source. La production est lue dans `production.ts`. Les réceptions et les factures
+ * fournisseurs n'ont pas encore de faux serveur : leurs chiffres sont ceux de la maquette, ici, en
+ * attendant l'écran Gestion › Fournisseurs.
  */
 
 type Corps = Record<string, unknown>;
@@ -62,10 +62,6 @@ const RACINE = '/api/v1/simulation/gestion/semaines/';
 const probleme = (status: number, code: string, detail: string, autres: object = {}) =>
   Response.json({ detail, code, ...autres }, { status });
 const refus = () => probleme(403, 'droit_insuffisant', 'Votre profil ne permet pas cette action.');
-const sansContenu = () => new Response(null, { status: 204 });
-
-/** Sacs du plan de la session en cours (maquette : `plan().totalSacs`). */
-const SACS_DU_PLAN = 6;
 
 /** Sacs que la maquette compte pour le stock quand aucun plan n'est en cours (`totalSacs||8`). */
 const SACS_SANS_PLAN = 8;
@@ -75,23 +71,6 @@ const RECETTE_ANTERIEURE = (): Record<string, number> => ({ S41: 2_214_600 });
 
 /** Réceptions fournisseurs rattachées à chaque semaine (maquette : `orders[].week`). */
 const RECEPTIONS = (): Record<string, number> => ({ S42: 6, S43: 1 });
-
-type Production = { jour: string; creneau: Creneau; sacs: number; note?: string };
-
-/** Productions clôturées de la semaine 42 (maquette : `prodRuns`). */
-const PRODUCTIONS = (): Record<string, Production[]> => {
-  const departs: Record<string, Production[]> = {
-    S42: [
-      { jour: '2026-10-12', creneau: 'jour', sacs: 6 },
-      { jour: '2026-10-12', creneau: 'nuit', sacs: 9 },
-      { jour: '2026-10-13', creneau: 'jour', sacs: 6 },
-      { jour: '2026-10-13', creneau: 'nuit', sacs: 8, note: 'Brûlés (four 2), justifié par Serge' },
-      { jour: '2026-10-14', creneau: 'jour', sacs: 6 },
-    ],
-  };
-  for (const { semaine, ...p } of cloturees) departs[semaine] = [...(departs[semaine] ?? []), p];
-  return departs;
-};
 
 type Facture = {
   numero: string;
@@ -140,16 +119,10 @@ const FACTURES = (): Facture[] => [
   },
 ];
 
-/** La production de la session en cours n'est pas clôturée : elle bloque la clôture de la semaine (R3). */
-let productionEnCours = true;
-/** Productions clôturées depuis le départ : la clôture ajoute la production de la session en cours. */
-let cloturees: Array<Production & { semaine: string }> = [];
 let journal: Journal[] = [];
 
-/** Remet l'état propre aux semaines à zéro (tests) ; le planning est remis par `planning.ts`. */
+/** Remet l'état propre aux semaines à zéro (tests) ; le planning est remis par `planning.ts`, la production par `production.ts`. */
 export function reinitialiserSemaines(): void {
-  productionEnCours = true;
-  cloturees = [];
   journal = [];
 }
 
@@ -186,21 +159,23 @@ function creneauxReels(semaines: readonly Semaine[]): CreneauReel[] {
     }));
 }
 
-/** Semaine de la session du comptoir, celle que la production en cours bloque. */
-const semaineDeLaSession = (semaines: readonly Semaine[]): string | undefined =>
-  semaineDuJour(semaines, sessionDeProduction().date)?.id;
+/** Semaine de la production en cours : c'est elle qu'elle bloque. */
+const semaineDeLaProduction = (semaines: readonly Semaine[]): string | undefined => {
+  const { enCours } = productionsRattachees();
+  return enCours ? semaineDuJour(semaines, enCours.date)?.id : undefined;
+};
 
 function indicateurs(semaines: readonly Semaine[]): Record<string, Indicateurs> {
   const { sessions } = lectureCaisses();
-  const productions = PRODUCTIONS();
+  const { historique, enCours } = productionsRattachees();
   const anterieures = RECETTE_ANTERIEURE();
   const receptions = RECEPTIONS();
-  const enDirect = semaineDeLaSession(semaines);
+  const enDirect = enCours ? semaineDuJour(semaines, enCours.date)?.id : undefined;
   return Object.fromEntries(
     semaines.map((s) => {
       const deLaSemaine = sessions.filter((c) => semaineDuJour(semaines, c.jour)?.id === s.id);
-      const faites = productions[s.id] ?? [];
-      const enCours = productionEnCours && enDirect === s.id;
+      const faites = historique.filter((p) => semaineDuJour(semaines, p.date)?.id === s.id);
+      const ici = Boolean(enCours) && enDirect === s.id;
       return [
         s.id,
         {
@@ -208,8 +183,8 @@ function indicateurs(semaines: readonly Semaine[]): Record<string, Indicateurs> 
             (anterieures[s.id] ?? 0) + deLaSemaine.reduce((somme, c) => somme + c.recette, 0),
           depenses: depensesDeSemaine(s.id),
           productions: {
-            nombre: faites.length + (enCours ? 1 : 0),
-            sacs: faites.reduce((somme, p) => somme + p.sacs, 0) + (enCours ? SACS_DU_PLAN : 0),
+            nombre: faites.length + (ici ? 1 : 0),
+            sacs: faites.reduce((somme, p) => somme + p.sacs, 0) + (ici ? enCours!.sacs : 0),
           },
           ecartCumule: deLaSemaine.filter((c) => !c.enCours).reduce((n, c) => n + ecartDe(c), 0),
           caisses: deLaSemaine.length,
@@ -234,7 +209,7 @@ function caisseOuverteDe(semaine: Semaine, semaines: readonly Semaine[]): Caisse
 
 function controles(semaine: Semaine, semaines: readonly Semaine[]): Controle[] {
   const caisse = caisseOuverteDe(semaine, semaines);
-  const productionBloquante = productionEnCours && semaineDeLaSession(semaines) === semaine.id;
+  const productionBloquante = semaineDeLaProduction(semaines) === semaine.id;
   const dettes = clientsSimules().filter((c) => c.solde < 0);
   const enRetard = FACTURES().filter((f) => !f.payee && f.retard);
   const attente = demandesEnAttente();
@@ -278,11 +253,16 @@ function passation(semaine: Semaine, semaines: readonly Semaine[]): Passation {
     r ? [{ genre: 'reouverture', par: r.par, heure: r.heure } as const] : [],
   );
   const incidents: Incident[] = [
-    ...(PRODUCTIONS()[semaine.id] ?? []).flatMap((p) =>
-      p.note
-        ? [{ genre: 'production', jour: p.jour, creneau: p.creneau, note: p.note } as const]
-        : [],
-    ),
+    ...productionsRattachees()
+      .historique.filter((p) => semaineDuJour(semaines, p.date)?.id === semaine.id)
+      .flatMap((p): Incident[] => [
+        ...(p.motif
+          ? [{ genre: 'ecart-matiere', par: p.responsable, motif: p.motif } as const]
+          : []),
+        ...(p.note
+          ? [{ genre: 'production', jour: p.date, creneau: p.type, note: p.note } as const]
+          : []),
+      ]),
     ...demandesEnAttente().map((d): Incident => ({
       genre: 'demande',
       numero: d.numero,
@@ -306,7 +286,7 @@ function passation(semaine: Semaine, semaines: readonly Semaine[]): Passation {
         .filter((f) => !f.payee)
         .reduce((somme, f) => somme + f.montant, 0),
     },
-    stockBas: matieresSousLeBesoin(productionEnCours ? SACS_DU_PLAN : SACS_SANS_PLAN),
+    stockBas: matieresSousLeBesoin(productionsRattachees().enCours?.sacs ?? SACS_SANS_PLAN),
     incidents: incidents.slice(0, 6),
   };
 }
@@ -461,8 +441,6 @@ function cloturer(a: Acteur, corps: Corps): Response {
  * - POST …/planning/        { semaine, jour, creneau, caissiere }  propriétaire ou gérant de la semaine
  * - POST …/ouvrir/          { semaine }                            propriétaire ou gérant affecté
  * - POST …/cloturer/        { semaine }                            propriétaire ou gérant de la semaine
- * - POST …/production/cloturer/   aide de démonstration : lève le blocage « production en cours »
- *   (la clôture de la production vivra dans Atelier › Production)
  */
 export function repondreSemaines(url: URL, methode: string, corps: Corps): Response | undefined {
   if (!url.pathname.startsWith(RACINE)) return undefined;
@@ -480,19 +458,6 @@ export function repondreSemaines(url: URL, methode: string, corps: Corps): Respo
       return ouvrir(a, corps);
     case 'POST cloturer/':
       return cloturer(a, corps);
-    case 'POST production/cloturer/': {
-      const { date, type } = sessionDeProduction();
-      const concernee = semaineDuJour(lireSemaines(), date);
-      if (productionEnCours && concernee) {
-        cloturees = [
-          ...cloturees,
-          { semaine: concernee.id, jour: date, creneau: type, sacs: SACS_DU_PLAN },
-        ];
-      }
-      productionEnCours = false;
-      tracer(a.nom, 'Production de la session clôturée');
-      return sansContenu();
-    }
     default:
       return undefined;
   }

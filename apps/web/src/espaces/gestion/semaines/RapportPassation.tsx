@@ -23,7 +23,7 @@ export function RapportPassation({ passation, onExporter }: Props) {
       case 'ecart-matiere':
         return {
           libelle: t('gestion.semaines.passation.incident.ecartMatiere', { par: i.par }),
-          valeur: i.motif,
+          valeur: t(`atelier.production.consommation.motifs.${i.motif}`),
         };
       case 'production':
         return {

@@ -56,10 +56,12 @@ const puce = (numero: number) =>
 const choix = (nom: string | RegExp) =>
   screen.getByRole('combobox', { name: nom }) as HTMLSelectElement;
 
-/** Ferme la caisse et la session, ouvre et ferme la suivante, lève la production (aide de simulation). */
+/** Ferme la caisse et la session, ouvre et ferme la suivante, archive la production . */
 async function toutFermer() {
   const appel = (chemin: string, methode: string, corps: object = {}) =>
     fetch(chemin, { method: methode, body: JSON.stringify(corps) });
+  // Lire les semaines abonne la production à l'ouverture de la session suivante.
+  await appel('/api/v1/simulation/gestion/semaines/', 'GET');
   const session = '/api/v1/simulation/comptoir/session/';
   const caisses = '/api/v1/simulation/caisses/';
   for (const tour of [1, 2]) {
@@ -71,7 +73,6 @@ async function toutFermer() {
       await appel(`${session}ouvrir-suivante/`, 'POST');
     }
   }
-  await appel('/api/v1/simulation/gestion/semaines/production/cloturer/', 'POST');
 }
 
 describe('Gestion › Semaines : semaine ouverte', () => {
