@@ -6,7 +6,7 @@ Documentation fonctionnelle, technique et design : [`docs/`](docs/README.md). Ba
 
 ## Architecture
 
-Deux applications autonomes dans un même dépôt ([spécification technique](docs/specifications/OptiBoul_ERP_Specification_technique_Architecture_v3.md), [ADR](docs/adr/README.md)) :
+Deux applications autonomes dans un même dépôt ([spécification technique](docs/specifications/OptiBoul_ERP_Specification_technique_Architecture_v4.md), [ADR](docs/adr/README.md)) :
 
 ```text
 optiboul/
