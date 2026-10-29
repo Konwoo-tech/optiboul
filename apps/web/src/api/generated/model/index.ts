@@ -8,11 +8,14 @@
 
 export * from './journalListParams.ts';
 export * from './ligneJournal.ts';
+export * from './modification.ts';
 export * from './nullEnum.ts';
 export * from './paginatedLigneJournalList.ts';
 export * from './paginatedUserList.ts';
+export * from './parametre.ts';
 export * from './patchedUser.ts';
 export * from './profilEnum.ts';
 export * from './sante.ts';
 export * from './user.ts';
 export * from './usersListParams.ts';
+export * from './valeur.ts';

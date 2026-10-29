@@ -49,6 +49,78 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedLigneJournalList'
           description: ''
+  /api/v1/parametres/:
+    get:
+      operationId: parametres_list
+      tags:
+      - parametres
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Parametre'
+          description: ''
+  /api/v1/parametres/{cle}/:
+    put:
+      operationId: parametres_update
+      parameters:
+      - in: path
+        name: cle
+        schema:
+          type: string
+          pattern: ^[a-z_]+$
+        required: true
+      tags:
+      - parametres
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Modification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Modification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Modification'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Parametre'
+          description: ''
+  /api/v1/parametres/{cle}/historique/:
+    get:
+      operationId: parametres_historique_list
+      parameters:
+      - in: path
+        name: cle
+        schema:
+          type: string
+          pattern: ^[a-z_]+$
+        required: true
+      tags:
+      - parametres
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Valeur'
+          description: ''
   /api/v1/sante/:
     get:
       operationId: sante
@@ -253,6 +325,12 @@ components:
       - poste_id
       - poste_nom
       - profil
+    Modification:
+      type: object
+      properties:
+        valeur: {}
+      required:
+      - valeur
     NullEnum:
       enum:
       - null
@@ -298,6 +376,50 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/User'
+    Parametre:
+      type: object
+      properties:
+        cle:
+          type: string
+        libelle:
+          type: string
+        genre:
+          type: string
+        unite:
+          type: string
+        usage:
+          type: string
+        valeur: {}
+        defaut: {}
+        choix:
+          type: array
+          items:
+            type: integer
+        minimum:
+          type: integer
+          nullable: true
+        maximum:
+          type: integer
+          nullable: true
+        modifie_le:
+          type: string
+          format: date-time
+          nullable: true
+        modifie_par:
+          type: string
+      required:
+      - choix
+      - cle
+      - defaut
+      - genre
+      - libelle
+      - maximum
+      - minimum
+      - modifie_le
+      - modifie_par
+      - unite
+      - usage
+      - valeur
     PatchedUser:
       type: object
       properties:
@@ -359,6 +481,19 @@ components:
       required:
       - profil
       - url
+    Valeur:
+      type: object
+      properties:
+        valeur: {}
+        auteur:
+          type: string
+        le:
+          type: string
+          format: date-time
+      required:
+      - auteur
+      - le
+      - valeur
   securitySchemes:
     cookieAuth:
       type: apiKey

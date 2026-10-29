@@ -30,6 +30,14 @@ def _media_storage(settings, tmpdir) -> None:
     settings.MEDIA_ROOT = tmpdir.strpath
 
 
+@pytest.fixture(autouse=True)
+def _cache_vide() -> None:
+    """Les paramètres sont lus via le cache : chaque test part d'un cache vide."""
+    from django.core.cache import cache  # noqa: PLC0415
+
+    cache.clear()
+
+
 @pytest.fixture
 def user(db) -> User:
     return UserFactory.create()

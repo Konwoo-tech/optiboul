@@ -49,3 +49,29 @@ class LigneJournal(models.Model):
     def __str__(self) -> str:
         acteur = self.acteur_nom or "—"
         return f"{self.horodatage:%d/%m/%Y %H:%M} · {acteur} · {self.action}"
+
+
+class ValeurParametre(models.Model):
+    """Valeur d'un paramètre métier (CdC §9) ; en ajout seul : la dernière fait foi."""
+
+    cle = models.CharField(_("paramètre"), max_length=60, db_index=True)
+    valeur = models.JSONField(_("valeur"))
+    auteur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("modifié par"),
+    )
+    auteur_nom = models.CharField(_("nom de l'auteur"), max_length=255, blank=True)
+    cree_le = models.DateTimeField(_("modifié le"), default=timezone.now)
+
+    class Meta:
+        db_table = "parametre"
+        ordering = ["cle", "-cree_le", "-id"]
+        verbose_name = _("valeur de paramètre")
+        verbose_name_plural = _("valeurs des paramètres")
+
+    def __str__(self) -> str:
+        return f"{self.cle} = {self.valeur}"
