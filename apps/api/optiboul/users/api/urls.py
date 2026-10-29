@@ -12,6 +12,7 @@ from .connexion import session_en_cours
 from .connexion import utilisateurs_du_poste
 from .connexion import verifier_application
 from .connexion import verifier_code
+from .groupes import GroupesViewSet
 from .mfa import MfaViewSet
 from .postes import PostesViewSet
 from .utilisateurs import UtilisateursViewSet
@@ -20,6 +21,7 @@ router = SimpleRouter()
 router.register("postes", PostesViewSet, basename="poste")
 router.register("utilisateurs", UtilisateursViewSet, basename="utilisateur")
 router.register("mfa", MfaViewSet, basename="mfa")
+router.register("groupes", GroupesViewSet, basename="groupe")
 router.register("brouillons", BrouillonsViewSet, basename="brouillon")
 
 urlpatterns = [

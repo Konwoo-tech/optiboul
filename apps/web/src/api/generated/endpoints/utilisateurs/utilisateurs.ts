@@ -25,6 +25,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ChangementGroupe,
   Compte,
   PaginatedCompteList,
   UtilisateursListParams
@@ -349,4 +350,101 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUtilisateursDebloquerCreateMutationOptions(options), queryClient);
+    }
+    export type utilisateursGroupeCreateResponse200 = {
+  data: Compte
+  status: 200
+}
+
+export type utilisateursGroupeCreateResponseSuccess = (utilisateursGroupeCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type utilisateursGroupeCreateResponse = (utilisateursGroupeCreateResponseSuccess)
+
+export const getUtilisateursGroupeCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/utilisateurs/${id}/groupe/`
+}
+
+/**
+ * Change la personne de groupe : ses droits changent aussitôt (US-021).
+ */
+export const utilisateursGroupeCreate = async (id: number,
+    changementGroupe: ChangementGroupe, options?: Parameters<typeof optiboulFetch>[1]): Promise<utilisateursGroupeCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<utilisateursGroupeCreateResponse>(getUtilisateursGroupeCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(changementGroupe)
+  }
+);}
+
+
+
+
+
+export const getUtilisateursGroupeCreateMutationKey = () => ['utilisateursGroupeCreate'] as const;
+
+export const getUtilisateursGroupeCreateMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursGroupeCreate>>, TError,UtilisateursGroupeCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof utilisateursGroupeCreate>>, TError,UtilisateursGroupeCreateMutationVariables, TContext> => {
+
+const mutationKey = getUtilisateursGroupeCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof utilisateursGroupeCreate>>, UtilisateursGroupeCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  utilisateursGroupeCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UtilisateursGroupeCreateMutationResult = NonNullable<Awaited<ReturnType<typeof utilisateursGroupeCreate>>>
+    export type UtilisateursGroupeCreateMutationBody = ChangementGroupe
+    export type UtilisateursGroupeCreateMutationError = unknown
+    export type UtilisateursGroupeCreateMutationVariables = {id: number;data: ChangementGroupe}
+
+    export const useUtilisateursGroupeCreate = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursGroupeCreate>>, TError,UtilisateursGroupeCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof utilisateursGroupeCreate>>,
+        TError,
+        UtilisateursGroupeCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUtilisateursGroupeCreateMutationOptions(options), queryClient);
     }

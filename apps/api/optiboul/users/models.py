@@ -14,6 +14,7 @@ from django.db.models import Model
 from django.db.models import OneToOneField
 from django.db.models import PositiveSmallIntegerField
 from django.db.models import TextChoices
+from django.db.models import TextField
 from django.db.models import UniqueConstraint
 from django.urls import reverse
 from django.utils import timezone
@@ -43,6 +44,7 @@ class ProfilGroupe(Model):
         verbose_name=_("groupe"),
     )
     profil = CharField(_("profil"), max_length=20, choices=Profil)
+    description = TextField(_("description"), blank=True, default="")
 
     class Meta:
         verbose_name = _("profil du groupe")

@@ -329,6 +329,84 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/groupes/:
+    get:
+      operationId: groupes_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - groupes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGroupeList'
+          description: ''
+    post:
+      operationId: groupes_create
+      tags:
+      - groupes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Groupe'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Groupe'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Groupe'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Groupe'
+          description: ''
+  /api/v1/groupes/{id}/:
+    patch:
+      operationId: groupes_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) groupe.
+        required: true
+      tags:
+      - groupes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedGroupe'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedGroupe'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedGroupe'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Groupe'
+          description: ''
   /api/v1/journal/:
     get:
       operationId: journal_list
@@ -862,6 +940,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/Compte'
           description: ''
+  /api/v1/utilisateurs/{id}/groupe/:
+    post:
+      operationId: utilisateurs_groupe_create
+      description: 'Change la personne de groupe : ses droits changent aussitôt (US-021).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) utilisateur.
+        required: true
+      tags:
+      - utilisateurs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangementGroupe'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChangementGroupe'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChangementGroupe'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compte'
+          description: ''
 components:
   schemas:
     Brouillon:
@@ -889,6 +1001,13 @@ components:
       description: |-
         * `sms` - sms
         * `whatsapp` - whatsapp
+    ChangementGroupe:
+      type: object
+      properties:
+        groupe:
+          type: integer
+      required:
+      - groupe
     CodeEnvoye:
       type: object
       properties:
@@ -938,6 +1057,10 @@ components:
           format: email
           readOnly: true
           title: Adresse électronique
+        groupe:
+          type: integer
+          nullable: true
+          readOnly: true
         profil:
           readOnly: true
           nullable: true
@@ -963,6 +1086,7 @@ components:
       - bloque
       - bloque_jusqua
       - email
+      - groupe
       - id
       - is_active
       - name
@@ -1027,6 +1151,28 @@ components:
       - derniere_cloud
       - derniere_locale
       - seuil_alerte_heures
+    Groupe:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          maxLength: 150
+        profil:
+          $ref: '#/components/schemas/ProfilEnum'
+        description:
+          type: string
+          default: ''
+        membres:
+          type: integer
+          readOnly: true
+      required:
+      - id
+      - membres
+      - nom
+      - profil
     LigneJournal:
       type: object
       properties:
@@ -1126,6 +1272,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Compte'
+    PaginatedGroupeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Groupe'
     PaginatedLigneJournalList:
       type: object
       required:
@@ -1258,6 +1427,23 @@ components:
       - unite
       - usage
       - valeur
+    PatchedGroupe:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          maxLength: 150
+        profil:
+          $ref: '#/components/schemas/ProfilEnum'
+        description:
+          type: string
+          default: ''
+        membres:
+          type: integer
+          readOnly: true
     PatchedUser:
       type: object
       properties:

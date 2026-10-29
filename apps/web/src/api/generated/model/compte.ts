@@ -12,6 +12,8 @@ export interface Compte {
   readonly id: number;
   readonly name: string;
   readonly email: string;
+  /** @nullable */
+  readonly groupe: number | null;
   readonly profil: ProfilEnum | NullEnum | null;
   /** Précise si l’utilisateur doit être considéré comme actif. Décochez ceci plutôt que de supprimer le compte. */
   readonly is_active: boolean;
