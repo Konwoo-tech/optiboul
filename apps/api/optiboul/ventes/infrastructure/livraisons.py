@@ -13,8 +13,10 @@ from optiboul.core.infrastructure.numeros import numeros
 from optiboul.production.infrastructure.models import Produit
 from optiboul.ventes.application.livraisons import Depots
 from optiboul.ventes.application.livraisons import EtatLivraison
+from optiboul.ventes.domain.livraisons import StatutLivraison
 from optiboul.ventes.domain.livraisons import montant_du
 
+from .autorisations import autorisations
 from .commandes import depot_commandes
 from .models import Encaissement
 from .models import LigneLivraison
@@ -38,6 +40,8 @@ def etat(livraison: Livraison) -> EtatLivraison:
         recu=livraison.encaissements.aggregate(recu=Sum("montant"))["recu"] or 0,
         solde_avant=livraison.solde_avant,
         solde_apres=livraison.solde_apres,
+        statut=StatutLivraison(livraison.statut),
+        semaine=livraison.semaine_id,
     )
 
 
@@ -52,10 +56,12 @@ class DepotLivraisonsDjango:
         lignes: list[Ligne],
         solde_avant: int,
         solde_apres: int,
+        statut: StatutLivraison,
         auteur: int,
         le: datetime,
     ) -> int:
         livraison = Livraison.objects.create(
+            statut=statut,
             numero=numero,
             semaine_id=caisse.semaine,
             caisse_id=caisse.id,
@@ -90,6 +96,28 @@ class DepotLivraisonsDjango:
     def obtenir(self, livraison_id: int) -> EtatLivraison | None:
         livraison = Livraison.objects.filter(pk=livraison_id).first()
         return etat(livraison) if livraison else None
+
+    def verrouiller(self, livraison_id: int) -> EtatLivraison | None:
+        livraison = (
+            Livraison.objects.select_for_update().filter(pk=livraison_id).first()
+        )
+        return etat(livraison) if livraison else None
+
+    def conclure(
+        self,
+        livraison_id: int,
+        *,
+        statut: StatutLivraison,
+        decideur: str,
+        solde_avant: int,
+        solde_apres: int,
+    ) -> None:
+        Livraison.objects.filter(pk=livraison_id).update(
+            statut=statut,
+            autorisee_par=decideur,
+            solde_avant=solde_avant,
+            solde_apres=solde_apres,
+        )
 
 
 class DepotEncaissementsDjango:
@@ -127,4 +155,5 @@ depots = Depots(
     caisses=depot_caisses,
     numeros=numeros,
     journal=journal,
+    autorisations=autorisations,
 )

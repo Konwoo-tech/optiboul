@@ -158,6 +158,7 @@ lint.per-file-ignores."optiboul/users/double_auth.py" = [ "EM101" ]
 # RefusMetier reçoit d'abord un code stable (semaine_cloturee…), puis le message.
 lint.per-file-ignores."optiboul/*/application/*.py" = [ "EM101" ]
 lint.per-file-ignores."optiboul/*/domain/*.py" = [ "EM101" ]
+lint.per-file-ignores."optiboul/*/infrastructure/*.py" = [ "EM101" ]
 lint.isort.force-single-line = true
 
 # ==== pyproject-fmt ====

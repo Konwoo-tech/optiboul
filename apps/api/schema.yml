@@ -1353,6 +1353,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Livraison'
           description: ''
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Livraison'
+          description: ''
         '409':
           content:
             application/json:
@@ -1410,6 +1416,12 @@ paths:
       - cookieAuth: []
       responses:
         '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Livraison'
+          description: ''
+        '202':
           content:
             application/json:
               schema:
@@ -3607,6 +3619,15 @@ components:
         statut:
           type: string
           readOnly: true
+        demande:
+          type: string
+          nullable: true
+          description: DEM-xxx de la demande d'accord, au-delà du plafond (R6).
+          readOnly: true
+        autorisee_par:
+          type: string
+          readOnly: true
+          title: Décidée par
         lignes:
           type: array
           items:
@@ -3646,12 +3667,14 @@ components:
           readOnly: true
           title: Livrée le
       required:
+      - autorisee_par
       - caisse
       - client
       - commande
       - cree_le
       - cree_par
       - creneau
+      - demande
       - id
       - jour
       - lignes
@@ -3672,6 +3695,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/Paiement'
           nullable: true
+        demander_autorisation:
+          type: string
+          maxLength: 500
       required:
       - client
     Matiere:
@@ -3819,6 +3845,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/Paiement'
           nullable: true
+        demander_autorisation:
+          type: string
+          description: 'Au-delà du plafond : motif de la demande d''accord au gérant
+            (R6).'
+          maxLength: 500
       required:
       - client
       - lignes
@@ -4590,10 +4621,14 @@ components:
           type: integer
         plafond:
           type: integer
+        manque:
+          type: integer
+          description: À encaisser pour livrer sans accord.
       required:
       - client
       - commande
       - lignes
+      - manque
       - montant_du
       - plafond
       - solde

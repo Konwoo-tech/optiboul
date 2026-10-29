@@ -15,9 +15,12 @@ from optiboul.ventes.domain.commandes import Session
 from optiboul.ventes.domain.commandes import quantites_saisies
 from optiboul.ventes.domain.encaissements import ModePaiement
 from optiboul.ventes.domain.encaissements import verifier_paiement
+from optiboul.ventes.domain.livraisons import ACTIONS_AU_DELA_DU_PLAFOND
 from optiboul.ventes.domain.livraisons import Ligne
+from optiboul.ventes.domain.livraisons import StatutLivraison
 from optiboul.ventes.domain.livraisons import lignes_facturees
 from optiboul.ventes.domain.livraisons import montant_du
+from optiboul.ventes.domain.regles import verifier_plafond
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -46,6 +49,8 @@ class EtatLivraison:
     recu: int
     solde_avant: int
     solde_apres: int
+    statut: StatutLivraison
+    semaine: int
 
 
 class DepotLivraisons(Protocol):
@@ -59,11 +64,39 @@ class DepotLivraisons(Protocol):
         lignes: list[Ligne],
         solde_avant: int,
         solde_apres: int,
+        statut: StatutLivraison,
         auteur: int,
         le: datetime,
     ) -> int: ...
 
     def obtenir(self, livraison_id: int) -> EtatLivraison | None: ...
+
+    def verrouiller(self, livraison_id: int) -> EtatLivraison | None: ...
+
+    def conclure(
+        self,
+        livraison_id: int,
+        *,
+        statut: StatutLivraison,
+        decideur: str,
+        solde_avant: int,
+        solde_apres: int,
+    ) -> None:
+        """Livraison en attente accordée ou refusée."""
+        ...
+
+
+class Autorisations(Protocol):
+    def demander(
+        self,
+        livraison_id: int,
+        *,
+        motif: str,
+        auteur: Auteur,
+        maintenant: datetime,
+    ) -> str:
+        """Émet la demande « livraison au-delà du plafond » ; renvoie DEM-xxx."""
+        ...
 
 
 class DepotEncaissements(Protocol):
@@ -94,6 +127,7 @@ class Depots:
     caisses: DepotCaisses
     numeros: Numeros
     journal: Journal
+    autorisations: Autorisations
 
 
 def caisse_de_saisie(depots: Depots, auteur: Auteur) -> EtatCaisse:
@@ -173,9 +207,13 @@ def livrer(  # noqa: PLR0913
     maintenant: datetime,
     commande_id: int | None = None,
     paiement: Paiement | None = None,
+    demande_motif: str | None = None,
 ) -> EtatLivraison:
     """Débite le montant dû au tarif du client et crédite le paiement : partiel, ou
     au-delà pour rembourser une ancienne dette ; tout dans la même transaction.
+
+    Au-delà du plafond (R6), la livraison est refusée avec le manque à encaisser ;
+    avec un motif, elle attend l'accord du gérant et la caisse sert le client suivant.
     """
     caisse = caisse_de_saisie(depots, auteur)
     compte = compte_du_client(depots, client_id)
@@ -186,6 +224,21 @@ def livrer(  # noqa: PLR0913
     paye = _paiement(paiement)
     du = montant_du(lignes)
     recu = paye.montant if paye else 0
+    plafond = verifier_plafond(compte.solde, du, recu, compte.plafond)
+    if not plafond.autorise and demande_motif is None:
+        message = (
+            f"Plafond de dette dépassé : encaissez {plafond.manque} FCFA "
+            "ou demandez l'accord du gérant."
+        )
+        raise RefusMetier(
+            "plafond_depasse",
+            message,
+            manque=plafond.manque,
+            solde_apres=compte.solde - du + recu,
+            plafond=compte.plafond,
+            actions=list(ACTIONS_AU_DELA_DU_PLAFOND),
+        )
+    statut = StatutLivraison.LIVREE if plafond.autorise else StatutLivraison.EN_ATTENTE
     assert auteur.utilisateur_id is not None
     livraison_id = depots.livraisons.creer(
         numero=depots.numeros.prochain(SEQUENCE_BONS),
@@ -195,10 +248,20 @@ def livrer(  # noqa: PLR0913
         lignes=lignes,
         solde_avant=compte.solde,
         solde_apres=compte.solde - du + recu,
+        statut=statut,
         auteur=auteur.utilisateur_id,
         le=maintenant,
     )
-    if du > 0:
+    demande = ""
+    if statut is StatutLivraison.EN_ATTENTE:
+        # Le compte n'est débité qu'à l'accord ; l'argent reçu est déjà encaissé.
+        demande = depots.autorisations.demander(
+            livraison_id,
+            motif=demande_motif or "",
+            auteur=auteur,
+            maintenant=maintenant,
+        )
+    elif du > 0:
         depots.comptes.mouvement(
             client_id,
             semaine=caisse.semaine,
@@ -222,12 +285,16 @@ def livrer(  # noqa: PLR0913
     assert livraison is not None
     depots.journal.enregistrer(
         Evenement(
-            action="livraison.enregistree",
+            action="livraison.enregistree"
+            if statut is StatutLivraison.LIVREE
+            else "livraison.en_attente",
             auteur=auteur,
             objet_type="livraison",
             objet_id=str(livraison_id),
             apres={
                 "numero": livraison.numero,
+                "statut": statut,
+                "demande": demande,
                 "client": client_id,
                 "caisse": caisse.id,
                 "lignes": {ligne.code: ligne.quantite for ligne in lignes},
@@ -300,13 +367,14 @@ def encaisser(
     return etat
 
 
-def livrer_comme_commande(
+def livrer_comme_commande(  # noqa: PLR0913
     depots: Depots,
     *,
     client_id: int,
     auteur: Auteur,
     maintenant: datetime,
     paiement: Paiement | None = None,
+    demande_motif: str | None = None,
 ) -> EtatLivraison:
     """« Livrer comme commandé » en une touche (O3) : les quantités de la commande."""
     caisse = caisse_de_saisie(depots, auteur)
@@ -325,6 +393,62 @@ def livrer_comme_commande(
         maintenant=maintenant,
         commande_id=commande.id,
         paiement=paiement,
+        demande_motif=demande_motif,
+    )
+
+
+def _livraison_en_attente(depots: Depots, livraison_id: int) -> EtatLivraison:
+    livraison = depots.livraisons.verrouiller(livraison_id)
+    if livraison is None or livraison.statut is not StatutLivraison.EN_ATTENTE:
+        message = "Cette livraison n'attend plus d'accord."
+        raise RefusMetier("livraison_non_en_attente", message)
+    return livraison
+
+
+def conclure_autorisation(
+    depots: Depots,
+    *,
+    livraison_id: int,
+    accord: bool,
+    decideur: Auteur,
+) -> None:
+    """La demande de plafond tranchée : livrée et débitée, ou refusée (US-071)."""
+    livraison = _livraison_en_attente(depots, livraison_id)
+    compte = depots.comptes.verrouiller(livraison.client)
+    assert compte is not None
+    statut = StatutLivraison.LIVREE if accord else StatutLivraison.REFUSEE
+    solde_apres = compte.solde - livraison.montant_du if accord else compte.solde
+    if accord and livraison.montant_du > 0:
+        assert decideur.utilisateur_id is not None
+        depots.comptes.mouvement(
+            livraison.client,
+            semaine=livraison.semaine,
+            sens=Sens.DEBIT,
+            montant=livraison.montant_du,
+            source_type="livraison",
+            source_id=livraison.id,
+            auteur=decideur.utilisateur_id,
+        )
+    depots.livraisons.conclure(
+        livraison_id,
+        statut=statut,
+        decideur=decideur.nom,
+        solde_avant=compte.solde,
+        solde_apres=solde_apres,
+    )
+    depots.journal.enregistrer(
+        Evenement(
+            action=f"livraison.{'autorisee' if accord else 'refusee'}",
+            auteur=decideur,
+            objet_type="livraison",
+            objet_id=str(livraison_id),
+            avant={"statut": StatutLivraison.EN_ATTENTE},
+            apres={
+                "statut": statut,
+                "solde_avant": compte.solde,
+                "solde_apres": solde_apres,
+            },
+        ),
     )
 
 
@@ -339,6 +463,7 @@ class Proposition:
     solde: int
     solde_apres: int
     plafond: int
+    manque: int  # à encaisser pour livrer sans accord (R6)
 
 
 def proposition(depots: Depots, *, client_id: int, auteur: Auteur) -> Proposition:
@@ -364,4 +489,5 @@ def proposition(depots: Depots, *, client_id: int, auteur: Auteur) -> Propositio
         solde=compte.solde,
         solde_apres=compte.solde - du,
         plafond=compte.plafond,
+        manque=verifier_plafond(compte.solde, du, 0, compte.plafond).manque,
     )

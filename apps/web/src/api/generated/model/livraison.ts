@@ -19,6 +19,12 @@ export interface Livraison {
   /** @nullable */
   readonly commande: number | null;
   readonly statut: string;
+  /**
+     * DEM-xxx de la demande d'accord, au-delà du plafond (R6).
+     * @nullable
+     */
+  readonly demande: string | null;
+  readonly autorisee_par: string;
   readonly lignes: readonly LivraisonLignesItem[];
   readonly montant_du: number;
   readonly recu: number;

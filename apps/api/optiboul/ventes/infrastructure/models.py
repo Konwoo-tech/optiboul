@@ -115,6 +115,8 @@ class Livraison(models.Model):
         verbose_name=_("commande"),
     )
     statut = models.CharField(_("statut"), max_length=12, default="livree")
+    # Au-delà du plafond (R6) : qui a accordé ou refusé la livraison en attente.
+    autorisee_par = models.CharField(_("décidée par"), max_length=255, blank=True)
     montant_du = models.PositiveBigIntegerField(_("montant dû (FCFA)"))
     solde_avant = models.BigIntegerField(_("solde avant (FCFA)"))
     solde_apres = models.BigIntegerField(_("solde après (FCFA)"))

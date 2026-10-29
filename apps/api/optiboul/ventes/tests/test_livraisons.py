@@ -150,7 +150,7 @@ def test_livrer_comme_commande(
     ]
     assert proposee["montant_du"] == 20_400
     assert (proposee["solde"], proposee["solde_apres"]) == (0, -20_400)
-    assert proposee["plafond"] == 2_000
+    assert proposee["plafond"] == 50_000
     reponse = client_de(caissiere).post(
         COMME_COMMANDE,
         {"client": rachel_boutique.pk},

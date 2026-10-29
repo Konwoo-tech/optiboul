@@ -26,8 +26,12 @@ from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.api.permissions import profil_de
 from optiboul.core.domain.erreurs import RefusMetier
+from optiboul.demandes.domain.demandes import numero_affiche
+from optiboul.demandes.infrastructure.models import Demande
 from optiboul.ventes.application import livraisons as cas
 from optiboul.ventes.application.livraisons import LIVRENT
+from optiboul.ventes.domain.livraisons import StatutLivraison
+from optiboul.ventes.infrastructure.autorisations import PLAFOND
 from optiboul.ventes.infrastructure.livraisons import depots
 from optiboul.ventes.infrastructure.models import Livraison
 
@@ -55,6 +59,7 @@ class LivraisonSerializer(serializers.ModelSerializer[Livraison]):
     recu = serializers.SerializerMethodField()
     reste = serializers.SerializerMethodField()
     paiements = serializers.SerializerMethodField()
+    demande = serializers.SerializerMethodField()
     cree_par = serializers.CharField(source="cree_par.name")
 
     class Meta:
@@ -68,6 +73,8 @@ class LivraisonSerializer(serializers.ModelSerializer[Livraison]):
             "client",
             "commande",
             "statut",
+            "demande",
+            "autorisee_par",
             "lignes",
             "montant_du",
             "recu",
@@ -92,6 +99,15 @@ class LivraisonSerializer(serializers.ModelSerializer[Livraison]):
             for ligne in livraison.lignes.all()
         ]
 
+    def get_demande(self, livraison: Livraison) -> str | None:
+        """DEM-xxx de la demande d'accord, au-delà du plafond (R6)."""
+        numero = (
+            Demande.objects.filter(type=PLAFOND, objet_id=livraison.pk)
+            .values_list("numero", flat=True)
+            .first()
+        )
+        return numero_affiche(numero) if numero is not None else None
+
     def get_recu(self, livraison: Livraison) -> int:
         return sum(e.montant for e in livraison.encaissements.all())
 
@@ -114,6 +130,11 @@ class NouvelleLivraisonSerializer(serializers.Serializer):
         help_text="Code du produit → pains livrés.",
     )
     paiement = PaiementSerializer(required=False, allow_null=True)
+    demander_autorisation = serializers.CharField(
+        max_length=500,
+        required=False,
+        help_text="Au-delà du plafond : motif de la demande d'accord au gérant (R6).",
+    )
 
 
 class ClientALivrerSerializer(serializers.Serializer):
@@ -122,6 +143,7 @@ class ClientALivrerSerializer(serializers.Serializer):
 
 class LivrerCommeCommandeSerializer(ClientALivrerSerializer):
     paiement = PaiementSerializer(required=False, allow_null=True)
+    demander_autorisation = serializers.CharField(max_length=500, required=False)
 
 
 class PropositionSerializer(serializers.Serializer):
@@ -132,6 +154,7 @@ class PropositionSerializer(serializers.Serializer):
     solde = serializers.IntegerField()
     solde_apres = serializers.IntegerField()
     plafond = serializers.IntegerField()
+    manque = serializers.IntegerField(help_text="À encaisser pour livrer sans accord.")
 
 
 def _ligne(ligne: Any) -> dict[str, Any]:
@@ -175,15 +198,21 @@ class LivraisonsViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         return super().list(request, *args, **kwargs)
 
     def _repondre(self, livraison: cas.EtatLivraison) -> Response:
+        """201 : livrée ; 202 : en attente de l'accord du gérant, la file continue."""
+        en_attente = livraison.statut is StatutLivraison.EN_ATTENTE
         return Response(
             LivraisonSerializer(self.get_queryset().get(pk=livraison.id)).data,
-            status=status.HTTP_201_CREATED,
+            status=status.HTTP_202_ACCEPTED if en_attente else status.HTTP_201_CREATED,
         )
 
     @extend_schema(
         request=NouvelleLivraisonSerializer,
         parameters=[IDEMPOTENCE],
-        responses={201: LivraisonSerializer, 409: ProblemeSerializer},
+        responses={
+            201: LivraisonSerializer,
+            202: LivraisonSerializer,
+            409: ProblemeSerializer,
+        },
     )
     @idempotent
     def create(self, request: Request) -> Response:
@@ -197,6 +226,7 @@ class LivraisonsViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
                     client_id=corps.validated_data["client"],
                     quantites=corps.validated_data["lignes"],
                     paiement=paiement_de(corps.validated_data.get("paiement")),
+                    demande_motif=corps.validated_data.get("demander_autorisation"),
                     auteur=auteur_de(request),
                     maintenant=timezone.now(),
                 )
@@ -207,7 +237,11 @@ class LivraisonsViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     @extend_schema(
         request=LivrerCommeCommandeSerializer,
         parameters=[IDEMPOTENCE],
-        responses={201: LivraisonSerializer, 409: ProblemeSerializer},
+        responses={
+            201: LivraisonSerializer,
+            202: LivraisonSerializer,
+            409: ProblemeSerializer,
+        },
     )
     @action(detail=False, methods=["post"], url_path="livrer-comme-commande")
     @idempotent
@@ -221,6 +255,7 @@ class LivraisonsViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
                     depots,
                     client_id=corps.validated_data["client"],
                     paiement=paiement_de(corps.validated_data.get("paiement")),
+                    demande_motif=corps.validated_data.get("demander_autorisation"),
                     auteur=auteur_de(request),
                     maintenant=timezone.now(),
                 )

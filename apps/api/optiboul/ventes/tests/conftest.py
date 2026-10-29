@@ -9,8 +9,12 @@ from optiboul.production.infrastructure.models import Produit
 
 @pytest.fixture
 def rachel_boutique(db) -> Client:
-    """Client livreur : la baguette à 95 FCFA, le reste au prix de base."""
-    client = Client.objects.create(nom="Rachel Boutique", type="livreur")
+    """Client livreur : plafond propre de 50 000 FCFA, la baguette à 95 FCFA."""
+    client = Client.objects.create(
+        nom="Rachel Boutique",
+        type="livreur",
+        plafond=50_000,
+    )
     TarifClient.objects.create(
         client=client,
         produit=Produit.objects.get(code="BAG"),

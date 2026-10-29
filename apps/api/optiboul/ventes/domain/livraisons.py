@@ -3,8 +3,18 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 
 from optiboul.core.domain.erreurs import RefusMetier
+
+
+class StatutLivraison(StrEnum):
+    LIVREE = "livree"
+    EN_ATTENTE = "en_attente"  # au-delà du plafond, en attente d'accord (R6)
+    REFUSEE = "refusee"
+
+
+ACTIONS_AU_DELA_DU_PLAFOND = ("encaisser_le_manque", "demander")
 
 
 @dataclass(frozen=True)

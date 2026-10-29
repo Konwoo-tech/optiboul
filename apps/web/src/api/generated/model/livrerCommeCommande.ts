@@ -10,4 +10,6 @@ import type { Paiement } from './paiement.ts';
 export interface LivrerCommeCommande {
   client: number;
   paiement?: Paiement | null;
+  /** @maxLength 500 */
+  demander_autorisation?: string;
 }

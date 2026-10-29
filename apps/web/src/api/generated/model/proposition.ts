@@ -16,4 +16,6 @@ export interface Proposition {
   solde: number;
   solde_apres: number;
   plafond: number;
+  /** À encaisser pour livrer sans accord. */
+  manque: number;
 }

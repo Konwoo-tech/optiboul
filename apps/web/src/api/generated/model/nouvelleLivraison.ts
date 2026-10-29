@@ -13,4 +13,9 @@ export interface NouvelleLivraison {
   /** Code du produit → pains livrés. */
   lignes: NouvelleLivraisonLignes;
   paiement?: Paiement | null;
+  /**
+     * Au-delà du plafond : motif de la demande d'accord au gérant (R6).
+     * @maxLength 500
+     */
+  demander_autorisation?: string;
 }

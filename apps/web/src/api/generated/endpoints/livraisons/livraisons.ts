@@ -178,12 +178,17 @@ export type livraisonsCreateResponse201 = {
   status: 201
 }
 
+export type livraisonsCreateResponse202 = {
+  data: Livraison
+  status: 202
+}
+
 export type livraisonsCreateResponse409 = {
   data: Probleme
   status: 409
 }
 
-export type livraisonsCreateResponseSuccess = (livraisonsCreateResponse201) & {
+export type livraisonsCreateResponseSuccess = (livraisonsCreateResponse201 | livraisonsCreateResponse202) & {
   headers: Headers;
 };
 export type livraisonsCreateResponseError = (livraisonsCreateResponse409) & {
@@ -390,12 +395,17 @@ export type livraisonsLivrerCommeCommandeCreateResponse201 = {
   status: 201
 }
 
+export type livraisonsLivrerCommeCommandeCreateResponse202 = {
+  data: Livraison
+  status: 202
+}
+
 export type livraisonsLivrerCommeCommandeCreateResponse409 = {
   data: Probleme
   status: 409
 }
 
-export type livraisonsLivrerCommeCommandeCreateResponseSuccess = (livraisonsLivrerCommeCommandeCreateResponse201) & {
+export type livraisonsLivrerCommeCommandeCreateResponseSuccess = (livraisonsLivrerCommeCommandeCreateResponse201 | livraisonsLivrerCommeCommandeCreateResponse202) & {
   headers: Headers;
 };
 export type livraisonsLivrerCommeCommandeCreateResponseError = (livraisonsLivrerCommeCommandeCreateResponse409) & {
