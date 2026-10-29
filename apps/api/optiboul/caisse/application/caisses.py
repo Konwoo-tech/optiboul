@@ -19,6 +19,7 @@ from optiboul.caisse.domain.regles import ecart_caisse
 from optiboul.core.application.journal import Evenement
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.domain.planning import Creneau
+from optiboul.core.domain.semaines import Statut as StatutSemaine
 
 if TYPE_CHECKING:
     from datetime import date
@@ -86,6 +87,10 @@ class DepotCaisses(Protocol):
         resultat: ResultatFermeture,
         le: datetime,
     ) -> None: ...
+
+    def fermeture(self, caisse_id: int) -> dict[str, int | None]: ...
+
+    def rouvrir(self, caisse_id: int) -> None: ...
 
 
 @dataclass(frozen=True)
@@ -314,3 +319,56 @@ def fermer(
         ),
     )
     return resultat
+
+
+ROUVRENT_LA_CAISSE = frozenset({"gerant", "proprietaire"})
+
+
+def rouvrir(
+    depots: Depots,
+    *,
+    caisse_id: int,
+    motif: str,
+    auteur: Auteur,
+) -> EtatCaisse:
+    """R13 : gérant ou propriétaire, motif obligatoire, tracé ; propriétaire informé."""
+    if auteur.profil not in ROUVRENT_LA_CAISSE:
+        message = "Seuls le gérant et le propriétaire rouvrent une caisse (R13)."
+        raise RefusMetier("droit_insuffisant", message)
+    if not motif.strip():
+        message = "Le motif de la réouverture est obligatoire."
+        raise RefusMetier("motif_obligatoire", message)
+    caisse = _caisse(depots, caisse_id, verrou=True)
+    if caisse.statut is not StatutCaisse.FERMEE:
+        message = "Seule une caisse fermée peut être rouverte."
+        raise RefusMetier("caisse_non_fermee", message)
+    semaine = depots.semaines.obtenir(caisse.semaine)
+    if semaine is None or semaine.statut is not StatutSemaine.OUVERTE:
+        message = "La semaine de cette caisse n'est plus ouverte."
+        raise RefusMetier("semaine_non_ouverte", message)
+    if depots.caisses.en_cours() is not None:
+        message = "Une autre caisse est en cours : fermez-la d'abord."
+        raise RefusMetier("caisse_deja_ouverte", message)
+    avant = depots.caisses.fermeture(caisse_id)
+    depots.caisses.rouvrir(caisse_id)
+    depots.journal.enregistrer(
+        Evenement(
+            action="caisse.rouverte",
+            auteur=auteur,
+            objet_type="caisse",
+            objet_id=str(caisse_id),
+            avant={"statut": StatutCaisse.FERMEE, **avant},
+            apres={"statut": StatutCaisse.ROUVERTE, "motif": motif.strip()},
+        ),
+    )
+    depots.notificateur.notifier_profils(
+        ["proprietaire"],
+        genre="caisse.rouverte",
+        titre=(
+            f"Caisse de {caisse.creneau} du {caisse.jour:%d/%m} "
+            f"rouverte par {auteur.nom}"
+        ),
+        message=f"Motif : {motif.strip()}",
+        lien="/comptoir/caisses",
+    )
+    return _caisse(depots, caisse_id)

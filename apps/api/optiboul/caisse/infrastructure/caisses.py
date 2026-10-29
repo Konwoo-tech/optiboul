@@ -109,6 +109,25 @@ class DepotCaissesDjango:
             fermee_le=le,
         )
 
+    def fermeture(self, caisse_id: int) -> dict[str, int | None]:
+        caisse = Caisse.objects.get(pk=caisse_id)
+        return {
+            "attendu": caisse.attendu,
+            "compte": caisse.compte,
+            "ecart": caisse.ecart,
+        }
+
+    def rouvrir(self, caisse_id: int) -> None:
+        """Le comptage précédent est annulé ; il reste dans le journal."""
+        Caisse.objects.filter(pk=caisse_id).update(
+            statut=StatutCaisse.ROUVERTE,
+            en_cours=True,
+            attendu=None,
+            compte=None,
+            ecart=None,
+            fermee_le=None,
+        )
+
 
 depot_caisses = DepotCaissesDjango()
 

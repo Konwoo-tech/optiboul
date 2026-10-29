@@ -64,6 +64,7 @@ export * from './postesListParams.ts';
 export * from './probleme.ts';
 export * from './prochaine.ts';
 export * from './profilEnum.ts';
+export * from './reouverture.ts';
 export * from './resultatConnexion.ts';
 export * from './resultatEnum.ts';
 export * from './resultatFermeture.ts';

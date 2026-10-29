@@ -196,6 +196,47 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/caisses/{id}/rouvrir/:
+    post:
+      operationId: caisses_rouvrir_create
+      description: Gérant ou propriétaire, motif obligatoire ; le propriétaire est
+        informé.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) caisse.
+        required: true
+      tags:
+      - caisses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reouverture'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Reouverture'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Reouverture'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Caisse'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/caisses/ouvrir/:
     post:
       operationId: caisses_ouvrir_create
@@ -2525,6 +2566,14 @@ components:
         * `production` - Responsable de production
         * `proprietaire` - Propriétaire
         * `administrateur` - Administrateur
+    Reouverture:
+      type: object
+      properties:
+        motif:
+          type: string
+          maxLength: 500
+      required:
+      - motif
     ResultatConnexion:
       type: object
       properties:

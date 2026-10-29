@@ -99,6 +99,10 @@ class ResultatFermetureSerializer(serializers.Serializer):
     resultat = serializers.ChoiceField(choices=["JUSTE", "MANQUE", "EXCEDENT"])
 
 
+class ReouvertureSerializer(serializers.Serializer):
+    motif = serializers.CharField(max_length=500)
+
+
 class CaissesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     serializer_class = CaisseSerializer
     permission_classes = [ProfilParmi("caissier", *DIRECTION)]
@@ -200,3 +204,25 @@ class CaissesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
                 "resultat": resultat.statut,
             },
         )
+
+    @extend_schema(
+        request=ReouvertureSerializer,
+        responses={200: CaisseSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"])
+    def rouvrir(self, request: Request, pk: str) -> Response:
+        """Gérant ou propriétaire, motif obligatoire ; le propriétaire est informé."""
+        corps = ReouvertureSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        caisse_id = self.get_object().pk
+        try:
+            with transaction.atomic():
+                cas.rouvrir(
+                    depots,
+                    caisse_id=caisse_id,
+                    motif=corps.validated_data["motif"],
+                    auteur=auteur_de(request),
+                )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(CaisseSerializer(self.get_queryset().get(pk=caisse_id)).data)
