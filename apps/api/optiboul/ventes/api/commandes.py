@@ -68,6 +68,7 @@ class CommandeSerializer(serializers.ModelSerializer[Commande]):
             "creneau",
             "lignes",
             "apres_heure_limite",
+            "tardive",
             "saisie_par",
             "saisie_le",
             "modifiee_le",

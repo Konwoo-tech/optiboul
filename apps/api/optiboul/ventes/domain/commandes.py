@@ -69,6 +69,19 @@ def quantites_saisies(lignes: dict[str, int]) -> dict[str, int]:
     return saisies
 
 
+def pains_ajoutes(
+    avant: dict[str, int] | None,
+    apres: dict[str, int],
+) -> dict[str, int]:
+    """Ce qu'une saisie ajoute par produit : tout, pour une nouvelle commande."""
+    avant = avant or {}
+    return {
+        code: quantite - avant.get(code, 0)
+        for code, quantite in apres.items()
+        if quantite > avant.get(code, 0)
+    }
+
+
 def sacs_a_petrir(pains: int, pains_par_sac: int) -> int:
     """Sacs nécessaires aux pains commandés, arrondis au sac supérieur (CdC §5.3)."""
     return ceil(pains / pains_par_sac) if pains > 0 else 0

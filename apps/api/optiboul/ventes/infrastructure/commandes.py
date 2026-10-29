@@ -12,7 +12,9 @@ from optiboul.clients.infrastructure.models import Client
 from optiboul.core.infrastructure.journal import journal
 from optiboul.core.infrastructure.parametres import parametre
 from optiboul.core.infrastructure.semaines import depot_semaines
+from optiboul.notifications.infrastructure.envois import notificateur
 from optiboul.production.infrastructure.models import FicheTechnique
+from optiboul.production.infrastructure.models import PlanProduction
 from optiboul.production.infrastructure.models import Produit
 from optiboul.ventes.application.commandes import Depots
 from optiboul.ventes.application.commandes import EtatCommande
@@ -66,6 +68,7 @@ class DepotCommandesDjango:
         apres_heure_limite: bool,
         auteur: int,
         le: datetime,
+        tardive: bool = False,
     ) -> int:
         commande, cree = Commande.objects.select_for_update().get_or_create(
             client_id=client,
@@ -77,12 +80,16 @@ class DepotCommandesDjango:
                 "saisie_le": le,
                 "modifiee_le": le,
                 "apres_heure_limite": apres_heure_limite,
+                "tardive": tardive,
             },
         )
         if not cree:
             commande.modifiee_le = le
             commande.apres_heure_limite = apres_heure_limite
-            commande.save(update_fields=["modifiee_le", "apres_heure_limite"])
+            commande.tardive = commande.tardive or tardive
+            commande.save(
+                update_fields=["modifiee_le", "apres_heure_limite", "tardive"],
+            )
             commande.lignes.all().delete()
         produits = dict(
             Produit.objects.filter(code__in=lignes).values_list("code", "pk"),
@@ -114,6 +121,16 @@ class CatalogueDjango:
         )
         return {produit.code: produit.par_sac for produit in produits}
 
+    def nom_du_client(self, client_id: int) -> str:
+        return Client.objects.get(pk=client_id).nom
+
+    def plan_valide(self, session: Session) -> bool:
+        return PlanProduction.objects.filter(
+            jour=session.jour,
+            creneau=session.creneau,
+            statut__in=["valide", "provisoire"],
+        ).exists()
+
     def clients_actifs(self, ids: set[int]) -> set[int]:
         return set(
             Client.objects.filter(pk__in=ids, actif=True).values_list("pk", flat=True),
@@ -136,4 +153,5 @@ depots = Depots(
     semaines=depot_semaines,
     caisses=depot_caisses,
     journal=journal,
+    notificateur=notificateur,
 )

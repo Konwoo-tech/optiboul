@@ -10,6 +10,7 @@ from optiboul.caisse.domain.caisses import StatutCaisse
 from optiboul.core.application.journal import Evenement
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.ventes.domain.commandes import heure_limite
+from optiboul.ventes.domain.commandes import pains_ajoutes
 from optiboul.ventes.domain.commandes import quantites_saisies
 from optiboul.ventes.domain.commandes import sacs_a_petrir
 
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
     from optiboul.core.application.journal import Auteur
     from optiboul.core.application.journal import Journal
     from optiboul.core.application.semaines import DepotSemaines
+    from optiboul.notifications.application.ports import Notificateur
     from optiboul.ventes.domain.commandes import Limites
     from optiboul.ventes.domain.commandes import Session
 
@@ -51,6 +53,7 @@ class DepotCommandes(Protocol):
         apres_heure_limite: bool,
         auteur: int,
         le: datetime,
+        tardive: bool = False,
     ) -> int:
         """Crée la commande du client pour la session, ou remplace ses lignes."""
         ...
@@ -65,6 +68,12 @@ class Catalogue(Protocol):
 
     def clients_actifs(self, ids: set[int]) -> set[int]: ...
 
+    def nom_du_client(self, client_id: int) -> str: ...
+
+    def plan_valide(self, session: Session) -> bool:
+        """Le plan de production de la session est validé (ou provisoire)."""
+        ...
+
 
 @dataclass(frozen=True)
 class Depots:
@@ -73,6 +82,7 @@ class Depots:
     semaines: DepotSemaines
     caisses: DepotCaisses
     journal: Journal
+    notificateur: Notificateur
 
 
 def _verifier_droit(auteur: Auteur) -> int:
@@ -122,6 +132,8 @@ def saisir(  # noqa: PLR0913
         message = f"Produits inconnus ou inactifs : {', '.join(inconnus)}."
         raise RefusMetier("produit_inconnu", message, produits=inconnus)
     avant = depots.commandes.du_client(client_id, session)
+    ajoutes = pains_ajoutes(avant.lignes if avant else None, saisies)
+    tardive = bool(ajoutes) and depots.catalogue.plan_valide(session)
     commande_id = depots.commandes.enregistrer(
         semaine=semaine,
         client=client_id,
@@ -130,7 +142,10 @@ def saisir(  # noqa: PLR0913
         apres_heure_limite=maintenant > heure_limite(session, limites),
         auteur=par,
         le=maintenant,
+        tardive=tardive,
     )
+    if tardive:
+        _signaler_tardive(depots, session, client_id, ajoutes)
     depots.journal.enregistrer(
         Evenement(
             action="commande.saisie" if avant is None else "commande.modifiee",
@@ -138,12 +153,31 @@ def saisir(  # noqa: PLR0913
             objet_type="commande",
             objet_id=str(commande_id),
             avant=_trace(session, avant.lignes if avant else None),
-            apres=_trace(session, saisies),
+            apres={**(_trace(session, saisies) or {}), "tardive": tardive},
         ),
     )
     commande = depots.commandes.obtenir(commande_id)
     assert commande is not None
     return commande, avant is None
+
+
+def _signaler_tardive(
+    depots: Depots,
+    session: Session,
+    client_id: int,
+    ajoutes: dict[str, int],
+) -> None:
+    """Après la validation du plan : le chef et le gérant ajustent la production."""
+    detail = ", ".join(f"{code} +{quantite}" for code, quantite in ajoutes.items())
+    depots.notificateur.notifier_type(
+        "commande.tardive",
+        titre=(
+            f"Commande tardive de {depots.catalogue.nom_du_client(client_id)} "
+            f"({session.creneau} du {session.jour:%d/%m})"
+        ),
+        message=f"Après la validation du plan : {detail}.",
+        lien="/atelier/production",
+    )
 
 
 def annuler(depots: Depots, *, commande_id: int, auteur: Auteur) -> None:

@@ -15,6 +15,7 @@ export interface Commande {
   readonly creneau: string;
   readonly lignes: CommandeLignes;
   readonly apres_heure_limite: boolean;
+  readonly tardive: boolean;
   saisie_par: string;
   readonly saisie_le: string;
   readonly modifiee_le: string;

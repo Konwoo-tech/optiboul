@@ -24,6 +24,8 @@ class Commande(models.Model):
     jour = models.DateField(_("jour de la session"))
     creneau = models.CharField(_("créneau"), max_length=4)
     apres_heure_limite = models.BooleanField(_("après l'heure limite"), default=False)
+    # Ajoutée après la validation du plan : signalée au chef et au gérant (CdC §5.3).
+    tardive = models.BooleanField(_("tardive"), default=False)
     saisie_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,

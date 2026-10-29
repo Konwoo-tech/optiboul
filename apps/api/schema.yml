@@ -3533,6 +3533,9 @@ components:
           type: boolean
           readOnly: true
           title: Après l'heure limite
+        tardive:
+          type: boolean
+          readOnly: true
         saisie_par:
           type: string
         saisie_le:
@@ -3554,6 +3557,7 @@ components:
       - modifiee_le
       - saisie_le
       - saisie_par
+      - tardive
     Compte:
       type: object
       properties:
