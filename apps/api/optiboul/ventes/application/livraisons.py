@@ -20,6 +20,7 @@ from optiboul.ventes.domain.livraisons import Ligne
 from optiboul.ventes.domain.livraisons import StatutLivraison
 from optiboul.ventes.domain.livraisons import lignes_facturees
 from optiboul.ventes.domain.livraisons import montant_du
+from optiboul.ventes.domain.mouvements import verifier_mouvement
 from optiboul.ventes.domain.regles import verifier_plafond
 
 if TYPE_CHECKING:
@@ -32,6 +33,8 @@ if TYPE_CHECKING:
     from optiboul.core.application.journal import Auteur
     from optiboul.core.application.journal import Journal
     from optiboul.ventes.domain.encaissements import Paiement
+    from optiboul.ventes.domain.mouvements import GenreMouvementInterne
+    from optiboul.ventes.domain.mouvements import MouvementInterne
 
     from .commandes import DepotCommandes
 
@@ -491,3 +494,60 @@ def proposition(depots: Depots, *, client_id: int, auteur: Auteur) -> Propositio
         plafond=compte.plafond,
         manque=verifier_plafond(compte.solde, du, 0, compte.plafond).manque,
     )
+
+
+class DepotMouvementsInternes(Protocol):
+    def creer(
+        self,
+        *,
+        caisse: EtatCaisse,
+        mouvement: MouvementInterne,
+        auteur: int,
+        le: datetime,
+    ) -> int: ...
+
+    def de_la_caisse(
+        self,
+        caisse_id: int,
+    ) -> list[tuple[GenreMouvementInterne, str, int]]: ...
+
+    def produits_actifs(self) -> set[str]: ...
+
+
+def enregistrer_mouvement_interne(
+    depots: Depots,
+    mouvements: DepotMouvementsInternes,
+    *,
+    mouvement: MouvementInterne,
+    auteur: Auteur,
+    maintenant: datetime,
+) -> int:
+    """Vente au guichet, retours, reste en salle ou ration, sur la caisse en cours."""
+    caisse = caisse_de_saisie(depots, auteur)
+    verifie = verifier_mouvement(mouvement)
+    if verifie.produit not in mouvements.produits_actifs():
+        message = f"Produit inconnu ou inactif : {verifie.produit}."
+        raise RefusMetier("produit_inconnu", message, produits=[verifie.produit])
+    assert auteur.utilisateur_id is not None
+    mouvement_id = mouvements.creer(
+        caisse=caisse,
+        mouvement=verifie,
+        auteur=auteur.utilisateur_id,
+        le=maintenant,
+    )
+    depots.journal.enregistrer(
+        Evenement(
+            action="mouvement_interne.enregistre",
+            auteur=auteur,
+            objet_type="mouvement_interne",
+            objet_id=str(mouvement_id),
+            apres={
+                "caisse": caisse.id,
+                "genre": verifie.genre,
+                "produit": verifie.produit,
+                "quantite": verifie.quantite,
+                "motif": verifie.motif,
+            },
+        ),
+    )
+    return mouvement_id

@@ -15,12 +15,14 @@ from optiboul.ventes.application.livraisons import Depots
 from optiboul.ventes.application.livraisons import EtatLivraison
 from optiboul.ventes.domain.livraisons import StatutLivraison
 from optiboul.ventes.domain.livraisons import montant_du
+from optiboul.ventes.domain.mouvements import GenreMouvementInterne
 
 from .autorisations import autorisations
 from .commandes import depot_commandes
 from .models import Encaissement
 from .models import LigneLivraison
 from .models import Livraison
+from .models import MouvementInterne as MouvementInterneModele
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -28,6 +30,7 @@ if TYPE_CHECKING:
     from optiboul.caisse.application.caisses import EtatCaisse
     from optiboul.ventes.domain.encaissements import Paiement
     from optiboul.ventes.domain.livraisons import Ligne
+    from optiboul.ventes.domain.mouvements import MouvementInterne
 
 
 def etat(livraison: Livraison) -> EtatLivraison:
@@ -157,3 +160,41 @@ depots = Depots(
     journal=journal,
     autorisations=autorisations,
 )
+
+
+class DepotMouvementsInternesDjango:
+    def creer(
+        self,
+        *,
+        caisse: EtatCaisse,
+        mouvement: MouvementInterne,
+        auteur: int,
+        le: datetime,
+    ) -> int:
+        return MouvementInterneModele.objects.create(
+            semaine_id=caisse.semaine,
+            caisse_id=caisse.id,
+            genre=mouvement.genre,
+            produit=Produit.objects.get(code=mouvement.produit),
+            quantite=mouvement.quantite,
+            motif=mouvement.motif,
+            cree_par_id=auteur,
+            cree_le=le,
+        ).pk
+
+    def de_la_caisse(
+        self,
+        caisse_id: int,
+    ) -> list[tuple[GenreMouvementInterne, str, int]]:
+        lignes = MouvementInterneModele.objects.filter(caisse_id=caisse_id).values_list(
+            "genre",
+            "produit__code",
+            "quantite",
+        )
+        return [(GenreMouvementInterne(g), code, q) for g, code, q in lignes]
+
+    def produits_actifs(self) -> set[str]:
+        return set(Produit.objects.filter(actif=True).values_list("code", flat=True))
+
+
+depot_mouvements_internes = DepotMouvementsInternesDjango()

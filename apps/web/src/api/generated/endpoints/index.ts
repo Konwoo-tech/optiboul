@@ -10,6 +10,7 @@ export * from './journal/journal.ts';
 export * from './livraisons/livraisons.ts';
 export * from './matieres/matieres.ts';
 export * from './mfa/mfa.ts';
+export * from './mouvements-internes/mouvements-internes.ts';
 export * from './parametres/parametres.ts';
 export * from './postes/postes.ts';
 export * from './produits/produits.ts';

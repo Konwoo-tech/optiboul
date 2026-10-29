@@ -1615,6 +1615,85 @@ paths:
               schema:
                 $ref: '#/components/schemas/SecretTotp'
           description: ''
+  /api/v1/mouvements-internes/:
+    get:
+      operationId: mouvements_internes_list
+      description: Une caissière ne voit que les mouvements de ses caisses (CdC §5.2).
+      parameters:
+      - in: query
+        name: caisse
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - mouvements-internes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMouvementInterneList'
+          description: ''
+    post:
+      operationId: mouvements_internes_create
+      description: Une caissière ne voit que les mouvements de ses caisses (CdC §5.2).
+      tags:
+      - mouvements-internes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NouveauMouvement'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NouveauMouvement'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NouveauMouvement'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MouvementInterne'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/mouvements-internes/totaux/:
+    get:
+      operationId: mouvements_internes_totaux_retrieve
+      description: Pains livrés et pains de chaque mouvement interne, par produit.
+      parameters:
+      - in: query
+        name: caisse
+        schema:
+          type: integer
+        required: true
+      tags:
+      - mouvements-internes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Totaux'
+          description: ''
   /api/v1/parametres/:
     get:
       operationId: parametres_list
@@ -3138,7 +3217,7 @@ components:
       type: object
       properties:
         genre:
-          $ref: '#/components/schemas/GenreEnum'
+          $ref: '#/components/schemas/ConflitPlanningGenreEnum'
         jour:
           type: string
           format: date
@@ -3148,6 +3227,14 @@ components:
       - caissiere
       - genre
       - jour
+    ConflitPlanningGenreEnum:
+      enum:
+      - jour_et_nuit
+      - nuit_puis_jour
+      type: string
+      description: |-
+        * `jour_et_nuit` - jour_et_nuit
+        * `nuit_puis_jour` - nuit_puis_jour
     ConnexionCode:
       type: object
       properties:
@@ -3577,14 +3664,6 @@ components:
       - procede
       - recette
       - version
-    GenreEnum:
-      enum:
-      - jour_et_nuit
-      - nuit_puis_jour
-      type: string
-      description: |-
-        * `jour_et_nuit` - jour_et_nuit
-        * `nuit_puis_jour` - nuit_puis_jour
     Groupe:
       type: object
       properties:
@@ -3863,6 +3942,56 @@ components:
         valeur: {}
       required:
       - valeur
+    MouvementInterne:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        caisse:
+          type: integer
+          readOnly: true
+        genre:
+          allOf:
+          - $ref: '#/components/schemas/MouvementInterneGenreEnum'
+          readOnly: true
+        produit:
+          type: string
+        quantite:
+          type: integer
+          readOnly: true
+          title: Pains
+        motif:
+          type: string
+          readOnly: true
+        cree_par:
+          type: string
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Saisi le
+      required:
+      - caisse
+      - cree_le
+      - cree_par
+      - genre
+      - id
+      - motif
+      - produit
+      - quantite
+    MouvementInterneGenreEnum:
+      enum:
+      - vente_guichet
+      - retours
+      - reste_en_salle
+      - ration
+      type: string
+      description: |-
+        * `vente_guichet` - vente au guichet
+        * `retours` - retours
+        * `reste_en_salle` - reste en salle
+        * `ration` - ration
     NiveauEnum:
       enum:
       - ok
@@ -3903,6 +4032,37 @@ components:
       - groupe
       - nom
       - telephone
+    NouveauMouvement:
+      type: object
+      properties:
+        genre:
+          $ref: '#/components/schemas/NouveauMouvementGenreEnum'
+        produit:
+          type: string
+          maxLength: 10
+        quantite:
+          type: integer
+          minimum: 1
+        motif:
+          type: string
+          maxLength: 500
+      required:
+      - genre
+      - motif
+      - produit
+      - quantite
+    NouveauMouvementGenreEnum:
+      enum:
+      - vente_guichet
+      - retours
+      - reste_en_salle
+      - ration
+      type: string
+      description: |-
+        * `vente_guichet` - vente_guichet
+        * `retours` - retours
+        * `reste_en_salle` - reste_en_salle
+        * `ration` - ration
     NouvelEncaissement:
       type: object
       properties:
@@ -4208,6 +4368,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Livraison'
+    PaginatedMouvementInterneList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MouvementInterne'
     PaginatedPosteList:
       type: object
       required:
@@ -5095,6 +5278,19 @@ components:
           description: Code du produit → prix en FCFA ; null retire le tarif propre.
       required:
       - tarifs
+    Totaux:
+      type: object
+      properties:
+        ration:
+          type: object
+          additionalProperties:
+            type: integer
+          title: Livres
+        caisse:
+          type: integer
+      required:
+      - caisse
+      - ration
     TypeEnum:
       enum:
       - livreur

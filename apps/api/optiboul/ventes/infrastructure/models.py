@@ -245,3 +245,60 @@ class Encaissement(models.Model):
 
     def __str__(self) -> str:
         return f"{self.client} : {self.montant} FCFA ({self.mode})"
+
+
+class MouvementInterne(models.Model):
+    """Pains sortis hors livraison, avec un motif (CdC §5.3)."""
+
+    semaine = models.ForeignKey(
+        "core.Semaine",
+        on_delete=models.PROTECT,
+        related_name="mouvements_internes",
+        verbose_name=_("semaine"),
+    )
+    caisse = models.ForeignKey(
+        "caisse.Caisse",
+        on_delete=models.PROTECT,
+        related_name="mouvements_internes",
+        verbose_name=_("caisse"),
+    )
+    genre = models.CharField(
+        _("genre"),
+        max_length=20,
+        choices=[
+            ("vente_guichet", "vente au guichet"),
+            ("retours", "retours"),
+            ("reste_en_salle", "reste en salle"),
+            ("ration", "ration"),
+        ],
+    )
+    produit = models.ForeignKey(
+        "production.Produit",
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("produit"),
+    )
+    quantite = models.PositiveIntegerField(_("pains"))
+    motif = models.TextField(_("motif"))
+    cree_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("saisi par"),
+    )
+    cree_le = models.DateTimeField(_("saisi le"), default=timezone.now)
+
+    class Meta:
+        db_table = "mouvement_interne"
+        ordering = ["-cree_le", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(quantite__gt=0),
+                name="mouvement_interne_quantite_positive",
+            ),
+        ]
+        verbose_name = _("mouvement interne")
+        verbose_name_plural = _("mouvements internes")
+
+    def __str__(self) -> str:
+        return f"{self.get_genre_display()} : {self.produit.code} {self.quantite}"

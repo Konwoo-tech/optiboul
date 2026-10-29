@@ -10,10 +10,10 @@
  * * `jour_et_nuit` - jour_et_nuit
  * * `nuit_puis_jour` - nuit_puis_jour
  */
-export type GenreEnum = typeof GenreEnum[keyof typeof GenreEnum];
+export type ConflitPlanningGenreEnum = typeof ConflitPlanningGenreEnum[keyof typeof ConflitPlanningGenreEnum];
 
 
-export const GenreEnum = {
+export const ConflitPlanningGenreEnum = {
   jour_et_nuit: 'jour_et_nuit',
   nuit_puis_jour: 'nuit_puis_jour',
 } as const;

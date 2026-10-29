@@ -5,10 +5,10 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
-import type { GenreEnum } from './genreEnum.ts';
+import type { ConflitPlanningGenreEnum } from './conflitPlanningGenreEnum.ts';
 
 export interface ConflitPlanning {
-  genre: GenreEnum;
+  genre: ConflitPlanningGenreEnum;
   jour: string;
   caissiere: number;
 }
