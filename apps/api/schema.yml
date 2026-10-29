@@ -91,6 +91,97 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/caisses/:
+    get:
+      operationId: caisses_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - caisses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCaisseList'
+          description: ''
+  /api/v1/caisses/{id}/:
+    get:
+      operationId: caisses_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) caisse.
+        required: true
+      tags:
+      - caisses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Caisse'
+          description: ''
+  /api/v1/caisses/ouvrir/:
+    post:
+      operationId: caisses_ouvrir_create
+      description: Ouverture en comptant le fonds ; hors planning, le gérant est prévenu.
+      tags:
+      - caisses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ouverture'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Ouverture'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Ouverture'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Caisse'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/caisses/prochaine/:
+    get:
+      operationId: caisses_prochaine_retrieve
+      description: Créneau à ouvrir, caissière planifiée et fonds proposé (20 000
+        FCFA).
+      tags:
+      - caisses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prochaine'
+          description: ''
   /api/v1/connexion/annuler/:
     post:
       operationId: connexion_annuler_create
@@ -1403,6 +1494,92 @@ components:
       - cle
       - contenu
       - mis_a_jour
+    Caisse:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        semaine:
+          type: integer
+        jour:
+          type: string
+          format: date
+          readOnly: true
+        creneau:
+          type: string
+          readOnly: true
+          title: Créneau
+        caissiere:
+          $ref: '#/components/schemas/Caissiere'
+        planifiee:
+          allOf:
+          - $ref: '#/components/schemas/Caissiere'
+          nullable: true
+        hors_planning:
+          type: boolean
+          readOnly: true
+        fonds:
+          type: integer
+          readOnly: true
+          title: Fonds (FCFA)
+        attendu:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Attendu (FCFA)
+        compte:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Compté (FCFA)
+        ecart:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Écart (FCFA)
+        statut:
+          type: string
+          readOnly: true
+        en_cours:
+          type: boolean
+          readOnly: true
+        ouverte_le:
+          type: string
+          format: date-time
+          readOnly: true
+        fermee_le:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Fermée le
+      required:
+      - attendu
+      - caissiere
+      - compte
+      - creneau
+      - ecart
+      - en_cours
+      - fermee_le
+      - fonds
+      - hors_planning
+      - id
+      - jour
+      - ouverte_le
+      - planifiee
+      - semaine
+      - statut
+    Caissiere:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+      required:
+      - id
+      - nom
     CanalEnum:
       enum:
       - sms
@@ -1811,6 +1988,37 @@ components:
     NullEnum:
       enum:
       - null
+    Ouverture:
+      type: object
+      properties:
+        fonds:
+          type: integer
+          minimum: 0
+      required:
+      - fonds
+    PaginatedCaisseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Caisse'
     PaginatedCompteList:
       type: object
       required:
@@ -2189,6 +2397,30 @@ components:
       required:
       - code
       - detail
+    Prochaine:
+      type: object
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          type: string
+        planifiee:
+          allOf:
+          - $ref: '#/components/schemas/Caissiere'
+          nullable: true
+        fonds_propose:
+          type: integer
+        caisse_en_cours:
+          allOf:
+          - $ref: '#/components/schemas/Caisse'
+          nullable: true
+      required:
+      - caisse_en_cours
+      - creneau
+      - fonds_propose
+      - jour
+      - planifiee
     ProfilEnum:
       enum:
       - caissier
