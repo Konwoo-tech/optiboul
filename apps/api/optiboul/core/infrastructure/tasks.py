@@ -13,6 +13,8 @@ from django.conf import settings
 from django.utils import timezone
 
 from optiboul.core.application import sauvegardes as cas
+from optiboul.core.application import semaines as cas_semaines
+from optiboul.core.application.journal import SYSTEME
 from optiboul.core.domain.sauvegardes import Declencheur
 from optiboul.core.domain.sauvegardes import Genre
 from optiboul.core.domain.sauvegardes import a_supprimer
@@ -20,12 +22,14 @@ from optiboul.core.domain.sauvegardes import sauvegarde_due
 from optiboul.notifications.infrastructure.envois import notificateur
 from optiboul.notifications.infrastructure.models import Notification
 
+from .journal import journal
 from .journal import journaliser
 from .parametres import parametre
 from .sauvegardes import CoffreS3
 from .sauvegardes import PgDump
 from .sauvegardes import depot_sauvegardes
 from .sauvegardes import dossier_sauvegardes
+from .semaines import depot_semaines
 
 logger = logging.getLogger(__name__)
 
@@ -106,3 +110,16 @@ def verifier_copie_cloud() -> bool:
         seuil_heures=parametre("alerte_sauvegarde_cloud"),
         deja_alerte=deja_alerte,
     )
+
+
+@shared_task(name="core.ouvrir_semaine")
+def ouvrir_semaine() -> int | None:
+    """Lundi 06:00 (O8, US-032) : ouverture automatique ou alerte au propriétaire."""
+    semaine = cas_semaines.ouvrir_automatiquement(
+        depot_semaines,
+        journal,
+        notificateur,
+        maintenant=timezone.now(),
+        systeme=SYSTEME,
+    )
+    return semaine.id if semaine else None

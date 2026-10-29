@@ -15,6 +15,7 @@ from .models import Semaine
 
 if TYPE_CHECKING:
     from datetime import date
+    from datetime import datetime
 
     from optiboul.core.domain.planning import Affectations
     from optiboul.core.domain.semaines import Bornes
@@ -79,6 +80,17 @@ class DepotSemainesDjango:
         modele = get_user_model()
         personnes = modele.objects.filter(is_active=True).order_by("name", "pk")
         return [p.pk for p in personnes if p.profil == profil]
+
+    def ouverte(self) -> EtatSemaine | None:
+        semaine = Semaine.objects.filter(statut=Statut.OUVERTE).first()
+        return etat(semaine) if semaine else None
+
+    def ouvrir(self, semaine_id: int, par: int | None, le: datetime) -> None:
+        Semaine.objects.filter(pk=semaine_id).update(
+            statut=Statut.OUVERTE,
+            ouverte_le=le,
+            ouverte_par_id=par,
+        )
 
 
 depot_semaines = DepotSemainesDjango()

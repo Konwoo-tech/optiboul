@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema
@@ -202,7 +203,7 @@ class SemainesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     )
 
     def get_permissions(self):
-        if self.action in {"list", "retrieve", "planning"}:
+        if self.action in {"list", "retrieve", "planning", "ouvrir"}:
             return [IsAuthenticated()]
         return [ProfilParmi("proprietaire")()]
 
@@ -289,6 +290,25 @@ class SemainesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         # Le planning des caisses suit, décalé de 7 jours (US-031).
         cas_planning.copier_precedent(depot_planning, depot_semaines, semaine=semaine)
         return self._reponse(semaine, conflits, status.HTTP_200_OK)
+
+    @extend_schema(
+        request=None,
+        responses={200: SemaineSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"])
+    def ouvrir(self, request: Request, pk: str) -> Response:
+        """Ouverture par le gérant affecté ou le propriétaire (CdC §5.1)."""
+        try:
+            semaine = cas.ouvrir(
+                depot_semaines,
+                journal,
+                semaine_id=self.get_object().pk,
+                auteur=auteur_de(request),
+                maintenant=timezone.now(),
+            )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(SemaineSerializer(self.get_queryset().get(pk=semaine.id)).data)
 
     @extend_schema(methods=["GET"], responses=PlanningSerializer)
     @extend_schema(

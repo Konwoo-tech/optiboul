@@ -405,6 +405,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "core.sauvegarde_planifiee",
         "schedule": crontab(minute=5),
     },
+    "ouvrir-semaine": {
+        "task": "core.ouvrir_semaine",
+        "schedule": crontab(minute=0, hour=6, day_of_week="mon"),
+    },
     "verifier-copie-cloud": {
         "task": "core.verifier_copie_cloud",
         "schedule": crontab(minute=35),

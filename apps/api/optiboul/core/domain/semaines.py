@@ -93,3 +93,38 @@ def conflits_affectation(
     if {gerant, production} & inactifs:
         conflits.append("compte_inactif")
     return conflits
+
+
+RAISONS_OUVERTURE = {
+    "deja_ouverte": "La semaine est déjà ouverte.",
+    "cloturee": "La semaine est clôturée.",
+    "gerant_manquant": "Aucun gérant n'est affecté.",
+    "production_manquante": "Aucun responsable de production n'est affecté.",
+    "precedente_non_cloturee": "La semaine précédente n'est pas clôturée.",
+    "autre_semaine_ouverte": "Une autre semaine est encore ouverte.",
+}
+
+
+def raisons_de_ne_pas_ouvrir(
+    *,
+    statut: Statut,
+    gerant: int | None,
+    production: int | None,
+    precedente: Statut | None,
+    autre_ouverte: bool,
+) -> list[str]:
+    """Ouverture (R2, CdC §5.1) : précédente clôturée et affectations faites."""
+    if statut is Statut.OUVERTE:
+        return ["deja_ouverte"]
+    if statut is Statut.CLOTUREE:
+        return ["cloturee"]
+    raisons = []
+    if gerant is None:
+        raisons.append("gerant_manquant")
+    if production is None:
+        raisons.append("production_manquante")
+    if precedente is not None and precedente is not Statut.CLOTUREE:
+        raisons.append("precedente_non_cloturee")
+    if autre_ouverte:
+        raisons.append("autre_semaine_ouverte")
+    return raisons

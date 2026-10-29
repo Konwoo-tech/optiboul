@@ -7,16 +7,24 @@ from typing import TYPE_CHECKING
 from typing import Protocol
 
 from optiboul.core.domain.erreurs import RefusMetier
+from optiboul.core.domain.semaines import RAISONS_OUVERTURE
 from optiboul.core.domain.semaines import Bornes
 from optiboul.core.domain.semaines import Statut
 from optiboul.core.domain.semaines import bornes
+from optiboul.core.domain.semaines import code
 from optiboul.core.domain.semaines import conflits_affectation
 from optiboul.core.domain.semaines import precedente
 from optiboul.core.domain.semaines import proposer_rotation
+from optiboul.core.domain.semaines import raisons_de_ne_pas_ouvrir
+from optiboul.core.domain.semaines import semaine_de
 
 from .journal import Evenement
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
+    from optiboul.notifications.application.ports import Notificateur
+
     from .journal import Auteur
     from .journal import Journal
 
@@ -56,6 +64,10 @@ class DepotSemaines(Protocol):
     def inactifs(self, ids: set[int]) -> set[int]: ...
 
     def candidats(self, profil: str) -> list[int]: ...
+
+    def ouverte(self) -> EtatSemaine | None: ...
+
+    def ouvrir(self, semaine_id: int, par: int | None, le: datetime) -> None: ...
 
 
 def _verifier_profil(
@@ -197,3 +209,102 @@ def _semaine(depot: DepotSemaines, semaine_id: int) -> EtatSemaine:
         message = "Semaine inconnue."
         raise RefusMetier("semaine_inconnue", message)
     return semaine
+
+
+ALERTE_OUVERTURE = "semaine.ouverture_impossible"
+
+
+def raisons_ouverture(depot: DepotSemaines, semaine: EtatSemaine) -> list[str]:
+    avant = depot.par_numero(*precedente(semaine.annee, semaine.numero))
+    ouverte = depot.ouverte()
+    return raisons_de_ne_pas_ouvrir(
+        statut=semaine.statut,
+        gerant=semaine.gerant,
+        production=semaine.production,
+        precedente=avant.statut if avant else None,
+        autre_ouverte=ouverte is not None and ouverte.id != semaine.id,
+    )
+
+
+def peut_ouvrir_ou_cloturer(semaine: EtatSemaine, auteur: Auteur) -> bool:
+    """Le propriétaire, ou le gérant affecté à la semaine (CdC §3.3)."""
+    if auteur.profil == "proprietaire":
+        return True
+    return auteur.profil == "gerant" and auteur.utilisateur_id == semaine.gerant
+
+
+def ouvrir(
+    depot: DepotSemaines,
+    journal: Journal,
+    *,
+    semaine_id: int,
+    auteur: Auteur,
+    maintenant: datetime,
+) -> EtatSemaine:
+    semaine = _semaine(depot, semaine_id)
+    if auteur.utilisateur_id is not None and not peut_ouvrir_ou_cloturer(
+        semaine,
+        auteur,
+    ):
+        message = "Seuls le propriétaire et le gérant de la semaine l'ouvrent."
+        raise RefusMetier("droit_insuffisant", message)
+    if raisons := raisons_ouverture(depot, semaine):
+        message = " ".join(RAISONS_OUVERTURE[r] for r in raisons)
+        raise RefusMetier("ouverture_impossible", message, raisons=raisons)
+    depot.ouvrir(semaine.id, auteur.utilisateur_id, maintenant)
+    journal.enregistrer(
+        Evenement(
+            action="semaine.ouverte",
+            auteur=auteur,
+            objet_type="semaine",
+            objet_id=str(semaine.id),
+            avant={"statut": semaine.statut},
+            apres={"statut": Statut.OUVERTE},
+        ),
+    )
+    return _semaine(depot, semaine.id)
+
+
+def ouvrir_automatiquement(
+    depot: DepotSemaines,
+    journal: Journal,
+    notificateur: Notificateur,
+    *,
+    maintenant: datetime,
+    systeme: Auteur,
+) -> EtatSemaine | None:
+    """Lundi 06:00 (O8) : ouvre si tout est prêt, sinon alerte le propriétaire."""
+    annee, numero = semaine_de(maintenant)
+    semaine = depot.par_numero(annee, numero)
+    if semaine is not None and semaine.statut is Statut.OUVERTE:
+        return semaine
+    if semaine is None:
+        raisons, detail = ["non_planifiee"], "La semaine n'est pas planifiée."
+    else:
+        try:
+            return ouvrir(
+                depot,
+                journal,
+                semaine_id=semaine.id,
+                auteur=systeme,
+                maintenant=maintenant,
+            )
+        except RefusMetier as refus:
+            raisons, detail = list(refus.autres.get("raisons", [])), refus.detail
+    notificateur.notifier_profils(
+        ["proprietaire"],
+        genre=ALERTE_OUVERTURE,
+        titre=f"La semaine {code(numero)} ne s'est pas ouverte",
+        message=detail,
+        lien="/gestion/semaines",
+    )
+    journal.enregistrer(
+        Evenement(
+            action=ALERTE_OUVERTURE,
+            auteur=systeme,
+            objet_type="semaine",
+            objet_id=str(semaine.id) if semaine else "",
+            apres={"annee": annee, "numero": numero, "raisons": raisons},
+        ),
+    )
+    return None

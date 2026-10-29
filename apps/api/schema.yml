@@ -929,6 +929,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/semaines/{id}/ouvrir/:
+    post:
+      operationId: semaines_ouvrir_create
+      description: Ouverture par le gérant affecté ou le propriétaire (CdC §5.1).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) semaine.
+        required: true
+      tags:
+      - semaines
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Semaine'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/semaines/{id}/planning/:
     get:
       operationId: semaines_planning_retrieve

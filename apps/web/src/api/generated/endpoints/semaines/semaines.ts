@@ -566,6 +566,95 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getSemainesCopierPrecedenteCreateMutationOptions(options), queryClient);
     }
+    export type semainesOuvrirCreateResponse200 = {
+  data: Semaine
+  status: 200
+}
+
+export type semainesOuvrirCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type semainesOuvrirCreateResponseSuccess = (semainesOuvrirCreateResponse200) & {
+  headers: Headers;
+};
+export type semainesOuvrirCreateResponseError = (semainesOuvrirCreateResponse409) & {
+  headers: Headers;
+};
+
+export type semainesOuvrirCreateResponse = (semainesOuvrirCreateResponseSuccess | semainesOuvrirCreateResponseError)
+
+export const getSemainesOuvrirCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/semaines/${id}/ouvrir/`
+}
+
+/**
+ * Ouverture par le gérant affecté ou le propriétaire (CdC §5.1).
+ */
+export const semainesOuvrirCreate = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<semainesOuvrirCreateResponse> => {
+
+  return optiboulFetch<semainesOuvrirCreateResponse>(getSemainesOuvrirCreateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSemainesOuvrirCreateMutationKey = () => ['semainesOuvrirCreate'] as const;
+
+export const getSemainesOuvrirCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof semainesOuvrirCreate>>, TError,SemainesOuvrirCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof semainesOuvrirCreate>>, TError,SemainesOuvrirCreateMutationVariables, TContext> => {
+
+const mutationKey = getSemainesOuvrirCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof semainesOuvrirCreate>>, SemainesOuvrirCreateMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  semainesOuvrirCreate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SemainesOuvrirCreateMutationResult = NonNullable<Awaited<ReturnType<typeof semainesOuvrirCreate>>>
+
+    export type SemainesOuvrirCreateMutationError = Probleme
+    export type SemainesOuvrirCreateMutationVariables = {id: number}
+
+    export const useSemainesOuvrirCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof semainesOuvrirCreate>>, TError,SemainesOuvrirCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof semainesOuvrirCreate>>,
+        TError,
+        SemainesOuvrirCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSemainesOuvrirCreateMutationOptions(options), queryClient);
+    }
     export type semainesPlanningRetrieveResponse200 = {
   data: Planning
   status: 200
