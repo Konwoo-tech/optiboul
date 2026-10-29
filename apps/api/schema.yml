@@ -2127,6 +2127,67 @@ paths:
               schema:
                 $ref: '#/components/schemas/PosteActuel'
           description: ''
+  /api/v1/productions/plan/:
+    get:
+      operationId: productions_plan_retrieve
+      description: Sacs, pains prévus et boules par produit, comparés aux dernières
+        sessions.
+      parameters:
+      - in: query
+        name: creneau
+        schema:
+          type: string
+          enum:
+          - jour
+          - nuit
+      - in: query
+        name: jour
+        schema:
+          type: string
+        description: AAAA-MM-JJ, avec le créneau
+      tags:
+      - productions
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+          description: ''
+  /api/v1/productions/proposer/:
+    post:
+      operationId: productions_proposer_create
+      description: Le responsable de production propose le plan ; le gérant est prévenu.
+      tags:
+      - productions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionProduction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionProduction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionProduction'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/produits/:
     get:
       operationId: produits_list
@@ -4257,6 +4318,40 @@ components:
       - montant
       - prix_unitaire
       - quantite
+    LignePlan:
+      type: object
+      properties:
+        code:
+          type: string
+        version_fiche:
+          type: integer
+        pains_par_sac:
+          type: integer
+        commandes:
+          type: integer
+          description: Pains commandés.
+        sacs:
+          type: integer
+        prevus:
+          type: integer
+          description: 'Pains prévus : sacs fois pains par sac.'
+        boules:
+          type: integer
+        moyenne_sacs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,1})?$
+          nullable: true
+          description: Sacs moyens des dernières sessions du même type.
+      required:
+      - boules
+      - code
+      - commandes
+      - moyenne_sacs
+      - pains_par_sac
+      - prevus
+      - sacs
+      - version_fiche
     Livraison:
       type: object
       properties:
@@ -5304,6 +5399,61 @@ components:
       - caissiere
       - creneau
       - jour
+    Plan:
+      type: object
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          type: string
+        statut:
+          nullable: true
+          description: |-
+            Vide : le plan n'est pas encore proposé.
+
+            * `propose` - propose
+            * `valide` - valide
+            * `provisoire` - provisoire
+          oneOf:
+          - $ref: '#/components/schemas/PlanStatutEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        lignes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LignePlan'
+        sacs:
+          type: integer
+        prevus:
+          type: integer
+        moyenne_sacs:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,7}(?:\.\d{0,1})?$
+          nullable: true
+        ecart:
+          type: integer
+          nullable: true
+          description: Écart des sacs à la moyenne, en %.
+      required:
+      - creneau
+      - ecart
+      - jour
+      - lignes
+      - moyenne_sacs
+      - prevus
+      - sacs
+      - statut
+    PlanStatutEnum:
+      enum:
+      - propose
+      - valide
+      - provisoire
+      type: string
+      description: |-
+        * `propose` - propose
+        * `valide` - valide
+        * `provisoire` - provisoire
     Planification:
       type: object
       properties:
@@ -5964,6 +6114,15 @@ components:
       required:
       - inactiviteMinutes
       - via
+    SessionProduction:
+      type: object
+      description: 'Sans jour ni créneau : la session dont les commandes sont closes.'
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          $ref: '#/components/schemas/CreneauEnum'
     SessionVente:
       type: object
       description: Session visée ; sans jour ni créneau, la prochaine dont l'heure

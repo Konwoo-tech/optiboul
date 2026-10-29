@@ -14,6 +14,7 @@ export * from './mouvements-internes/mouvements-internes.ts';
 export * from './notifications/notifications.ts';
 export * from './parametres/parametres.ts';
 export * from './postes/postes.ts';
+export * from './productions/productions.ts';
 export * from './produits/produits.ts';
 export * from './regles-notification/regles-notification.ts';
 export * from './sante/sante.ts';

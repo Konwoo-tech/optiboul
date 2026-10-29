@@ -103,3 +103,81 @@ class LigneRecette(models.Model):
 
     def __str__(self) -> str:
         return f"{self.matiere} : {self.quantite}"
+
+
+class PlanProduction(models.Model):
+    """Plan d'une session (jour, créneau) : proposé, puis validé ou provisoire (R4)."""
+
+    semaine = models.ForeignKey(
+        "core.Semaine",
+        on_delete=models.PROTECT,
+        related_name="plans",
+        verbose_name=_("semaine"),
+    )
+    jour = models.DateField(_("jour de la session"))
+    creneau = models.CharField(_("créneau"), max_length=4)
+    statut = models.CharField(_("statut"), max_length=12, default="propose")
+    propose_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("proposé par"),
+    )
+    propose_le = models.DateTimeField(_("proposé le"), default=timezone.now)
+
+    class Meta:
+        db_table = "plan_production"
+        ordering = ["-jour", "-creneau"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["jour", "creneau"],
+                name="un_plan_par_session",
+            ),
+        ]
+        verbose_name = _("plan de production")
+        verbose_name_plural = _("plans de production")
+
+    def __str__(self) -> str:
+        return f"Plan {self.creneau} du {self.jour:%d/%m/%Y}"
+
+
+class LignePlanProduction(models.Model):
+    """Un produit du plan, avec la version de fiche utilisée (CdC §5.5)."""
+
+    plan = models.ForeignKey(
+        PlanProduction,
+        on_delete=models.CASCADE,
+        related_name="lignes",
+        verbose_name=_("plan"),
+    )
+    produit = models.ForeignKey(
+        Produit,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("produit"),
+    )
+    fiche = models.ForeignKey(
+        FicheTechnique,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("version de fiche"),
+    )
+    commandes = models.PositiveIntegerField(_("pains commandés"))
+    sacs = models.PositiveIntegerField(_("sacs"))
+    pains_prevus = models.PositiveIntegerField(_("pains prévus"))
+    boules = models.PositiveIntegerField(_("boules"))
+
+    class Meta:
+        db_table = "ligne_plan"
+        ordering = ["produit__ordre"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["plan", "produit"],
+                name="une_ligne_de_plan_par_produit",
+            ),
+        ]
+        verbose_name = _("ligne de plan")
+        verbose_name_plural = _("lignes de plan")
+
+    def __str__(self) -> str:
+        return f"{self.produit.code} : {self.sacs} sacs"
