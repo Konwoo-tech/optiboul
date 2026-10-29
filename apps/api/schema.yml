@@ -286,6 +286,190 @@ paths:
               schema:
                 $ref: '#/components/schemas/Prochaine'
           description: ''
+  /api/v1/clients/:
+    get:
+      operationId: clients_list
+      description: La caisse lit les clients ; le gérant et le propriétaire les gèrent.
+      parameters:
+      - in: query
+        name: actif
+        schema:
+          type: boolean
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - in: query
+        name: recherche
+        schema:
+          type: string
+        description: Premières lettres du nom
+      tags:
+      - clients
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedClientList'
+          description: ''
+    post:
+      operationId: clients_create
+      description: La caisse lit les clients ; le gérant et le propriétaire les gèrent.
+      tags:
+      - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Client'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Client'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+          description: ''
+  /api/v1/clients/{id}/:
+    get:
+      operationId: clients_retrieve
+      description: La caisse lit les clients ; le gérant et le propriétaire les gèrent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) client.
+        required: true
+      tags:
+      - clients
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+          description: ''
+    put:
+      operationId: clients_update
+      description: La caisse lit les clients ; le gérant et le propriétaire les gèrent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) client.
+        required: true
+      tags:
+      - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Client'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Client'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+          description: ''
+    patch:
+      operationId: clients_partial_update
+      description: La caisse lit les clients ; le gérant et le propriétaire les gèrent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) client.
+        required: true
+      tags:
+      - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClient'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedClient'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClient'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+          description: ''
+  /api/v1/clients/{id}/tarifs/:
+    put:
+      operationId: clients_tarifs_update
+      description: 'Tarif par produit : un prix fixe le tarif propre, null le retire.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) client.
+        required: true
+      tags:
+      - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tarifs'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Tarifs'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Tarifs'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/connexion/annuler/:
     post:
       operationId: connexion_annuler_create
@@ -2014,6 +2198,55 @@ components:
           type: integer
       required:
       - groupe
+    Client:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          maxLength: 150
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        telephone:
+          type: string
+          title: Téléphone
+          maxLength: 20
+        lieu:
+          type: string
+          maxLength: 150
+        plafond:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          title: Plafond propre (FCFA)
+        plafond_effectif:
+          type: integer
+          readOnly: true
+        actif:
+          type: boolean
+        tarifs:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Prix propres au client, produit par produit.
+          readOnly: true
+        prix:
+          type: object
+          additionalProperties:
+            type: integer
+            nullable: true
+          description: 'Prix appliqués à la livraison : le tarif du client, sinon
+            le prix de base.'
+          readOnly: true
+      required:
+      - id
+      - nom
+      - plafond_effectif
+      - prix
+      - tarifs
     Code:
       type: object
       properties:
@@ -2590,6 +2823,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Caisse'
+    PaginatedClientList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Client'
     PaginatedCompteList:
       type: object
       required:
@@ -2860,6 +3116,49 @@ components:
       - unite
       - usage
       - valeur
+    PatchedClient:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          maxLength: 150
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        telephone:
+          type: string
+          title: Téléphone
+          maxLength: 20
+        lieu:
+          type: string
+          maxLength: 150
+        plafond:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          title: Plafond propre (FCFA)
+        plafond_effectif:
+          type: integer
+          readOnly: true
+        actif:
+          type: boolean
+        tarifs:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Prix propres au client, produit par produit.
+          readOnly: true
+        prix:
+          type: object
+          additionalProperties:
+            type: integer
+            nullable: true
+          description: 'Prix appliqués à la livraison : le tarif du client, sinon
+            le prix de base.'
+          readOnly: true
     PatchedGroupe:
       type: object
       properties:
@@ -3372,6 +3671,30 @@ components:
       required:
       - inactiviteMinutes
       - via
+    Tarifs:
+      type: object
+      properties:
+        tarifs:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+            nullable: true
+          description: Code du produit → prix en FCFA ; null retire le tarif propre.
+      required:
+      - tarifs
+    TypeEnum:
+      enum:
+      - livreur
+      - restaurant
+      - hotel
+      - particulier
+      type: string
+      description: |-
+        * `livreur` - livreur
+        * `restaurant` - restaurant
+        * `hotel` - hotel
+        * `particulier` - particulier
     UniteEnum:
       enum:
       - kg

@@ -1,5 +1,6 @@
 export * from './brouillons/brouillons.ts';
 export * from './caisses/caisses.ts';
+export * from './clients/clients.ts';
 export * from './connexion/connexion.ts';
 export * from './groupes/groupes.ts';
 export * from './journal/journal.ts';
