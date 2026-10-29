@@ -470,6 +470,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/clients/dettes/:
+    get:
+      operationId: clients_dettes_retrieve
+      description: Clients qui doivent de l'argent, la plus grosse dette d'abord (R21).
+      parameters:
+      - in: query
+        name: statut
+        schema:
+          type: string
+          enum:
+          - a_jour
+          - dette
+          - plafond_depasse
+      tags:
+      - clients
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dettes'
+          description: ''
   /api/v1/commandes/:
     get:
       operationId: commandes_list
@@ -3405,6 +3429,70 @@ components:
       - type_libelle
       - valideurs
       - via
+    Dette:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        type:
+          type: string
+        telephone:
+          type: string
+        solde:
+          type: integer
+        plafond:
+          type: integer
+        jauge:
+          type: integer
+          description: Part du plafond utilisée, en %.
+        statut:
+          $ref: '#/components/schemas/DetteStatutEnum'
+        reportee:
+          type: boolean
+          description: Dette reportée d'une semaine close (R20).
+        derniere_livraison:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - derniere_livraison
+      - id
+      - jauge
+      - nom
+      - plafond
+      - reportee
+      - solde
+      - statut
+      - telephone
+      - type
+    DetteStatutEnum:
+      enum:
+      - a_jour
+      - dette
+      - plafond_depasse
+      type: string
+      description: |-
+        * `a_jour` - a_jour
+        * `dette` - dette
+        * `plafond_depasse` - plafond_depasse
+    Dettes:
+      type: object
+      properties:
+        nombre:
+          type: integer
+        total:
+          type: integer
+          description: Total dû par les clients, en FCFA.
+        clients:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dette'
+      required:
+      - clients
+      - nombre
+      - total
     Emission:
       type: object
       properties:
@@ -3533,7 +3621,7 @@ components:
           readOnly: true
         statut:
           allOf:
-          - $ref: '#/components/schemas/StatutEnum'
+          - $ref: '#/components/schemas/EnvoiStatutEnum'
           readOnly: true
         cree_le:
           type: string
@@ -3560,6 +3648,16 @@ components:
           $ref: '#/components/schemas/CanalEnum'
       required:
       - canal
+    EnvoiStatutEnum:
+      enum:
+      - en_attente
+      - envoye
+      - echec
+      type: string
+      description: |-
+        * `en_attente` - en_attente
+        * `envoye` - envoye
+        * `echec` - echec
     Especes:
       type: object
       properties:
@@ -5256,16 +5354,6 @@ components:
           format: date
         creneau:
           $ref: '#/components/schemas/CreneauEnum'
-    StatutEnum:
-      enum:
-      - en_attente
-      - envoye
-      - echec
-      type: string
-      description: |-
-        * `en_attente` - en_attente
-        * `envoye` - envoye
-        * `echec` - echec
     Tarifs:
       type: object
       properties:

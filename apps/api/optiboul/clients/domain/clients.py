@@ -47,3 +47,24 @@ class Sens(IntEnum):
 def solde(mouvements: list[tuple[Sens, int]]) -> int:
     """Le solde n'est jamais saisi : il est la somme des mouvements (R21)."""
     return sum(sens * montant for sens, montant in mouvements)
+
+
+class StatutDette(StrEnum):
+    A_JOUR = "a_jour"
+    DETTE = "dette"
+    PLAFOND_DEPASSE = "plafond_depasse"
+
+
+def statut_dette(solde: int, plafond: int) -> StatutDette:
+    """À jour, dette dans le plafond, ou plafond dépassé (CdC §5.4)."""
+    if solde >= 0:
+        return StatutDette.A_JOUR
+    return StatutDette.PLAFOND_DEPASSE if -solde > plafond else StatutDette.DETTE
+
+
+def jauge(solde: int, plafond: int) -> int:
+    """Part du plafond utilisée, en pourcentage entier ; au-delà de 100 : dépassé."""
+    dette = max(0, -solde)
+    if plafond <= 0:
+        return 100 if dette else 0
+    return round(dette * 100 / plafond)

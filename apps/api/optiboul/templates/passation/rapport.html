@@ -127,6 +127,27 @@
         {% else %}
           <p class="absent">Aucune caisse fermée cette semaine.</p>
         {% endif %}
+      {% elif section.cle == "dettes_clients" %}
+        {% if section.contenu.lignes %}
+          <table>
+            <tr>
+              <th>Client</th>
+              <th class="montant">Dette reportée</th>
+            </tr>
+            {% for ligne in section.contenu.lignes %}
+              <tr>
+                <td>{{ ligne.client }}</td>
+                <td class="montant manque">{{ ligne.montant|fcfa }}</td>
+              </tr>
+            {% endfor %}
+            <tr class="total">
+              <td>Total reporté</td>
+              <td class="montant manque">{{ section.contenu.total|fcfa }}</td>
+            </tr>
+          </table>
+        {% else %}
+          <p class="absent">Aucune dette client reportée.</p>
+        {% endif %}
       {% else %}
         <table>
           {% for libelle, valeur in section.contenu.items %}

@@ -26,7 +26,9 @@ import type {
 
 import type {
   Client,
+  ClientsDettesRetrieveParams,
   ClientsListParams,
+  Dettes,
   PaginatedClientList,
   PatchedClient,
   Probleme,
@@ -701,3 +703,119 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getClientsTarifsUpdateMutationOptions(options), queryClient);
     }
+    export type clientsDettesRetrieveResponse200 = {
+  data: Dettes
+  status: 200
+}
+
+export type clientsDettesRetrieveResponseSuccess = (clientsDettesRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type clientsDettesRetrieveResponse = (clientsDettesRetrieveResponseSuccess)
+
+export const getClientsDettesRetrieveUrl = (params?: ClientsDettesRetrieveParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/clients/dettes/?${stringifiedParams}` : `/api/v1/clients/dettes/`
+}
+
+/**
+ * Clients qui doivent de l'argent, la plus grosse dette d'abord (R21).
+ */
+export const clientsDettesRetrieve = async (params?: ClientsDettesRetrieveParams, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsDettesRetrieveResponse> => {
+
+  return optiboulFetch<clientsDettesRetrieveResponse>(getClientsDettesRetrieveUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getClientsDettesRetrieveQueryKey = (params?: ClientsDettesRetrieveParams,) => {
+    return [
+    `/api/v1/clients/dettes/`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getClientsDettesRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof clientsDettesRetrieve>>, TError = unknown>(params?: ClientsDettesRetrieveParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsDettesRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getClientsDettesRetrieveQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof clientsDettesRetrieve>>> = ({ signal }) => clientsDettesRetrieve(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof clientsDettesRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ClientsDettesRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof clientsDettesRetrieve>>>
+export type ClientsDettesRetrieveQueryError = unknown
+
+
+export function useClientsDettesRetrieve<TData = Awaited<ReturnType<typeof clientsDettesRetrieve>>, TError = unknown>(
+ params: undefined |  ClientsDettesRetrieveParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsDettesRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof clientsDettesRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof clientsDettesRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useClientsDettesRetrieve<TData = Awaited<ReturnType<typeof clientsDettesRetrieve>>, TError = unknown>(
+ params?: ClientsDettesRetrieveParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsDettesRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof clientsDettesRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof clientsDettesRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useClientsDettesRetrieve<TData = Awaited<ReturnType<typeof clientsDettesRetrieve>>, TError = unknown>(
+ params?: ClientsDettesRetrieveParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsDettesRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useClientsDettesRetrieve<TData = Awaited<ReturnType<typeof clientsDettesRetrieve>>, TError = unknown>(
+ params?: ClientsDettesRetrieveParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsDettesRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getClientsDettesRetrieveQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+

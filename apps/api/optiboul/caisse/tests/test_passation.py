@@ -81,8 +81,9 @@ def test_le_rapport_reprend_caisses_dettes_stock_et_incidents(
     assert f"−1{F}000{F}FCFA" in contenu  # noqa: RUF001
     assert "Réouverture de caisse par Willy" in contenu
     assert "Recompte demandé" in contenu
-    # Dettes et stock : pas encore de module dans l'API, la section le dit.
-    assert contenu.count("Non disponible") == 3
+    # Dettes fournisseurs et stock : pas encore de module dans l'API, la section le dit.
+    assert contenu.count("Non disponible") == 2
+    assert "Aucune dette client reportée." in contenu
 
 
 def test_le_pdf_est_envoye_au_gerant_suivant(semaine_cloturee, s45_patrick):

@@ -8,7 +8,10 @@ from typing import Any
 
 from django.db import transaction
 from django.db.models import Case
+from django.db.models import Exists
 from django.db.models import IntegerField
+from django.db.models import Max
+from django.db.models import OuterRef
 from django.db.models import Q
 from django.db.models import Value
 from django.db.models import When
@@ -20,12 +23,16 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from optiboul.clients.domain.clients import StatutDette
+from optiboul.clients.domain.clients import jauge
 from optiboul.clients.domain.clients import plafond_du_client
 from optiboul.clients.domain.clients import prix_du_client
+from optiboul.clients.domain.clients import statut_dette
 from optiboul.clients.domain.clients import telephone_du_client
 from optiboul.clients.infrastructure.comptes import SOLDE
 from optiboul.clients.infrastructure.comptes import solde_de
 from optiboul.clients.infrastructure.models import Client
+from optiboul.clients.infrastructure.models import ReportDette
 from optiboul.clients.infrastructure.models import TarifClient
 from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.erreurs import ProblemeSerializer
@@ -114,6 +121,27 @@ class ClientSerializer(serializers.ModelSerializer[Client]):
         return donnees
 
 
+class DetteSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nom = serializers.CharField()
+    type = serializers.CharField()
+    telephone = serializers.CharField()
+    solde = serializers.IntegerField()
+    plafond = serializers.IntegerField()
+    jauge = serializers.IntegerField(help_text="Part du plafond utilisée, en %.")
+    statut = serializers.ChoiceField(choices=[s.value for s in StatutDette])
+    reportee = serializers.BooleanField(
+        help_text="Dette reportée d'une semaine close (R20).",
+    )
+    derniere_livraison = serializers.DateTimeField(allow_null=True)
+
+
+class DettesSerializer(serializers.Serializer):
+    nombre = serializers.IntegerField()
+    total = serializers.IntegerField(help_text="Total dû par les clients, en FCFA.")
+    clients = DetteSerializer(many=True)
+
+
 class TarifsSerializer(serializers.Serializer):
     tarifs = serializers.DictField(
         child=serializers.IntegerField(min_value=0, allow_null=True),
@@ -161,7 +189,7 @@ class ClientsViewSet(
     http_method_names = ["get", "post", "put", "patch"]
 
     def get_permissions(self):
-        if self.action in {"list", "retrieve"}:
+        if self.action in {"list", "retrieve", "dettes"}:
             return [ProfilParmi("caissier", *DIRECTION)()]
         return [ProfilParmi(*DIRECTION)()]
 
@@ -211,6 +239,59 @@ class ClientsViewSet(
             objet_id=client.pk,
             avant=avant,
             apres=_valeurs(client),
+        )
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("statut", str, enum=[s.value for s in StatutDette]),
+        ],
+        responses=DettesSerializer,
+    )
+    @action(detail=False)
+    def dettes(self, request: Request) -> Response:
+        """Clients qui doivent de l'argent, la plus grosse dette d'abord (R21)."""
+        plafond_general = parametre("plafond_dette_client")
+        masquer = profil_de(request) not in DIRECTION
+        debiteurs = (
+            Client.objects.annotate(
+                solde=SOLDE,
+                derniere_livraison=Max("livraisons__cree_le"),
+                reportee=Exists(ReportDette.objects.filter(client=OuterRef("pk"))),
+            )
+            .filter(solde__lt=0)
+            .order_by("solde", "nom")
+        )
+        lignes = []
+        for client in debiteurs:
+            plafond = plafond_du_client(client.plafond, plafond_general)
+            statut = statut_dette(client.solde, plafond)
+            if request.query_params.get("statut") not in {None, "", statut}:
+                continue
+            telephone = client.telephone
+            if masquer and telephone:
+                telephone = masquer_telephone(telephone)
+            lignes.append(
+                {
+                    "id": client.pk,
+                    "nom": client.nom,
+                    "type": client.type,
+                    "telephone": telephone,
+                    "solde": client.solde,
+                    "plafond": plafond,
+                    "jauge": jauge(client.solde, plafond),
+                    "statut": statut,
+                    "reportee": client.reportee,
+                    "derniere_livraison": client.derniere_livraison,
+                },
+            )
+        return Response(
+            DettesSerializer(
+                {
+                    "nombre": len(lignes),
+                    "total": -sum(ligne["solde"] for ligne in lignes),
+                    "clients": lignes,
+                },
+            ).data,
         )
 
     @extend_schema(

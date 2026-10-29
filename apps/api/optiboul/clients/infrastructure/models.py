@@ -122,3 +122,37 @@ class MouvementCompte(models.Model):
 
     def __str__(self) -> str:
         return f"{self.client} {self.sens * self.montant:+} FCFA"
+
+
+class ReportDette(models.Model):
+    """Dette non soldée à la clôture de la semaine, reportée et marquée (R20)."""
+
+    semaine = models.ForeignKey(
+        "core.Semaine",
+        on_delete=models.PROTECT,
+        related_name="dettes_reportees",
+        verbose_name=_("semaine clôturée"),
+    )
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.PROTECT,
+        related_name="reports",
+        verbose_name=_("client"),
+    )
+    montant = models.PositiveBigIntegerField(_("dette reportée (FCFA)"))
+    cree_le = models.DateTimeField(_("reportée le"), default=timezone.now)
+
+    class Meta:
+        db_table = "report_dette"
+        ordering = ["-montant"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["semaine", "client"],
+                name="un_report_par_semaine",
+            ),
+        ]
+        verbose_name = _("dette reportée")
+        verbose_name_plural = _("dettes reportées")
+
+    def __str__(self) -> str:
+        return f"{self.client} : {self.montant} FCFA"
