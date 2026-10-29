@@ -20,6 +20,10 @@ STATUTS = {
     "fiche_invalide": status.HTTP_400_BAD_REQUEST,
     "produit_inconnu": status.HTTP_400_BAD_REQUEST,
     "telephone_invalide": status.HTTP_400_BAD_REQUEST,
+    "client_inconnu": status.HTTP_404_NOT_FOUND,
+    "commande_inconnue": status.HTTP_404_NOT_FOUND,
+    "quantite_invalide": status.HTTP_400_BAD_REQUEST,
+    "commande_vide": status.HTTP_400_BAD_REQUEST,
 }
 
 

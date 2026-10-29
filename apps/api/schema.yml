@@ -470,6 +470,181 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/commandes/:
+    get:
+      operationId: commandes_list
+      description: Commandes d'une session ; la caisse et le gérant les saisissent.
+      parameters:
+      - in: query
+        name: creneau
+        schema:
+          type: string
+          enum:
+          - jour
+          - nuit
+      - in: query
+        name: jour
+        schema:
+          type: string
+        description: AAAA-MM-JJ, avec le créneau
+      tags:
+      - commandes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Commande'
+          description: ''
+    post:
+      operationId: commandes_create
+      description: Saisit la commande du client ; une seconde saisie remplace ses
+        lignes.
+      tags:
+      - commandes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Saisie'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Saisie'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Saisie'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commande'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commande'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/commandes/{id}/:
+    get:
+      operationId: commandes_retrieve
+      description: Commandes d'une session ; la caisse et le gérant les saisissent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) commande.
+        required: true
+      tags:
+      - commandes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commande'
+          description: ''
+  /api/v1/commandes/{id}/annuler/:
+    post:
+      operationId: commandes_annuler_create
+      description: Commandes d'une session ; la caisse et le gérant les saisissent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) commande.
+        required: true
+      tags:
+      - commandes
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/commandes/reprendre-veille/:
+    post:
+      operationId: commandes_reprendre_veille_create
+      description: Reprend les commandes du même créneau la veille (O3).
+      tags:
+      - commandes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionVente'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionVente'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionVente'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reprise'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/commandes/sacs/:
+    get:
+      operationId: commandes_sacs_retrieve
+      description: Pains commandés et sacs à pétrir par produit (CdC §5.3).
+      parameters:
+      - in: query
+        name: creneau
+        schema:
+          type: string
+          enum:
+          - jour
+          - nuit
+      - in: query
+        name: jour
+        schema:
+          type: string
+        description: AAAA-MM-JJ, avec le créneau
+      tags:
+      - commandes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sacs'
+          description: ''
   /api/v1/connexion/annuler/:
     post:
       operationId: connexion_annuler_create
@@ -2247,6 +2422,16 @@ components:
       - plafond_effectif
       - prix
       - tarifs
+    ClientResume:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+      required:
+      - id
+      - nom
     Code:
       type: object
       properties:
@@ -2289,6 +2474,53 @@ components:
             type: string
       required:
       - codesSecours
+    Commande:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        client:
+          $ref: '#/components/schemas/ClientResume'
+        jour:
+          type: string
+          format: date
+          readOnly: true
+          title: Jour de la session
+        creneau:
+          type: string
+          readOnly: true
+          title: Créneau
+        lignes:
+          type: object
+          additionalProperties:
+            type: integer
+          readOnly: true
+        apres_heure_limite:
+          type: boolean
+          readOnly: true
+          title: Après l'heure limite
+        saisie_par:
+          type: string
+        saisie_le:
+          type: string
+          format: date-time
+          readOnly: true
+        modifiee_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Modifiée le
+      required:
+      - apres_heure_limite
+      - client
+      - creneau
+      - id
+      - jour
+      - lignes
+      - modifiee_le
+      - saisie_le
+      - saisie_par
     Compte:
       type: object
       properties:
@@ -3455,6 +3687,18 @@ components:
           maxLength: 500
       required:
       - motif
+    Reprise:
+      type: object
+      properties:
+        reprises:
+          type: integer
+        commandes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Commande'
+      required:
+      - commandes
+      - reprises
     ResultatConnexion:
       type: object
       properties:
@@ -3494,6 +3738,72 @@ components:
       required:
       - gerant
       - production
+    Sacs:
+      type: object
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          type: string
+        heure_limite:
+          type: string
+          format: date-time
+        apres_heure_limite:
+          type: boolean
+        clients:
+          type: integer
+          description: Clients qui ont commandé.
+        produits:
+          type: array
+          items:
+            $ref: '#/components/schemas/SacsProduit'
+        total_sacs:
+          type: integer
+      required:
+      - apres_heure_limite
+      - clients
+      - creneau
+      - heure_limite
+      - jour
+      - produits
+      - total_sacs
+    SacsProduit:
+      type: object
+      properties:
+        code:
+          type: string
+        pains:
+          type: integer
+        pains_par_sac:
+          type: integer
+        sacs:
+          type: integer
+      required:
+      - code
+      - pains
+      - pains_par_sac
+      - sacs
+    Saisie:
+      type: object
+      description: Session visée ; sans jour ni créneau, la prochaine dont l'heure
+        limite court.
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          $ref: '#/components/schemas/CreneauEnum'
+        client:
+          type: integer
+        lignes:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+      required:
+      - client
+      - lignes
     Sante:
       type: object
       properties:
@@ -3671,6 +3981,16 @@ components:
       required:
       - inactiviteMinutes
       - via
+    SessionVente:
+      type: object
+      description: Session visée ; sans jour ni créneau, la prochaine dont l'heure
+        limite court.
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          $ref: '#/components/schemas/CreneauEnum'
     Tarifs:
       type: object
       properties:
