@@ -22,6 +22,8 @@ def test_le_catalogue_reprend_les_valeurs_par_defaut_du_cahier_des_charges():
         "tolerance_validation_plan": 10,
         "heure_limite_commandes_nuit": "18:30",
         "heure_limite_commandes_jour": "05:30",
+        "heure_petrissage_nuit": "19:00",
+        "heure_petrissage_jour": "06:30",
         "echeance_demande_plafond": 10,
         "inactivite_comptoir": 5,
         "sauvegarde_locale": 4,

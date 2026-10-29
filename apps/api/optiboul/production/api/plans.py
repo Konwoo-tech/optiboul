@@ -24,9 +24,12 @@ from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.production.application import plans as cas
 from optiboul.production.domain.plan import MotifSupplement
 from optiboul.production.domain.plan import StatutPlan
+from optiboul.production.domain.plan import heure_validation_auto
 from optiboul.production.domain.plan import session_de_production
+from optiboul.production.infrastructure.models import PlanProduction
 from optiboul.production.infrastructure.plans import depots
 from optiboul.production.infrastructure.plans import nombre_de_sessions
+from optiboul.production.infrastructure.plans import petrissage
 from optiboul.ventes.domain.commandes import JOUR
 from optiboul.ventes.domain.commandes import NUIT
 from optiboul.ventes.domain.commandes import Session
@@ -106,6 +109,12 @@ class PlanSerializer(serializers.Serializer):
         help_text="Vide : le plan n'est pas encore proposé.",
     )
     motif_supplement = serializers.CharField(allow_blank=True)
+    valide_par = serializers.CharField(allow_blank=True)
+    valide_le = serializers.DateTimeField(allow_null=True)
+    validation_auto = serializers.BooleanField()
+    heure_validation_auto = serializers.DateTimeField(
+        help_text="T-15 min avant le pétrissage : sans réponse, décision automatique.",
+    )
     alerte = serializers.BooleanField(help_text="Demande estimée au-dessus du plan.")
     lignes = LignePlanSerializer(many=True)
     sacs = serializers.IntegerField()
@@ -122,6 +131,10 @@ class PlanSerializer(serializers.Serializer):
 
 
 def projeter(plan: cas.PlanCalcule) -> dict[str, Any]:
+    enregistre = PlanProduction.objects.filter(
+        jour=plan.session.jour,
+        creneau=plan.session.creneau,
+    ).first()
     ecart = None
     if plan.moyenne_sacs:
         ecart = round(
@@ -132,6 +145,13 @@ def projeter(plan: cas.PlanCalcule) -> dict[str, Any]:
         "creneau": plan.session.creneau,
         "statut": plan.enregistre.statut if plan.enregistre else None,
         "motif_supplement": plan.enregistre.motif if plan.enregistre else "",
+        "valide_par": enregistre.valide_par_nom if enregistre else "",
+        "valide_le": enregistre.valide_le if enregistre else None,
+        "validation_auto": enregistre.validation_auto if enregistre else False,
+        "heure_validation_auto": heure_validation_auto(
+            plan.session,
+            petrissage(plan.session.creneau),
+        ),
         "alerte": plan.alerte,
         "lignes": [
             {
@@ -170,7 +190,31 @@ class ProductionsViewSet(ViewSet):
     def get_permissions(self):
         if self.action == "plan":
             return [ProfilParmi(*LISENT_LE_PLAN)()]
+        if self.action == "valider":
+            return [ProfilParmi(*DIRECTION)()]
         return [ProfilParmi("production")()]
+
+    @extend_schema(
+        request=SessionProductionSerializer,
+        responses={200: PlanSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=False, methods=["post"])
+    def valider(self, request: Request) -> Response:
+        """Le gérant de la semaine ou le propriétaire valide, au poste ou à distance."""
+        corps = SessionProductionSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        try:
+            with transaction.atomic():
+                plan = cas.valider(
+                    depots,
+                    session=corps.session(),
+                    nombre=nombre_de_sessions(),
+                    auteur=auteur_de(request),
+                    maintenant=timezone.now(),
+                )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(PlanSerializer(projeter(plan)).data)
 
     @extend_schema(parameters=PARAMETRES_SESSION, responses=PlanSerializer)
     @action(detail=False)

@@ -191,6 +191,7 @@ export * from './semainesControlesClotureListParams.ts';
 export * from './semainesListParams.ts';
 export * from './semainesRotationRetrieveParams.ts';
 export * from './session.ts';
+export * from './sessionProduction.ts';
 export * from './sessionVente.ts';
 export * from './tarifs.ts';
 export * from './tarifsTarifs.ts';

@@ -11,6 +11,8 @@ from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.production.domain.plan import Demande
 from optiboul.production.domain.plan import MotifSupplement
 from optiboul.production.domain.plan import StatutPlan
+from optiboul.production.domain.plan import decision_automatique
+from optiboul.production.domain.plan import heure_validation_auto
 from optiboul.production.domain.plan import ligne
 from optiboul.production.domain.plan import moyenne
 from optiboul.production.domain.plan import moyennes_par_produit
@@ -18,6 +20,7 @@ from optiboul.ventes.domain.habitudes import sessions_precedentes
 
 if TYPE_CHECKING:
     from datetime import datetime
+    from datetime import time
     from decimal import Decimal
 
     from optiboul.core.application.journal import Auteur
@@ -58,6 +61,17 @@ class DepotPlans(Protocol):
     ) -> int:
         """Crée le plan proposé de la session, ou remplace ses lignes."""
         ...
+
+    def valider(  # noqa: PLR0913
+        self,
+        plan_id: int,
+        *,
+        statut: StatutPlan,
+        par: int | None,
+        par_nom: str,
+        le: datetime,
+        automatique: bool,
+    ) -> None: ...
 
 
 class Sources(Protocol):
@@ -248,3 +262,140 @@ def proposer(  # noqa: PLR0913
         lien="/atelier/production",
     )
     return calculer(depots, session=session, nombre=nombre)
+
+
+def _valideur(depots: Depots, auteur: Auteur) -> None:
+    """Le gérant de la semaine ou le propriétaire valident le plan (CdC §3.3)."""
+    if auteur.profil == "proprietaire":
+        return
+    semaine = depots.semaines.ouverte()
+    if (
+        auteur.profil != "gerant"
+        or semaine is None
+        or semaine.gerant != auteur.utilisateur_id
+    ):
+        message = "Seuls le gérant de la semaine et le propriétaire valident le plan."
+        raise RefusMetier("droit_insuffisant", message)
+
+
+def _plan_propose(depots: Depots, session: Session) -> PlanEnregistre:
+    plan = depots.plans.obtenir(session)
+    if plan is None:
+        message = "Le plan de cette session n'est pas encore proposé."
+        raise RefusMetier("plan_non_propose", message)
+    if plan.statut is not StatutPlan.PROPOSE:
+        message = "Le plan de cette session est déjà validé."
+        raise RefusMetier("plan_deja_valide", message)
+    return plan
+
+
+def _annoncer(
+    depots: Depots,
+    session: Session,
+    statut: StatutPlan,
+    detail: str,
+) -> None:
+    quand = f"{session.creneau} du {session.jour:%d/%m}"
+    if statut is StatutPlan.VALIDE:
+        depots.notificateur.notifier_type(
+            "plan.valide",
+            titre=f"Plan de {quand} validé",
+            message=detail,
+            lien="/atelier/production",
+        )
+    else:
+        depots.notificateur.notifier_type(
+            "plan.provisoire",
+            titre=f"Production de {quand} provisoire",
+            message=detail,
+            lien="/atelier/production",
+        )
+
+
+def valider(
+    depots: Depots,
+    *,
+    session: Session,
+    nombre: int,
+    auteur: Auteur,
+    maintenant: datetime,
+) -> PlanCalcule:
+    """Validation du gérant, au poste ou sur son téléphone (R4)."""
+    _valideur(depots, auteur)
+    plan = _plan_propose(depots, session)
+    depots.plans.valider(
+        plan.id,
+        statut=StatutPlan.VALIDE,
+        par=auteur.utilisateur_id,
+        par_nom=auteur.nom,
+        le=maintenant,
+        automatique=False,
+    )
+    depots.journal.enregistrer(
+        Evenement(
+            action="plan.valide",
+            auteur=auteur,
+            objet_type="plan",
+            objet_id=str(plan.id),
+            avant={"statut": StatutPlan.PROPOSE},
+            apres={"statut": StatutPlan.VALIDE, "sacs": plan.sacs},
+        ),
+    )
+    _annoncer(depots, session, StatutPlan.VALIDE, f"Par {auteur.nom}.")
+    return calculer(depots, session=session, nombre=nombre)
+
+
+def valider_automatiquement(  # noqa: PLR0913
+    depots: Depots,
+    *,
+    session: Session,
+    maintenant: datetime,
+    petrissage: time,
+    tolerance: int,
+    nombre: int,
+    systeme: Auteur,
+) -> StatutPlan | None:
+    """À T-15 min du pétrissage, sans réponse du gérant (O6, R4) : validé dans la
+    tolérance de la moyenne des N dernières sessions, sinon provisoire et alerte."""
+    plan = depots.plans.obtenir(session)
+    if plan is None or plan.statut is not StatutPlan.PROPOSE:
+        return None
+    if maintenant < heure_validation_auto(session, petrissage):
+        return None
+    calcule = calculer(depots, session=session, nombre=nombre)
+    statut = decision_automatique(calcule.sacs, calcule.moyenne_sacs, tolerance)
+    depots.plans.valider(
+        plan.id,
+        statut=statut,
+        par=None,
+        par_nom=systeme.nom,
+        le=maintenant,
+        automatique=True,
+    )
+    depots.journal.enregistrer(
+        Evenement(
+            action=f"plan.{statut}",
+            auteur=systeme,
+            objet_type="plan",
+            objet_id=str(plan.id),
+            avant={"statut": StatutPlan.PROPOSE},
+            apres={
+                "statut": statut,
+                "automatique": True,
+                "sacs": calcule.sacs,
+                "moyenne": str(calcule.moyenne_sacs)
+                if calcule.moyenne_sacs is not None
+                else None,
+                "tolerance": tolerance,
+            },
+        ),
+    )
+    moyenne_texte = (
+        f"moyenne {calcule.moyenne_sacs}" if calcule.moyenne_sacs else "sans historique"
+    )
+    detail = (
+        f"Sans réponse à T-15 min : {calcule.sacs} sacs, {moyenne_texte}, "
+        f"tolérance ±{tolerance} %."
+    )
+    _annoncer(depots, session, statut, detail)
+    return statut

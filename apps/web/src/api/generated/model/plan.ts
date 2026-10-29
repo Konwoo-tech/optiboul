@@ -21,6 +21,12 @@ export interface Plan {
      */
   statut: PlanStatutEnum | NullEnum | null;
   motif_supplement: string;
+  valide_par: string;
+  /** @nullable */
+  valide_le: string | null;
+  validation_auto: boolean;
+  /** T-15 min avant le pétrissage : sans réponse, décision automatique. */
+  heure_validation_auto: string;
   /** Demande estimée au-dessus du plan. */
   alerte: boolean;
   lignes: LignePlan[];

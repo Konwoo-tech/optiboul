@@ -28,7 +28,8 @@ import type {
   Plan,
   Probleme,
   ProductionsPlanRetrieveParams,
-  PropositionPlan
+  PropositionPlan,
+  SessionProduction
 } from '../../model';
 
 import { optiboulFetch } from '../../../http.ts';
@@ -271,4 +272,107 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getProductionsProposerCreateMutationOptions(options), queryClient);
+    }
+    export type productionsValiderCreateResponse200 = {
+  data: Plan
+  status: 200
+}
+
+export type productionsValiderCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type productionsValiderCreateResponseSuccess = (productionsValiderCreateResponse200) & {
+  headers: Headers;
+};
+export type productionsValiderCreateResponseError = (productionsValiderCreateResponse409) & {
+  headers: Headers;
+};
+
+export type productionsValiderCreateResponse = (productionsValiderCreateResponseSuccess | productionsValiderCreateResponseError)
+
+export const getProductionsValiderCreateUrl = () => {
+
+
+
+
+  return `/api/v1/productions/valider/`
+}
+
+/**
+ * Le gérant de la semaine ou le propriétaire valide, au poste ou à distance.
+ */
+export const productionsValiderCreate = async (sessionProduction?: SessionProduction, options?: Parameters<typeof optiboulFetch>[1]): Promise<productionsValiderCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<productionsValiderCreateResponse>(getProductionsValiderCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(sessionProduction)
+  }
+);}
+
+
+
+
+
+export const getProductionsValiderCreateMutationKey = () => ['productionsValiderCreate'] as const;
+
+export const getProductionsValiderCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof productionsValiderCreate>>, TError,ProductionsValiderCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof productionsValiderCreate>>, TError,ProductionsValiderCreateMutationVariables, TContext> => {
+
+const mutationKey = getProductionsValiderCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof productionsValiderCreate>>, ProductionsValiderCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  productionsValiderCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ProductionsValiderCreateMutationResult = NonNullable<Awaited<ReturnType<typeof productionsValiderCreate>>>
+    export type ProductionsValiderCreateMutationBody = SessionProduction | undefined
+    export type ProductionsValiderCreateMutationError = Probleme
+    export type ProductionsValiderCreateMutationVariables = {data?: SessionProduction}
+
+    export const useProductionsValiderCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof productionsValiderCreate>>, TError,ProductionsValiderCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof productionsValiderCreate>>,
+        TError,
+        ProductionsValiderCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getProductionsValiderCreateMutationOptions(options), queryClient);
     }

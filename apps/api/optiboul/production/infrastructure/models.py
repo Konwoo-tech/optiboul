@@ -129,6 +129,18 @@ class PlanProduction(models.Model):
         verbose_name=_("proposé par"),
     )
     propose_le = models.DateTimeField(_("proposé le"), default=timezone.now)
+    valide_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("validé par"),
+    )
+    valide_par_nom = models.CharField(_("validé par (nom)"), max_length=255, blank=True)
+    valide_le = models.DateTimeField(_("validé le"), null=True, blank=True)
+    # Sans réponse à T-15 min : validé dans la tolérance, ou provisoire (O6).
+    validation_auto = models.BooleanField(_("décidé automatiquement"), default=False)
 
     class Meta:
         db_table = "plan_production"

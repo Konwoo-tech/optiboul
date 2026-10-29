@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from datetime import time
 from datetime import timedelta
 from decimal import ROUND_HALF_UP
 from decimal import Decimal
@@ -96,6 +97,34 @@ class LignePlan:
     @property
     def au_dessus_du_plan(self) -> bool:
         return self.demande.estimee > self.prevus
+
+
+AVANCE_VALIDATION_AUTO = timedelta(minutes=15)
+
+
+def heure_validation_auto(session: Session, petrissage: time) -> datetime:
+    """T-15 min avant le pétrissage de la session (O6)."""
+    return datetime.combine(session.jour, petrissage, tzinfo=FUSEAU) - (
+        AVANCE_VALIDATION_AUTO
+    )
+
+
+def dans_la_tolerance(sacs: int, moyenne: Decimal | None, tolerance: int) -> bool:
+    """± tolérance % de la moyenne des dernières sessions du même type (R4)."""
+    if moyenne is None or moyenne <= 0:
+        return False
+    return abs(Decimal(sacs) - moyenne) <= moyenne * tolerance / 100
+
+
+def decision_automatique(
+    sacs: int,
+    moyenne: Decimal | None,
+    tolerance: int,
+) -> StatutPlan:
+    """Sans réponse du gérant : validé dans la tolérance, sinon provisoire (O6)."""
+    if dans_la_tolerance(sacs, moyenne, tolerance):
+        return StatutPlan.VALIDE
+    return StatutPlan.PROVISOIRE
 
 
 def sacs_pour(pains: int, pains_par_sac: int) -> int:

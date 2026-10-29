@@ -189,6 +189,20 @@ CATALOGUE: tuple[Definition, ...] = (
         usage="Production",
     ),
     Definition(
+        "heure_petrissage_nuit",
+        "Heure du pétrissage (nuit)",
+        Genre.HEURE,
+        "19:00",
+        usage="Production, validation automatique du plan à T-15 min (O6)",
+    ),
+    Definition(
+        "heure_petrissage_jour",
+        "Heure du pétrissage (jour)",
+        Genre.HEURE,
+        "06:30",
+        usage="Production, validation automatique du plan à T-15 min (O6)",
+    ),
+    Definition(
         "echeance_demande_plafond",
         "Échéance d'une demande de plafond",
         Genre.ENTIER,

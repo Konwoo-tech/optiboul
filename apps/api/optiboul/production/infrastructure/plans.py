@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import time
 from decimal import ROUND_HALF_UP
 from decimal import Decimal
 from typing import TYPE_CHECKING
@@ -114,6 +115,24 @@ class DepotPlansDjango:
         )
         return plan.pk
 
+    def valider(  # noqa: PLR0913
+        self,
+        plan_id: int,
+        *,
+        statut: StatutPlan,
+        par: int | None,
+        par_nom: str,
+        le: datetime,
+        automatique: bool,
+    ) -> None:
+        PlanProduction.objects.filter(pk=plan_id).update(
+            statut=statut,
+            valide_par_id=par,
+            valide_par_nom=par_nom,
+            valide_le=le,
+            validation_auto=automatique,
+        )
+
 
 class SourcesDjango:
     def rendements(self) -> dict[str, Rendement]:
@@ -172,6 +191,11 @@ class SourcesDjango:
             )
             for item in ventes
         }
+
+
+def petrissage(creneau: str) -> time:
+    """Heure du pétrissage de la session (paramètres, CdC §5.5)."""
+    return time.fromisoformat(parametre(f"heure_petrissage_{creneau}"))
 
 
 def nombre_de_sessions() -> int:

@@ -20,7 +20,7 @@ def test_tous_les_parametres_avec_leur_valeur_par_defaut(client_de, administrate
     assert fonds["valeur"] == 20_000
     assert fonds["unite"] == "FCFA"
     assert fonds["modifie_par"] == ""
-    assert len(reponse.json()) == 24
+    assert len(reponse.json()) == 26
 
 
 def test_le_proprietaire_modifie_avec_historique_et_trace(client_de, proprietaire):

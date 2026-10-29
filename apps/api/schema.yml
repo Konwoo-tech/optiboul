@@ -2189,6 +2189,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/productions/valider/:
+    post:
+      operationId: productions_valider_create
+      description: Le gérant de la semaine ou le propriétaire valide, au poste ou
+        à distance.
+      tags:
+      - productions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionProduction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionProduction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionProduction'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/produits/:
     get:
       operationId: produits_list
@@ -5440,6 +5473,18 @@ components:
           - $ref: '#/components/schemas/NullEnum'
         motif_supplement:
           type: string
+        valide_par:
+          type: string
+        valide_le:
+          type: string
+          format: date-time
+          nullable: true
+        validation_auto:
+          type: boolean
+        heure_validation_auto:
+          type: string
+          format: date-time
+          description: 'T-15 min avant le pétrissage : sans réponse, décision automatique.'
         alerte:
           type: boolean
           description: Demande estimée au-dessus du plan.
@@ -5464,6 +5509,7 @@ components:
       - alerte
       - creneau
       - ecart
+      - heure_validation_auto
       - jour
       - lignes
       - motif_supplement
@@ -5471,6 +5517,9 @@ components:
       - prevus
       - sacs
       - statut
+      - validation_auto
+      - valide_le
+      - valide_par
     PlanStatutEnum:
       enum:
       - propose
@@ -6186,6 +6235,15 @@ components:
       required:
       - inactiviteMinutes
       - via
+    SessionProduction:
+      type: object
+      description: 'Sans jour ni créneau : la session dont les commandes sont closes.'
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          $ref: '#/components/schemas/CreneauEnum'
     SessionVente:
       type: object
       description: Session visée ; sans jour ni créneau, la prochaine dont l'heure
