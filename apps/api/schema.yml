@@ -4,6 +4,64 @@ info:
   version: 1.0.0
   description: API REST d'OptiBoul ERP (Boulangerie du Faubourg)
 paths:
+  /api/v1/connexion/code/:
+    post:
+      operationId: connexion_code_create
+      description: Nom + code à 4 chiffres, vérifié dès le 4ᵉ chiffre (US-010).
+      tags:
+      - connexion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnexionCode'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConnexionCode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConnexionCode'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultatConnexion'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/connexion/utilisateurs/:
+    get:
+      operationId: connexion_utilisateurs_list
+      description: Les noms à toucher sur le poste de confiance du comptoir (O1).
+      tags:
+      - connexion
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PersonneDuPoste'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/journal/:
     get:
       operationId: journal_list
@@ -496,6 +554,18 @@ components:
       - is_active
       - name
       - profil
+    ConnexionCode:
+      type: object
+      properties:
+        utilisateur:
+          type: integer
+        code:
+          type: string
+          maxLength: 4
+          minLength: 4
+      required:
+      - code
+      - utilisateur
     EtatSauvegardes:
       type: object
       properties:
@@ -764,6 +834,22 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ProfilEnum'
           - $ref: '#/components/schemas/NullEnum'
+    PersonneDuPoste:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        profil:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ProfilEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - id
+      - nom
+      - profil
     Poste:
       type: object
       properties:
@@ -812,6 +898,16 @@ components:
           nullable: true
       required:
       - poste
+    Probleme:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+      required:
+      - code
+      - detail
     ProfilEnum:
       enum:
       - caissier
@@ -826,6 +922,13 @@ components:
         * `production` - Responsable de production
         * `proprietaire` - Propriétaire
         * `administrateur` - Administrateur
+    ResultatConnexion:
+      type: object
+      properties:
+        deuxFacteurs:
+          type: boolean
+      required:
+      - deuxFacteurs
     Sante:
       type: object
       properties:

@@ -66,6 +66,8 @@ class User(AbstractUser):
     # Code à 4 chiffres faux à la suite ; 5 bloquent le compte 15 min (CdC §4.2).
     echecs_connexion = PositiveSmallIntegerField(_("échecs de connexion"), default=0)
     bloque_jusqua = DateTimeField(_("bloqué jusqu'à"), null=True, blank=True)
+    # Code à 4 chiffres du comptoir, haché en Argon2 (O1) ; vide : pas de code.
+    code_pin = CharField(_("code à 4 chiffres"), max_length=128, blank=True, default="")
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

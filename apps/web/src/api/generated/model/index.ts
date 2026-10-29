@@ -7,6 +7,7 @@
  */
 
 export * from './compte.ts';
+export * from './connexionCode.ts';
 export * from './etatSauvegardes.ts';
 export * from './journalListParams.ts';
 export * from './ligneJournal.ts';
@@ -19,10 +20,13 @@ export * from './paginatedSauvegardeList.ts';
 export * from './paginatedUserList.ts';
 export * from './parametre.ts';
 export * from './patchedUser.ts';
+export * from './personneDuPoste.ts';
 export * from './poste.ts';
 export * from './posteActuel.ts';
 export * from './postesListParams.ts';
+export * from './probleme.ts';
 export * from './profilEnum.ts';
+export * from './resultatConnexion.ts';
 export * from './sante.ts';
 export * from './sauvegarde.ts';
 export * from './sauvegardesListParams.ts';

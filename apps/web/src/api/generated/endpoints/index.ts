@@ -1,3 +1,4 @@
+export * from './connexion/connexion.ts';
 export * from './journal/journal.ts';
 export * from './parametres/parametres.ts';
 export * from './postes/postes.ts';

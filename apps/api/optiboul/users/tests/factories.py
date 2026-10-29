@@ -44,3 +44,13 @@ def utilisateur_avec_profil(profil: str, **champs) -> User:
     assert groupe is not None, profil
     utilisateur.groups.add(groupe)
     return utilisateur
+
+
+def poste_de_confiance(nom: str = "Comptoir") -> str:
+    """Enregistre un poste et renvoie la valeur de son cookie."""
+    from optiboul.core.application.journal import SYSTEME  # noqa: PLC0415
+    from optiboul.users import postes  # noqa: PLC0415
+
+    admin = UserFactory.create(is_superuser=True)
+    _, cookie = postes.enregistrer(nom, admin, SYSTEME)
+    return cookie
