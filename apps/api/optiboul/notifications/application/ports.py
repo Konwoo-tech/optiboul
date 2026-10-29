@@ -34,6 +34,17 @@ class Notificateur(Protocol):
         lien: str = "",
     ) -> int: ...
 
+    def notifier_type(
+        self,
+        genre: str,
+        *,
+        titre: str,
+        message: str = "",
+        lien: str = "",
+    ) -> int:
+        """Selon la table de routage (CdC §5.13) : rôles concernés et canaux."""
+        ...
+
 
 class FileEnvoi(Protocol):
     def mettre_en_file(  # noqa: PLR0913

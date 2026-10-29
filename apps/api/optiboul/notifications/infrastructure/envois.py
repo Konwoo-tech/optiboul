@@ -17,9 +17,13 @@ from optiboul.notifications.domain.envois import Canal
 from optiboul.notifications.domain.envois import StatutEnvoi
 from optiboul.notifications.domain.envois import delai_avant_nouvel_essai
 from optiboul.notifications.domain.envois import statut_apres_echec
+from optiboul.notifications.domain.routage import PAR_GENRE
+from optiboul.notifications.domain.routage import CanalNotification
+from optiboul.notifications.domain.routage import Regle
 
 from .models import MessageSortant
 from .models import Notification
+from .models import RegleNotification
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -63,6 +67,56 @@ class NotificateurDjango:
         ]
         Notification.objects.bulk_create(lignes)
         return len(lignes)
+
+    def notifier_type(
+        self,
+        genre: str,
+        *,
+        titre: str,
+        message: str = "",
+        lien: str = "",
+    ) -> int:
+        """Aux seuls rôles concernés (CdC §5.13) ; SMS ou WhatsApp en plus si la règle
+        le prévoit, par la file d'envoi."""
+        routage = regle(genre)
+        nombre = self.notifier_profils(
+            routage.profils,
+            genre=genre,
+            titre=titre,
+            message=message,
+            lien=lien,
+        )
+        externes = [c for c in routage.canaux if c is not CanalNotification.APPLICATION]
+        if externes:
+            for utilisateur in (
+                get_user_model()
+                .objects.filter(is_active=True)
+                .exclude(
+                    telephone="",
+                )
+            ):
+                if utilisateur.profil in routage.profils:
+                    for canal in externes:
+                        file_envoi.mettre_en_file(
+                            Canal(canal),
+                            utilisateur.telephone,
+                            f"OptiBoul : {titre}. {message}".strip(),
+                        )
+        return nombre
+
+
+def regle(genre: str) -> Regle:
+    """La règle enregistrée pour ce type, sinon celle de départ (CdC §5.13)."""
+    depart = PAR_GENRE.get(genre, Regle(genre, genre, ()))
+    ligne = RegleNotification.objects.filter(genre=genre).first()
+    if ligne is None:
+        return depart
+    return Regle(
+        genre,
+        depart.libelle,
+        tuple(ligne.profils),
+        tuple(CanalNotification(c) for c in ligne.canaux),
+    )
 
 
 class FileEnvoiDjango:

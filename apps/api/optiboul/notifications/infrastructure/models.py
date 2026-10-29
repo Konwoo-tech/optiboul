@@ -75,3 +75,25 @@ class MessageSortant(models.Model):
 
     def __str__(self) -> str:
         return f"{self.get_canal_display()} → {self.destinataire} ({self.statut})"
+
+
+class RegleNotification(models.Model):
+    """Destinataires et canaux d'un type de notification (CdC §5.13), modifiables.
+
+    Sans ligne pour un type, la table de départ du domaine s'applique.
+    """
+
+    genre = models.CharField(_("type"), max_length=50, unique=True)
+    profils = models.JSONField(_("profils destinataires"), default=list)
+    canaux = models.JSONField(_("canaux"), default=list)
+    modifie_par = models.CharField(_("modifiée par"), max_length=255, blank=True)
+    modifie_le = models.DateTimeField(_("modifiée le"), default=timezone.now)
+
+    class Meta:
+        db_table = "regle_notification"
+        ordering = ["genre"]
+        verbose_name = _("règle de notification")
+        verbose_name_plural = _("règles de notification")
+
+    def __str__(self) -> str:
+        return self.genre

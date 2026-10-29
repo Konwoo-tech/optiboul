@@ -1888,6 +1888,87 @@ paths:
               schema:
                 $ref: '#/components/schemas/Totaux'
           description: ''
+  /api/v1/notifications/:
+    get:
+      operationId: notifications_list
+      description: Chacun ne voit que ses notifications ; chacune ouvre l'écran concerné
+        (lien).
+      parameters:
+      - in: query
+        name: non_lues
+        schema:
+          type: boolean
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - notifications
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+  /api/v1/notifications/{id}/marquer-lue/:
+    post:
+      operationId: notifications_marquer_lue_create
+      description: Chacun ne voit que ses notifications ; chacune ouvre l'écran concerné
+        (lien).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) notification.
+        required: true
+      tags:
+      - notifications
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/v1/notifications/non-lues/:
+    get:
+      operationId: notifications_non_lues_retrieve
+      description: Compteur de l'en-tête, rafraîchi toutes les 15 s au plus (ADR-21).
+      tags:
+      - notifications
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compteur'
+          description: ''
+  /api/v1/notifications/tout-marquer-lu/:
+    post:
+      operationId: notifications_tout_marquer_lu_create
+      description: Chacun ne voit que ses notifications ; chacune ouvre l'écran concerné
+        (lien).
+      tags:
+      - notifications
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Marquage'
+          description: ''
   /api/v1/parametres/:
     get:
       operationId: parametres_list
@@ -2264,6 +2345,57 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/regles-notification/:
+    get:
+      operationId: regles_notification_list
+      description: Table de routage par type et par rôle (CdC §5.13).
+      tags:
+      - regles-notification
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Regle'
+          description: ''
+  /api/v1/regles-notification/{genre}/:
+    put:
+      operationId: regles_notification_update
+      description: Table de routage par type et par rôle (CdC §5.13).
+      parameters:
+      - in: path
+        name: genre
+        schema:
+          type: string
+          pattern: ^[a-z_.]+$
+        required: true
+      tags:
+      - regles-notification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Regle'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Regle'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Regle'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Regle'
           description: ''
   /api/v1/sante/:
     get:
@@ -3129,6 +3261,16 @@ components:
         * `sms` - sms
         * `whatsapp` - whatsapp
         * `email` - email
+    CanauxEnum:
+      enum:
+      - application
+      - sms
+      - whatsapp
+      type: string
+      description: |-
+        * `application` - application
+        * `sms` - sms
+        * `whatsapp` - whatsapp
     ChangementGroupe:
       type: object
       properties:
@@ -3421,6 +3563,13 @@ components:
       - is_active
       - name
       - profil
+    Compteur:
+      type: object
+      properties:
+        non_lues:
+          type: integer
+      required:
+      - non_lues
     ConflitPlanning:
       type: object
       properties:
@@ -4223,6 +4372,13 @@ components:
           maxLength: 500
       required:
       - client
+    Marquage:
+      type: object
+      properties:
+        marquees:
+          type: integer
+      required:
+      - marquees
     Matiere:
       type: object
       properties:
@@ -4336,6 +4492,47 @@ components:
         * `ok` - ok
         * `surveiller` - surveiller
         * `bloquant` - bloquant
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        genre:
+          type: string
+          readOnly: true
+          title: Type
+        titre:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        lien:
+          type: string
+          readOnly: true
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créée le
+        lue_le:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        lue:
+          type: boolean
+          readOnly: true
+      required:
+      - cree_le
+      - genre
+      - id
+      - lien
+      - lue
+      - lue_le
+      - message
+      - titre
     NouveauCompte:
       type: object
       description: 'Les 3 étapes (CdC §5.12) : identité, groupe, canal de vérification.'
@@ -4725,6 +4922,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MouvementInterne'
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
     PaginatedPosteList:
       type: object
       required:
@@ -5259,6 +5479,20 @@ components:
         * `production` - Responsable de production
         * `proprietaire` - Propriétaire
         * `administrateur` - Administrateur
+    ProfilsEnum:
+      enum:
+      - caissier
+      - gerant
+      - production
+      - proprietaire
+      - administrateur
+      type: string
+      description: |-
+        * `caissier` - caissier
+        * `gerant` - gerant
+        * `production` - production
+        * `proprietaire` - proprietaire
+        * `administrateur` - administrateur
     Proposition:
       type: object
       properties:
@@ -5324,6 +5558,29 @@ components:
           maxLength: 500
       required:
       - motif
+    Regle:
+      type: object
+      properties:
+        genre:
+          type: string
+          readOnly: true
+        libelle:
+          type: string
+          readOnly: true
+        profils:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfilsEnum'
+        canaux:
+          type: array
+          items:
+            $ref: '#/components/schemas/CanauxEnum'
+          description: « application » toujours ; SMS ou WhatsApp en plus si besoin.
+      required:
+      - canaux
+      - genre
+      - libelle
+      - profils
     Relance:
       type: object
       properties:
