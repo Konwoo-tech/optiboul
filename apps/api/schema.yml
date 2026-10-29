@@ -4,6 +4,51 @@ info:
   version: 1.0.0
   description: API REST d'OptiBoul ERP (Boulangerie du Faubourg)
 paths:
+  /api/v1/journal/:
+    get:
+      operationId: journal_list
+      description: 'Journal non modifiable : aucune route d''écriture, la base refuse
+        UPDATE.'
+      parameters:
+      - in: query
+        name: au
+        schema:
+          type: string
+          format: date
+        description: Dernier jour inclus
+      - in: query
+        name: auteur
+        schema:
+          type: integer
+        description: Identifiant de l'acteur
+      - name: cursor
+        required: false
+        in: query
+        description: La valeur du curseur de pagination.
+        schema:
+          type: string
+      - in: query
+        name: du
+        schema:
+          type: string
+          format: date
+        description: Premier jour inclus
+      - in: query
+        name: type
+        schema:
+          type: string
+        description: Type d'objet (caisse…) ou préfixe d'action (connexion…)
+      tags:
+      - journal
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLigneJournalList'
+          description: ''
   /api/v1/sante/:
     get:
       operationId: sante
@@ -141,9 +186,95 @@ paths:
           description: ''
 components:
   schemas:
+    LigneJournal:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        horodatage:
+          type: string
+          format: date-time
+          readOnly: true
+        acteur:
+          type: integer
+          readOnly: true
+          nullable: true
+        acteur_nom:
+          type: string
+          readOnly: true
+          title: Nom de l'acteur
+        profil:
+          type: string
+          readOnly: true
+        poste_id:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Poste
+        poste_nom:
+          type: string
+          readOnly: true
+          title: Nom du poste
+        entree:
+          type: string
+          readOnly: true
+          title: Entrée
+        action:
+          type: string
+          readOnly: true
+        objet_type:
+          type: string
+          readOnly: true
+          title: Type d'objet
+        objet_id:
+          type: string
+          readOnly: true
+          title: Identifiant de l'objet
+        avant:
+          readOnly: true
+          nullable: true
+          title: Valeurs avant
+        apres:
+          readOnly: true
+          nullable: true
+          title: Valeurs après
+      required:
+      - acteur
+      - acteur_nom
+      - action
+      - apres
+      - avant
+      - entree
+      - horodatage
+      - id
+      - objet_id
+      - objet_type
+      - poste_id
+      - poste_nom
+      - profil
     NullEnum:
       enum:
       - null
+    PaginatedLigneJournalList:
+      type: object
+      required:
+      - results
+      properties:
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cD00ODY%3D"
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?cursor=cj0xJnA9NDg3
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LigneJournal'
     PaginatedUserList:
       type: object
       required:

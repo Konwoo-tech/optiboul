@@ -6,7 +6,10 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './journalListParams.ts';
+export * from './ligneJournal.ts';
 export * from './nullEnum.ts';
+export * from './paginatedLigneJournalList.ts';
 export * from './paginatedUserList.ts';
 export * from './patchedUser.ts';
 export * from './profilEnum.ts';
