@@ -11,6 +11,7 @@ from optiboul.core.infrastructure.numeros import numeros
 from optiboul.demandes.application.demandes import Depots
 from optiboul.demandes.application.demandes import EtatDemande
 from optiboul.demandes.domain.demandes import StatutDemande
+from optiboul.demandes.domain.demandes import Via
 from optiboul.notifications.domain.envois import Canal
 from optiboul.notifications.infrastructure.envois import file_envoi
 from optiboul.notifications.infrastructure.envois import notificateur
@@ -81,6 +82,29 @@ class DepotDemandesDjango:
             statut=StatutDemande.EN_ATTENTE,
         ).first()
         return etat(demande) if demande else None
+
+    def verrouiller(self, demande_id: int) -> EtatDemande | None:
+        demande = Demande.objects.select_for_update().filter(pk=demande_id).first()
+        return etat(demande) if demande else None
+
+    def decider(  # noqa: PLR0913
+        self,
+        demande_id: int,
+        *,
+        statut: StatutDemande,
+        decideur: Auteur,
+        via: Via,
+        motif_refus: str,
+        le: datetime,
+    ) -> None:
+        Demande.objects.filter(pk=demande_id).update(
+            statut=statut,
+            decide_par_id=decideur.utilisateur_id,
+            decide_par_nom=decideur.nom,
+            decide_le=le,
+            motif_refus=motif_refus,
+            via=via,
+        )
 
 
 class TelephonesDjango:

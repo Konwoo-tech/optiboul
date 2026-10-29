@@ -25,11 +25,13 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  Accord,
   Demande,
   DemandesListParams,
   Emission,
   PaginatedDemandeList,
-  Probleme
+  Probleme,
+  Refus
 } from '../../model';
 
 import { optiboulFetch } from '../../../http.ts';
@@ -376,7 +378,215 @@ export function useDemandesRetrieve<TData = Awaited<ReturnType<typeof demandesRe
 
 
 
-export type demandesEnAttenteListResponse200 = {
+export type demandesAccorderCreateResponse200 = {
+  data: Demande
+  status: 200
+}
+
+export type demandesAccorderCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type demandesAccorderCreateResponseSuccess = (demandesAccorderCreateResponse200) & {
+  headers: Headers;
+};
+export type demandesAccorderCreateResponseError = (demandesAccorderCreateResponse409) & {
+  headers: Headers;
+};
+
+export type demandesAccorderCreateResponse = (demandesAccorderCreateResponseSuccess | demandesAccorderCreateResponseError)
+
+export const getDemandesAccorderCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/demandes/${id}/accorder/`
+}
+
+/**
+ * Accord en un clic ; l'objet lié change de statut automatiquement.
+ */
+export const demandesAccorderCreate = async (id: number,
+    accord?: Accord, options?: Parameters<typeof optiboulFetch>[1]): Promise<demandesAccorderCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<demandesAccorderCreateResponse>(getDemandesAccorderCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(accord)
+  }
+);}
+
+
+
+
+
+export const getDemandesAccorderCreateMutationKey = () => ['demandesAccorderCreate'] as const;
+
+export const getDemandesAccorderCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof demandesAccorderCreate>>, TError,DemandesAccorderCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof demandesAccorderCreate>>, TError,DemandesAccorderCreateMutationVariables, TContext> => {
+
+const mutationKey = getDemandesAccorderCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof demandesAccorderCreate>>, DemandesAccorderCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  demandesAccorderCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DemandesAccorderCreateMutationResult = NonNullable<Awaited<ReturnType<typeof demandesAccorderCreate>>>
+    export type DemandesAccorderCreateMutationBody = Accord | undefined
+    export type DemandesAccorderCreateMutationError = Probleme
+    export type DemandesAccorderCreateMutationVariables = {id: number;data?: Accord}
+
+    export const useDemandesAccorderCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof demandesAccorderCreate>>, TError,DemandesAccorderCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof demandesAccorderCreate>>,
+        TError,
+        DemandesAccorderCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDemandesAccorderCreateMutationOptions(options), queryClient);
+    }
+    export type demandesRefuserCreateResponse200 = {
+  data: Demande
+  status: 200
+}
+
+export type demandesRefuserCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type demandesRefuserCreateResponseSuccess = (demandesRefuserCreateResponse200) & {
+  headers: Headers;
+};
+export type demandesRefuserCreateResponseError = (demandesRefuserCreateResponse409) & {
+  headers: Headers;
+};
+
+export type demandesRefuserCreateResponse = (demandesRefuserCreateResponseSuccess | demandesRefuserCreateResponseError)
+
+export const getDemandesRefuserCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/demandes/${id}/refuser/`
+}
+
+/**
+ * Refus motivé ; l'émetteur est prévenu.
+ */
+export const demandesRefuserCreate = async (id: number,
+    refus: Refus, options?: Parameters<typeof optiboulFetch>[1]): Promise<demandesRefuserCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<demandesRefuserCreateResponse>(getDemandesRefuserCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(refus)
+  }
+);}
+
+
+
+
+
+export const getDemandesRefuserCreateMutationKey = () => ['demandesRefuserCreate'] as const;
+
+export const getDemandesRefuserCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof demandesRefuserCreate>>, TError,DemandesRefuserCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof demandesRefuserCreate>>, TError,DemandesRefuserCreateMutationVariables, TContext> => {
+
+const mutationKey = getDemandesRefuserCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof demandesRefuserCreate>>, DemandesRefuserCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  demandesRefuserCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DemandesRefuserCreateMutationResult = NonNullable<Awaited<ReturnType<typeof demandesRefuserCreate>>>
+    export type DemandesRefuserCreateMutationBody = Refus
+    export type DemandesRefuserCreateMutationError = Probleme
+    export type DemandesRefuserCreateMutationVariables = {id: number;data: Refus}
+
+    export const useDemandesRefuserCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof demandesRefuserCreate>>, TError,DemandesRefuserCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof demandesRefuserCreate>>,
+        TError,
+        DemandesRefuserCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDemandesRefuserCreateMutationOptions(options), queryClient);
+    }
+    export type demandesEnAttenteListResponse200 = {
   data: Demande[]
   status: 200
 }

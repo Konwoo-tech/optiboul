@@ -29,6 +29,22 @@ class Demande(models.Model):
     valideurs = models.JSONField(_("profils valideurs"), default=list)
     statut = models.CharField(_("statut"), max_length=12, default="en_attente")
     cree_le = models.DateTimeField(_("émise le"), default=timezone.now)
+    decide_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="demandes_decidees",
+        verbose_name=_("décidée par"),
+    )
+    decide_par_nom = models.CharField(
+        _("décidée par (nom)"),
+        max_length=255,
+        blank=True,
+    )
+    decide_le = models.DateTimeField(_("décidée le"), null=True, blank=True)
+    motif_refus = models.TextField(_("motif du refus"), blank=True)
+    via = models.CharField(_("décidée depuis"), max_length=10, blank=True)
 
     class Meta:
         db_table = "demande"

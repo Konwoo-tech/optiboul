@@ -2,11 +2,7 @@ import pytest
 from django.urls import reverse
 
 from optiboul.clients.infrastructure.models import Client
-from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.infrastructure.models import LigneJournal
-from optiboul.demandes.application import demandes as cas
-from optiboul.demandes.application.demandes import ObjetLie
-from optiboul.demandes.application.demandes import TypeDemande
 from optiboul.demandes.domain.demandes import numero_affiche
 from optiboul.notifications.infrastructure.models import MessageSortant
 from optiboul.notifications.infrastructure.models import Notification
@@ -20,36 +16,7 @@ def test_numero_affiche():
     assert numero_affiche(1234) == "DEM-1234"
 
 
-def _preparer(objet_id, auteur) -> ObjetLie:
-    client = Client.objects.filter(pk=objet_id).first()
-    if client is None:
-        message = "Client inconnu."
-        raise RefusMetier("objet_inconnu", message)
-    return ObjetLie(f"Client {client.nom}", {"plafond": 2_000})
-
-
-@pytest.fixture
-def type_essai():
-    """Type de demande d'essai : la caisse demande, la direction valide."""
-    essai = TypeDemande(
-        cle="essai",
-        libelle="Essai",
-        objet_type="client",
-        emetteurs=frozenset({"caissier"}),
-        valideurs=lambda profil: ("gerant", "proprietaire"),
-        preparer=_preparer,
-    )
-    cas.enregistrer_type(essai)
-    yield essai
-    cas._TYPES.pop("essai")  # noqa: SLF001
-
-
-@pytest.fixture
-def mama(db) -> Client:
-    return Client.objects.create(nom="Mama Rasta")
-
-
-def _emettre(client, objet_id, motif="Client fidèle, paie samedi"):
+def emettre(client, objet_id, motif="Client fidèle, paie samedi"):
     return client.post(
         LISTE,
         {"type": "essai", "objet_id": objet_id, "motif": motif},
@@ -71,7 +38,7 @@ def test_emission_liee_a_l_objet(
     gerant.telephone = "677000001"
     gerant.canal_verification = "whatsapp"
     gerant.save()
-    reponse = _emettre(client_de(caissiere), mama.pk)
+    reponse = emettre(client_de(caissiere), mama.pk)
     assert reponse.status_code == 201, reponse.content
     demande = reponse.json()
     assert demande["code"] == "DEM-001"
@@ -100,8 +67,8 @@ def test_emission_liee_a_l_objet(
 
 
 def test_une_seule_demande_en_attente_par_objet(client_de, caissiere, type_essai, mama):
-    _emettre(client_de(caissiere), mama.pk)
-    reponse = _emettre(client_de(caissiere), mama.pk)
+    emettre(client_de(caissiere), mama.pk)
+    reponse = emettre(client_de(caissiere), mama.pk)
     assert reponse.status_code == 409
     assert reponse.json()["code"] == "demande_deja_en_attente"
     assert "DEM-001" in reponse.json()["detail"]
@@ -109,14 +76,14 @@ def test_une_seule_demande_en_attente_par_objet(client_de, caissiere, type_essai
 
 def test_numeros_communs(client_de, caissiere, type_essai, mama):
     autre = Client.objects.create(nom="Raoul")
-    codes = [_emettre(client_de(caissiere), c.pk).json()["code"] for c in (mama, autre)]
+    codes = [emettre(client_de(caissiere), c.pk).json()["code"] for c in (mama, autre)]
     assert codes == ["DEM-001", "DEM-002"]
 
 
 def test_refus(client_de, caissiere, responsable_production, type_essai, mama):
-    assert _emettre(client_de(responsable_production), mama.pk).status_code == 403
-    assert _emettre(client_de(caissiere), 999_999).status_code == 404
-    assert _emettre(client_de(caissiere), mama.pk, motif="  ").status_code == 400
+    assert emettre(client_de(responsable_production), mama.pk).status_code == 403
+    assert emettre(client_de(caissiere), 999_999).status_code == 404
+    assert emettre(client_de(caissiere), mama.pk, motif="  ").status_code == 400
     reponse = client_de(caissiere).post(
         LISTE,
         {"type": "inconnu", "objet_id": mama.pk, "motif": "x"},
@@ -134,7 +101,7 @@ def test_qui_voit_la_demande(
     type_essai,
     mama,
 ):
-    _emettre(client_de(caissiere), mama.pk)
+    emettre(client_de(caissiere), mama.pk)
     davy = utilisateur_avec_profil("caissier", name="Davy")
     vues = {
         personne.name: client_de(personne).get(LISTE).json()["count"]

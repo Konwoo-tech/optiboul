@@ -24,4 +24,9 @@ export interface Demande {
   readonly valideurs: unknown;
   readonly statut: string;
   readonly cree_le: string;
+  readonly decide_par_nom: string;
+  /** @nullable */
+  readonly decide_le: string | null;
+  readonly motif_refus: string;
+  readonly via: string;
 }

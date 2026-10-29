@@ -7,6 +7,7 @@
  */
 
 export * from './acces.ts';
+export * from './accord.ts';
 export * from './affectations.ts';
 export * from './apercu.ts';
 export * from './brouillon.ts';
@@ -22,6 +23,7 @@ export * from './clientsListParams.ts';
 export * from './clientTarifs.ts';
 export * from './code.ts';
 export * from './codeEnvoye.ts';
+export * from './codeGerant.ts';
 export * from './codesSecours.ts';
 export * from './codeTotp.ts';
 export * from './commande.ts';
@@ -119,6 +121,7 @@ export * from './produitsFichesListParams.ts';
 export * from './produitsListParams.ts';
 export * from './profilEnum.ts';
 export * from './proposition.ts';
+export * from './refus.ts';
 export * from './reouverture.ts';
 export * from './reprise.ts';
 export * from './resultatConnexion.ts';

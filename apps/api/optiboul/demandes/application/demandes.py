@@ -15,6 +15,7 @@ from typing import Protocol
 from optiboul.core.application.journal import Evenement
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.demandes.domain.demandes import StatutDemande
+from optiboul.demandes.domain.demandes import Via
 from optiboul.demandes.domain.demandes import numero_affiche
 
 if TYPE_CHECKING:
@@ -113,6 +114,19 @@ class DepotDemandes(Protocol):
 
     def en_attente_pour(self, type_cle: str, objet_id: int) -> EtatDemande | None: ...
 
+    def verrouiller(self, demande_id: int) -> EtatDemande | None: ...
+
+    def decider(  # noqa: PLR0913
+        self,
+        demande_id: int,
+        *,
+        statut: StatutDemande,
+        decideur: Auteur,
+        via: Via,
+        motif_refus: str,
+        le: datetime,
+    ) -> None: ...
+
 
 class Numeros(Protocol):
     def prochain(self, nom: str) -> int: ...
@@ -210,3 +224,77 @@ def visible_par(demande: EtatDemande, auteur: Auteur) -> bool:
         or auteur.profil in demande.valideurs
         or (demande.emetteur is not None and demande.emetteur == auteur.utilisateur_id)
     )
+
+
+def peut_decider(demande: EtatDemande, decideur: Auteur) -> bool:
+    """Un valideur de la demande, ou le propriétaire ; jamais son émetteur."""
+    if demande.emetteur is not None and demande.emetteur == decideur.utilisateur_id:
+        return False
+    return decideur.profil == "proprietaire" or decideur.profil in demande.valideurs
+
+
+def decider(  # noqa: PLR0913
+    depots: Depots,
+    *,
+    demande_id: int,
+    accord: bool,
+    motif: str,
+    decideur: Auteur,
+    via: Via,
+    maintenant: datetime,
+) -> EtatDemande:
+    """Accord en un clic, refus motivé ; l'objet lié change de statut avec (O5)."""
+    demande = depots.demandes.verrouiller(demande_id)
+    if demande is None:
+        message = "Demande inconnue."
+        raise RefusMetier("demande_inconnue", message)
+    if demande.statut is not StatutDemande.EN_ATTENTE:
+        message = f"La demande {demande.code} a déjà reçu une réponse."
+        raise RefusMetier("demande_deja_decidee", message, statut=demande.statut)
+    if not peut_decider(demande, decideur):
+        message = "Vous ne validez pas cette demande."
+        raise RefusMetier("droit_insuffisant", message)
+    if not accord and not motif.strip():
+        message = "Le motif du refus est obligatoire."
+        raise RefusMetier("motif_obligatoire", message)
+    statut = StatutDemande.ACCORDEE if accord else StatutDemande.REFUSEE
+    depots.demandes.decider(
+        demande_id,
+        statut=statut,
+        decideur=decideur,
+        via=via,
+        motif_refus="" if accord else motif.strip(),
+        le=maintenant,
+    )
+    decidee = obtenir(depots, demande_id)
+    type_demande = type_de(demande.type)
+    if accord:
+        type_demande.sur_accord(decidee, decideur)
+    else:
+        type_demande.sur_refus(decidee, decideur)
+    depots.journal.enregistrer(
+        Evenement(
+            action=f"demande.{statut}",
+            auteur=decideur,
+            objet_type="demande",
+            objet_id=str(demande_id),
+            avant={"statut": StatutDemande.EN_ATTENTE},
+            apres={
+                "statut": statut,
+                "via": via,
+                "motif_refus": "" if accord else motif.strip(),
+                "objet_type": demande.objet_type,
+                "objet_id": demande.objet_id,
+            },
+        ),
+    )
+    if demande.emetteur is not None:
+        reponse = "accordée" if accord else f"refusée : {motif.strip()}"
+        depots.notificateur.notifier(
+            [demande.emetteur],
+            genre=f"demande.{statut}",
+            titre=f"{demande.code} {reponse}",
+            message=f"{demande.objet} — par {decideur.nom}",
+            lien=type_demande.lien,
+        )
+    return decidee
