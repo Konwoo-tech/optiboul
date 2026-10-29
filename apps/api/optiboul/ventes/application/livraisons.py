@@ -1,4 +1,4 @@
-"""Cas d'usage des livraisons (US-051, CdC §5.3, O3, R21)."""
+"""Livraisons et encaissements (US-051, US-052, CdC §5.3, R7, R21)."""
 
 from __future__ import annotations
 
@@ -6,12 +6,15 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from typing import Protocol
 
+from optiboul.caisse.domain.caisses import GenreMouvement
 from optiboul.caisse.domain.caisses import peut_saisir
 from optiboul.clients.domain.clients import Sens
 from optiboul.core.application.journal import Evenement
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.ventes.domain.commandes import Session
 from optiboul.ventes.domain.commandes import quantites_saisies
+from optiboul.ventes.domain.encaissements import ModePaiement
+from optiboul.ventes.domain.encaissements import verifier_paiement
 from optiboul.ventes.domain.livraisons import Ligne
 from optiboul.ventes.domain.livraisons import lignes_facturees
 from optiboul.ventes.domain.livraisons import montant_du
@@ -25,6 +28,7 @@ if TYPE_CHECKING:
     from optiboul.clients.application.comptes import Comptes
     from optiboul.core.application.journal import Auteur
     from optiboul.core.application.journal import Journal
+    from optiboul.ventes.domain.encaissements import Paiement
 
     from .commandes import DepotCommandes
 
@@ -39,6 +43,7 @@ class EtatLivraison:
     client: int
     caisse: int
     montant_du: int
+    recu: int
     solde_avant: int
     solde_apres: int
 
@@ -61,6 +66,19 @@ class DepotLivraisons(Protocol):
     def obtenir(self, livraison_id: int) -> EtatLivraison | None: ...
 
 
+class DepotEncaissements(Protocol):
+    def creer(  # noqa: PLR0913
+        self,
+        *,
+        caisse: EtatCaisse,
+        client: int,
+        livraison: int | None,
+        paiement: Paiement,
+        auteur: int,
+        le: datetime,
+    ) -> int: ...
+
+
 class Numeros(Protocol):
     def prochain(self, nom: str) -> int:
         """Numéro suivant, dans la transaction : sans trou ni doublon."""
@@ -70,6 +88,7 @@ class Numeros(Protocol):
 @dataclass(frozen=True)
 class Depots:
     livraisons: DepotLivraisons
+    encaissements: DepotEncaissements
     commandes: DepotCommandes
     comptes: Comptes
     caisses: DepotCaisses
@@ -101,6 +120,50 @@ def compte_du_client(depots: Depots, client_id: int) -> Compte:
     return compte
 
 
+def _encaisser(  # noqa: PLR0913
+    depots: Depots,
+    *,
+    caisse: EtatCaisse,
+    client_id: int,
+    paiement: Paiement,
+    auteur: int,
+    maintenant: datetime,
+    livraison_id: int | None = None,
+) -> int:
+    """Crédite le compte du client ; les espèces entrent dans la caisse (R21)."""
+    encaissement_id = depots.encaissements.creer(
+        caisse=caisse,
+        client=client_id,
+        livraison=livraison_id,
+        paiement=paiement,
+        auteur=auteur,
+        le=maintenant,
+    )
+    depots.comptes.mouvement(
+        client_id,
+        semaine=caisse.semaine,
+        sens=Sens.CREDIT,
+        montant=paiement.montant,
+        source_type="encaissement",
+        source_id=encaissement_id,
+        auteur=auteur,
+    )
+    if paiement.mode is ModePaiement.ESPECES:
+        depots.caisses.ajouter_mouvement(
+            caisse.id,
+            genre=GenreMouvement.ESPECES,
+            montant=paiement.montant,
+            auteur=auteur,
+            libelle=f"Encaissement n° {encaissement_id}",
+            receveur=None,
+        )
+    return encaissement_id
+
+
+def _paiement(paiement: Paiement | None) -> Paiement | None:
+    return verifier_paiement(paiement) if paiement and paiement.montant else None
+
+
 def livrer(  # noqa: PLR0913
     depots: Depots,
     *,
@@ -109,15 +172,20 @@ def livrer(  # noqa: PLR0913
     auteur: Auteur,
     maintenant: datetime,
     commande_id: int | None = None,
+    paiement: Paiement | None = None,
 ) -> EtatLivraison:
-    """Montant dû selon le tarif du client, débité de son compte dans la transaction."""
+    """Débite le montant dû au tarif du client et crédite le paiement : partiel, ou
+    au-delà pour rembourser une ancienne dette ; tout dans la même transaction.
+    """
     caisse = caisse_de_saisie(depots, auteur)
     compte = compte_du_client(depots, client_id)
     lignes = lignes_facturees(
         quantites_saisies(quantites),
         depots.comptes.prix(client_id),
     )
+    paye = _paiement(paiement)
     du = montant_du(lignes)
+    recu = paye.montant if paye else 0
     assert auteur.utilisateur_id is not None
     livraison_id = depots.livraisons.creer(
         numero=depots.numeros.prochain(SEQUENCE_BONS),
@@ -126,7 +194,7 @@ def livrer(  # noqa: PLR0913
         commande=commande_id,
         lignes=lignes,
         solde_avant=compte.solde,
-        solde_apres=compte.solde - du,
+        solde_apres=compte.solde - du + recu,
         auteur=auteur.utilisateur_id,
         le=maintenant,
     )
@@ -139,6 +207,16 @@ def livrer(  # noqa: PLR0913
             source_type="livraison",
             source_id=livraison_id,
             auteur=auteur.utilisateur_id,
+        )
+    if paye is not None:
+        _encaisser(
+            depots,
+            caisse=caisse,
+            client_id=client_id,
+            paiement=paye,
+            auteur=auteur.utilisateur_id,
+            maintenant=maintenant,
+            livraison_id=livraison_id,
         )
     livraison = depots.livraisons.obtenir(livraison_id)
     assert livraison is not None
@@ -154,6 +232,9 @@ def livrer(  # noqa: PLR0913
                 "caisse": caisse.id,
                 "lignes": {ligne.code: ligne.quantite for ligne in lignes},
                 "montant_du": du,
+                "recu": recu,
+                "mode": paye.mode if paye else None,
+                "reference": paye.reference if paye else "",
                 "solde_avant": livraison.solde_avant,
                 "solde_apres": livraison.solde_apres,
             },
@@ -162,12 +243,70 @@ def livrer(  # noqa: PLR0913
     return livraison
 
 
+@dataclass(frozen=True)
+class EtatEncaissement:
+    id: int
+    client: int
+    montant: int
+    solde_avant: int
+    solde_apres: int
+
+
+def encaisser(
+    depots: Depots,
+    *,
+    client_id: int,
+    paiement: Paiement,
+    auteur: Auteur,
+    maintenant: datetime,
+) -> EtatEncaissement:
+    """Paiement sans livraison : remboursement d'une ancienne dette, même partiel."""
+    caisse = caisse_de_saisie(depots, auteur)
+    compte = compte_du_client(depots, client_id)
+    paye = verifier_paiement(paiement)
+    assert auteur.utilisateur_id is not None
+    encaissement_id = _encaisser(
+        depots,
+        caisse=caisse,
+        client_id=client_id,
+        paiement=paye,
+        auteur=auteur.utilisateur_id,
+        maintenant=maintenant,
+    )
+    etat = EtatEncaissement(
+        id=encaissement_id,
+        client=client_id,
+        montant=paye.montant,
+        solde_avant=compte.solde,
+        solde_apres=compte.solde + paye.montant,
+    )
+    depots.journal.enregistrer(
+        Evenement(
+            action="encaissement.enregistre",
+            auteur=auteur,
+            objet_type="encaissement",
+            objet_id=str(encaissement_id),
+            apres={
+                "client": client_id,
+                "caisse": caisse.id,
+                "mode": paye.mode,
+                "montant": paye.montant,
+                "reference": paye.reference,
+                "solde_avant": etat.solde_avant,
+                "solde_apres": etat.solde_apres,
+            },
+        ),
+    )
+    return etat
+
+
 def livrer_comme_commande(
     depots: Depots,
     *,
     client_id: int,
     auteur: Auteur,
     maintenant: datetime,
+    paiement: Paiement | None = None,
 ) -> EtatLivraison:
     """« Livrer comme commandé » en une touche (O3) : les quantités de la commande."""
     caisse = caisse_de_saisie(depots, auteur)
@@ -185,6 +324,7 @@ def livrer_comme_commande(
         auteur=auteur,
         maintenant=maintenant,
         commande_id=commande.id,
+        paiement=paiement,
     )
 
 

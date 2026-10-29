@@ -7,6 +7,7 @@
  */
 import type { ClientResume } from './clientResume.ts';
 import type { LivraisonLignesItem } from './livraisonLignesItem.ts';
+import type { LivraisonPaiementsItem } from './livraisonPaiementsItem.ts';
 
 export interface Livraison {
   readonly id: number;
@@ -20,6 +21,10 @@ export interface Livraison {
   readonly statut: string;
   readonly lignes: readonly LivraisonLignesItem[];
   readonly montant_du: number;
+  readonly recu: number;
+  /** Reçu moins dû : négatif, nouvelle dette ; positif, dette remboursée. */
+  readonly reste: number;
+  readonly paiements: readonly LivraisonPaiementsItem[];
   readonly solde_avant: number;
   readonly solde_apres: number;
   cree_par: string;

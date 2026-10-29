@@ -25,10 +25,10 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  ClientALivrer,
   Livraison,
   LivraisonsListParams,
   LivraisonsPropositionRetrieveParams,
+  LivrerCommeCommande,
   NouvelleLivraison,
   PaginatedLivraisonList,
   Probleme,
@@ -415,7 +415,7 @@ export const getLivraisonsLivrerCommeCommandeCreateUrl = () => {
 /**
  * « Livrer comme commandé » en une touche (O3).
  */
-export const livraisonsLivrerCommeCommandeCreate = async (clientALivrer: ClientALivrer, options?: Parameters<typeof optiboulFetch>[1]): Promise<livraisonsLivrerCommeCommandeCreateResponse> => {
+export const livraisonsLivrerCommeCommandeCreate = async (livrerCommeCommande: LivrerCommeCommande, options?: Parameters<typeof optiboulFetch>[1]): Promise<livraisonsLivrerCommeCommandeCreateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -436,7 +436,7 @@ return optiboulFetch<livraisonsLivrerCommeCommandeCreateResponse>(getLivraisonsL
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(clientALivrer)
+    body: JSON.stringify(livrerCommeCommande)
   }
 );}
 
@@ -474,9 +474,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type LivraisonsLivrerCommeCommandeCreateMutationResult = NonNullable<Awaited<ReturnType<typeof livraisonsLivrerCommeCommandeCreate>>>
-    export type LivraisonsLivrerCommeCommandeCreateMutationBody = ClientALivrer
+    export type LivraisonsLivrerCommeCommandeCreateMutationBody = LivrerCommeCommande
     export type LivraisonsLivrerCommeCommandeCreateMutationError = Probleme
-    export type LivraisonsLivrerCommeCommandeCreateMutationVariables = {data: ClientALivrer}
+    export type LivraisonsLivrerCommeCommandeCreateMutationVariables = {data: LivrerCommeCommande}
 
     export const useLivraisonsLivrerCommeCommandeCreate = <TError = Probleme,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof livraisonsLivrerCommeCommandeCreate>>, TError,LivraisonsLivrerCommeCommandeCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}

@@ -32,6 +32,8 @@ from optiboul.ventes.infrastructure.livraisons import depots
 from optiboul.ventes.infrastructure.models import Livraison
 
 from .commandes import ClientResumeSerializer
+from .encaissements import PaiementSerializer
+from .encaissements import paiement_de
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -50,6 +52,9 @@ class LivraisonSerializer(serializers.ModelSerializer[Livraison]):
     jour = serializers.DateField(source="caisse.jour")
     creneau = serializers.CharField(source="caisse.creneau")
     lignes = serializers.SerializerMethodField()
+    recu = serializers.SerializerMethodField()
+    reste = serializers.SerializerMethodField()
+    paiements = serializers.SerializerMethodField()
     cree_par = serializers.CharField(source="cree_par.name")
 
     class Meta:
@@ -65,6 +70,9 @@ class LivraisonSerializer(serializers.ModelSerializer[Livraison]):
             "statut",
             "lignes",
             "montant_du",
+            "recu",
+            "reste",
+            "paiements",
             "solde_avant",
             "solde_apres",
             "cree_par",
@@ -84,6 +92,20 @@ class LivraisonSerializer(serializers.ModelSerializer[Livraison]):
             for ligne in livraison.lignes.all()
         ]
 
+    def get_recu(self, livraison: Livraison) -> int:
+        return sum(e.montant for e in livraison.encaissements.all())
+
+    def get_reste(self, livraison: Livraison) -> int:
+        """Reçu moins dû : négatif, nouvelle dette ; positif, dette remboursée."""
+        return self.get_recu(livraison) - livraison.montant_du
+
+    @extend_schema(responses=PaiementSerializer(many=True))
+    def get_paiements(self, livraison: Livraison) -> list[dict[str, Any]]:
+        return [
+            {"mode": e.mode, "montant": e.montant, "reference": e.reference}
+            for e in livraison.encaissements.all()
+        ]
+
 
 class NouvelleLivraisonSerializer(serializers.Serializer):
     client = serializers.IntegerField()
@@ -91,10 +113,15 @@ class NouvelleLivraisonSerializer(serializers.Serializer):
         child=serializers.IntegerField(min_value=0),
         help_text="Code du produit → pains livrés.",
     )
+    paiement = PaiementSerializer(required=False, allow_null=True)
 
 
 class ClientALivrerSerializer(serializers.Serializer):
     client = serializers.IntegerField()
+
+
+class LivrerCommeCommandeSerializer(ClientALivrerSerializer):
+    paiement = PaiementSerializer(required=False, allow_null=True)
 
 
 class PropositionSerializer(serializers.Serializer):
@@ -124,7 +151,7 @@ class LivraisonsViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         "client",
         "caisse",
         "cree_par",
-    ).prefetch_related("lignes__produit")
+    ).prefetch_related("lignes__produit", "encaissements")
 
     def get_permissions(self):
         if self.action in {"list", "retrieve"}:
@@ -169,6 +196,7 @@ class LivraisonsViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
                     depots,
                     client_id=corps.validated_data["client"],
                     quantites=corps.validated_data["lignes"],
+                    paiement=paiement_de(corps.validated_data.get("paiement")),
                     auteur=auteur_de(request),
                     maintenant=timezone.now(),
                 )
@@ -177,7 +205,7 @@ class LivraisonsViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         return self._repondre(livraison)
 
     @extend_schema(
-        request=ClientALivrerSerializer,
+        request=LivrerCommeCommandeSerializer,
         parameters=[IDEMPOTENCE],
         responses={201: LivraisonSerializer, 409: ProblemeSerializer},
     )
@@ -185,13 +213,14 @@ class LivraisonsViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     @idempotent
     def livrer_comme_commande(self, request: Request) -> Response:
         """« Livrer comme commandé » en une touche (O3)."""
-        corps = ClientALivrerSerializer(data=request.data)
+        corps = LivrerCommeCommandeSerializer(data=request.data)
         corps.is_valid(raise_exception=True)
         try:
             with transaction.atomic():
                 livraison = cas.livrer_comme_commande(
                     depots,
                     client_id=corps.validated_data["client"],
+                    paiement=paiement_de(corps.validated_data.get("paiement")),
                     auteur=auteur_de(request),
                     maintenant=timezone.now(),
                 )

@@ -396,6 +396,9 @@ SPECTACULAR_SETTINGS: dict[str, Any] = {
     "VERSION": "1.0.0",
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "SCHEMA_PATH_PREFIX": "/api/v1/",
+    "ENUM_NAME_OVERRIDES": {
+        "ModePaiementEnum": "optiboul.ventes.infrastructure.models.MODES_PAIEMENT",
+    },
 }
 # OptiBoul
 # ------------------------------------------------------------------------------

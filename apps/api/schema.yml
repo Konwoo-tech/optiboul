@@ -914,6 +914,77 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/encaissements/:
+    get:
+      operationId: encaissements_list
+      description: Une caissière ne voit que les encaissements de ses caisses (CdC
+        §5.2).
+      parameters:
+      - in: query
+        name: caisse
+        schema:
+          type: integer
+      - in: query
+        name: client
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - encaissements
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEncaissementList'
+          description: ''
+    post:
+      operationId: encaissements_create
+      description: 'Paiement sans livraison : rembourse une ancienne dette, même en
+        partie.'
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Clé unique de l'opération, générée par l'application web.
+        required: true
+      tags:
+      - encaissements
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NouvelEncaissement'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NouvelEncaissement'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NouvelEncaissement'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EncaissementEnregistre'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/groupes/:
     get:
       operationId: groupes_list
@@ -1145,13 +1216,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ClientALivrer'
+              $ref: '#/components/schemas/LivrerCommeCommande'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/ClientALivrer'
+              $ref: '#/components/schemas/LivrerCommeCommande'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ClientALivrer'
+              $ref: '#/components/schemas/LivrerCommeCommande'
         required: true
       security:
       - cookieAuth: []
@@ -2587,13 +2658,6 @@ components:
       - prix
       - solde
       - tarifs
-    ClientALivrer:
-      type: object
-      properties:
-        client:
-          type: integer
-      required:
-      - client
     ClientResume:
       type: object
       properties:
@@ -2871,6 +2935,102 @@ components:
       description: |-
         * `jour` - jour
         * `nuit` - nuit
+    Encaissement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        caisse:
+          type: integer
+          readOnly: true
+        client:
+          $ref: '#/components/schemas/ClientResume'
+        livraison:
+          type: integer
+          readOnly: true
+          nullable: true
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/ModePaiementEnum'
+          readOnly: true
+        montant:
+          type: integer
+          readOnly: true
+          title: Montant (FCFA)
+        reference:
+          type: string
+          readOnly: true
+          title: Référence de transaction
+        cree_par:
+          type: string
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Encaissé le
+      required:
+      - caisse
+      - client
+      - cree_le
+      - cree_par
+      - id
+      - livraison
+      - mode
+      - montant
+      - reference
+    EncaissementEnregistre:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        caisse:
+          type: integer
+          readOnly: true
+        client:
+          $ref: '#/components/schemas/ClientResume'
+        livraison:
+          type: integer
+          readOnly: true
+          nullable: true
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/ModePaiementEnum'
+          readOnly: true
+        montant:
+          type: integer
+          readOnly: true
+          title: Montant (FCFA)
+        reference:
+          type: string
+          readOnly: true
+          title: Référence de transaction
+        cree_par:
+          type: string
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Encaissé le
+        solde_avant:
+          type: integer
+          readOnly: true
+        solde_apres:
+          type: integer
+          readOnly: true
+      required:
+      - caisse
+      - client
+      - cree_le
+      - cree_par
+      - id
+      - livraison
+      - mode
+      - montant
+      - reference
+      - solde_apres
+      - solde_avant
     EnvoiCode:
       type: object
       properties:
@@ -3145,6 +3305,19 @@ components:
           type: integer
           readOnly: true
           title: Montant dû (FCFA)
+        recu:
+          type: integer
+          readOnly: true
+        reste:
+          type: integer
+          description: 'Reçu moins dû : négatif, nouvelle dette ; positif, dette remboursée.'
+          readOnly: true
+        paiements:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
         solde_avant:
           type: integer
           readOnly: true
@@ -3172,9 +3345,23 @@ components:
       - lignes
       - montant_du
       - numero
+      - paiements
+      - recu
+      - reste
       - solde_apres
       - solde_avant
       - statut
+    LivrerCommeCommande:
+      type: object
+      properties:
+        client:
+          type: integer
+        paiement:
+          allOf:
+          - $ref: '#/components/schemas/Paiement'
+          nullable: true
+      required:
+      - client
     Matiere:
       type: object
       properties:
@@ -3204,6 +3391,16 @@ components:
       - nom
       - stockee
       - unite
+    ModePaiementEnum:
+      enum:
+      - especes
+      - mtn
+      - orange
+      type: string
+      description: |-
+        * `especes` - espèces
+        * `mtn` - MTN MoMo
+        * `orange` - Orange Money
     Modification:
       type: object
       properties:
@@ -3250,6 +3447,25 @@ components:
       - groupe
       - nom
       - telephone
+    NouvelEncaissement:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/ModePaiementEnum'
+        montant:
+          type: integer
+          minimum: 0
+        reference:
+          type: string
+          default: ''
+          description: Référence de la transaction, obligatoire en mobile money (R7).
+          maxLength: 60
+        client:
+          type: integer
+      required:
+      - client
+      - mode
+      - montant
     NouvelleFiche:
       type: object
       properties:
@@ -3287,6 +3503,10 @@ components:
             type: integer
             minimum: 0
           description: Code du produit → pains livrés.
+        paiement:
+          allOf:
+          - $ref: '#/components/schemas/Paiement'
+          nullable: true
       required:
       - client
       - lignes
@@ -3393,6 +3613,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Controle'
+    PaginatedEncaissementList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Encaissement'
     PaginatedFicheList:
       type: object
       required:
@@ -3596,6 +3839,22 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/User'
+    Paiement:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/ModePaiementEnum'
+        montant:
+          type: integer
+          minimum: 0
+        reference:
+          type: string
+          default: ''
+          description: Référence de la transaction, obligatoire en mobile money (R7).
+          maxLength: 60
+      required:
+      - mode
+      - montant
     Parametre:
       type: object
       properties:

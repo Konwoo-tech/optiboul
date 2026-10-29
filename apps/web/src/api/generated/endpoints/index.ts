@@ -3,6 +3,7 @@ export * from './caisses/caisses.ts';
 export * from './clients/clients.ts';
 export * from './commandes/commandes.ts';
 export * from './connexion/connexion.ts';
+export * from './encaissements/encaissements.ts';
 export * from './groupes/groupes.ts';
 export * from './journal/journal.ts';
 export * from './livraisons/livraisons.ts';

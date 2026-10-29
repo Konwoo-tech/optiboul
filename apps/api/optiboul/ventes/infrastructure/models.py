@@ -167,3 +167,79 @@ class LigneLivraison(models.Model):
 
     def __str__(self) -> str:
         return f"{self.produit.code} : {self.quantite} à {self.prix_unitaire} FCFA"
+
+
+MODES_PAIEMENT = [
+    ("especes", "espèces"),
+    ("mtn", "MTN MoMo"),
+    ("orange", "Orange Money"),
+]
+
+
+class Encaissement(models.Model):
+    """Paiement d'un client à la caisse, crédité sur son compte dans la transaction."""
+
+    semaine = models.ForeignKey(
+        "core.Semaine",
+        on_delete=models.PROTECT,
+        related_name="encaissements",
+        verbose_name=_("semaine"),
+    )
+    caisse = models.ForeignKey(
+        "caisse.Caisse",
+        on_delete=models.PROTECT,
+        related_name="encaissements",
+        verbose_name=_("caisse"),
+    )
+    client = models.ForeignKey(
+        "clients.Client",
+        on_delete=models.PROTECT,
+        related_name="encaissements",
+        verbose_name=_("client"),
+    )
+    livraison = models.ForeignKey(
+        Livraison,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="encaissements",
+        verbose_name=_("livraison"),
+    )
+    mode = models.CharField(
+        _("mode"),
+        max_length=10,
+        choices=MODES_PAIEMENT,
+    )
+    montant = models.PositiveBigIntegerField(_("montant (FCFA)"))
+    reference = models.CharField(
+        _("référence de transaction"),
+        max_length=60,
+        blank=True,
+    )
+    cree_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("encaissé par"),
+    )
+    cree_le = models.DateTimeField(_("encaissé le"), default=timezone.now)
+
+    class Meta:
+        db_table = "encaissement"
+        ordering = ["-cree_le", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name="encaissement_montant_positif",
+            ),
+            # R7 : pas de mobile money sans référence de transaction.
+            models.CheckConstraint(
+                condition=models.Q(mode="especes") | ~models.Q(reference=""),
+                name="reference_obligatoire_mobile_money",
+            ),
+        ]
+        verbose_name = _("encaissement")
+        verbose_name_plural = _("encaissements")
+
+    def __str__(self) -> str:
+        return f"{self.client} : {self.montant} FCFA ({self.mode})"

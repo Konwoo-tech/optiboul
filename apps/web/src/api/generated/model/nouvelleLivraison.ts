@@ -6,9 +6,11 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { NouvelleLivraisonLignes } from './nouvelleLivraisonLignes.ts';
+import type { Paiement } from './paiement.ts';
 
 export interface NouvelleLivraison {
   client: number;
   /** Code du produit → pains livrés. */
   lignes: NouvelleLivraisonLignes;
+  paiement?: Paiement | null;
 }

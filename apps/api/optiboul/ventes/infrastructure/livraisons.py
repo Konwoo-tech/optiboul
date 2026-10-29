@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.db.models import Sum
+
 from optiboul.caisse.infrastructure.caisses import depot_caisses
 from optiboul.clients.infrastructure.comptes import comptes
 from optiboul.core.infrastructure.journal import journal
@@ -14,6 +16,7 @@ from optiboul.ventes.application.livraisons import EtatLivraison
 from optiboul.ventes.domain.livraisons import montant_du
 
 from .commandes import depot_commandes
+from .models import Encaissement
 from .models import LigneLivraison
 from .models import Livraison
 
@@ -21,6 +24,7 @@ if TYPE_CHECKING:
     from datetime import datetime
 
     from optiboul.caisse.application.caisses import EtatCaisse
+    from optiboul.ventes.domain.encaissements import Paiement
     from optiboul.ventes.domain.livraisons import Ligne
 
 
@@ -31,6 +35,7 @@ def etat(livraison: Livraison) -> EtatLivraison:
         client=livraison.client_id,
         caisse=livraison.caisse_id,
         montant_du=livraison.montant_du,
+        recu=livraison.encaissements.aggregate(recu=Sum("montant"))["recu"] or 0,
         solde_avant=livraison.solde_avant,
         solde_apres=livraison.solde_apres,
     )
@@ -87,16 +92,42 @@ class DepotLivraisonsDjango:
         return etat(livraison) if livraison else None
 
 
+class DepotEncaissementsDjango:
+    def creer(  # noqa: PLR0913
+        self,
+        *,
+        caisse: EtatCaisse,
+        client: int,
+        livraison: int | None,
+        paiement: Paiement,
+        auteur: int,
+        le: datetime,
+    ) -> int:
+        return Encaissement.objects.create(
+            semaine_id=caisse.semaine,
+            caisse_id=caisse.id,
+            client_id=client,
+            livraison_id=livraison,
+            mode=paiement.mode,
+            montant=paiement.montant,
+            reference=paiement.reference,
+            cree_par_id=auteur,
+            cree_le=le,
+        ).pk
+
+
 class NumerosDjango:
     def prochain(self, nom: str) -> int:
         return prochain_numero(nom)
 
 
 depot_livraisons = DepotLivraisonsDjango()
+depot_encaissements = DepotEncaissementsDjango()
 numeros = NumerosDjango()
 
 depots = Depots(
     livraisons=depot_livraisons,
+    encaissements=depot_encaissements,
     commandes=depot_commandes,
     comptes=comptes,
     caisses=depot_caisses,

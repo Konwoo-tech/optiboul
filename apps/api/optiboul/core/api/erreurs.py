@@ -26,6 +26,8 @@ STATUTS = {
     "commande_vide": status.HTTP_400_BAD_REQUEST,
     "cle_idempotence_absente": status.HTTP_400_BAD_REQUEST,
     "caisse_d_une_autre": status.HTTP_403_FORBIDDEN,
+    "reference_obligatoire": status.HTTP_400_BAD_REQUEST,
+    "montant_invalide": status.HTTP_400_BAD_REQUEST,
     "cle_idempotence_reutilisee": status.HTTP_422_UNPROCESSABLE_ENTITY,
 }
 
