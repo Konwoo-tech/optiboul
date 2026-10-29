@@ -202,3 +202,126 @@ class LignePlanProduction(models.Model):
 
     def __str__(self) -> str:
         return f"{self.produit.code} : {self.sacs} sacs"
+
+
+class Production(models.Model):
+    """Production d'une session, ouverte sur un plan validé ou provisoire (CdC §5.5)."""
+
+    plan = models.OneToOneField(
+        PlanProduction,
+        on_delete=models.PROTECT,
+        related_name="production",
+        verbose_name=_("plan"),
+    )
+    semaine = models.ForeignKey(
+        "core.Semaine",
+        on_delete=models.PROTECT,
+        related_name="productions",
+        verbose_name=_("semaine"),
+    )
+    statut = models.CharField(_("statut"), max_length=10, default="en_cours")
+    ouverte_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("ouverte par"),
+    )
+    ouverte_le = models.DateTimeField(_("ouverte le"), default=timezone.now)
+    cloturee_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("clôturée par"),
+    )
+    cloturee_le = models.DateTimeField(_("clôturée le"), null=True, blank=True)
+
+    class Meta:
+        db_table = "production"
+        ordering = ["-ouverte_le"]
+        verbose_name = _("production")
+        verbose_name_plural = _("productions")
+
+    def __str__(self) -> str:
+        return f"Production {self.plan.creneau} du {self.plan.jour:%d/%m/%Y}"
+
+
+class Fournee(models.Model):
+    """Pains réellement sortis d'une fournée : le réalisé s'additionne (CdC §5.5)."""
+
+    production = models.ForeignKey(
+        Production,
+        on_delete=models.PROTECT,
+        related_name="fournees",
+        verbose_name=_("production"),
+    )
+    produit = models.ForeignKey(
+        Produit,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("produit"),
+    )
+    pains = models.PositiveIntegerField(_("pains"))
+    auteur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("saisie par"),
+    )
+    cree_le = models.DateTimeField(_("saisie le"), default=timezone.now)
+
+    class Meta:
+        db_table = "fournee"
+        ordering = ["cree_le", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(pains__gt=0),
+                name="fournee_pains_positifs",
+            ),
+        ]
+        verbose_name = _("fournée")
+        verbose_name_plural = _("fournées")
+
+    def __str__(self) -> str:
+        return f"{self.produit.code} : {self.pains} pains"
+
+
+class Consommation(models.Model):
+    """Consommation réelle d'une matière par la production (CdC §5.5)."""
+
+    production = models.ForeignKey(
+        Production,
+        on_delete=models.CASCADE,
+        related_name="consommations",
+        verbose_name=_("production"),
+    )
+    matiere = models.ForeignKey(
+        "stocks.Matiere",
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("matière"),
+    )
+    quantite = models.DecimalField(_("quantité"), max_digits=12, decimal_places=3)
+    saisie_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("saisie par"),
+    )
+    modifiee_le = models.DateTimeField(_("modifiée le"), default=timezone.now)
+
+    class Meta:
+        db_table = "consommation"
+        ordering = ["matiere__ordre"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["production", "matiere"],
+                name="une_consommation_par_matiere",
+            ),
+        ]
+        verbose_name = _("consommation")
+        verbose_name_plural = _("consommations")
+
+    def __str__(self) -> str:
+        return f"{self.matiere} : {self.quantite}"

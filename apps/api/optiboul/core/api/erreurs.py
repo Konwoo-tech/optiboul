@@ -31,6 +31,8 @@ STATUTS = {
     "type_demande_inconnu": status.HTTP_400_BAD_REQUEST,
     "demande_inconnue": status.HTTP_404_NOT_FOUND,
     "objet_inconnu": status.HTTP_404_NOT_FOUND,
+    "production_inconnue": status.HTTP_404_NOT_FOUND,
+    "matiere_inconnue": status.HTTP_400_BAD_REQUEST,
     "motif_obligatoire": status.HTTP_400_BAD_REQUEST,
     "cle_idempotence_reutilisee": status.HTTP_422_UNPROCESSABLE_ENTITY,
 }

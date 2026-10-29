@@ -1,4 +1,4 @@
-"""Plan de production (US-081, US-086, CdC §5.5, R4) : trois sources, proposé."""
+"""Plan et production d'une session (US-081, US-086, US-082, US-083, CdC §5.5)."""
 
 from __future__ import annotations
 
@@ -21,15 +21,21 @@ from optiboul.core.api.erreurs import probleme
 from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.domain.erreurs import RefusMetier
+from optiboul.core.domain.sauvegardes import Declencheur
+from optiboul.core.infrastructure.sauvegardes import demander_sauvegarde
 from optiboul.production.application import plans as cas
+from optiboul.production.application import productions as cas_production
 from optiboul.production.domain.plan import MotifSupplement
 from optiboul.production.domain.plan import StatutPlan
 from optiboul.production.domain.plan import heure_validation_auto
 from optiboul.production.domain.plan import session_de_production
+from optiboul.production.domain.production import consommation_theorique
+from optiboul.production.domain.production import reste_a_produire
 from optiboul.production.infrastructure.models import PlanProduction
 from optiboul.production.infrastructure.plans import depots
 from optiboul.production.infrastructure.plans import nombre_de_sessions
 from optiboul.production.infrastructure.plans import petrissage
+from optiboul.production.infrastructure.productions import depots as depots_production
 from optiboul.ventes.domain.commandes import JOUR
 from optiboul.ventes.domain.commandes import NUIT
 from optiboul.ventes.domain.commandes import Session
@@ -180,6 +186,81 @@ def projeter(plan: cas.PlanCalcule) -> dict[str, Any]:
     }
 
 
+class ProduitProduitSerializer(serializers.Serializer):
+    code = serializers.CharField()
+    sacs = serializers.IntegerField()
+    prevus = serializers.IntegerField()
+    realise = serializers.IntegerField()
+    reste = serializers.IntegerField(
+        help_text="Reste à produire : prévu moins réalisé.",
+    )
+
+
+class MatiereConsommeeSerializer(serializers.Serializer):
+    matiere = serializers.CharField()
+    theorique = serializers.DecimalField(max_digits=12, decimal_places=3)
+    reelle = serializers.DecimalField(max_digits=12, decimal_places=3, allow_null=True)
+
+
+class ProductionSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    jour = serializers.DateField()
+    creneau = serializers.CharField()
+    statut = serializers.CharField()
+    produits = ProduitProduitSerializer(many=True)
+    consommation = MatiereConsommeeSerializer(many=True)
+    prevus = serializers.IntegerField()
+    realise = serializers.IntegerField()
+    reste = serializers.IntegerField()
+
+
+class FourneeSerializer(serializers.Serializer):
+    produit = serializers.CharField(max_length=10)
+    pains = serializers.IntegerField(min_value=1)
+
+
+class ConsommationSerializer(serializers.Serializer):
+    quantites = serializers.DictField(
+        child=serializers.DecimalField(max_digits=12, decimal_places=3, min_value=0),
+        help_text="Code de la matière → quantité réelle, dans l'unité de la matière.",
+    )
+
+
+def projeter_production(production: cas_production.EtatProduction) -> dict[str, Any]:
+    reste = reste_a_produire(production.prevus, production.realise)
+    theorique = consommation_theorique(production.sacs, production.recettes)
+    matieres = sorted(set(theorique) | set(production.consommation))
+    return {
+        "id": production.id,
+        "jour": production.session.jour,
+        "creneau": production.session.creneau,
+        "statut": production.statut,
+        "produits": [
+            {
+                "code": code,
+                "sacs": sacs,
+                "prevus": production.prevus.get(code, 0),
+                "realise": production.realise.get(code, 0),
+                "reste": reste.get(code, 0),
+            }
+            for code, sacs in production.sacs.items()
+        ],
+        "consommation": [
+            {
+                "matiere": matiere,
+                "theorique": theorique.get(matiere, Decimal(0)),
+                "reelle": production.consommation.get(matiere),
+            }
+            for matiere in matieres
+        ],
+        "prevus": sum(production.prevus.values()),
+        "realise": sum(production.realise.values()),
+        "reste": sum(reste.values()),
+    }
+
+
+IDENTIFIANT = OpenApiParameter("id", int, OpenApiParameter.PATH)
+
 PARAMETRES_SESSION = [
     OpenApiParameter("jour", str, description="AAAA-MM-JJ, avec le créneau"),
     OpenApiParameter("creneau", str, enum=[JOUR, NUIT]),
@@ -187,12 +268,119 @@ PARAMETRES_SESSION = [
 
 
 class ProductionsViewSet(ViewSet):
+    lookup_value_regex = r"[0-9]+"
+
     def get_permissions(self):
         if self.action == "plan":
             return [ProfilParmi(*LISENT_LE_PLAN)()]
+        if self.action in {"en_cours", "retrieve"}:
+            # Le reste à produire est visible aussi de la caisse (CdC §5.5).
+            return [ProfilParmi("caissier", *LISENT_LE_PLAN)()]
         if self.action == "valider":
             return [ProfilParmi(*DIRECTION)()]
         return [ProfilParmi("production")()]
+
+    def _production(self, appel) -> Response:
+        try:
+            with transaction.atomic():
+                production = appel()
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(ProductionSerializer(projeter_production(production)).data)
+
+    @extend_schema(
+        request=SessionProductionSerializer,
+        responses={200: ProductionSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=False, methods=["post"])
+    def ouvrir(self, request: Request) -> Response:
+        """Le responsable de production ouvre sur un plan validé ou provisoire."""
+        corps = SessionProductionSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        return self._production(
+            lambda: cas_production.ouvrir(
+                depots_production,
+                session=corps.session(),
+                auteur=auteur_de(request),
+                maintenant=timezone.now(),
+            ),
+        )
+
+    @extend_schema(
+        parameters=PARAMETRES_SESSION,
+        responses={200: ProductionSerializer, 404: ProblemeSerializer},
+    )
+    @action(detail=False, url_path="en-cours")
+    def en_cours(self, request: Request) -> Response:
+        """Prévu, réalisé et reste à produire par produit ; consommation."""
+        parametres = SessionProductionSerializer(data=request.query_params)
+        parametres.is_valid(raise_exception=True)
+        production = depots_production.productions.de_la_session(parametres.session())
+        if production is None:
+            message = "La production de cette session n'est pas ouverte."
+            return probleme(RefusMetier("production_inconnue", message))
+        return Response(ProductionSerializer(projeter_production(production)).data)
+
+    @extend_schema(
+        request=FourneeSerializer,
+        parameters=[IDENTIFIANT],
+        responses={200: ProductionSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"])
+    def fournee(self, request: Request, pk: str) -> Response:
+        """Pains d'une fournée : le réalisé et le reste à produire suivent."""
+        corps = FourneeSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        return self._production(
+            lambda: cas_production.saisir_fournee(
+                depots_production,
+                production_id=int(pk),
+                code=corps.validated_data["produit"],
+                pains=corps.validated_data["pains"],
+                auteur=auteur_de(request),
+            ),
+        )
+
+    @extend_schema(
+        request=ConsommationSerializer,
+        parameters=[IDENTIFIANT],
+        responses={200: ProductionSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["put"])
+    def consommation(self, request: Request, pk: str) -> Response:
+        """Consommation réelle, la valeur théorique à côté de chaque matière."""
+        corps = ConsommationSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        return self._production(
+            lambda: cas_production.saisir_consommation(
+                depots_production,
+                production_id=int(pk),
+                quantites=dict(corps.validated_data["quantites"]),
+                auteur=auteur_de(request),
+                maintenant=timezone.now(),
+            ),
+        )
+
+    @extend_schema(
+        request=None,
+        parameters=[IDENTIFIANT],
+        responses={200: ProductionSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"])
+    def cloturer(self, request: Request, pk: str) -> Response:
+        """R5 : impossible sans réalisé ni consommation ; sauvegarde à la clôture."""
+
+        def cloturer_et_sauvegarder():
+            production = cas_production.cloturer(
+                depots_production,
+                production_id=int(pk),
+                auteur=auteur_de(request),
+                maintenant=timezone.now(),
+            )
+            demander_sauvegarde(Declencheur.CLOTURE_PRODUCTION)
+            return production
+
+        return self._production(cloturer_et_sauvegarder)
 
     @extend_schema(
         request=SessionProductionSerializer,

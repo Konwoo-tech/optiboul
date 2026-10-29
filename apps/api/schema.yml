@@ -2127,6 +2127,178 @@ paths:
               schema:
                 $ref: '#/components/schemas/PosteActuel'
           description: ''
+  /api/v1/productions/{id}/cloturer/:
+    post:
+      operationId: productions_cloturer_create
+      description: 'R5 : impossible sans réalisé ni consommation ; sauvegarde à la
+        clôture.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - productions
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Production'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/productions/{id}/consommation/:
+    put:
+      operationId: productions_consommation_update
+      description: Consommation réelle, la valeur théorique à côté de chaque matière.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - productions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Consommation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Consommation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Consommation'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Production'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/productions/{id}/fournee/:
+    post:
+      operationId: productions_fournee_create
+      description: 'Pains d''une fournée : le réalisé et le reste à produire suivent.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - productions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fournee'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Fournee'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Fournee'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Production'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/productions/en-cours/:
+    get:
+      operationId: productions_en_cours_retrieve
+      description: Prévu, réalisé et reste à produire par produit ; consommation.
+      parameters:
+      - in: query
+        name: creneau
+        schema:
+          type: string
+          enum:
+          - jour
+          - nuit
+      - in: query
+        name: jour
+        schema:
+          type: string
+        description: AAAA-MM-JJ, avec le créneau
+      tags:
+      - productions
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Production'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/productions/ouvrir/:
+    post:
+      operationId: productions_ouvrir_create
+      description: Le responsable de production ouvre sur un plan validé ou provisoire.
+      tags:
+      - productions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionProduction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SessionProduction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SessionProduction'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Production'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/productions/plan/:
     get:
       operationId: productions_plan_retrieve
@@ -3714,6 +3886,18 @@ components:
       required:
       - email
       - motDePasse
+    Consommation:
+      type: object
+      properties:
+        quantites:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+            pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          description: Code de la matière → quantité réelle, dans l'unité de la matière.
+      required:
+      - quantites
     Controle:
       type: object
       properties:
@@ -4199,6 +4383,18 @@ components:
       - procede
       - recette
       - version
+    Fournee:
+      type: object
+      properties:
+        produit:
+          type: string
+          maxLength: 10
+        pains:
+          type: integer
+          minimum: 1
+      required:
+      - pains
+      - produit
     Groupe:
       type: object
       properties:
@@ -4568,6 +4764,24 @@ components:
       - nom
       - stockee
       - unite
+    MatiereConsommee:
+      type: object
+      properties:
+        matiere:
+          type: string
+        theorique:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        reelle:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          nullable: true
+      required:
+      - matiere
+      - reelle
+      - theorique
     ModePaiementEnum:
       enum:
       - especes
@@ -5656,6 +5870,42 @@ components:
       - fonds_propose
       - jour
       - planifiee
+    Production:
+      type: object
+      properties:
+        id:
+          type: integer
+        jour:
+          type: string
+          format: date
+        creneau:
+          type: string
+        statut:
+          type: string
+        produits:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProduitProduit'
+        consommation:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatiereConsommee'
+        prevus:
+          type: integer
+        realise:
+          type: integer
+        reste:
+          type: integer
+      required:
+      - consommation
+      - creneau
+      - id
+      - jour
+      - prevus
+      - produits
+      - realise
+      - reste
+      - statut
     Produit:
       type: object
       properties:
@@ -5695,6 +5945,26 @@ components:
       - fiche
       - id
       - nom
+    ProduitProduit:
+      type: object
+      properties:
+        code:
+          type: string
+        sacs:
+          type: integer
+        prevus:
+          type: integer
+        realise:
+          type: integer
+        reste:
+          type: integer
+          description: 'Reste à produire : prévu moins réalisé.'
+      required:
+      - code
+      - prevus
+      - realise
+      - reste
+      - sacs
     ProfilEnum:
       enum:
       - caissier
