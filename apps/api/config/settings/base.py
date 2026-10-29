@@ -361,6 +361,10 @@ SOCIALACCOUNT_ADAPTER = "optiboul.users.adapters.SocialAccountAdapter"
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
 SOCIALACCOUNT_FORMS = {"signup": "optiboul.users.forms.UserSocialSignupForm"}
 
+# https://docs.allauth.org/en/latest/mfa/configuration.html (US-012)
+MFA_TOTP_ISSUER = "OptiBoul"
+MFA_RECOVERY_CODE_COUNT = 10
+
 # django-rest-framework
 # -------------------------------------------------------------------------------
 # django-rest-framework - https://www.django-rest-framework.org/api-guide/settings/

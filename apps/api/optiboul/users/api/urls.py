@@ -7,13 +7,16 @@ from .connexion import connexion_par_email
 from .connexion import deconnexion
 from .connexion import envoyer_code
 from .connexion import utilisateurs_du_poste
+from .connexion import verifier_application
 from .connexion import verifier_code
+from .mfa import MfaViewSet
 from .postes import PostesViewSet
 from .utilisateurs import UtilisateursViewSet
 
 router = SimpleRouter()
 router.register("postes", PostesViewSet, basename="poste")
 router.register("utilisateurs", UtilisateursViewSet, basename="utilisateur")
+router.register("mfa", MfaViewSet, basename="mfa")
 
 urlpatterns = [
     path(
@@ -25,6 +28,7 @@ urlpatterns = [
     path("connexion/email/", connexion_par_email, name="connexion-email"),
     path("connexion/otp/envoyer/", envoyer_code, name="connexion-otp-envoyer"),
     path("connexion/otp/verifier/", verifier_code, name="connexion-otp-verifier"),
+    path("connexion/totp/", verifier_application, name="connexion-totp"),
     path("connexion/annuler/", annuler_identification, name="connexion-annuler"),
     path("connexion/deconnexion/", deconnexion, name="connexion-deconnexion"),
     *router.urls,

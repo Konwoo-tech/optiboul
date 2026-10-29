@@ -8,10 +8,13 @@
 
 export * from './canalEnum.ts';
 export * from './codeEnvoye.ts';
+export * from './codesSecours.ts';
+export * from './codeTotp.ts';
 export * from './compte.ts';
 export * from './connexionCode.ts';
 export * from './connexionEmail.ts';
 export * from './envoiCode.ts';
+export * from './etatMfa.ts';
 export * from './etatSauvegardes.ts';
 export * from './journalListParams.ts';
 export * from './ligneJournal.ts';
@@ -34,6 +37,7 @@ export * from './resultatConnexion.ts';
 export * from './sante.ts';
 export * from './sauvegarde.ts';
 export * from './sauvegardesListParams.ts';
+export * from './secretTotp.ts';
 export * from './user.ts';
 export * from './usersListParams.ts';
 export * from './utilisateursListParams.ts';

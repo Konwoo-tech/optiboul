@@ -159,6 +159,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/connexion/totp/:
+    post:
+      operationId: connexion_totp_create
+      description: 'Sans réseau : code de l''application d''authentification ou code
+        de secours.'
+      tags:
+      - connexion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Verification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Verification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Verification'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/connexion/utilisateurs/:
     get:
       operationId: connexion_utilisateurs_list
@@ -227,6 +258,93 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedLigneJournalList'
+          description: ''
+  /api/v1/mfa/:
+    get:
+      operationId: mfa_list
+      description: 'US-012 : TOTP compatible Google Authenticator, 10 codes de secours.'
+      tags:
+      - mfa
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EtatMfa'
+          description: ''
+  /api/v1/mfa/codes-secours/:
+    post:
+      operationId: mfa_codes_secours_create
+      description: 'US-012 : TOTP compatible Google Authenticator, 10 codes de secours.'
+      tags:
+      - mfa
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodesSecours'
+          description: ''
+  /api/v1/mfa/totp/activer/:
+    post:
+      operationId: mfa_totp_activer_create
+      description: 'US-012 : TOTP compatible Google Authenticator, 10 codes de secours.'
+      tags:
+      - mfa
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodeTotp'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CodeTotp'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CodeTotp'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodesSecours'
+          description: ''
+        '400':
+          description: No response body
+  /api/v1/mfa/totp/desactiver/:
+    post:
+      operationId: mfa_totp_desactiver_create
+      description: 'US-012 : TOTP compatible Google Authenticator, 10 codes de secours.'
+      tags:
+      - mfa
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/mfa/totp/preparer/:
+    post:
+      operationId: mfa_totp_preparer_create
+      description: 'US-012 : TOTP compatible Google Authenticator, 10 codes de secours.'
+      tags:
+      - mfa
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecretTotp'
           description: ''
   /api/v1/parametres/:
     get:
@@ -655,6 +773,24 @@ components:
       - heure
       - renvoiDans
       - telephoneMasque
+    CodeTotp:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 6
+          minLength: 6
+      required:
+      - code
+    CodesSecours:
+      type: object
+      properties:
+        codesSecours:
+          type: array
+          items:
+            type: string
+      required:
+      - codesSecours
     Compte:
       type: object
       properties:
@@ -729,6 +865,16 @@ components:
           $ref: '#/components/schemas/CanalEnum'
       required:
       - canal
+    EtatMfa:
+      type: object
+      properties:
+        totp:
+          type: boolean
+        codesSecoursRestants:
+          type: integer
+      required:
+      - codesSecoursRestants
+      - totp
     EtatSauvegardes:
       type: object
       properties:
@@ -1154,6 +1300,16 @@ components:
       - source
       - statut
       - taille
+    SecretTotp:
+      type: object
+      properties:
+        secret:
+          type: string
+        uri:
+          type: string
+      required:
+      - secret
+      - uri
     User:
       type: object
       properties:

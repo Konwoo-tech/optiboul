@@ -11,6 +11,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
 
+from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.contexte import entree_de
 from optiboul.core.application.journal import Entree
 from optiboul.notifications.domain.envois import Canal
@@ -18,6 +19,8 @@ from optiboul.notifications.domain.envois import masquer_telephone
 from optiboul.notifications.infrastructure.envois import file_envoi
 
 from . import connexion
+from . import mfa
+from . import verrouillage
 from .connexion import Identifie
 from .connexion import RefusConnexion
 from .domain.double_auth import ESSAIS_CODE
@@ -26,6 +29,7 @@ from .domain.double_auth import VALIDITE_CODE
 from .domain.double_auth import VALIDITE_IDENTIFICATION
 from .domain.double_auth import double_auth_requise
 from .domain.double_auth import renvoi_dans
+from .domain.verrouillage import ECHECS_MAX
 from .models import CodeVerification
 from .models import User
 
@@ -155,6 +159,23 @@ def verifier(request: HttpRequest, code: str) -> Identifie:
     envoye.utilise = True
     envoye.save(update_fields=["utilise"])
     return Identifie(identifie.utilisateur, identifie.via, verification=envoye.canal)
+
+
+def verifier_application(request: HttpRequest, code: str) -> Identifie:
+    """Sans réseau : code TOTP ou code de secours ; les échecs comptent (US-155)."""
+    identifie = en_attente(request)
+    utilisateur = identifie.utilisateur
+    if verrouillage.est_bloque(utilisateur):
+        raise RefusConnexion(connexion.BLOQUE)
+    verification = mfa.verifier_second_facteur(utilisateur, code)
+    if verification is None:
+        if verrouillage.enregistrer_echec(utilisateur, "totp", auteur_de(request)):
+            annuler(request)
+            raise RefusConnexion(connexion.BLOQUE)
+        restants = ECHECS_MAX - utilisateur.echecs_connexion
+        raise RefusConnexion(connexion.INCORRECT, essaisRestants=restants)
+    verrouillage.enregistrer_reussite(utilisateur)
+    return Identifie(utilisateur, identifie.via, verification=verification)
 
 
 def terminer(request: HttpRequest, identifie: Identifie) -> None:

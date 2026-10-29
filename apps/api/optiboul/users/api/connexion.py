@@ -227,3 +227,27 @@ def deconnexion(request: Request) -> Response:
         )
     logout(request._request)  # noqa: SLF001
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    request=VerificationSerializer,
+    responses={204: None, 400: ProblemeSerializer},
+)
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([LimiteParPoste])
+def verifier_application(request: Request) -> Response:
+    """Sans réseau : code de l'application d'authentification ou code de secours."""
+    exiger_csrf(request)
+    corps = VerificationSerializer(data=request.data)
+    corps.is_valid(raise_exception=True)
+    brute = request._request  # noqa: SLF001
+    try:
+        identifie = double_auth.verifier_application(
+            brute,
+            corps.validated_data["code"],
+        )
+    except connexion.RefusConnexion as refus:
+        return probleme(refus)
+    double_auth.terminer(brute, identifie)
+    return Response(status=status.HTTP_204_NO_CONTENT)

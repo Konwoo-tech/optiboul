@@ -627,6 +627,109 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getConnexionOtpVerifierCreateMutationOptions(options), queryClient);
     }
+    export type connexionTotpCreateResponse204 = {
+  data: void
+  status: 204
+}
+
+export type connexionTotpCreateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
+export type connexionTotpCreateResponseSuccess = (connexionTotpCreateResponse204) & {
+  headers: Headers;
+};
+export type connexionTotpCreateResponseError = (connexionTotpCreateResponse400) & {
+  headers: Headers;
+};
+
+export type connexionTotpCreateResponse = (connexionTotpCreateResponseSuccess | connexionTotpCreateResponseError)
+
+export const getConnexionTotpCreateUrl = () => {
+
+
+
+
+  return `/api/v1/connexion/totp/`
+}
+
+/**
+ * Sans réseau : code de l'application d'authentification ou code de secours.
+ */
+export const connexionTotpCreate = async (verification: Verification, options?: Parameters<typeof optiboulFetch>[1]): Promise<connexionTotpCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<connexionTotpCreateResponse>(getConnexionTotpCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(verification)
+  }
+);}
+
+
+
+
+
+export const getConnexionTotpCreateMutationKey = () => ['connexionTotpCreate'] as const;
+
+export const getConnexionTotpCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionTotpCreate>>, TError,ConnexionTotpCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof connexionTotpCreate>>, TError,ConnexionTotpCreateMutationVariables, TContext> => {
+
+const mutationKey = getConnexionTotpCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof connexionTotpCreate>>, ConnexionTotpCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  connexionTotpCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConnexionTotpCreateMutationResult = NonNullable<Awaited<ReturnType<typeof connexionTotpCreate>>>
+    export type ConnexionTotpCreateMutationBody = Verification
+    export type ConnexionTotpCreateMutationError = Probleme
+    export type ConnexionTotpCreateMutationVariables = {data: Verification}
+
+    export const useConnexionTotpCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionTotpCreate>>, TError,ConnexionTotpCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof connexionTotpCreate>>,
+        TError,
+        ConnexionTotpCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getConnexionTotpCreateMutationOptions(options), queryClient);
+    }
     export type connexionUtilisateursListResponse200 = {
   data: PersonneDuPoste[]
   status: 200
