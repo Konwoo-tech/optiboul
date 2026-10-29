@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from django.contrib.auth import authenticate
 from django.contrib.auth import login
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.hashers import make_password
@@ -32,12 +33,19 @@ SESSION_VIA = "optiboul_connexion_via"
 REFUS: dict[str, tuple[str, int]] = {
     "utilisateur_inconnu": ("Utilisateur inconnu.", 400),
     "code_incorrect": ("Code incorrect.", 400),
-    "compte_bloque": ("Trop de codes faux : compte bloqué 15 minutes.", 403),
+    "compte_bloque": ("Trop d'échecs : compte bloqué 15 minutes.", 403),
     "code_interdit_a_distance": (
         "À distance, connectez-vous par e-mail ou Google.",
         403,
     ),
     "poste_non_reconnu": ("Ce poste n'est pas un poste de confiance.", 403),
+    "identifiants_incorrects": ("E-mail ou mot de passe incorrect.", 400),
+    "aucune_identification": ("Identifiez-vous d'abord.", 409),
+    "aucun_code_envoye": ("Demandez d'abord un code.", 409),
+    "trop_d_essais": ("Trop d'essais : demandez un nouveau code.", 400),
+    "code_expire": ("Ce code a expiré : demandez-en un nouveau.", 400),
+    "renvoi_trop_tot": ("Patientez avant de renvoyer un code.", 429),
+    "telephone_absent": ("Aucun numéro enregistré : utilisez un code de secours.", 400),
 }
 
 
@@ -55,6 +63,7 @@ class RefusConnexion(Exception):  # noqa: N818
 class Identifie:
     utilisateur: User
     via: str  # « code », « e-mail », « Google »
+    verification: str = ""  # canal du second facteur : sms, whatsapp, totp, secours
 
 
 def definir_code(utilisateur: User, code: str) -> None:
@@ -85,6 +94,29 @@ def verifier_code(utilisateur_id: int, code: str, auteur: Auteur) -> Identifie:
     return Identifie(utilisateur, "code")
 
 
+def verifier_mot_de_passe(
+    request: HttpRequest,
+    email: str,
+    mot_de_passe: str,
+    auteur: Auteur,
+) -> Identifie:
+    """E-mail + mot de passe (autre appareil, accès distant) ; même verrouillage."""
+    compte = User.objects.filter(email__iexact=email.strip(), is_active=True).first()
+    if compte is not None and verrouillage.est_bloque(compte):
+        raise _bloque(compte)
+    utilisateur = authenticate(request, username=email.strip(), password=mot_de_passe)
+    if utilisateur is None:
+        if compte is not None and verrouillage.enregistrer_echec(
+            compte,
+            "mot_de_passe",
+            auteur,
+        ):
+            raise _bloque(compte)
+        raise RefusConnexion("identifiants_incorrects")
+    verrouillage.enregistrer_reussite(utilisateur)
+    return Identifie(utilisateur, "e-mail")
+
+
 def _bloque(utilisateur: User) -> RefusConnexion:
     return RefusConnexion(
         BLOQUE,
@@ -102,5 +134,5 @@ def ouvrir_session(request: HttpRequest, identifie: Identifie) -> None:
         auteur=auteur_de(request),
         objet_type="utilisateur",
         objet_id=identifie.utilisateur.pk,
-        apres={"methode": identifie.via},
+        apres={"methode": identifie.via, "verification": identifie.verification},
     )

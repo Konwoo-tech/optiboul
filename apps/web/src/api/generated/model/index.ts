@@ -6,8 +6,12 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './canalEnum.ts';
+export * from './codeEnvoye.ts';
 export * from './compte.ts';
 export * from './connexionCode.ts';
+export * from './connexionEmail.ts';
+export * from './envoiCode.ts';
 export * from './etatSauvegardes.ts';
 export * from './journalListParams.ts';
 export * from './ligneJournal.ts';
@@ -34,3 +38,4 @@ export * from './user.ts';
 export * from './usersListParams.ts';
 export * from './utilisateursListParams.ts';
 export * from './valeur.ts';
+export * from './verification.ts';

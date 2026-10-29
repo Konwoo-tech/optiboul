@@ -4,6 +4,17 @@ info:
   version: 1.0.0
   description: API REST d'OptiBoul ERP (Boulangerie du Faubourg)
 paths:
+  /api/v1/connexion/annuler/:
+    post:
+      operationId: connexion_annuler_create
+      tags:
+      - connexion
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
   /api/v1/connexion/code/:
     post:
       operationId: connexion_code_create
@@ -32,6 +43,116 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResultatConnexion'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/connexion/deconnexion/:
+    post:
+      operationId: connexion_deconnexion_create
+      tags:
+      - connexion
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/connexion/email/:
+    post:
+      operationId: connexion_email_create
+      description: 'E-mail + mot de passe : double authentification à chaque connexion.'
+      tags:
+      - connexion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnexionEmail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConnexionEmail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConnexionEmail'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultatConnexion'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/connexion/otp/envoyer/:
+    post:
+      operationId: connexion_otp_envoyer_create
+      description: Code à 6 chiffres par SMS ou WhatsApp (renvoi après 30 s, bascule
+        de canal).
+      tags:
+      - connexion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvoiCode'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EnvoiCode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EnvoiCode'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CodeEnvoye'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/connexion/otp/verifier/:
+    post:
+      operationId: connexion_otp_verifier_create
+      description: Code reçu, vérifié dès le 6ᵉ chiffre ; 3 essais puis nouveau code.
+      tags:
+      - connexion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Verification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Verification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Verification'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
         '400':
           content:
             application/json:
@@ -510,6 +631,30 @@ paths:
           description: ''
 components:
   schemas:
+    CanalEnum:
+      enum:
+      - sms
+      - whatsapp
+      type: string
+      description: |-
+        * `sms` - sms
+        * `whatsapp` - whatsapp
+    CodeEnvoye:
+      type: object
+      properties:
+        heure:
+          type: string
+        canal:
+          type: string
+        telephoneMasque:
+          type: string
+        renvoiDans:
+          type: integer
+      required:
+      - canal
+      - heure
+      - renvoiDans
+      - telephoneMasque
     Compte:
       type: object
       properties:
@@ -566,6 +711,24 @@ components:
       required:
       - code
       - utilisateur
+    ConnexionEmail:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        motDePasse:
+          type: string
+      required:
+      - email
+      - motDePasse
+    EnvoiCode:
+      type: object
+      properties:
+        canal:
+          $ref: '#/components/schemas/CanalEnum'
+      required:
+      - canal
     EtatSauvegardes:
       type: object
       properties:
@@ -1024,6 +1187,14 @@ components:
       - auteur
       - le
       - valeur
+    Verification:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 12
+      required:
+      - code
   securitySchemes:
     cookieAuth:
       type: apiKey

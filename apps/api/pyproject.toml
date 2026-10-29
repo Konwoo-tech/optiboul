@@ -148,6 +148,9 @@ lint.ignore = [
 lint.per-file-ignores."**/tests/**" = [
   "PLR2004", # valeurs métier explicites dans les tests (FCFA)
 ]
+# RefusConnexion reçoit un code de refus du catalogue REFUS, pas un message.
+lint.per-file-ignores."optiboul/users/connexion.py" = [ "EM101" ]
+lint.per-file-ignores."optiboul/users/double_auth.py" = [ "EM101" ]
 lint.isort.force-single-line = true
 
 # ==== pyproject-fmt ====

@@ -76,7 +76,7 @@ def test_bon_code_ouvre_la_session(comptoir, rachel):
     ligne = LigneJournal.objects.get(action="connexion.reussie")
     assert ligne.acteur == rachel
     assert ligne.poste_nom == "Comptoir"
-    assert ligne.apres == {"methode": "code"}
+    assert ligne.apres == {"methode": "code", "verification": ""}
 
 
 def test_le_code_est_hache(rachel):

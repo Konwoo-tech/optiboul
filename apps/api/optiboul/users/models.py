@@ -68,6 +68,19 @@ class User(AbstractUser):
     bloque_jusqua = DateTimeField(_("bloqué jusqu'à"), null=True, blank=True)
     # Code à 4 chiffres du comptoir, haché en Argon2 (O1) ; vide : pas de code.
     code_pin = CharField(_("code à 4 chiffres"), max_length=128, blank=True, default="")
+    # Double authentification (CdC §4.1) : numéro +237, canal préféré, dernier passage.
+    telephone = CharField(_("téléphone"), max_length=20, blank=True, default="")
+    canal_verification = CharField(
+        _("canal de vérification"),
+        max_length=10,
+        choices=[("sms", "SMS"), ("whatsapp", "WhatsApp")],
+        default="sms",
+    )
+    derniere_double_auth = DateTimeField(
+        _("dernière double authentification"),
+        null=True,
+        blank=True,
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -128,3 +141,29 @@ class PosteConfiance(Model):
 
     def __str__(self) -> str:
         return self.nom
+
+
+class CodeVerification(Model):
+    """Code à 6 chiffres envoyé par SMS ou WhatsApp (CdC §4.1), haché, 5 minutes."""
+
+    utilisateur = ForeignKey(
+        "users.User",
+        on_delete=CASCADE,
+        related_name="codes_verification",
+        verbose_name=_("utilisateur"),
+    )
+    code = CharField(_("code haché"), max_length=128)
+    canal = CharField(_("canal"), max_length=10)
+    cree_le = DateTimeField(_("envoyé le"), default=timezone.now)
+    expire_le = DateTimeField(_("expire le"))
+    essais = PositiveSmallIntegerField(_("essais"), default=0)
+    utilise = BooleanField(_("utilisé"), default=False)
+
+    class Meta:
+        db_table = "code_verification"
+        ordering = ["-cree_le", "-id"]
+        verbose_name = _("code de vérification")
+        verbose_name_plural = _("codes de vérification")
+
+    def __str__(self) -> str:
+        return f"{self.utilisateur} · {self.canal} · {self.cree_le:%d/%m %H:%M}"
