@@ -47,6 +47,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   gettext \
   # entrypoint
   wait-for-it \
+  # sauvegardes de la base (pg_dump, US-142)
+  postgresql-client \
   # cleaning up unused files
   && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
   && rm -rf /var/lib/apt/lists/*
@@ -79,6 +81,9 @@ COPY --from=python-build-stage --chown=django:django ${APP_HOME} ${APP_HOME}
 
 # make django owner of the WORKDIR directory as well.
 RUN chown django:django ${APP_HOME}
+
+# Dossier des sauvegardes locales (volume monté sur le worker Celery, US-142).
+RUN mkdir -p /sauvegardes && chown django:django /sauvegardes
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"

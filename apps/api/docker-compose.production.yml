@@ -4,6 +4,7 @@ volumes:
   production_traefik: {}
 
   production_redis_data: {}
+  production_sauvegardes: {}
 
 
 
@@ -63,6 +64,11 @@ services:
     <<: *django
     image: optiboul_production_celeryworker
     command: /start-celeryworker
+    # Copies locales de la base (US-142) : à doubler sur le disque externe (CdC §10.1).
+    environment:
+      - OPTIBOUL_DOSSIER_SAUVEGARDES=/sauvegardes
+    volumes:
+      - production_sauvegardes:/sauvegardes
 
   celerybeat:
     <<: *django

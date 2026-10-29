@@ -6,16 +6,20 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './etatSauvegardes.ts';
 export * from './journalListParams.ts';
 export * from './ligneJournal.ts';
 export * from './modification.ts';
 export * from './nullEnum.ts';
 export * from './paginatedLigneJournalList.ts';
+export * from './paginatedSauvegardeList.ts';
 export * from './paginatedUserList.ts';
 export * from './parametre.ts';
 export * from './patchedUser.ts';
 export * from './profilEnum.ts';
 export * from './sante.ts';
+export * from './sauvegarde.ts';
+export * from './sauvegardesListParams.ts';
 export * from './user.ts';
 export * from './usersListParams.ts';
 export * from './valeur.ts';

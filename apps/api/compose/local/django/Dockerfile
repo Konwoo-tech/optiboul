@@ -35,7 +35,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # devcontainer dependencies and utils
 RUN apt-get update && apt-get install --no-install-recommends -y \
-  sudo git bash-completion nano ssh
+  sudo git bash-completion nano ssh \
+  # sauvegardes de la base (pg_dump, US-142)
+  postgresql-client
 
 # Create devcontainer user and add it to sudoers
 RUN groupadd --gid 1000 dev-user \

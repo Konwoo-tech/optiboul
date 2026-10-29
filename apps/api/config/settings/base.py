@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import environ
+from celery.schedules import crontab
 from django.utils.translation import gettext_lazy as _
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
@@ -377,5 +378,38 @@ SPECTACULAR_SETTINGS: dict[str, Any] = {
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "SCHEMA_PATH_PREFIX": "/api/v1/",
 }
-# Your stuff...
+# OptiBoul
 # ------------------------------------------------------------------------------
+# Tâches planifiées (spécification §8), synchronisées dans django-celery-beat.
+CELERY_BEAT_SCHEDULE = {
+    "envoyer-file": {"task": "notifications.envoyer_file", "schedule": 30.0},
+    "sauvegarde-planifiee": {
+        "task": "core.sauvegarde_planifiee",
+        "schedule": crontab(minute=5),
+    },
+    "verifier-copie-cloud": {
+        "task": "core.verifier_copie_cloud",
+        "schedule": crontab(minute=35),
+    },
+}
+
+# Passerelle de chaque canal de la file d'envoi (O15). SMS et WhatsApp : fournisseur à
+# choisir (CdC §11.6) ; sans passerelle, les messages attendent dans la file.
+OPTIBOUL_PASSERELLES: dict[str, str | None] = {
+    "email": "optiboul.notifications.infrastructure.envois.PasserelleEmail",
+    "sms": env("OPTIBOUL_PASSERELLE_SMS", default=None),
+    "whatsapp": env("OPTIBOUL_PASSERELLE_WHATSAPP", default=None),
+}
+
+# Sauvegardes (US-142) : copies locales, puis copie chiffrée sur S3 (ADR-14).
+OPTIBOUL_DOSSIER_SAUVEGARDES = env(
+    "OPTIBOUL_DOSSIER_SAUVEGARDES",
+    default=str(BASE_DIR / "sauvegardes"),
+)
+OPTIBOUL_SAUVEGARDES_CONSERVATION_JOURS = env.int(
+    "OPTIBOUL_SAUVEGARDES_CONSERVATION_JOURS",
+    default=14,
+)
+OPTIBOUL_SAUVEGARDES_PREFIXE_S3 = "sauvegardes/"
+# Clé AES-256 en base64 ; à conserver aussi hors du serveur pour pouvoir restaurer.
+OPTIBOUL_CLE_SAUVEGARDE = env("OPTIBOUL_CLE_SAUVEGARDE", default="")

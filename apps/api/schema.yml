@@ -138,6 +138,51 @@ paths:
               schema:
                 $ref: '#/components/schemas/Sante'
           description: ''
+  /api/v1/sauvegardes/:
+    get:
+      operationId: sauvegardes_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - sauvegardes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSauvegardeList'
+          description: ''
+  /api/v1/sauvegardes/etat/:
+    get:
+      operationId: sauvegardes_etat_retrieve
+      tags:
+      - sauvegardes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EtatSauvegardes'
+          description: ''
+  /api/v1/sauvegardes/lancer/:
+    post:
+      operationId: sauvegardes_lancer_create
+      tags:
+      - sauvegardes
+      security:
+      - cookieAuth: []
+      responses:
+        '202':
+          description: No response body
   /api/v1/users/:
     get:
       operationId: users_list
@@ -258,6 +303,26 @@ paths:
           description: ''
 components:
   schemas:
+    EtatSauvegardes:
+      type: object
+      properties:
+        derniere_locale:
+          type: string
+          format: date-time
+          nullable: true
+        derniere_cloud:
+          type: string
+          format: date-time
+          nullable: true
+        cloud_en_retard:
+          type: boolean
+        seuil_alerte_heures:
+          type: integer
+      required:
+      - cloud_en_retard
+      - derniere_cloud
+      - derniere_locale
+      - seuil_alerte_heures
     LigneJournal:
       type: object
       properties:
@@ -353,6 +418,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LigneJournal'
+    PaginatedSauvegardeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sauvegarde'
     PaginatedUserList:
       type: object
       required:
@@ -461,6 +549,58 @@ components:
       required:
       - base
       - statut
+    Sauvegarde:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        genre:
+          type: string
+          readOnly: true
+        declencheur:
+          type: string
+          readOnly: true
+          title: Déclencheur
+        statut:
+          type: string
+          readOnly: true
+        source:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Sauvegarde locale copiée
+        emplacement:
+          type: string
+          readOnly: true
+        taille:
+          type: integer
+          readOnly: true
+          title: Taille (octets)
+        erreur:
+          type: string
+          readOnly: true
+        debut:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Début
+        fin:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - debut
+      - declencheur
+      - emplacement
+      - erreur
+      - fin
+      - genre
+      - id
+      - source
+      - statut
+      - taille
     User:
       type: object
       properties:

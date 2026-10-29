@@ -280,3 +280,4 @@ optiboul/media/
 
 # Certificats locaux mkcert (make certs)
 compose/production/traefik/certs/
+sauvegardes/

@@ -75,3 +75,33 @@ class ValeurParametre(models.Model):
 
     def __str__(self) -> str:
         return f"{self.cle} = {self.valeur}"
+
+
+class Sauvegarde(models.Model):
+    """Une sauvegarde locale ou sa copie cloud chiffrée (CdC §5.12, US-142)."""
+
+    genre = models.CharField(_("genre"), max_length=10)
+    declencheur = models.CharField(_("déclencheur"), max_length=20)
+    statut = models.CharField(_("statut"), max_length=10, db_index=True)
+    source = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="copies",
+        verbose_name=_("sauvegarde locale copiée"),
+    )
+    emplacement = models.CharField(_("emplacement"), max_length=500, blank=True)
+    taille = models.PositiveBigIntegerField(_("taille (octets)"), default=0)
+    erreur = models.TextField(_("erreur"), blank=True)
+    debut = models.DateTimeField(_("début"), default=timezone.now)
+    fin = models.DateTimeField(_("fin"), null=True, blank=True)
+
+    class Meta:
+        db_table = "sauvegarde"
+        ordering = ["-debut", "-id"]
+        verbose_name = _("sauvegarde")
+        verbose_name_plural = _("sauvegardes")
+
+    def __str__(self) -> str:
+        return f"{self.genre} {self.debut:%d/%m/%Y %H:%M} ({self.statut})"
