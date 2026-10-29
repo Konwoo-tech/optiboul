@@ -7,6 +7,7 @@
  */
 
 export * from './acces.ts';
+export * from './affectations.ts';
 export * from './apercu.ts';
 export * from './brouillon.ts';
 export * from './canalEnum.ts';
@@ -35,21 +36,29 @@ export * from './paginatedGroupeList.ts';
 export * from './paginatedLigneJournalList.ts';
 export * from './paginatedPosteList.ts';
 export * from './paginatedSauvegardeList.ts';
+export * from './paginatedSemaineList.ts';
 export * from './paginatedUserList.ts';
 export * from './parametre.ts';
 export * from './patchedGroupe.ts';
 export * from './patchedUser.ts';
+export * from './personne.ts';
 export * from './personneDuPoste.ts';
+export * from './planification.ts';
 export * from './poste.ts';
 export * from './posteActuel.ts';
 export * from './postesListParams.ts';
 export * from './probleme.ts';
 export * from './profilEnum.ts';
 export * from './resultatConnexion.ts';
+export * from './rotation.ts';
 export * from './sante.ts';
 export * from './sauvegarde.ts';
 export * from './sauvegardesListParams.ts';
 export * from './secretTotp.ts';
+export * from './semaine.ts';
+export * from './semaineConflits.ts';
+export * from './semainesListParams.ts';
+export * from './semainesRotationRetrieveParams.ts';
 export * from './session.ts';
 export * from './user.ts';
 export * from './usersListParams.ts';

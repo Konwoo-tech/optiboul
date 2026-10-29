@@ -790,6 +790,171 @@ paths:
       responses:
         '202':
           description: No response body
+  /api/v1/semaines/:
+    get:
+      operationId: semaines_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - semaines
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSemaineList'
+          description: ''
+    post:
+      operationId: semaines_create
+      tags:
+      - semaines
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Planification'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Planification'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Planification'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SemaineConflits'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/semaines/{id}/:
+    get:
+      operationId: semaines_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) semaine.
+        required: true
+      tags:
+      - semaines
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Semaine'
+          description: ''
+  /api/v1/semaines/{id}/affectations/:
+    post:
+      operationId: semaines_affectations_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) semaine.
+        required: true
+      tags:
+      - semaines
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Affectations'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Affectations'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Affectations'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SemaineConflits'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/semaines/{id}/copier-precedente/:
+    post:
+      operationId: semaines_copier_precedente_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) semaine.
+        required: true
+      tags:
+      - semaines
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SemaineConflits'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/semaines/rotation/:
+    get:
+      operationId: semaines_rotation_retrieve
+      description: Gérant et responsable proposés pour une semaine (O9).
+      parameters:
+      - in: query
+        name: annee
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: numero
+        schema:
+          type: integer
+        required: true
+      tags:
+      - semaines
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rotation'
+          description: ''
   /api/v1/users/:
     get:
       operationId: users_list
@@ -1111,6 +1276,18 @@ components:
       - espaces
       - fonctions
       - profil
+    Affectations:
+      type: object
+      properties:
+        gerant:
+          type: integer
+          nullable: true
+        production:
+          type: integer
+          nullable: true
+      required:
+      - gerant
+      - production
     Apercu:
       type: object
       properties:
@@ -1608,6 +1785,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Sauvegarde'
+    PaginatedSemaineList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Semaine'
     PaginatedUserList:
       type: object
       required:
@@ -1709,6 +1909,20 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ProfilEnum'
           - $ref: '#/components/schemas/NullEnum'
+    Personne:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        profil:
+          type: string
+          nullable: true
+      required:
+      - id
+      - nom
+      - profil
     PersonneDuPoste:
       type: object
       properties:
@@ -1725,6 +1939,26 @@ components:
       - id
       - nom
       - profil
+    Planification:
+      type: object
+      properties:
+        annee:
+          type: integer
+          maximum: 2100
+          minimum: 2026
+        numero:
+          type: integer
+          maximum: 53
+          minimum: 1
+        gerant:
+          type: integer
+          nullable: true
+        production:
+          type: integer
+          nullable: true
+      required:
+      - annee
+      - numero
     Poste:
       type: object
       properties:
@@ -1804,6 +2038,18 @@ components:
           type: boolean
       required:
       - deuxFacteurs
+    Rotation:
+      type: object
+      properties:
+        gerant:
+          type: integer
+          nullable: true
+        production:
+          type: integer
+          nullable: true
+      required:
+      - gerant
+      - production
     Sante:
       type: object
       properties:
@@ -1876,6 +2122,100 @@ components:
       required:
       - secret
       - uri
+    Semaine:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+        annee:
+          type: integer
+          readOnly: true
+          title: Année
+        numero:
+          type: integer
+          readOnly: true
+          title: Numéro
+        du:
+          type: string
+          readOnly: true
+        au:
+          type: string
+          readOnly: true
+        debut:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Début
+        fin:
+          type: string
+          format: date-time
+          readOnly: true
+        statut:
+          type: string
+          readOnly: true
+        gerant:
+          allOf:
+          - $ref: '#/components/schemas/Personne'
+          nullable: true
+        production:
+          allOf:
+          - $ref: '#/components/schemas/Personne'
+          nullable: true
+        planifiee_par:
+          type: string
+          default: ''
+        ouverte_le:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        ouverte_par:
+          type: string
+          default: ''
+        cloturee_le:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Clôturée le
+        cloturee_par:
+          type: string
+          default: ''
+        cloture_forcee_motif:
+          type: string
+          readOnly: true
+          title: Motif de clôture forcée
+      required:
+      - annee
+      - au
+      - cloture_forcee_motif
+      - cloturee_le
+      - code
+      - debut
+      - du
+      - fin
+      - gerant
+      - id
+      - numero
+      - ouverte_le
+      - production
+      - statut
+    SemaineConflits:
+      type: object
+      properties:
+        semaine:
+          $ref: '#/components/schemas/Semaine'
+        conflits:
+          type: array
+          items:
+            type: string
+      required:
+      - conflits
+      - semaine
     Session:
       type: object
       properties:

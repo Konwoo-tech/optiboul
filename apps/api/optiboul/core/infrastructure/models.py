@@ -105,3 +105,77 @@ class Sauvegarde(models.Model):
 
     def __str__(self) -> str:
         return f"{self.genre} {self.debut:%d/%m/%Y %H:%M} ({self.statut})"
+
+
+class Semaine(models.Model):
+    """Unité de rattachement de toute l'activité (R1) : lundi 06:00 → lundi 06:00."""
+
+    annee = models.PositiveSmallIntegerField(_("année"))
+    numero = models.PositiveSmallIntegerField(_("numéro"))
+    debut = models.DateTimeField(_("début"))
+    fin = models.DateTimeField(_("fin"))
+    statut = models.CharField(_("statut"), max_length=10, default="planifiee")
+    gerant = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="semaines_gerees",
+        verbose_name=_("gérant de la semaine"),
+    )
+    production = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="semaines_en_production",
+        verbose_name=_("responsable de production"),
+    )
+    planifiee_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("planifiée par"),
+    )
+    ouverte_le = models.DateTimeField(_("ouverte le"), null=True, blank=True)
+    ouverte_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("ouverte par"),
+    )
+    cloturee_le = models.DateTimeField(_("clôturée le"), null=True, blank=True)
+    cloturee_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("clôturée par"),
+    )
+    cloture_forcee_motif = models.TextField(_("motif de clôture forcée"), blank=True)
+
+    class Meta:
+        db_table = "semaine"
+        ordering = ["-annee", "-numero"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["annee", "numero"],
+                name="une_semaine_par_numero",
+            ),
+            # R2 : une seule semaine ouverte à la fois.
+            models.UniqueConstraint(
+                fields=["statut"],
+                condition=models.Q(statut="ouverte"),
+                name="une_semaine_ouverte",
+            ),
+        ]
+        verbose_name = _("semaine")
+        verbose_name_plural = _("semaines")
+
+    def __str__(self) -> str:
+        return f"S{self.numero:02d} {self.annee}"

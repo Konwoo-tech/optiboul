@@ -20,6 +20,7 @@ from rest_framework.response import Response
 
 from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.contexte import entree_de
+from optiboul.core.api.erreurs import ProblemeSerializer
 from optiboul.core.application.journal import Entree
 from optiboul.core.infrastructure.journal import journaliser
 from optiboul.core.infrastructure.parametres import parametre
@@ -55,11 +56,6 @@ class ConnexionCodeSerializer(serializers.Serializer):
 
 class ResultatConnexionSerializer(serializers.Serializer):
     deuxFacteurs = serializers.BooleanField()  # noqa: N815 : nom attendu par le web
-
-
-class ProblemeSerializer(serializers.Serializer):
-    detail = serializers.CharField()
-    code = serializers.CharField()
 
 
 def exiger_csrf(request: Request) -> None:
