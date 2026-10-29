@@ -1,0 +1,126 @@
+{% load optiboul %}
+
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Bon n° {{ livraison.numero }}</title>
+    <style>
+      @page {
+        size: A5;
+        margin: 12mm;
+      }
+
+      body {
+        font-family: "DejaVu Sans", sans-serif;
+        font-size: 10pt;
+        color: #2b1a10;
+      }
+
+      h1 {
+        color: #5A3220;
+        font-size: 15pt;
+        margin: 0 0 1mm;
+      }
+
+      .entete {
+        border-bottom: 2px solid #F2B705;
+        padding-bottom: 2mm;
+        margin-bottom: 4mm;
+      }
+
+      .discret {
+        color: #6b5446;
+        font-size: 9pt;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 3mm;
+      }
+
+      th,
+      td {
+        padding: 1.5mm 1mm;
+        border-bottom: 1px solid #eadfc8;
+        text-align: left;
+      }
+
+      th {
+        color: #5A3220;
+        font-size: 9pt;
+      }
+
+      .montant {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .totaux td {
+        border-bottom: none;
+      }
+
+      .fort {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="entete">
+      <h1>Bon de livraison n° {{ livraison.numero }}</h1>
+      <div class="discret">{{ boulangerie }}</div>
+      <div class="discret">
+        {{ moment|date:"d/m/Y" }} à {{ moment|date:"H:i" }} · livré par {{ livraison.cree_par.name }}
+      </div>
+    </div>
+
+    <p class="fort">{{ livraison.client.nom }}</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Produit</th>
+          <th class="montant">Pains</th>
+          <th class="montant">Prix</th>
+          <th class="montant">Montant</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in lignes %}
+          <tr>
+            <td>{{ ligne.produit.code }} · {{ ligne.produit.nom }}</td>
+            <td class="montant">{{ ligne.quantite }}</td>
+            <td class="montant">{{ ligne.prix_unitaire|fcfa }}</td>
+            <td class="montant">{{ ligne.montant|fcfa }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <table class="totaux">
+      <tr>
+        <td>Montant dû</td>
+        <td class="montant fort">{{ livraison.montant_du|fcfa }}</td>
+      </tr>
+      {% for paiement in paiements %}
+        <tr>
+          <td>
+            Reçu ({{ paiement.get_mode_display }}{% if paiement.reference %} · {{ paiement.reference }}{% endif %})
+          </td>
+          <td class="montant">{{ paiement.montant|fcfa }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td>Reçu</td>
+          <td class="montant">{{ recu|fcfa }}</td>
+        </tr>
+      {% endfor %}
+      <tr>
+        <td>Solde après livraison</td>
+        <td class="montant fort">{{ livraison.solde_apres|fcfa }}</td>
+      </tr>
+    </table>
+  </body>
+</html>

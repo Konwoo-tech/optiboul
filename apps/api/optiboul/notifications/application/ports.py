@@ -36,12 +36,15 @@ class Notificateur(Protocol):
 
 
 class FileEnvoi(Protocol):
-    def mettre_en_file(
+    def mettre_en_file(  # noqa: PLR0913
         self,
         canal: Canal,
         destinataire: str,
         contenu: str,
         sujet: str = "",
-    ) -> None:
+        *,
+        objet_type: str = "",
+        objet_id: int | None = None,
+    ) -> int:
         """Écrit le message dans la file ; il partira quand le réseau sera là (R22)."""
         ...

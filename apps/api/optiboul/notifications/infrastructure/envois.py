@@ -66,19 +66,24 @@ class NotificateurDjango:
 
 
 class FileEnvoiDjango:
-    def mettre_en_file(
+    def mettre_en_file(  # noqa: PLR0913
         self,
         canal: Canal,
         destinataire: str,
         contenu: str,
         sujet: str = "",
-    ) -> None:
-        MessageSortant.objects.create(
+        *,
+        objet_type: str = "",
+        objet_id: int | None = None,
+    ) -> int:
+        return MessageSortant.objects.create(
             canal=canal,
             destinataire=destinataire,
             contenu=contenu,
             sujet=sujet,
-        )
+            objet_type=objet_type,
+            objet_id=objet_id,
+        ).pk
 
 
 notificateur = NotificateurDjango()

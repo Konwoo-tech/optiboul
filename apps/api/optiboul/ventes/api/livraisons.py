@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from django.db import transaction
+from django.http import HttpResponse
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
@@ -26,11 +28,15 @@ from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.api.permissions import profil_de
 from optiboul.core.domain.erreurs import RefusMetier
+from optiboul.core.infrastructure.journal import journaliser
 from optiboul.demandes.domain.demandes import numero_affiche
 from optiboul.demandes.infrastructure.models import Demande
+from optiboul.notifications.domain.envois import masquer_telephone
+from optiboul.notifications.infrastructure.models import MessageSortant
 from optiboul.ventes.application import livraisons as cas
 from optiboul.ventes.application.livraisons import LIVRENT
 from optiboul.ventes.domain.livraisons import StatutLivraison
+from optiboul.ventes.infrastructure import bons
 from optiboul.ventes.infrastructure.autorisations import PLAFOND
 from optiboul.ventes.infrastructure.livraisons import depots
 from optiboul.ventes.infrastructure.models import Livraison
@@ -51,6 +57,20 @@ class LigneLivreeSerializer(serializers.Serializer):
     montant = serializers.IntegerField()
 
 
+class EnvoiSerializer(serializers.ModelSerializer[MessageSortant]):
+    """État d'un envoi de la file : en attente, envoyé, échec (O15)."""
+
+    destinataire = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MessageSortant
+        fields = ["id", "canal", "destinataire", "statut", "cree_le", "envoye_le"]
+        read_only_fields = fields
+
+    def get_destinataire(self, message: MessageSortant) -> str:
+        return masquer_telephone(message.destinataire)
+
+
 class LivraisonSerializer(serializers.ModelSerializer[Livraison]):
     client = ClientResumeSerializer()
     jour = serializers.DateField(source="caisse.jour")
@@ -60,6 +80,7 @@ class LivraisonSerializer(serializers.ModelSerializer[Livraison]):
     reste = serializers.SerializerMethodField()
     paiements = serializers.SerializerMethodField()
     demande = serializers.SerializerMethodField()
+    envoi_whatsapp = serializers.SerializerMethodField()
     cree_par = serializers.CharField(source="cree_par.name")
 
     class Meta:
@@ -82,10 +103,17 @@ class LivraisonSerializer(serializers.ModelSerializer[Livraison]):
             "paiements",
             "solde_avant",
             "solde_apres",
+            "envoi_whatsapp",
             "cree_par",
             "cree_le",
         ]
         read_only_fields = fields
+
+    @extend_schema(responses=EnvoiSerializer(allow_null=True))
+    def get_envoi_whatsapp(self, livraison: Livraison) -> dict[str, Any] | None:
+        """Dernier envoi du bon par WhatsApp, avec son état."""
+        envoi = bons.dernier_envoi(livraison.pk)
+        return EnvoiSerializer(envoi).data if envoi else None
 
     @extend_schema(responses=LigneLivreeSerializer(many=True))
     def get_lignes(self, livraison: Livraison) -> list[dict[str, Any]]:
@@ -177,7 +205,7 @@ class LivraisonsViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     ).prefetch_related("lignes__produit", "encaissements")
 
     def get_permissions(self):
-        if self.action in {"list", "retrieve"}:
+        if self.action in {"list", "retrieve", "bon"}:
             return [ProfilParmi("caissier", *DIRECTION)()]
         return [ProfilParmi(*LIVRENT)()]
 
@@ -262,6 +290,38 @@ class LivraisonsViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         except RefusMetier as refus:
             return probleme(refus)
         return self._repondre(livraison)
+
+    @extend_schema(responses={(200, "application/pdf"): OpenApiTypes.BINARY})
+    @action(detail=True)
+    def bon(self, request: Request, pk: str) -> HttpResponse:
+        """Le bon de livraison en PDF, à imprimer ou à remettre."""
+        livraison = self.get_object()
+        reponse = HttpResponse(bons.pdf(livraison), content_type="application/pdf")
+        reponse["Content-Disposition"] = (
+            f'inline; filename="bon-{livraison.numero}.pdf"'
+        )
+        return reponse
+
+    @extend_schema(
+        request=None,
+        responses={202: EnvoiSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"], url_path="envoyer-whatsapp")
+    def envoyer_whatsapp(self, request: Request, pk: str) -> Response:
+        """Le bon part par WhatsApp ; hors ligne, il attend dans la file (O15)."""
+        livraison = self.get_object()
+        try:
+            envoi = bons.envoyer_whatsapp(livraison)
+        except RefusMetier as refus:
+            return probleme(refus)
+        journaliser(
+            "livraison.bon_envoye",
+            auteur=auteur_de(request),
+            objet_type="livraison",
+            objet_id=livraison.pk,
+            apres={"canal": envoi.canal, "message": envoi.pk},
+        )
+        return Response(EnvoiSerializer(envoi).data, status=status.HTTP_202_ACCEPTED)
 
     @extend_schema(
         parameters=[OpenApiParameter("client", int, required=True)],

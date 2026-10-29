@@ -25,6 +25,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  Envoi,
   Livraison,
   LivraisonsListParams,
   LivraisonsPropositionRetrieveParams,
@@ -390,7 +391,205 @@ export function useLivraisonsRetrieve<TData = Awaited<ReturnType<typeof livraiso
 
 
 
-export type livraisonsLivrerCommeCommandeCreateResponse201 = {
+export type livraisonsBonRetrieveResponse200 = {
+  data: Blob
+  status: 200
+}
+
+export type livraisonsBonRetrieveResponseSuccess = (livraisonsBonRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type livraisonsBonRetrieveResponse = (livraisonsBonRetrieveResponseSuccess)
+
+export const getLivraisonsBonRetrieveUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/livraisons/${id}/bon/`
+}
+
+/**
+ * Le bon de livraison en PDF, à imprimer ou à remettre.
+ */
+export const livraisonsBonRetrieve = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<livraisonsBonRetrieveResponse> => {
+
+  return optiboulFetch<livraisonsBonRetrieveResponse>(getLivraisonsBonRetrieveUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getLivraisonsBonRetrieveQueryKey = (id: number,) => {
+    return [
+    `/api/v1/livraisons/${id}/bon/`
+    ] as const;
+    }
+
+
+export const getLivraisonsBonRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof livraisonsBonRetrieve>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof livraisonsBonRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getLivraisonsBonRetrieveQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof livraisonsBonRetrieve>>> = ({ signal }) => livraisonsBonRetrieve(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof livraisonsBonRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type LivraisonsBonRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof livraisonsBonRetrieve>>>
+export type LivraisonsBonRetrieveQueryError = unknown
+
+
+export function useLivraisonsBonRetrieve<TData = Awaited<ReturnType<typeof livraisonsBonRetrieve>>, TError = unknown>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof livraisonsBonRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof livraisonsBonRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof livraisonsBonRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useLivraisonsBonRetrieve<TData = Awaited<ReturnType<typeof livraisonsBonRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof livraisonsBonRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof livraisonsBonRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof livraisonsBonRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useLivraisonsBonRetrieve<TData = Awaited<ReturnType<typeof livraisonsBonRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof livraisonsBonRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useLivraisonsBonRetrieve<TData = Awaited<ReturnType<typeof livraisonsBonRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof livraisonsBonRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getLivraisonsBonRetrieveQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type livraisonsEnvoyerWhatsappCreateResponse202 = {
+  data: Envoi
+  status: 202
+}
+
+export type livraisonsEnvoyerWhatsappCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type livraisonsEnvoyerWhatsappCreateResponseSuccess = (livraisonsEnvoyerWhatsappCreateResponse202) & {
+  headers: Headers;
+};
+export type livraisonsEnvoyerWhatsappCreateResponseError = (livraisonsEnvoyerWhatsappCreateResponse409) & {
+  headers: Headers;
+};
+
+export type livraisonsEnvoyerWhatsappCreateResponse = (livraisonsEnvoyerWhatsappCreateResponseSuccess | livraisonsEnvoyerWhatsappCreateResponseError)
+
+export const getLivraisonsEnvoyerWhatsappCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/livraisons/${id}/envoyer-whatsapp/`
+}
+
+/**
+ * Le bon part par WhatsApp ; hors ligne, il attend dans la file (O15).
+ */
+export const livraisonsEnvoyerWhatsappCreate = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<livraisonsEnvoyerWhatsappCreateResponse> => {
+
+  return optiboulFetch<livraisonsEnvoyerWhatsappCreateResponse>(getLivraisonsEnvoyerWhatsappCreateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getLivraisonsEnvoyerWhatsappCreateMutationKey = () => ['livraisonsEnvoyerWhatsappCreate'] as const;
+
+export const getLivraisonsEnvoyerWhatsappCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof livraisonsEnvoyerWhatsappCreate>>, TError,LivraisonsEnvoyerWhatsappCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof livraisonsEnvoyerWhatsappCreate>>, TError,LivraisonsEnvoyerWhatsappCreateMutationVariables, TContext> => {
+
+const mutationKey = getLivraisonsEnvoyerWhatsappCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof livraisonsEnvoyerWhatsappCreate>>, LivraisonsEnvoyerWhatsappCreateMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  livraisonsEnvoyerWhatsappCreate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type LivraisonsEnvoyerWhatsappCreateMutationResult = NonNullable<Awaited<ReturnType<typeof livraisonsEnvoyerWhatsappCreate>>>
+
+    export type LivraisonsEnvoyerWhatsappCreateMutationError = Probleme
+    export type LivraisonsEnvoyerWhatsappCreateMutationVariables = {id: number}
+
+    export const useLivraisonsEnvoyerWhatsappCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof livraisonsEnvoyerWhatsappCreate>>, TError,LivraisonsEnvoyerWhatsappCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof livraisonsEnvoyerWhatsappCreate>>,
+        TError,
+        LivraisonsEnvoyerWhatsappCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getLivraisonsEnvoyerWhatsappCreateMutationOptions(options), queryClient);
+    }
+    export type livraisonsLivrerCommeCommandeCreateResponse201 = {
   data: Livraison
   status: 201
 }

@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { ClientResume } from './clientResume.ts';
+import type { LivraisonEnvoiWhatsapp } from './livraisonEnvoiWhatsapp.ts';
 import type { LivraisonLignesItem } from './livraisonLignesItem.ts';
 import type { LivraisonPaiementsItem } from './livraisonPaiementsItem.ts';
 
@@ -33,6 +34,11 @@ export interface Livraison {
   readonly paiements: readonly LivraisonPaiementsItem[];
   readonly solde_avant: number;
   readonly solde_apres: number;
+  /**
+     * Dernier envoi du bon par WhatsApp, avec son état.
+     * @nullable
+     */
+  readonly envoi_whatsapp: LivraisonEnvoiWhatsapp;
   cree_par: string;
   readonly cree_le: string;
 }

@@ -8,6 +8,8 @@ from django.utils.translation import gettext_lazy as _
 from optiboul.notifications.domain.envois import Canal
 from optiboul.notifications.domain.envois import StatutEnvoi
 
+CANAUX = [(c.value, c.value) for c in Canal]
+
 
 class Notification(models.Model):
     """Notification dans l'application (CdC §5.13), adressée à une personne."""
@@ -41,7 +43,7 @@ class MessageSortant(models.Model):
     canal = models.CharField(
         _("canal"),
         max_length=10,
-        choices=[(c.value, c.value) for c in Canal],
+        choices=CANAUX,
     )
     destinataire = models.CharField(_("destinataire"), max_length=255)
     sujet = models.CharField(_("sujet"), max_length=200, blank=True)
@@ -58,10 +60,16 @@ class MessageSortant(models.Model):
     derniere_erreur = models.TextField(_("dernière erreur"), blank=True)
     cree_le = models.DateTimeField(_("créé le"), default=timezone.now)
     envoye_le = models.DateTimeField(_("envoyé le"), null=True, blank=True)
+    # Ce que le message accompagne (bon, relance…) : son état s'affiche avec l'objet.
+    objet_type = models.CharField(_("type de l'objet"), max_length=30, blank=True)
+    objet_id = models.PositiveBigIntegerField(_("objet"), null=True, blank=True)
 
     class Meta:
         db_table = "outbox_message"
         ordering = ["cree_le", "id"]
+        indexes = [
+            models.Index(fields=["objet_type", "objet_id"], name="outbox_objet"),
+        ]
         verbose_name = _("message à envoyer")
         verbose_name_plural = _("file d'envoi")
 

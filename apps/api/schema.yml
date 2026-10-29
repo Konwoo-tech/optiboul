@@ -1387,6 +1387,57 @@ paths:
               schema:
                 $ref: '#/components/schemas/Livraison'
           description: ''
+  /api/v1/livraisons/{id}/bon/:
+    get:
+      operationId: livraisons_bon_retrieve
+      description: Le bon de livraison en PDF, à imprimer ou à remettre.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) livraison.
+        required: true
+      tags:
+      - livraisons
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/livraisons/{id}/envoyer-whatsapp/:
+    post:
+      operationId: livraisons_envoyer_whatsapp_create
+      description: Le bon part par WhatsApp ; hors ligne, il attend dans la file (O15).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) livraison.
+        required: true
+      tags:
+      - livraisons
+      security:
+      - cookieAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envoi'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/livraisons/livrer-comme-commande/:
     post:
       operationId: livraisons_livrer_comme_commande_create
@@ -2795,6 +2846,16 @@ components:
       description: |-
         * `sms` - sms
         * `whatsapp` - whatsapp
+    CanalEnvoiEnum:
+      enum:
+      - sms
+      - whatsapp
+      - email
+      type: string
+      description: |-
+        * `sms` - sms
+        * `whatsapp` - whatsapp
+        * `email` - email
     ChangementGroupe:
       type: object
       properties:
@@ -3369,6 +3430,42 @@ components:
       - reference
       - solde_apres
       - solde_avant
+    Envoi:
+      type: object
+      description: 'État d''un envoi de la file : en attente, envoyé, échec (O15).'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        canal:
+          allOf:
+          - $ref: '#/components/schemas/CanalEnvoiEnum'
+          readOnly: true
+        destinataire:
+          type: string
+          readOnly: true
+        statut:
+          allOf:
+          - $ref: '#/components/schemas/StatutEnum'
+          readOnly: true
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+        envoye_le:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Envoyé le
+      required:
+      - canal
+      - cree_le
+      - destinataire
+      - envoye_le
+      - id
+      - statut
     EnvoiCode:
       type: object
       properties:
@@ -3673,6 +3770,12 @@ components:
           type: integer
           readOnly: true
           title: Solde après (FCFA)
+        envoi_whatsapp:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: Dernier envoi du bon par WhatsApp, avec son état.
+          readOnly: true
         cree_par:
           type: string
         cree_le:
@@ -3689,6 +3792,7 @@ components:
       - cree_par
       - creneau
       - demande
+      - envoi_whatsapp
       - id
       - jour
       - lignes
@@ -4969,6 +5073,16 @@ components:
           format: date
         creneau:
           $ref: '#/components/schemas/CreneauEnum'
+    StatutEnum:
+      enum:
+      - en_attente
+      - envoye
+      - echec
+      type: string
+      description: |-
+        * `en_attente` - en_attente
+        * `envoye` - envoye
+        * `echec` - echec
     Tarifs:
       type: object
       properties:
