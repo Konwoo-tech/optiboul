@@ -53,6 +53,7 @@ class DepotDemandesDjango:
         objet: ObjetLie,
         motif: str,
         valideurs: tuple[str, ...],
+        echeance: datetime | None,
         auteur: Auteur,
         le: datetime,
     ) -> int:
@@ -68,6 +69,7 @@ class DepotDemandesDjango:
             emetteur_nom=auteur.nom,
             emetteur_profil=auteur.profil,
             valideurs=list(valideurs),
+            echeance=echeance,
             cree_le=le,
         ).pk
 
@@ -86,6 +88,21 @@ class DepotDemandesDjango:
     def verrouiller(self, demande_id: int) -> EtatDemande | None:
         demande = Demande.objects.select_for_update().filter(pk=demande_id).first()
         return etat(demande) if demande else None
+
+    def echues(self, maintenant: datetime) -> list[EtatDemande]:
+        demandes = Demande.objects.filter(
+            statut=StatutDemande.EN_ATTENTE,
+            echeance__lte=maintenant,
+            escaladee_le=None,
+        ).order_by("echeance", "id")
+        return [etat(demande) for demande in demandes]
+
+    def escalader(self, demande_id: int, le: datetime) -> None:
+        demande = Demande.objects.select_for_update().get(pk=demande_id)
+        demande.escaladee_le = le
+        if "proprietaire" not in demande.valideurs:
+            demande.valideurs = [*demande.valideurs, "proprietaire"]
+        demande.save(update_fields=["escaladee_le", "valideurs"])
 
     def decider(  # noqa: PLR0913
         self,

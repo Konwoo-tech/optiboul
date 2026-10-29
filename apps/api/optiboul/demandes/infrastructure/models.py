@@ -29,6 +29,13 @@ class Demande(models.Model):
     valideurs = models.JSONField(_("profils valideurs"), default=list)
     statut = models.CharField(_("statut"), max_length=12, default="en_attente")
     cree_le = models.DateTimeField(_("émise le"), default=timezone.now)
+    # Sans réponse à l'échéance, la demande remonte au propriétaire (R19).
+    echeance = models.DateTimeField(_("échéance"), null=True, blank=True)
+    escaladee_le = models.DateTimeField(
+        _("remontée au propriétaire le"),
+        null=True,
+        blank=True,
+    )
     decide_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,

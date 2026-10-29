@@ -24,6 +24,10 @@ export interface Demande {
   readonly valideurs: unknown;
   readonly statut: string;
   readonly cree_le: string;
+  /** @nullable */
+  readonly echeance: string | null;
+  /** @nullable */
+  readonly escaladee_le: string | null;
   readonly decide_par_nom: string;
   /** @nullable */
   readonly decide_le: string | null;

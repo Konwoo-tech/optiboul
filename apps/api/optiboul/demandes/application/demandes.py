@@ -61,6 +61,10 @@ def _rien(demande: EtatDemande, auteur: Auteur) -> None:
     return None
 
 
+def _sans_echeance(emise_le: datetime) -> datetime | None:
+    return None
+
+
 @dataclass(frozen=True)
 class TypeDemande:
     cle: str
@@ -74,6 +78,8 @@ class TypeDemande:
     # L'objet lié change de statut avec la décision (US-071).
     sur_accord: Callable[[EtatDemande, Auteur], None] = _rien
     sur_refus: Callable[[EtatDemande, Auteur], None] = _rien
+    # Échéance selon le type (CdC §5.9) : 10 min pour le plafond, fin de session…
+    echeance: Callable[[datetime], datetime | None] = _sans_echeance
     lien: str = "/gestion/demandes"
 
 
@@ -106,6 +112,7 @@ class DepotDemandes(Protocol):
         objet: ObjetLie,
         motif: str,
         valideurs: tuple[str, ...],
+        echeance: datetime | None,
         auteur: Auteur,
         le: datetime,
     ) -> int: ...
@@ -115,6 +122,12 @@ class DepotDemandes(Protocol):
     def en_attente_pour(self, type_cle: str, objet_id: int) -> EtatDemande | None: ...
 
     def verrouiller(self, demande_id: int) -> EtatDemande | None: ...
+
+    def echues(self, maintenant: datetime) -> list[EtatDemande]:
+        """En attente, échéance passée, pas encore remontées au propriétaire."""
+        ...
+
+    def escalader(self, demande_id: int, le: datetime) -> None: ...
 
     def decider(  # noqa: PLR0913
         self,
@@ -184,6 +197,7 @@ def emettre(  # noqa: PLR0913
         objet=objet,
         motif=motif.strip(),
         valideurs=valideurs,
+        echeance=type_demande.echeance(maintenant),
         auteur=auteur,
         le=maintenant,
     )
@@ -298,3 +312,34 @@ def decider(  # noqa: PLR0913
             lien=type_demande.lien,
         )
     return decidee
+
+
+def escalader_echues(depots: Depots, *, maintenant: datetime, systeme: Auteur) -> int:
+    """R19 : sans réponse à l'échéance, la demande remonte au propriétaire."""
+    echues = depots.demandes.echues(maintenant)
+    for demande in echues:
+        depots.demandes.escalader(demande.id, maintenant)
+        type_demande = type_de(demande.type)
+        titre = f"{demande.code} sans réponse · {type_demande.libelle}"
+        texte = f"{demande.objet} — {demande.motif}"
+        depots.notificateur.notifier_profils(
+            ["proprietaire"],
+            genre="demande.escaladee",
+            titre=titre,
+            message=texte,
+            lien=type_demande.lien,
+        )
+        depots.telephones.prevenir(("proprietaire",), f"OptiBoul : {titre}. {texte}")
+        depots.journal.enregistrer(
+            Evenement(
+                action="demande.escaladee",
+                auteur=systeme,
+                objet_type="demande",
+                objet_id=str(demande.id),
+                apres={
+                    "numero": demande.code,
+                    "valideurs_avant": list(demande.valideurs),
+                },
+            ),
+        )
+    return len(echues)

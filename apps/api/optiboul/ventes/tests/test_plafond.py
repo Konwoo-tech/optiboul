@@ -1,7 +1,10 @@
+from datetime import timedelta
+
 import pytest
 from django.urls import reverse
 
 from optiboul.clients.infrastructure.models import MouvementCompte
+from optiboul.conftest import MARDI_8H
 from optiboul.core.infrastructure.models import LigneJournal
 from optiboul.demandes.infrastructure.models import Demande
 from optiboul.ventes.infrastructure.models import Livraison
@@ -126,6 +129,34 @@ def test_refus_du_gerant(client_de, caissiere, proprietaire, caisse, mama):
     livraison = Livraison.objects.get()
     assert (livraison.statut, livraison.autorisee_par) == ("refusee", "Fotso")
     assert _solde(client_de, caissiere, mama) == 500
+
+
+@pytest.mark.parametrize(("minutes", "parametre"), [(10, None), (3, 3)])
+def test_echeance_de_la_demande(
+    client_de,
+    caissiere,
+    proprietaire,
+    caisse,
+    mama,
+    minutes,
+    parametre,
+):
+    if parametre is not None:
+        client_de(proprietaire).put(
+            reverse("api:parametre-detail", kwargs={"cle": "echeance_demande_plafond"}),
+            {"valeur": parametre},
+            format="json",
+        )
+    livrer(
+        client_de(caissiere),
+        {
+            "client": mama.pk,
+            "lignes": TRENTE_BAGUETTES,
+            "demander_autorisation": "Samedi",
+        },
+    )
+    demande = Demande.objects.get()
+    assert demande.echeance == MARDI_8H + timedelta(minutes=minutes)
 
 
 def test_sous_le_plafond_le_motif_est_ignore(client_de, caissiere, caisse, mama):

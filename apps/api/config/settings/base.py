@@ -421,6 +421,7 @@ CELERY_BEAT_SCHEDULE = {
         "task": "core.verifier_copie_cloud",
         "schedule": crontab(minute=35),
     },
+    "escalader-demandes": {"task": "demandes.escalader", "schedule": 60.0},
 }
 
 # Passerelle de chaque canal de la file d'envoi (O15). SMS et WhatsApp : fournisseur à

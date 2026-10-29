@@ -3205,6 +3205,18 @@ components:
           format: date-time
           readOnly: true
           title: Émise le
+        echeance:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Échéance
+        escaladee_le:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Remontée au propriétaire le
         decide_par_nom:
           type: string
           readOnly: true
@@ -3229,8 +3241,10 @@ components:
       - decide_le
       - decide_par_nom
       - details
+      - echeance
       - emetteur
       - emetteur_profil
+      - escaladee_le
       - id
       - motif
       - motif_refus

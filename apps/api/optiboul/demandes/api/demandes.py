@@ -70,6 +70,8 @@ class DemandeSerializer(serializers.ModelSerializer[Demande]):
             "valideurs",
             "statut",
             "cree_le",
+            "echeance",
+            "escaladee_le",
             "decide_par_nom",
             "decide_le",
             "motif_refus",

@@ -6,6 +6,8 @@ livraison en attente ; l'accord la livre et débite le compte, le refus l'annule
 
 from __future__ import annotations
 
+from datetime import datetime
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from optiboul.clients.domain.clients import plafond_du_client
@@ -19,8 +21,6 @@ from optiboul.ventes.domain.livraisons import StatutLivraison
 from .models import Livraison
 
 if TYPE_CHECKING:
-    from datetime import datetime
-
     from optiboul.core.application.journal import Auteur
     from optiboul.demandes.application.demandes import EtatDemande
 
@@ -66,6 +66,11 @@ def _conclure(demande: EtatDemande, decideur: Auteur, *, accord: bool) -> None:
     )
 
 
+def _echeance(emise_le: datetime) -> datetime:
+    """10 minutes par défaut (echeance_demande_plafond), puis le propriétaire."""
+    return emise_le + timedelta(minutes=parametre("echeance_demande_plafond"))
+
+
 TYPE_PLAFOND = TypeDemande(
     cle=PLAFOND,
     libelle="Livraison au-delà du plafond",
@@ -75,6 +80,7 @@ TYPE_PLAFOND = TypeDemande(
     preparer=_preparer,
     sur_accord=lambda demande, qui: _conclure(demande, qui, accord=True),
     sur_refus=lambda demande, qui: _conclure(demande, qui, accord=False),
+    echeance=_echeance,
     lien="/comptoir/demandes",
 )
 
