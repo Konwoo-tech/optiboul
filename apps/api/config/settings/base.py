@@ -339,6 +339,13 @@ CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_LOGIN_METHODS = {"email"}
+# https://docs.allauth.org/en/latest/account/rate_limits.html (US-155) : 5 mots de passe
+# faux par compte en 15 minutes, 10 par minute et par adresse.
+ACCOUNT_RATE_LIMITS = {
+    "login": "30/m/ip",
+    "login_failed": "10/m/ip,5/15m/key",
+    "reset_password": "5/m/ip,3/15m/key",
+}
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 # https://docs.allauth.org/en/latest/account/configuration.html
@@ -365,6 +372,11 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 50,
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Connexion (US-155) : au plus 10 tentatives par minute sur un compte, 30 par poste.
+    "DEFAULT_THROTTLE_RATES": {
+        "connexion_compte": "10/min",
+        "connexion_poste": "30/min",
+    },
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup

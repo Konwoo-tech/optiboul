@@ -6,11 +6,13 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './compte.ts';
 export * from './etatSauvegardes.ts';
 export * from './journalListParams.ts';
 export * from './ligneJournal.ts';
 export * from './modification.ts';
 export * from './nullEnum.ts';
+export * from './paginatedCompteList.ts';
 export * from './paginatedLigneJournalList.ts';
 export * from './paginatedPosteList.ts';
 export * from './paginatedSauvegardeList.ts';
@@ -26,4 +28,5 @@ export * from './sauvegarde.ts';
 export * from './sauvegardesListParams.ts';
 export * from './user.ts';
 export * from './usersListParams.ts';
+export * from './utilisateursListParams.ts';
 export * from './valeur.ts';

@@ -11,6 +11,7 @@ from django.db.models import EmailField
 from django.db.models import ForeignKey
 from django.db.models import Model
 from django.db.models import OneToOneField
+from django.db.models import PositiveSmallIntegerField
 from django.db.models import TextChoices
 from django.urls import reverse
 from django.utils import timezone
@@ -62,6 +63,9 @@ class User(AbstractUser):
     last_name = None  # type: ignore[assignment]
     email = EmailField(_("email address"), unique=True)
     username = None  # type: ignore[assignment]
+    # Code à 4 chiffres faux à la suite ; 5 bloquent le compte 15 min (CdC §4.2).
+    echecs_connexion = PositiveSmallIntegerField(_("échecs de connexion"), default=0)
+    bloque_jusqua = DateTimeField(_("bloqué jusqu'à"), null=True, blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

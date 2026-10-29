@@ -38,6 +38,7 @@ http:
       entryPoints:
         - web-secure
       middlewares:
+        - limitation
         - csrf
         - securite
         - entree-locale
@@ -59,6 +60,7 @@ http:
       entryPoints:
         - remote
       middlewares:
+        - limitation
         - csrf
         - securite
         - entree-distante
@@ -81,6 +83,14 @@ http:
       tls: {}
 
   middlewares:
+    # Limitation par adresse (US-155) devant /api, /accounts et l'admin : contre les
+    # rafales et le déni de service. Les essais de code sont aussi limités par l'API.
+    limitation:
+      rateLimit:
+        average: 20
+        period: 1s
+        burst: 50
+
     csrf:
       # https://docs.djangoproject.com/en/dev/ref/csrf/#ajax
       headers:

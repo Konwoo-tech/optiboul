@@ -387,8 +387,115 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
+  /api/v1/utilisateurs/:
+    get:
+      operationId: utilisateurs_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - utilisateurs
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCompteList'
+          description: ''
+  /api/v1/utilisateurs/{id}/:
+    get:
+      operationId: utilisateurs_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) utilisateur.
+        required: true
+      tags:
+      - utilisateurs
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compte'
+          description: ''
+  /api/v1/utilisateurs/{id}/debloquer/:
+    post:
+      operationId: utilisateurs_debloquer_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) utilisateur.
+        required: true
+      tags:
+      - utilisateurs
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compte'
+          description: ''
 components:
   schemas:
+    Compte:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+          title: Name of User
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Adresse électronique
+        profil:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ProfilEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        is_active:
+          type: boolean
+          readOnly: true
+          title: Actif
+          description: Précise si l’utilisateur doit être considéré comme actif. Décochez
+            ceci plutôt que de supprimer le compte.
+        bloque:
+          type: boolean
+          readOnly: true
+        bloque_jusqua:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Bloqué jusqu'à
+      required:
+      - bloque
+      - bloque_jusqua
+      - email
+      - id
+      - is_active
+      - name
+      - profil
     EtatSauvegardes:
       type: object
       properties:
@@ -485,6 +592,29 @@ components:
     NullEnum:
       enum:
       - null
+    PaginatedCompteList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Compte'
     PaginatedLigneJournalList:
       type: object
       required:
