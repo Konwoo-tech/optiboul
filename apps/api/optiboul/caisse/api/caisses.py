@@ -27,7 +27,9 @@ from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.api.permissions import profil_de
 from optiboul.core.domain.erreurs import RefusMetier
+from optiboul.core.domain.sauvegardes import Declencheur
 from optiboul.core.infrastructure.parametres import parametre
+from optiboul.core.infrastructure.sauvegardes import demander_sauvegarde
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -78,6 +80,23 @@ class ProchaineSerializer(serializers.Serializer):
 
 class OuvertureSerializer(serializers.Serializer):
     fonds = serializers.IntegerField(min_value=0)
+
+
+class EspecesSerializer(serializers.Serializer):
+    fonds = serializers.IntegerField()
+    especes = serializers.IntegerField()
+    depenses = serializers.IntegerField()
+    remises = serializers.IntegerField()
+    attendu = serializers.IntegerField()
+
+
+class FermetureSerializer(serializers.Serializer):
+    compte = serializers.IntegerField(min_value=0)
+
+
+class ResultatFermetureSerializer(serializers.Serializer):
+    caisse = CaisseSerializer()
+    resultat = serializers.ChoiceField(choices=["JUSTE", "MANQUE", "EXCEDENT"])
 
 
 class CaissesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
@@ -144,4 +163,40 @@ class CaissesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         return Response(
             CaisseSerializer(self.get_queryset().get(pk=caisse.id)).data,
             status=status.HTTP_201_CREATED,
+        )
+
+    @extend_schema(responses=EspecesSerializer)
+    @action(detail=True)
+    def especes(self, request: Request, pk: str) -> Response:
+        """Fonds, espèces encaissées, dépenses, remises et attendu de la caisse."""
+        detail = cas.especes(depots, self.get_object().pk)
+        return Response(EspecesSerializer(detail).data)
+
+    @extend_schema(
+        request=FermetureSerializer,
+        responses={200: ResultatFermetureSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"])
+    def fermer(self, request: Request, pk: str) -> Response:
+        """Un seul comptage ; statut juste, manque ou excédent ; sauvegarde (US-042)."""
+        corps = FermetureSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        caisse_id = self.get_object().pk
+        try:
+            with transaction.atomic():
+                resultat = cas.fermer(
+                    depots,
+                    caisse_id=caisse_id,
+                    compte=corps.validated_data["compte"],
+                    auteur=auteur_de(request),
+                    maintenant=timezone.now(),
+                )
+                demander_sauvegarde(Declencheur.CLOTURE_CAISSE)
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(
+            {
+                "caisse": CaisseSerializer(self.get_queryset().get(pk=caisse_id)).data,
+                "resultat": resultat.statut,
+            },
         )

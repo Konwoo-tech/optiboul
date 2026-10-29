@@ -7,9 +7,15 @@ from typing import TYPE_CHECKING
 from typing import Protocol
 
 from optiboul.caisse.domain.caisses import RAISONS_OUVERTURE
+from optiboul.caisse.domain.caisses import GenreMouvement
 from optiboul.caisse.domain.caisses import StatutCaisse
 from optiboul.caisse.domain.caisses import creneau_de
+from optiboul.caisse.domain.caisses import peut_saisir
 from optiboul.caisse.domain.caisses import raison_de_ne_pas_ouvrir
+from optiboul.caisse.domain.caisses import totaux
+from optiboul.caisse.domain.regles import ResultatFermeture
+from optiboul.caisse.domain.regles import attendu_en_caisse
+from optiboul.caisse.domain.regles import ecart_caisse
 from optiboul.core.application.journal import Evenement
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.domain.planning import Creneau
@@ -56,6 +62,30 @@ class DepotCaisses(Protocol):
         fonds: int,
         le: datetime,
     ) -> int: ...
+
+    def verrouiller(self, caisse_id: int) -> EtatCaisse | None:
+        """Relit la caisse en la verrouillant jusqu'à la fin de la transaction."""
+        ...
+
+    def mouvements(self, caisse_id: int) -> list[tuple[GenreMouvement, int]]: ...
+
+    def ajouter_mouvement(  # noqa: PLR0913
+        self,
+        caisse_id: int,
+        *,
+        genre: GenreMouvement,
+        montant: int,
+        auteur: int,
+        libelle: str,
+        receveur: int | None,
+    ) -> None: ...
+
+    def fermer(
+        self,
+        caisse_id: int,
+        resultat: ResultatFermeture,
+        le: datetime,
+    ) -> None: ...
 
 
 @dataclass(frozen=True)
@@ -171,3 +201,116 @@ def _signaler_hors_planning(  # noqa: PLR0913
             message=f"La caisse a été ouverte hors planning : {prevue}.",
             lien="/comptoir/caisses",
         )
+
+
+def _caisse(depots: Depots, caisse_id: int, *, verrou: bool = False) -> EtatCaisse:
+    caisse = (
+        depots.caisses.verrouiller(caisse_id)
+        if verrou
+        else depots.caisses.obtenir(caisse_id)
+    )
+    if caisse is None:
+        message = "Caisse inconnue."
+        raise RefusMetier("caisse_inconnue", message)
+    return caisse
+
+
+@dataclass(frozen=True)
+class Especes:
+    fonds: int
+    especes: int
+    depenses: int
+    remises: int
+    attendu: int
+
+
+def especes(depots: Depots, caisse_id: int) -> Especes:
+    """Détail des espèces : ce que la fermeture et la remise au coffre affichent."""
+    caisse = _caisse(depots, caisse_id)
+    sommes = totaux(depots.caisses.mouvements(caisse_id))
+    return Especes(
+        fonds=caisse.fonds,
+        especes=sommes[GenreMouvement.ESPECES],
+        depenses=sommes[GenreMouvement.DEPENSE],
+        remises=sommes[GenreMouvement.REMISE],
+        attendu=attendu_en_caisse(
+            caisse.fonds,
+            sommes[GenreMouvement.ESPECES],
+            sommes[GenreMouvement.DEPENSE],
+            sommes[GenreMouvement.REMISE],
+        ),
+    )
+
+
+def enregistrer_mouvement(  # noqa: PLR0913
+    depots: Depots,
+    *,
+    caisse_id: int,
+    genre: GenreMouvement,
+    montant: int,
+    auteur: Auteur,
+    libelle: str = "",
+    receveur: int | None = None,
+) -> None:
+    """Pour les encaissements, dépenses et remises : refusé sur une caisse fermée."""
+    caisse = _caisse(depots, caisse_id, verrou=True)
+    if not peut_saisir(caisse.statut):
+        message = "La caisse est fermée : plus aucune saisie n'est possible."
+        raise RefusMetier("caisse_fermee", message)
+    if montant <= 0:
+        message = "Le montant doit être positif."
+        raise RefusMetier("montant_invalide", message)
+    assert auteur.utilisateur_id is not None
+    depots.caisses.ajouter_mouvement(
+        caisse_id,
+        genre=genre,
+        montant=montant,
+        auteur=auteur.utilisateur_id,
+        libelle=libelle,
+        receveur=receveur,
+    )
+
+
+def fermer(
+    depots: Depots,
+    *,
+    caisse_id: int,
+    compte: int,
+    auteur: Auteur,
+    maintenant: datetime,
+) -> ResultatFermeture:
+    """Un seul comptage (O2, R17) : écart = compté moins attendu ; puis verrouillage."""
+    caisse = _caisse(depots, caisse_id, verrou=True)
+    sienne = auteur.profil == "caissier" and auteur.utilisateur_id == caisse.caissiere
+    if not (sienne or auteur.profil == "gerant"):
+        message = "Seuls la caissière de cette caisse et le gérant la ferment."
+        raise RefusMetier("droit_insuffisant", message)
+    if not peut_saisir(caisse.statut):
+        message = "Cette caisse est déjà fermée."
+        raise RefusMetier("caisse_fermee", message)
+    detail = especes(depots, caisse_id)
+    resultat = ecart_caisse(
+        detail.fonds,
+        detail.especes,
+        detail.depenses,
+        detail.remises,
+        compte,
+    )
+    depots.caisses.fermer(caisse_id, resultat, maintenant)
+    depots.journal.enregistrer(
+        Evenement(
+            action="caisse.fermee",
+            auteur=auteur,
+            objet_type="caisse",
+            objet_id=str(caisse_id),
+            avant={"statut": caisse.statut},
+            apres={
+                "statut": StatutCaisse.FERMEE,
+                "attendu": resultat.attendu,
+                "compte": resultat.compte,
+                "ecart": resultat.ecart,
+                "resultat": resultat.statut,
+            },
+        ),
+    )
+    return resultat

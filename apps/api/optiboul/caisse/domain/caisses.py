@@ -61,3 +61,16 @@ def raison_de_ne_pas_ouvrir(
     if fonds < 0:
         return "fonds_negatif"
     return None
+
+
+def totaux(mouvements: list[tuple[GenreMouvement, int]]) -> dict[GenreMouvement, int]:
+    """Espèces encaissées, dépenses et remises de la caisse, en entiers FCFA."""
+    sommes = dict.fromkeys(GenreMouvement, 0)
+    for genre, montant in mouvements:
+        sommes[genre] += montant
+    return sommes
+
+
+def peut_saisir(statut: StatutCaisse) -> bool:
+    """La fermeture verrouille toutes les saisies de la caisse (CdC §5.2)."""
+    return statut in EN_COURS

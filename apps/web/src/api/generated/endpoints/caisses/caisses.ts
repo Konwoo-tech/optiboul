@@ -27,10 +27,13 @@ import type {
 import type {
   Caisse,
   CaissesListParams,
+  Especes,
+  Fermeture,
   Ouverture,
   PaginatedCaisseList,
   Probleme,
-  Prochaine
+  Prochaine,
+  ResultatFermeture
 } from '../../model';
 
 import { optiboulFetch } from '../../../http.ts';
@@ -274,7 +277,220 @@ export function useCaissesRetrieve<TData = Awaited<ReturnType<typeof caissesRetr
 
 
 
-export type caissesOuvrirCreateResponse201 = {
+export type caissesEspecesRetrieveResponse200 = {
+  data: Especes
+  status: 200
+}
+
+export type caissesEspecesRetrieveResponseSuccess = (caissesEspecesRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type caissesEspecesRetrieveResponse = (caissesEspecesRetrieveResponseSuccess)
+
+export const getCaissesEspecesRetrieveUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/caisses/${id}/especes/`
+}
+
+/**
+ * Fonds, espèces encaissées, dépenses, remises et attendu de la caisse.
+ */
+export const caissesEspecesRetrieve = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<caissesEspecesRetrieveResponse> => {
+
+  return optiboulFetch<caissesEspecesRetrieveResponse>(getCaissesEspecesRetrieveUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCaissesEspecesRetrieveQueryKey = (id: number,) => {
+    return [
+    `/api/v1/caisses/${id}/especes/`
+    ] as const;
+    }
+
+
+export const getCaissesEspecesRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof caissesEspecesRetrieve>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof caissesEspecesRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCaissesEspecesRetrieveQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof caissesEspecesRetrieve>>> = ({ signal }) => caissesEspecesRetrieve(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof caissesEspecesRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CaissesEspecesRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof caissesEspecesRetrieve>>>
+export type CaissesEspecesRetrieveQueryError = unknown
+
+
+export function useCaissesEspecesRetrieve<TData = Awaited<ReturnType<typeof caissesEspecesRetrieve>>, TError = unknown>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof caissesEspecesRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof caissesEspecesRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof caissesEspecesRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCaissesEspecesRetrieve<TData = Awaited<ReturnType<typeof caissesEspecesRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof caissesEspecesRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof caissesEspecesRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof caissesEspecesRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCaissesEspecesRetrieve<TData = Awaited<ReturnType<typeof caissesEspecesRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof caissesEspecesRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useCaissesEspecesRetrieve<TData = Awaited<ReturnType<typeof caissesEspecesRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof caissesEspecesRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCaissesEspecesRetrieveQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type caissesFermerCreateResponse200 = {
+  data: ResultatFermeture
+  status: 200
+}
+
+export type caissesFermerCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type caissesFermerCreateResponseSuccess = (caissesFermerCreateResponse200) & {
+  headers: Headers;
+};
+export type caissesFermerCreateResponseError = (caissesFermerCreateResponse409) & {
+  headers: Headers;
+};
+
+export type caissesFermerCreateResponse = (caissesFermerCreateResponseSuccess | caissesFermerCreateResponseError)
+
+export const getCaissesFermerCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/caisses/${id}/fermer/`
+}
+
+/**
+ * Un seul comptage ; statut juste, manque ou excédent ; sauvegarde (US-042).
+ */
+export const caissesFermerCreate = async (id: number,
+    fermeture: Fermeture, options?: Parameters<typeof optiboulFetch>[1]): Promise<caissesFermerCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<caissesFermerCreateResponse>(getCaissesFermerCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(fermeture)
+  }
+);}
+
+
+
+
+
+export const getCaissesFermerCreateMutationKey = () => ['caissesFermerCreate'] as const;
+
+export const getCaissesFermerCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof caissesFermerCreate>>, TError,CaissesFermerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof caissesFermerCreate>>, TError,CaissesFermerCreateMutationVariables, TContext> => {
+
+const mutationKey = getCaissesFermerCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof caissesFermerCreate>>, CaissesFermerCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  caissesFermerCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CaissesFermerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof caissesFermerCreate>>>
+    export type CaissesFermerCreateMutationBody = Fermeture
+    export type CaissesFermerCreateMutationError = Probleme
+    export type CaissesFermerCreateMutationVariables = {id: number;data: Fermeture}
+
+    export const useCaissesFermerCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof caissesFermerCreate>>, TError,CaissesFermerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof caissesFermerCreate>>,
+        TError,
+        CaissesFermerCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCaissesFermerCreateMutationOptions(options), queryClient);
+    }
+    export type caissesOuvrirCreateResponse201 = {
   data: Caisse
   status: 201
 }

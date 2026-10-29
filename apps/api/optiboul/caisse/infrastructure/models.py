@@ -61,3 +61,47 @@ class Caisse(models.Model):
 
     def __str__(self) -> str:
         return f"Caisse {self.creneau} du {self.jour:%d/%m/%Y}"
+
+
+class MouvementCaisse(models.Model):
+    """Registre des espèces de la caisse, en ajout seul (spécification §5.1)."""
+
+    caisse = models.ForeignKey(
+        Caisse,
+        on_delete=models.PROTECT,
+        related_name="mouvements",
+        verbose_name=_("caisse"),
+    )
+    genre = models.CharField(_("genre"), max_length=10)
+    montant = models.PositiveBigIntegerField(_("montant (FCFA)"))
+    libelle = models.CharField(_("libellé"), max_length=200, blank=True)
+    receveur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("receveur de la remise"),
+    )
+    auteur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("auteur"),
+    )
+    cree_le = models.DateTimeField(_("enregistré le"), default=timezone.now)
+
+    class Meta:
+        db_table = "mouvement_caisse"
+        ordering = ["cree_le", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name="mouvement_caisse_montant_positif",
+            ),
+        ]
+        verbose_name = _("mouvement de caisse")
+        verbose_name_plural = _("mouvements de caisse")
+
+    def __str__(self) -> str:
+        return f"{self.genre} {self.montant} FCFA"

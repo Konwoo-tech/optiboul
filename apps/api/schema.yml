@@ -133,6 +133,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/Caisse'
           description: ''
+  /api/v1/caisses/{id}/especes/:
+    get:
+      operationId: caisses_especes_retrieve
+      description: Fonds, espèces encaissées, dépenses, remises et attendu de la caisse.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) caisse.
+        required: true
+      tags:
+      - caisses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Especes'
+          description: ''
+  /api/v1/caisses/{id}/fermer/:
+    post:
+      operationId: caisses_fermer_create
+      description: Un seul comptage ; statut juste, manque ou excédent ; sauvegarde
+        (US-042).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) caisse.
+        required: true
+      tags:
+      - caisses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fermeture'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Fermeture'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Fermeture'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultatFermeture'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/caisses/ouvrir/:
     post:
       operationId: caisses_ouvrir_create
@@ -1809,6 +1872,25 @@ components:
           $ref: '#/components/schemas/CanalEnum'
       required:
       - canal
+    Especes:
+      type: object
+      properties:
+        fonds:
+          type: integer
+        especes:
+          type: integer
+        depenses:
+          type: integer
+        remises:
+          type: integer
+        attendu:
+          type: integer
+      required:
+      - attendu
+      - depenses
+      - especes
+      - fonds
+      - remises
     EtatMfa:
       type: object
       properties:
@@ -1839,6 +1921,14 @@ components:
       - derniere_cloud
       - derniere_locale
       - seuil_alerte_heures
+    Fermeture:
+      type: object
+      properties:
+        compte:
+          type: integer
+          minimum: 0
+      required:
+      - compte
     GenreEnum:
       enum:
       - jour_et_nuit
@@ -2442,6 +2532,26 @@ components:
           type: boolean
       required:
       - deuxFacteurs
+    ResultatEnum:
+      enum:
+      - JUSTE
+      - MANQUE
+      - EXCEDENT
+      type: string
+      description: |-
+        * `JUSTE` - JUSTE
+        * `MANQUE` - MANQUE
+        * `EXCEDENT` - EXCEDENT
+    ResultatFermeture:
+      type: object
+      properties:
+        caisse:
+          $ref: '#/components/schemas/Caisse'
+        resultat:
+          $ref: '#/components/schemas/ResultatEnum'
+      required:
+      - caisse
+      - resultat
     Rotation:
       type: object
       properties:
