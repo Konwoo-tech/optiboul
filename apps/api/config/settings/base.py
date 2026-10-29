@@ -409,6 +409,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "core.ouvrir_semaine",
         "schedule": crontab(minute=0, hour=6, day_of_week="mon"),
     },
+    "rappel-cloture-semaine": {
+        "task": "core.rappel_cloture_semaine",
+        "schedule": crontab(minute=0, hour=18, day_of_week="sun"),
+    },
     "verifier-copie-cloud": {
         "task": "core.verifier_copie_cloud",
         "schedule": crontab(minute=35),

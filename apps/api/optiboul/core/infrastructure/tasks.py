@@ -12,6 +12,7 @@ from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
 
+from optiboul.core.application import cloture as cas_cloture
 from optiboul.core.application import sauvegardes as cas
 from optiboul.core.application import semaines as cas_semaines
 from optiboul.core.application.journal import SYSTEME
@@ -19,6 +20,7 @@ from optiboul.core.domain.sauvegardes import Declencheur
 from optiboul.core.domain.sauvegardes import Genre
 from optiboul.core.domain.sauvegardes import a_supprimer
 from optiboul.core.domain.sauvegardes import sauvegarde_due
+from optiboul.core.domain.semaines import code
 from optiboul.notifications.infrastructure.envois import notificateur
 from optiboul.notifications.infrastructure.models import Notification
 
@@ -123,3 +125,26 @@ def ouvrir_semaine() -> int | None:
         systeme=SYSTEME,
     )
     return semaine.id if semaine else None
+
+
+@shared_task(name="core.rappel_cloture_semaine")
+def rappel_cloture_semaine() -> int:
+    """Dimanche 18:00 (spécification §8) : rappel au gérant de la semaine ouverte."""
+    semaine = depot_semaines.ouverte()
+    if semaine is None or semaine.gerant is None:
+        return 0
+    bloquants = [
+        c.detail
+        for c in cas_cloture.controles(semaine)
+        if c.niveau is cas_cloture.Niveau.BLOQUANT
+    ]
+    message = "Pensez à clôturer la semaine avant lundi 06:00."
+    if bloquants:
+        message += " À régler d'abord : " + " ".join(bloquants)
+    return notificateur.notifier(
+        [semaine.gerant],
+        genre="semaine.rappel_cloture",
+        titre=f"Clôture de la semaine {code(semaine.numero)}",
+        message=message,
+        lien="/gestion/semaines",
+    )

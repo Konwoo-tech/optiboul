@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
@@ -19,15 +20,18 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from optiboul.core.application import cloture as cas_cloture
 from optiboul.core.application import planning as cas_planning
 from optiboul.core.application import semaines as cas
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.domain.planning import Creneau
 from optiboul.core.domain.planning import creneaux
+from optiboul.core.domain.sauvegardes import Declencheur
 from optiboul.core.domain.semaines import bornes
 from optiboul.core.domain.semaines import code
 from optiboul.core.infrastructure.journal import journal
 from optiboul.core.infrastructure.models import Semaine
+from optiboul.core.infrastructure.sauvegardes import demander_sauvegarde
 from optiboul.core.infrastructure.semaines import depot_planning
 from optiboul.core.infrastructure.semaines import depot_semaines
 
@@ -183,6 +187,12 @@ def _planning(semaine: cas.EtatSemaine) -> dict:
     }
 
 
+class ControleSerializer(serializers.Serializer):
+    cle = serializers.CharField()
+    niveau = serializers.ChoiceField(choices=["ok", "surveiller", "bloquant"])
+    detail = serializers.CharField(allow_blank=True)
+
+
 class RotationSerializer(serializers.Serializer):
     gerant = serializers.IntegerField(allow_null=True)
     production = serializers.IntegerField(allow_null=True)
@@ -203,7 +213,14 @@ class SemainesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     )
 
     def get_permissions(self):
-        if self.action in {"list", "retrieve", "planning", "ouvrir"}:
+        if self.action in {
+            "list",
+            "retrieve",
+            "planning",
+            "ouvrir",
+            "cloturer",
+            "controles_cloture",
+        }:
             return [IsAuthenticated()]
         return [ProfilParmi("proprietaire")()]
 
@@ -309,6 +326,38 @@ class SemainesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         except RefusMetier as refus:
             return probleme(refus)
         return Response(SemaineSerializer(self.get_queryset().get(pk=semaine.id)).data)
+
+    @extend_schema(responses=ControleSerializer(many=True))
+    @action(detail=True, url_path="controles-cloture")
+    def controles_cloture(self, request: Request, pk: str) -> Response:
+        """Bloquants (caisse ouverte, production en cours) et « à voir » (CdC §5.1)."""
+        semaine = depot_semaines.obtenir(self.get_object().pk)
+        assert semaine is not None
+        return Response(
+            [cas_cloture.projeter(c) for c in cas_cloture.controles(semaine)],
+        )
+
+    @extend_schema(
+        request=None,
+        responses={200: SemaineSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"])
+    def cloturer(self, request: Request, pk: str) -> Response:
+        """Clôture par le gérant affecté ou le propriétaire ; sauvegarde (US-033)."""
+        semaine_id = self.get_object().pk
+        try:
+            with transaction.atomic():
+                cas_cloture.cloturer(
+                    depot_semaines,
+                    journal,
+                    semaine_id=semaine_id,
+                    auteur=auteur_de(request),
+                    maintenant=timezone.now(),
+                )
+                demander_sauvegarde(Declencheur.CLOTURE_SEMAINE)
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(SemaineSerializer(self.get_queryset().get(pk=semaine_id)).data)
 
     @extend_schema(methods=["GET"], responses=PlanningSerializer)
     @extend_schema(

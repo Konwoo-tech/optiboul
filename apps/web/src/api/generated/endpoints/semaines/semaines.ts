@@ -26,6 +26,7 @@ import type {
 
 import type {
   Affectations,
+  PaginatedControleList,
   PaginatedSemaineList,
   Placement,
   Planification,
@@ -34,6 +35,7 @@ import type {
   Rotation,
   Semaine,
   SemaineConflits,
+  SemainesControlesClotureListParams,
   SemainesListParams,
   SemainesRotationRetrieveParams
 } from '../../model';
@@ -480,7 +482,220 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getSemainesAffectationsCreateMutationOptions(options), queryClient);
     }
-    export type semainesCopierPrecedenteCreateResponse200 = {
+    export type semainesCloturerCreateResponse200 = {
+  data: Semaine
+  status: 200
+}
+
+export type semainesCloturerCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type semainesCloturerCreateResponseSuccess = (semainesCloturerCreateResponse200) & {
+  headers: Headers;
+};
+export type semainesCloturerCreateResponseError = (semainesCloturerCreateResponse409) & {
+  headers: Headers;
+};
+
+export type semainesCloturerCreateResponse = (semainesCloturerCreateResponseSuccess | semainesCloturerCreateResponseError)
+
+export const getSemainesCloturerCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/semaines/${id}/cloturer/`
+}
+
+/**
+ * Clôture par le gérant affecté ou le propriétaire ; sauvegarde (US-033).
+ */
+export const semainesCloturerCreate = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<semainesCloturerCreateResponse> => {
+
+  return optiboulFetch<semainesCloturerCreateResponse>(getSemainesCloturerCreateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getSemainesCloturerCreateMutationKey = () => ['semainesCloturerCreate'] as const;
+
+export const getSemainesCloturerCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof semainesCloturerCreate>>, TError,SemainesCloturerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof semainesCloturerCreate>>, TError,SemainesCloturerCreateMutationVariables, TContext> => {
+
+const mutationKey = getSemainesCloturerCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof semainesCloturerCreate>>, SemainesCloturerCreateMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  semainesCloturerCreate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SemainesCloturerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof semainesCloturerCreate>>>
+
+    export type SemainesCloturerCreateMutationError = Probleme
+    export type SemainesCloturerCreateMutationVariables = {id: number}
+
+    export const useSemainesCloturerCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof semainesCloturerCreate>>, TError,SemainesCloturerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof semainesCloturerCreate>>,
+        TError,
+        SemainesCloturerCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSemainesCloturerCreateMutationOptions(options), queryClient);
+    }
+    export type semainesControlesClotureListResponse200 = {
+  data: PaginatedControleList
+  status: 200
+}
+
+export type semainesControlesClotureListResponseSuccess = (semainesControlesClotureListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type semainesControlesClotureListResponse = (semainesControlesClotureListResponseSuccess)
+
+export const getSemainesControlesClotureListUrl = (id: number,
+    params?: SemainesControlesClotureListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/semaines/${id}/controles-cloture/?${stringifiedParams}` : `/api/v1/semaines/${id}/controles-cloture/`
+}
+
+/**
+ * Bloquants (caisse ouverte, production en cours) et « à voir » (CdC §5.1).
+ */
+export const semainesControlesClotureList = async (id: number,
+    params?: SemainesControlesClotureListParams, options?: Parameters<typeof optiboulFetch>[1]): Promise<semainesControlesClotureListResponse> => {
+
+  return optiboulFetch<semainesControlesClotureListResponse>(getSemainesControlesClotureListUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSemainesControlesClotureListQueryKey = (id: number,
+    params?: SemainesControlesClotureListParams,) => {
+    return [
+    `/api/v1/semaines/${id}/controles-cloture/`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSemainesControlesClotureListQueryOptions = <TData = Awaited<ReturnType<typeof semainesControlesClotureList>>, TError = unknown>(id: number,
+    params?: SemainesControlesClotureListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesControlesClotureList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSemainesControlesClotureListQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof semainesControlesClotureList>>> = ({ signal }) => semainesControlesClotureList(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof semainesControlesClotureList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SemainesControlesClotureListQueryResult = NonNullable<Awaited<ReturnType<typeof semainesControlesClotureList>>>
+export type SemainesControlesClotureListQueryError = unknown
+
+
+export function useSemainesControlesClotureList<TData = Awaited<ReturnType<typeof semainesControlesClotureList>>, TError = unknown>(
+ id: number,
+    params: undefined |  SemainesControlesClotureListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesControlesClotureList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof semainesControlesClotureList>>,
+          TError,
+          Awaited<ReturnType<typeof semainesControlesClotureList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSemainesControlesClotureList<TData = Awaited<ReturnType<typeof semainesControlesClotureList>>, TError = unknown>(
+ id: number,
+    params?: SemainesControlesClotureListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesControlesClotureList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof semainesControlesClotureList>>,
+          TError,
+          Awaited<ReturnType<typeof semainesControlesClotureList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSemainesControlesClotureList<TData = Awaited<ReturnType<typeof semainesControlesClotureList>>, TError = unknown>(
+ id: number,
+    params?: SemainesControlesClotureListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesControlesClotureList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useSemainesControlesClotureList<TData = Awaited<ReturnType<typeof semainesControlesClotureList>>, TError = unknown>(
+ id: number,
+    params?: SemainesControlesClotureListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesControlesClotureList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSemainesControlesClotureListQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type semainesCopierPrecedenteCreateResponse200 = {
   data: SemaineConflits
   status: 200
 }

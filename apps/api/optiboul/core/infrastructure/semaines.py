@@ -85,6 +85,13 @@ class DepotSemainesDjango:
         semaine = Semaine.objects.filter(statut=Statut.OUVERTE).first()
         return etat(semaine) if semaine else None
 
+    def cloturer(self, semaine_id: int, par: int | None, le: datetime) -> None:
+        Semaine.objects.filter(pk=semaine_id).update(
+            statut=Statut.CLOTUREE,
+            cloturee_le=le,
+            cloturee_par_id=par,
+        )
+
     def ouvrir(self, semaine_id: int, par: int | None, le: datetime) -> None:
         Semaine.objects.filter(pk=semaine_id).update(
             statut=Statut.OUVERTE,

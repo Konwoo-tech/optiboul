@@ -69,6 +69,8 @@ class DepotSemaines(Protocol):
 
     def ouvrir(self, semaine_id: int, par: int | None, le: datetime) -> None: ...
 
+    def cloturer(self, semaine_id: int, par: int | None, le: datetime) -> None: ...
+
 
 def _verifier_profil(
     depot: DepotSemaines,
@@ -144,7 +146,7 @@ def affecter(  # noqa: PLR0913
     production: int | None,
     auteur: Auteur,
 ) -> tuple[EtatSemaine, list[str]]:
-    semaine = _semaine(depot, semaine_id)
+    semaine = obtenir_semaine(depot, semaine_id)
     if semaine.statut is Statut.CLOTUREE:
         message = "Une semaine clôturée ne change plus d'affectations."
         raise RefusMetier("semaine_cloturee", message)
@@ -161,7 +163,7 @@ def affecter(  # noqa: PLR0913
             apres={"gerant": gerant, "production": production},
         ),
     )
-    apres = _semaine(depot, semaine_id)
+    apres = obtenir_semaine(depot, semaine_id)
     return apres, _conflits(depot, apres)
 
 
@@ -173,7 +175,7 @@ def copier_precedente(
     auteur: Auteur,
 ) -> tuple[EtatSemaine, list[str]]:
     """« Copier la semaine précédente » (O9) : mêmes affectations."""
-    semaine = _semaine(depot, semaine_id)
+    semaine = obtenir_semaine(depot, semaine_id)
     avant = depot.par_numero(*precedente(semaine.annee, semaine.numero))
     if avant is None:
         message = "Aucune semaine précédente à copier."
@@ -203,7 +205,7 @@ def rotation(depot: DepotSemaines, annee: int, numero: int) -> dict[str, int | N
     }
 
 
-def _semaine(depot: DepotSemaines, semaine_id: int) -> EtatSemaine:
+def obtenir_semaine(depot: DepotSemaines, semaine_id: int) -> EtatSemaine:
     semaine = depot.obtenir(semaine_id)
     if semaine is None:
         message = "Semaine inconnue."
@@ -241,7 +243,7 @@ def ouvrir(
     auteur: Auteur,
     maintenant: datetime,
 ) -> EtatSemaine:
-    semaine = _semaine(depot, semaine_id)
+    semaine = obtenir_semaine(depot, semaine_id)
     if auteur.utilisateur_id is not None and not peut_ouvrir_ou_cloturer(
         semaine,
         auteur,
@@ -262,7 +264,7 @@ def ouvrir(
             apres={"statut": Statut.OUVERTE},
         ),
     )
-    return _semaine(depot, semaine.id)
+    return obtenir_semaine(depot, semaine.id)
 
 
 def ouvrir_automatiquement(

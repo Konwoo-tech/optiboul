@@ -1097,6 +1097,63 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/semaines/{id}/cloturer/:
+    post:
+      operationId: semaines_cloturer_create
+      description: Clôture par le gérant affecté ou le propriétaire ; sauvegarde (US-033).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) semaine.
+        required: true
+      tags:
+      - semaines
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Semaine'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/semaines/{id}/controles-cloture/:
+    get:
+      operationId: semaines_controles_cloture_list
+      description: Bloquants (caisse ouverte, production en cours) et « à voir » (CdC
+        §5.1).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) semaine.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - semaines
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedControleList'
+          description: ''
   /api/v1/semaines/{id}/copier-precedente/:
     post:
       operationId: semaines_copier_precedente_create
@@ -1882,6 +1939,19 @@ components:
       required:
       - email
       - motDePasse
+    Controle:
+      type: object
+      properties:
+        cle:
+          type: string
+        niveau:
+          $ref: '#/components/schemas/NiveauEnum'
+        detail:
+          type: string
+      required:
+      - cle
+      - detail
+      - niveau
     Creneau:
       type: object
       properties:
@@ -2086,6 +2156,16 @@ components:
         valeur: {}
       required:
       - valeur
+    NiveauEnum:
+      enum:
+      - ok
+      - surveiller
+      - bloquant
+      type: string
+      description: |-
+        * `ok` - ok
+        * `surveiller` - surveiller
+        * `bloquant` - bloquant
     NouveauCompte:
       type: object
       description: 'Les 3 étapes (CdC §5.12) : identité, groupe, canal de vérification.'
@@ -2173,6 +2253,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Compte'
+    PaginatedControleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Controle'
     PaginatedGroupeList:
       type: object
       required:
