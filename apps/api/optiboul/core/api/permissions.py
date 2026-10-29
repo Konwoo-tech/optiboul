@@ -32,3 +32,10 @@ def ProfilParmi(*profils: str) -> type[BasePermission]:  # noqa: N802
 
 
 DIRECTION = ("gerant", "proprietaire")
+TOUS_LES_PROFILS = (
+    "caissier",
+    "gerant",
+    "production",
+    "proprietaire",
+    "administrateur",
+)

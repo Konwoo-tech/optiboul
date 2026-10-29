@@ -17,6 +17,7 @@ STATUTS = {
     "semaine_inconnue": status.HTTP_404_NOT_FOUND,
     "caisse_inconnue": status.HTTP_404_NOT_FOUND,
     "droit_insuffisant": status.HTTP_403_FORBIDDEN,
+    "fiche_invalide": status.HTTP_400_BAD_REQUEST,
 }
 
 

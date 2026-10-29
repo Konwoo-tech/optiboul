@@ -678,6 +678,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedLigneJournalList'
           description: ''
+  /api/v1/matieres/:
+    get:
+      operationId: matieres_list
+      tags:
+      - matieres
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Matiere'
+          description: ''
   /api/v1/mfa/:
     get:
       operationId: mfa_list
@@ -922,6 +938,225 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PosteActuel'
+          description: ''
+  /api/v1/produits/:
+    get:
+      operationId: produits_list
+      description: |-
+        Tous les profils lisent les produits ; propriétaire et administrateur les gèrent.
+
+        Un produit n'est jamais supprimé : il est désactivé (`actif`), ses ventes restent.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - produits
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProduitList'
+          description: ''
+    post:
+      operationId: produits_create
+      description: |-
+        Tous les profils lisent les produits ; propriétaire et administrateur les gèrent.
+
+        Un produit n'est jamais supprimé : il est désactivé (`actif`), ses ventes restent.
+      tags:
+      - produits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Produit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Produit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Produit'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Produit'
+          description: ''
+  /api/v1/produits/{id}/:
+    get:
+      operationId: produits_retrieve
+      description: |-
+        Tous les profils lisent les produits ; propriétaire et administrateur les gèrent.
+
+        Un produit n'est jamais supprimé : il est désactivé (`actif`), ses ventes restent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) produit.
+        required: true
+      tags:
+      - produits
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Produit'
+          description: ''
+    put:
+      operationId: produits_update
+      description: |-
+        Tous les profils lisent les produits ; propriétaire et administrateur les gèrent.
+
+        Un produit n'est jamais supprimé : il est désactivé (`actif`), ses ventes restent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) produit.
+        required: true
+      tags:
+      - produits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Produit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Produit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Produit'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Produit'
+          description: ''
+    patch:
+      operationId: produits_partial_update
+      description: |-
+        Tous les profils lisent les produits ; propriétaire et administrateur les gèrent.
+
+        Un produit n'est jamais supprimé : il est désactivé (`actif`), ses ventes restent.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) produit.
+        required: true
+      tags:
+      - produits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProduit'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProduit'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProduit'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Produit'
+          description: ''
+  /api/v1/produits/{id}/fiches/:
+    get:
+      operationId: produits_fiches_list
+      description: Toutes les versions de la fiche, la plus récente d'abord.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) produit.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - produits
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFicheList'
+          description: ''
+  /api/v1/produits/{id}/nouvelle-version/:
+    post:
+      operationId: produits_nouvelle_version_create
+      description: Rendement, recette d'un sac et procédé ; la version précédente
+        reste.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) produit.
+        required: true
+      tags:
+      - produits
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NouvelleFiche'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NouvelleFiche'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NouvelleFiche'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fiche'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
           description: ''
   /api/v1/sante/:
     get:
@@ -2063,6 +2298,53 @@ components:
           minimum: 0
       required:
       - compte
+    Fiche:
+      type: object
+      properties:
+        version:
+          type: integer
+          readOnly: true
+        poids_boule:
+          type: integer
+          readOnly: true
+          title: Poids de boule (g)
+        pains_par_boule:
+          type: integer
+          readOnly: true
+        pains_par_sac:
+          type: integer
+          readOnly: true
+        boules_par_sac:
+          type: string
+          readOnly: true
+        procede:
+          type: string
+          readOnly: true
+          title: Procédé
+        recette:
+          type: object
+          additionalProperties:
+            type: string
+          readOnly: true
+        cree_par_nom:
+          type: string
+          readOnly: true
+          title: Créée par (nom)
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créée le
+      required:
+      - boules_par_sac
+      - cree_le
+      - cree_par_nom
+      - pains_par_boule
+      - pains_par_sac
+      - poids_boule
+      - procede
+      - recette
+      - version
     GenreEnum:
       enum:
       - jour_et_nuit
@@ -2173,6 +2455,35 @@ components:
       - poste_id
       - poste_nom
       - profil
+    Matiere:
+      type: object
+      properties:
+        code:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        nom:
+          type: string
+          readOnly: true
+        unite:
+          allOf:
+          - $ref: '#/components/schemas/UniteEnum'
+          readOnly: true
+          title: Unité
+        cle:
+          type: boolean
+          readOnly: true
+          title: Matière clé
+        stockee:
+          type: boolean
+          readOnly: true
+          title: Suivie en stock
+      required:
+      - cle
+      - code
+      - nom
+      - stockee
+      - unite
     Modification:
       type: object
       properties:
@@ -2219,6 +2530,32 @@ components:
       - groupe
       - nom
       - telephone
+    NouvelleFiche:
+      type: object
+      properties:
+        poids_boule:
+          type: integer
+          minimum: 1
+        pains_par_boule:
+          type: integer
+          minimum: 1
+        pains_par_sac:
+          type: integer
+          minimum: 1
+        procede:
+          type: string
+          default: ''
+        recette:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+            pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+      required:
+      - pains_par_boule
+      - pains_par_sac
+      - poids_boule
+      - recette
     NullEnum:
       enum:
       - null
@@ -2299,6 +2636,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Controle'
+    PaginatedFicheList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Fiche'
     PaginatedGroupeList:
       type: object
       required:
@@ -2364,6 +2724,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Poste'
+    PaginatedProduitList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Produit'
     PaginatedSauvegardeList:
       type: object
       required:
@@ -2493,6 +2876,40 @@ components:
           default: ''
         membres:
           type: integer
+          readOnly: true
+    PatchedProduit:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 10
+        nom:
+          type: string
+          maxLength: 100
+        nom_en:
+          type: string
+          title: Nom en anglais
+          maxLength: 100
+        prix:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          title: Prix de base (FCFA)
+        actif:
+          type: boolean
+        ordre:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        fiche:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: Version en cours de la fiche technique.
           readOnly: true
     PatchedUser:
       type: object
@@ -2678,6 +3095,45 @@ components:
       - fonds_propose
       - jour
       - planifiee
+    Produit:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 10
+        nom:
+          type: string
+          maxLength: 100
+        nom_en:
+          type: string
+          title: Nom en anglais
+          maxLength: 100
+        prix:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          title: Prix de base (FCFA)
+        actif:
+          type: boolean
+        ordre:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        fiche:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: Version en cours de la fiche technique.
+          readOnly: true
+      required:
+      - code
+      - fiche
+      - id
+      - nom
     ProfilEnum:
       enum:
       - caissier
@@ -2916,6 +3372,20 @@ components:
       required:
       - inactiviteMinutes
       - via
+    UniteEnum:
+      enum:
+      - kg
+      - g
+      - l
+      - sachet
+      - unite
+      type: string
+      description: |-
+        * `kg` - kg
+        * `g` - g
+        * `l` - l
+        * `sachet` - sachet
+        * `unite` - unite
     User:
       type: object
       properties:
