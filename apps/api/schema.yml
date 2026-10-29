@@ -914,6 +914,109 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/demandes/:
+    get:
+      operationId: demandes_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - in: query
+        name: statut
+        schema:
+          type: string
+          enum:
+          - accordee
+          - en_attente
+          - refusee
+      - in: query
+        name: type
+        schema:
+          type: string
+      tags:
+      - demandes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDemandeList'
+          description: ''
+    post:
+      operationId: demandes_create
+      description: Émet une demande liée à l'objet bloqué ; les valideurs sont prévenus.
+      tags:
+      - demandes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Emission'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Emission'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Emission'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Demande'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/demandes/{id}/:
+    get:
+      operationId: demandes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) demande.
+        required: true
+      tags:
+      - demandes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Demande'
+          description: ''
+  /api/v1/demandes/en-attente/:
+    get:
+      operationId: demandes_en_attente_list
+      description: Demandes qui attendent ma réponse, les plus anciennes d'abord.
+      tags:
+      - demandes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Demande'
+          description: ''
   /api/v1/encaissements/:
     get:
       operationId: encaissements_list
@@ -2935,6 +3038,96 @@ components:
       description: |-
         * `jour` - jour
         * `nuit` - nuit
+    Demande:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        numero:
+          type: integer
+          readOnly: true
+          title: Numéro
+        code:
+          type: string
+          description: « DEM-021 ».
+          readOnly: true
+        type:
+          type: string
+          readOnly: true
+        type_libelle:
+          type: string
+          readOnly: true
+        objet_type:
+          type: string
+          readOnly: true
+          title: Type de l'objet lié
+        objet_id:
+          type: integer
+          readOnly: true
+          title: Objet lié
+        objet:
+          type: string
+          readOnly: true
+          title: Objet lié (libellé)
+        details:
+          readOnly: true
+          title: Détails
+        motif:
+          type: string
+          readOnly: true
+        emetteur:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        emetteur_profil:
+          type: string
+          readOnly: true
+          title: Profil de l'émetteur
+        valideurs:
+          readOnly: true
+          title: Profils valideurs
+        statut:
+          type: string
+          readOnly: true
+          default: en_attente
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Émise le
+      required:
+      - code
+      - cree_le
+      - details
+      - emetteur
+      - emetteur_profil
+      - id
+      - motif
+      - numero
+      - objet
+      - objet_id
+      - objet_type
+      - statut
+      - type
+      - type_libelle
+      - valideurs
+    Emission:
+      type: object
+      properties:
+        type:
+          type: string
+          maxLength: 30
+        objet_id:
+          type: integer
+          minimum: 1
+        motif:
+          type: string
+          maxLength: 500
+      required:
+      - motif
+      - objet_id
+      - type
     Encaissement:
       type: object
       properties:
@@ -3613,6 +3806,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Controle'
+    PaginatedDemandeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Demande'
     PaginatedEncaissementList:
       type: object
       required:

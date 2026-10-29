@@ -28,6 +28,10 @@ STATUTS = {
     "caisse_d_une_autre": status.HTTP_403_FORBIDDEN,
     "reference_obligatoire": status.HTTP_400_BAD_REQUEST,
     "montant_invalide": status.HTTP_400_BAD_REQUEST,
+    "type_demande_inconnu": status.HTTP_400_BAD_REQUEST,
+    "demande_inconnue": status.HTTP_404_NOT_FOUND,
+    "objet_inconnu": status.HTTP_404_NOT_FOUND,
+    "motif_obligatoire": status.HTTP_400_BAD_REQUEST,
     "cle_idempotence_reutilisee": status.HTTP_422_UNPROCESSABLE_ENTITY,
 }
 

@@ -150,6 +150,7 @@ lint.per-file-ignores."**/tests/**" = [
   "PLR2004", # valeurs métier explicites dans les tests (FCFA)
   "PLR0913", # les tests reçoivent leurs fixtures en arguments
   "PLR0917",
+  "EM101",   # refus métier d'essai : un code, puis le message
 ]
 # RefusConnexion reçoit un code de refus du catalogue REFUS, pas un message.
 lint.per-file-ignores."optiboul/users/connexion.py" = [ "EM101" ]

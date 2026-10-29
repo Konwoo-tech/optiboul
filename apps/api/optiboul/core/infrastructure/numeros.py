@@ -12,3 +12,13 @@ def prochain_numero(nom: str) -> int:
     SequenceNumero.objects.get_or_create(nom=nom)
     SequenceNumero.objects.filter(nom=nom).update(dernier=F("dernier") + 1)
     return SequenceNumero.objects.get(nom=nom).dernier
+
+
+class NumerosDjango:
+    """Adaptateur du port `Numeros` des cas d'usage."""
+
+    def prochain(self, nom: str) -> int:
+        return prochain_numero(nom)
+
+
+numeros = NumerosDjango()

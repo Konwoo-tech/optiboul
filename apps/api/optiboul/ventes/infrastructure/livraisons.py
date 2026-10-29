@@ -9,7 +9,7 @@ from django.db.models import Sum
 from optiboul.caisse.infrastructure.caisses import depot_caisses
 from optiboul.clients.infrastructure.comptes import comptes
 from optiboul.core.infrastructure.journal import journal
-from optiboul.core.infrastructure.numeros import prochain_numero
+from optiboul.core.infrastructure.numeros import numeros
 from optiboul.production.infrastructure.models import Produit
 from optiboul.ventes.application.livraisons import Depots
 from optiboul.ventes.application.livraisons import EtatLivraison
@@ -116,14 +116,8 @@ class DepotEncaissementsDjango:
         ).pk
 
 
-class NumerosDjango:
-    def prochain(self, nom: str) -> int:
-        return prochain_numero(nom)
-
-
 depot_livraisons = DepotLivraisonsDjango()
 depot_encaissements = DepotEncaissementsDjango()
-numeros = NumerosDjango()
 
 depots = Depots(
     livraisons=depot_livraisons,
