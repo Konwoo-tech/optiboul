@@ -687,6 +687,98 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/commandes/habituels-sans-commande/:
+    get:
+      operationId: commandes_habituels_sans_commande_list
+      description: 'Au-dessus des commandes : les habitués qui n''ont pas commandé
+        (O18).'
+      parameters:
+      - in: query
+        name: creneau
+        schema:
+          type: string
+          enum:
+          - jour
+          - nuit
+      - in: query
+        name: jour
+        schema:
+          type: string
+        description: AAAA-MM-JJ, avec le créneau
+      tags:
+      - commandes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Habituel'
+          description: ''
+  /api/v1/commandes/relancer-habituels/:
+    post:
+      operationId: commandes_relancer_habituels_create
+      description: Relance WhatsApp, un par un ou tous, par la file d'envoi (O15).
+      tags:
+      - commandes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelanceHabituels'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RelanceHabituels'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RelanceHabituels'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Rappel'
+          description: ''
+  /api/v1/commandes/reprendre-habituelle/:
+    post:
+      operationId: commandes_reprendre_habituelle_create
+      description: 'Le client confirme : sa commande habituelle en un clic (O3).'
+      tags:
+      - commandes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientDeLaSession'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClientDeLaSession'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClientDeLaSession'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commande'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/commandes/reprendre-veille/:
     post:
       operationId: commandes_reprendre_veille_create
@@ -3099,6 +3191,20 @@ components:
       - prix
       - solde
       - tarifs
+    ClientDeLaSession:
+      type: object
+      description: Session visée ; sans jour ni créneau, la prochaine dont l'heure
+        limite court.
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          $ref: '#/components/schemas/CreneauEnum'
+        client:
+          type: integer
+      required:
+      - client
     ClientResume:
       type: object
       properties:
@@ -3867,6 +3973,32 @@ components:
       - membres
       - nom
       - profil
+    Habituel:
+      type: object
+      properties:
+        commande:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+          description: Code du produit → pains commandés.
+        client:
+          $ref: '#/components/schemas/ClientResume'
+        telephone:
+          type: string
+        sessions:
+          type: integer
+          description: Sessions commandées parmi les N dernières.
+        rappel:
+          allOf:
+          - $ref: '#/components/schemas/Rappel'
+          nullable: true
+      required:
+      - client
+      - commande
+      - rappel
+      - sessions
+      - telephone
     Ignore:
       type: object
       properties:
@@ -5167,6 +5299,21 @@ components:
       description: |-
         * `sans_telephone` - sans_telephone
         * `sans_dette` - sans_dette
+    Rappel:
+      type: object
+      properties:
+        statut:
+          type: string
+          description: 'État du WhatsApp : en_attente, envoye, echec.'
+        automatique:
+          type: boolean
+        cree_le:
+          type: string
+          format: date-time
+      required:
+      - automatique
+      - cree_le
+      - statut
     Refus:
       type: object
       properties:
@@ -5229,6 +5376,21 @@ components:
           minItems: 1
       required:
       - clients
+    RelanceHabituels:
+      type: object
+      description: Session visée ; sans jour ni créneau, la prochaine dont l'heure
+        limite court.
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          $ref: '#/components/schemas/CreneauEnum'
+        clients:
+          type: array
+          items:
+            type: integer
+          description: 'Sans liste : tous les habituels sans commande.'
     Reouverture:
       type: object
       properties:

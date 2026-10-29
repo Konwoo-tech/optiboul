@@ -25,10 +25,15 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ClientDeLaSession,
   Commande,
+  CommandesHabituelsSansCommandeListParams,
   CommandesListParams,
   CommandesSacsRetrieveParams,
+  Habituel,
   Probleme,
+  Rappel,
+  RelanceHabituels,
   Reprise,
   Sacs,
   Saisie,
@@ -478,6 +483,321 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getCommandesAnnulerCreateMutationOptions(options), queryClient);
+    }
+    export type commandesHabituelsSansCommandeListResponse200 = {
+  data: Habituel[]
+  status: 200
+}
+
+export type commandesHabituelsSansCommandeListResponseSuccess = (commandesHabituelsSansCommandeListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type commandesHabituelsSansCommandeListResponse = (commandesHabituelsSansCommandeListResponseSuccess)
+
+export const getCommandesHabituelsSansCommandeListUrl = (params?: CommandesHabituelsSansCommandeListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/commandes/habituels-sans-commande/?${stringifiedParams}` : `/api/v1/commandes/habituels-sans-commande/`
+}
+
+/**
+ * Au-dessus des commandes : les habitués qui n'ont pas commandé (O18).
+ */
+export const commandesHabituelsSansCommandeList = async (params?: CommandesHabituelsSansCommandeListParams, options?: Parameters<typeof optiboulFetch>[1]): Promise<commandesHabituelsSansCommandeListResponse> => {
+
+  return optiboulFetch<commandesHabituelsSansCommandeListResponse>(getCommandesHabituelsSansCommandeListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCommandesHabituelsSansCommandeListQueryKey = (params?: CommandesHabituelsSansCommandeListParams,) => {
+    return [
+    `/api/v1/commandes/habituels-sans-commande/`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCommandesHabituelsSansCommandeListQueryOptions = <TData = Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>, TError = unknown>(params?: CommandesHabituelsSansCommandeListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCommandesHabituelsSansCommandeListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>> = ({ signal }) => commandesHabituelsSansCommandeList(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CommandesHabituelsSansCommandeListQueryResult = NonNullable<Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>>
+export type CommandesHabituelsSansCommandeListQueryError = unknown
+
+
+export function useCommandesHabituelsSansCommandeList<TData = Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>, TError = unknown>(
+ params: undefined |  CommandesHabituelsSansCommandeListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>,
+          TError,
+          Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCommandesHabituelsSansCommandeList<TData = Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>, TError = unknown>(
+ params?: CommandesHabituelsSansCommandeListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>,
+          TError,
+          Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCommandesHabituelsSansCommandeList<TData = Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>, TError = unknown>(
+ params?: CommandesHabituelsSansCommandeListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useCommandesHabituelsSansCommandeList<TData = Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>, TError = unknown>(
+ params?: CommandesHabituelsSansCommandeListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof commandesHabituelsSansCommandeList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCommandesHabituelsSansCommandeListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type commandesRelancerHabituelsCreateResponse200 = {
+  data: Rappel[]
+  status: 200
+}
+
+export type commandesRelancerHabituelsCreateResponseSuccess = (commandesRelancerHabituelsCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type commandesRelancerHabituelsCreateResponse = (commandesRelancerHabituelsCreateResponseSuccess)
+
+export const getCommandesRelancerHabituelsCreateUrl = () => {
+
+
+
+
+  return `/api/v1/commandes/relancer-habituels/`
+}
+
+/**
+ * Relance WhatsApp, un par un ou tous, par la file d'envoi (O15).
+ */
+export const commandesRelancerHabituelsCreate = async (relanceHabituels?: RelanceHabituels, options?: Parameters<typeof optiboulFetch>[1]): Promise<commandesRelancerHabituelsCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<commandesRelancerHabituelsCreateResponse>(getCommandesRelancerHabituelsCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(relanceHabituels)
+  }
+);}
+
+
+
+
+
+export const getCommandesRelancerHabituelsCreateMutationKey = () => ['commandesRelancerHabituelsCreate'] as const;
+
+export const getCommandesRelancerHabituelsCreateMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commandesRelancerHabituelsCreate>>, TError,CommandesRelancerHabituelsCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof commandesRelancerHabituelsCreate>>, TError,CommandesRelancerHabituelsCreateMutationVariables, TContext> => {
+
+const mutationKey = getCommandesRelancerHabituelsCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof commandesRelancerHabituelsCreate>>, CommandesRelancerHabituelsCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  commandesRelancerHabituelsCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CommandesRelancerHabituelsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof commandesRelancerHabituelsCreate>>>
+    export type CommandesRelancerHabituelsCreateMutationBody = RelanceHabituels | undefined
+    export type CommandesRelancerHabituelsCreateMutationError = unknown
+    export type CommandesRelancerHabituelsCreateMutationVariables = {data?: RelanceHabituels}
+
+    export const useCommandesRelancerHabituelsCreate = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commandesRelancerHabituelsCreate>>, TError,CommandesRelancerHabituelsCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof commandesRelancerHabituelsCreate>>,
+        TError,
+        CommandesRelancerHabituelsCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCommandesRelancerHabituelsCreateMutationOptions(options), queryClient);
+    }
+    export type commandesReprendreHabituelleCreateResponse201 = {
+  data: Commande
+  status: 201
+}
+
+export type commandesReprendreHabituelleCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type commandesReprendreHabituelleCreateResponseSuccess = (commandesReprendreHabituelleCreateResponse201) & {
+  headers: Headers;
+};
+export type commandesReprendreHabituelleCreateResponseError = (commandesReprendreHabituelleCreateResponse409) & {
+  headers: Headers;
+};
+
+export type commandesReprendreHabituelleCreateResponse = (commandesReprendreHabituelleCreateResponseSuccess | commandesReprendreHabituelleCreateResponseError)
+
+export const getCommandesReprendreHabituelleCreateUrl = () => {
+
+
+
+
+  return `/api/v1/commandes/reprendre-habituelle/`
+}
+
+/**
+ * Le client confirme : sa commande habituelle en un clic (O3).
+ */
+export const commandesReprendreHabituelleCreate = async (clientDeLaSession: ClientDeLaSession, options?: Parameters<typeof optiboulFetch>[1]): Promise<commandesReprendreHabituelleCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<commandesReprendreHabituelleCreateResponse>(getCommandesReprendreHabituelleCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(clientDeLaSession)
+  }
+);}
+
+
+
+
+
+export const getCommandesReprendreHabituelleCreateMutationKey = () => ['commandesReprendreHabituelleCreate'] as const;
+
+export const getCommandesReprendreHabituelleCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commandesReprendreHabituelleCreate>>, TError,CommandesReprendreHabituelleCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof commandesReprendreHabituelleCreate>>, TError,CommandesReprendreHabituelleCreateMutationVariables, TContext> => {
+
+const mutationKey = getCommandesReprendreHabituelleCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof commandesReprendreHabituelleCreate>>, CommandesReprendreHabituelleCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  commandesReprendreHabituelleCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CommandesReprendreHabituelleCreateMutationResult = NonNullable<Awaited<ReturnType<typeof commandesReprendreHabituelleCreate>>>
+    export type CommandesReprendreHabituelleCreateMutationBody = ClientDeLaSession
+    export type CommandesReprendreHabituelleCreateMutationError = Probleme
+    export type CommandesReprendreHabituelleCreateMutationVariables = {data: ClientDeLaSession}
+
+    export const useCommandesReprendreHabituelleCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof commandesReprendreHabituelleCreate>>, TError,CommandesReprendreHabituelleCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof commandesReprendreHabituelleCreate>>,
+        TError,
+        CommandesReprendreHabituelleCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCommandesReprendreHabituelleCreateMutationOptions(options), queryClient);
     }
     export type commandesReprendreVeilleCreateResponse200 = {
   data: Reprise

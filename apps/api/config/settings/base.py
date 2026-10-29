@@ -424,6 +424,7 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute=35),
     },
     "escalader-demandes": {"task": "demandes.escalader", "schedule": 60.0},
+    "rappel-habituels": {"task": "ventes.rappel_habituels", "schedule": 60.0},
 }
 
 # Passerelle de chaque canal de la file d'envoi (O15). SMS et WhatsApp : fournisseur à

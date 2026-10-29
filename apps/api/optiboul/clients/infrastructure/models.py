@@ -178,6 +178,9 @@ class Relance(models.Model):
         related_name="+",
         verbose_name=_("message"),
     )
+    # Rappel de commande (O18) : la session visée.
+    jour = models.DateField(_("jour de la session"), null=True, blank=True)
+    creneau = models.CharField(_("créneau"), max_length=4, blank=True)
     montant = models.BigIntegerField(_("dette relancée (FCFA)"), default=0)
     automatique = models.BooleanField(_("automatique"), default=False)
     auteur = models.ForeignKey(
