@@ -30,5 +30,6 @@ DOMAINES = [
 app_name = "api"
 urlpatterns = [
     *router.urls,
+    path("", include("optiboul.users.api.urls")),
     *(path("", include(f"optiboul.{domaine}.api.urls")) for domaine in DOMAINES),
 ]

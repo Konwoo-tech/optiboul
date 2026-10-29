@@ -121,6 +121,92 @@ paths:
                 items:
                   $ref: '#/components/schemas/Valeur'
           description: ''
+  /api/v1/postes/:
+    get:
+      operationId: postes_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - postes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPosteList'
+          description: ''
+    post:
+      operationId: postes_create
+      description: Enregistre ce navigateur comme poste de confiance (cookie signé).
+      tags:
+      - postes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Poste'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Poste'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Poste'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Poste'
+          description: ''
+  /api/v1/postes/{id}/revoquer/:
+    post:
+      operationId: postes_revoquer_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) poste de
+          confiance.
+        required: true
+      tags:
+      - postes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Poste'
+          description: ''
+  /api/v1/postes/actuel/:
+    get:
+      operationId: postes_actuel_retrieve
+      description: Ce navigateur est-il un poste de confiance ? (écran de connexion,
+        O1).
+      tags:
+      - postes
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PosteActuel'
+          description: ''
   /api/v1/sante/:
     get:
       operationId: sante
@@ -418,6 +504,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LigneJournal'
+    PaginatedPosteList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Poste'
     PaginatedSauvegardeList:
       type: object
       required:
@@ -525,6 +634,54 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ProfilEnum'
           - $ref: '#/components/schemas/NullEnum'
+    Poste:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          maxLength: 100
+        actif:
+          type: boolean
+          readOnly: true
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Enregistré le
+        cree_par:
+          type: string
+          readOnly: true
+        revoque_le:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Révoqué le
+        dernier_usage:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - actif
+      - cree_le
+      - cree_par
+      - dernier_usage
+      - id
+      - nom
+      - revoque_le
+    PosteActuel:
+      type: object
+      properties:
+        poste:
+          allOf:
+          - $ref: '#/components/schemas/Poste'
+          nullable: true
+      required:
+      - poste
     ProfilEnum:
       enum:
       - caissier

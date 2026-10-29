@@ -3,12 +3,17 @@ from typing import ClassVar
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import Group
 from django.db.models import CASCADE
+from django.db.models import PROTECT
+from django.db.models import BooleanField
 from django.db.models import CharField
+from django.db.models import DateTimeField
 from django.db.models import EmailField
+from django.db.models import ForeignKey
 from django.db.models import Model
 from django.db.models import OneToOneField
 from django.db.models import TextChoices
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from .managers import UserManager
@@ -83,3 +88,37 @@ class User(AbstractUser):
 
         """
         return reverse("users:detail", kwargs={"pk": self.id})
+
+
+class PosteConfiance(Model):
+    """Poste du comptoir enregistré (O1, US-022) : seule l'empreinte du jeton reste."""
+
+    nom = CharField(_("nom"), max_length=100)
+    empreinte = CharField(_("empreinte du jeton"), max_length=64, unique=True)
+    actif = BooleanField(_("actif"), default=True)
+    cree_le = DateTimeField(_("enregistré le"), default=timezone.now)
+    cree_par = ForeignKey(
+        "users.User",
+        on_delete=PROTECT,
+        related_name="+",
+        verbose_name=_("enregistré par"),
+    )
+    revoque_le = DateTimeField(_("révoqué le"), null=True, blank=True)
+    revoque_par = ForeignKey(
+        "users.User",
+        on_delete=PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("révoqué par"),
+    )
+    dernier_usage = DateTimeField(_("dernier usage"), null=True, blank=True)
+
+    class Meta:
+        db_table = "poste_confiance"
+        ordering = ["nom"]
+        verbose_name = _("poste de confiance")
+        verbose_name_plural = _("postes de confiance")
+
+    def __str__(self) -> str:
+        return self.nom
