@@ -1,11 +1,14 @@
 from django.urls import path
 from rest_framework.routers import SimpleRouter
 
+from .brouillons import BrouillonsViewSet
 from .connexion import annuler_identification
+from .connexion import changer_utilisateur
 from .connexion import connexion_par_code
 from .connexion import connexion_par_email
 from .connexion import deconnexion
 from .connexion import envoyer_code
+from .connexion import session_en_cours
 from .connexion import utilisateurs_du_poste
 from .connexion import verifier_application
 from .connexion import verifier_code
@@ -17,6 +20,7 @@ router = SimpleRouter()
 router.register("postes", PostesViewSet, basename="poste")
 router.register("utilisateurs", UtilisateursViewSet, basename="utilisateur")
 router.register("mfa", MfaViewSet, basename="mfa")
+router.register("brouillons", BrouillonsViewSet, basename="brouillon")
 
 urlpatterns = [
     path(
@@ -31,5 +35,11 @@ urlpatterns = [
     path("connexion/totp/", verifier_application, name="connexion-totp"),
     path("connexion/annuler/", annuler_identification, name="connexion-annuler"),
     path("connexion/deconnexion/", deconnexion, name="connexion-deconnexion"),
+    path(
+        "connexion/changer-utilisateur/",
+        changer_utilisateur,
+        name="connexion-changer-utilisateur",
+    ),
+    path("connexion/session/", session_en_cours, name="connexion-session"),
     *router.urls,
 ]

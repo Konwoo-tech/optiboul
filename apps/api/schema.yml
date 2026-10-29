@@ -4,6 +4,93 @@ info:
   version: 1.0.0
   description: API REST d'OptiBoul ERP (Boulangerie du Faubourg)
 paths:
+  /api/v1/brouillons/:
+    get:
+      operationId: brouillons_list
+      tags:
+      - brouillons
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Brouillon'
+          description: ''
+  /api/v1/brouillons/{cle}/:
+    get:
+      operationId: brouillons_retrieve
+      parameters:
+      - in: path
+        name: cle
+        schema:
+          type: string
+          pattern: ^[a-z0-9._-]+$
+        required: true
+      tags:
+      - brouillons
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brouillon'
+          description: ''
+        '404':
+          description: No response body
+    put:
+      operationId: brouillons_update
+      parameters:
+      - in: path
+        name: cle
+        schema:
+          type: string
+          pattern: ^[a-z0-9._-]+$
+        required: true
+      tags:
+      - brouillons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Brouillon'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Brouillon'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Brouillon'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brouillon'
+          description: ''
+    delete:
+      operationId: brouillons_destroy
+      parameters:
+      - in: path
+        name: cle
+        schema:
+          type: string
+          pattern: ^[a-z0-9._-]+$
+        required: true
+      tags:
+      - brouillons
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/connexion/annuler/:
     post:
       operationId: connexion_annuler_create
@@ -12,6 +99,18 @@ paths:
       security:
       - cookieAuth: []
       - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/connexion/changer-utilisateur/:
+    post:
+      operationId: connexion_changer_utilisateur_create
+      description: '« Changer d''utilisateur » : la session se ferme ; poste et brouillons
+        restent.'
+      tags:
+      - connexion
+      security:
+      - cookieAuth: []
       responses:
         '204':
           description: No response body
@@ -158,6 +257,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/connexion/session/:
+    get:
+      operationId: connexion_session_retrieve
+      description: Méthode de connexion et délai d'inactivité, pour le minuteur de
+        l'écran.
+      tags:
+      - connexion
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
           description: ''
   /api/v1/connexion/totp/:
     post:
@@ -749,6 +864,23 @@ paths:
           description: ''
 components:
   schemas:
+    Brouillon:
+      type: object
+      properties:
+        cle:
+          type: string
+          readOnly: true
+          title: Écran
+        contenu: {}
+        mis_a_jour:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Mis à jour le
+      required:
+      - cle
+      - contenu
+      - mis_a_jour
     CanalEnum:
       enum:
       - sms
@@ -1310,6 +1442,17 @@ components:
       required:
       - secret
       - uri
+    Session:
+      type: object
+      properties:
+        via:
+          type: string
+        inactiviteMinutes:
+          type: integer
+          nullable: true
+      required:
+      - inactiviteMinutes
+      - via
     User:
       type: object
       properties:

@@ -9,10 +9,12 @@ from django.db.models import CharField
 from django.db.models import DateTimeField
 from django.db.models import EmailField
 from django.db.models import ForeignKey
+from django.db.models import JSONField
 from django.db.models import Model
 from django.db.models import OneToOneField
 from django.db.models import PositiveSmallIntegerField
 from django.db.models import TextChoices
+from django.db.models import UniqueConstraint
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -167,3 +169,29 @@ class CodeVerification(Model):
 
     def __str__(self) -> str:
         return f"{self.utilisateur} · {self.canal} · {self.cree_le:%d/%m %H:%M}"
+
+
+class Brouillon(Model):
+    """Saisie en cours, gardée pour la personne qui l'a commencée (US-014)."""
+
+    auteur = ForeignKey(
+        "users.User",
+        on_delete=CASCADE,
+        related_name="brouillons",
+        verbose_name=_("auteur"),
+    )
+    cle = CharField(_("écran"), max_length=100)
+    contenu = JSONField(_("contenu"))
+    mis_a_jour = DateTimeField(_("mis à jour le"), auto_now=True)
+
+    class Meta:
+        db_table = "brouillon"
+        ordering = ["-mis_a_jour"]
+        constraints = [
+            UniqueConstraint(fields=["auteur", "cle"], name="un_brouillon_par_ecran"),
+        ]
+        verbose_name = _("brouillon")
+        verbose_name_plural = _("brouillons")
+
+    def __str__(self) -> str:
+        return f"{self.auteur} · {self.cle}"

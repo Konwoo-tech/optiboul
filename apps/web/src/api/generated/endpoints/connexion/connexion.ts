@@ -32,6 +32,7 @@ import type {
   PersonneDuPoste,
   Probleme,
   ResultatConnexion,
+  Session,
   Verification
 } from '../../model';
 
@@ -135,6 +136,88 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getConnexionAnnulerCreateMutationOptions(options), queryClient);
+    }
+    export type connexionChangerUtilisateurCreateResponse204 = {
+  data: void
+  status: 204
+}
+
+export type connexionChangerUtilisateurCreateResponseSuccess = (connexionChangerUtilisateurCreateResponse204) & {
+  headers: Headers;
+};
+;
+
+export type connexionChangerUtilisateurCreateResponse = (connexionChangerUtilisateurCreateResponseSuccess)
+
+export const getConnexionChangerUtilisateurCreateUrl = () => {
+
+
+
+
+  return `/api/v1/connexion/changer-utilisateur/`
+}
+
+/**
+ * « Changer d'utilisateur » : la session se ferme ; poste et brouillons restent.
+ */
+export const connexionChangerUtilisateurCreate = async ( options?: Parameters<typeof optiboulFetch>[1]): Promise<connexionChangerUtilisateurCreateResponse> => {
+
+  return optiboulFetch<connexionChangerUtilisateurCreateResponse>(getConnexionChangerUtilisateurCreateUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getConnexionChangerUtilisateurCreateMutationKey = () => ['connexionChangerUtilisateurCreate'] as const;
+
+export const getConnexionChangerUtilisateurCreateMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionChangerUtilisateurCreate>>, TError,void, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof connexionChangerUtilisateurCreate>>, TError,void, TContext> => {
+
+const mutationKey = getConnexionChangerUtilisateurCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof connexionChangerUtilisateurCreate>>, void> = () => {
+
+
+          return  connexionChangerUtilisateurCreate(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConnexionChangerUtilisateurCreateMutationResult = NonNullable<Awaited<ReturnType<typeof connexionChangerUtilisateurCreate>>>
+
+    export type ConnexionChangerUtilisateurCreateMutationError = unknown
+
+
+    export const useConnexionChangerUtilisateurCreate = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionChangerUtilisateurCreate>>, TError,void, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof connexionChangerUtilisateurCreate>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getConnexionChangerUtilisateurCreateMutationOptions(options), queryClient);
     }
     export type connexionCodeCreateResponse200 = {
   data: ResultatConnexion
@@ -627,7 +710,116 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getConnexionOtpVerifierCreateMutationOptions(options), queryClient);
     }
-    export type connexionTotpCreateResponse204 = {
+    export type connexionSessionRetrieveResponse200 = {
+  data: Session
+  status: 200
+}
+
+export type connexionSessionRetrieveResponseSuccess = (connexionSessionRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type connexionSessionRetrieveResponse = (connexionSessionRetrieveResponseSuccess)
+
+export const getConnexionSessionRetrieveUrl = () => {
+
+
+
+
+  return `/api/v1/connexion/session/`
+}
+
+/**
+ * Méthode de connexion et délai d'inactivité, pour le minuteur de l'écran.
+ */
+export const connexionSessionRetrieve = async ( options?: Parameters<typeof optiboulFetch>[1]): Promise<connexionSessionRetrieveResponse> => {
+
+  return optiboulFetch<connexionSessionRetrieveResponse>(getConnexionSessionRetrieveUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getConnexionSessionRetrieveQueryKey = () => {
+    return [
+    `/api/v1/connexion/session/`
+    ] as const;
+    }
+
+
+export const getConnexionSessionRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof connexionSessionRetrieve>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof connexionSessionRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getConnexionSessionRetrieveQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof connexionSessionRetrieve>>> = ({ signal }) => connexionSessionRetrieve({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof connexionSessionRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ConnexionSessionRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof connexionSessionRetrieve>>>
+export type ConnexionSessionRetrieveQueryError = unknown
+
+
+export function useConnexionSessionRetrieve<TData = Awaited<ReturnType<typeof connexionSessionRetrieve>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof connexionSessionRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof connexionSessionRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof connexionSessionRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useConnexionSessionRetrieve<TData = Awaited<ReturnType<typeof connexionSessionRetrieve>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof connexionSessionRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof connexionSessionRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof connexionSessionRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useConnexionSessionRetrieve<TData = Awaited<ReturnType<typeof connexionSessionRetrieve>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof connexionSessionRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useConnexionSessionRetrieve<TData = Awaited<ReturnType<typeof connexionSessionRetrieve>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof connexionSessionRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getConnexionSessionRetrieveQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type connexionTotpCreateResponse204 = {
   data: void
   status: 204
 }

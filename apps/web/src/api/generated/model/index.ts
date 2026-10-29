@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './brouillon.ts';
 export * from './canalEnum.ts';
 export * from './codeEnvoye.ts';
 export * from './codesSecours.ts';
@@ -38,6 +39,7 @@ export * from './sante.ts';
 export * from './sauvegarde.ts';
 export * from './sauvegardesListParams.ts';
 export * from './secretTotp.ts';
+export * from './session.ts';
 export * from './user.ts';
 export * from './usersListParams.ts';
 export * from './utilisateursListParams.ts';

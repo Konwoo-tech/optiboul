@@ -20,6 +20,7 @@ from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.contexte import entree_de
 from optiboul.core.application.journal import Entree
 from optiboul.core.infrastructure.journal import journaliser
+from optiboul.core.infrastructure.parametres import parametre
 from optiboul.users import connexion
 from optiboul.users import double_auth
 from optiboul.users.models import Profil
@@ -250,4 +251,31 @@ def verifier_application(request: Request) -> Response:
     except connexion.RefusConnexion as refus:
         return probleme(refus)
     double_auth.terminer(brute, identifie)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SessionSerializer(serializers.Serializer):
+    via = serializers.CharField(allow_blank=True)
+    inactiviteMinutes = serializers.IntegerField(allow_null=True)  # noqa: N815
+
+
+@extend_schema(responses=SessionSerializer)
+@api_view(["GET"])
+def session_en_cours(request: Request) -> Response:
+    """Méthode de connexion et délai d'inactivité, pour le minuteur de l'écran."""
+    via = request.session.get(connexion.SESSION_VIA, "")
+    minutes = parametre("inactivite_comptoir") if via == "code" else None
+    return Response({"via": via, "inactiviteMinutes": minutes})
+
+
+@extend_schema(request=None, responses={204: None})
+@api_view(["POST"])
+def changer_utilisateur(request: Request) -> Response:
+    """« Changer d'utilisateur » : la session se ferme ; poste et brouillons restent."""
+    journaliser(
+        "connexion.changement",
+        auteur=auteur_de(request),
+        objet_type="utilisateur",
+    )
+    logout(request._request)  # noqa: SLF001
     return Response(status=status.HTTP_204_NO_CONTENT)

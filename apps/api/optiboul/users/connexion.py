@@ -10,6 +10,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth import login
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
 
 from optiboul.core.api.contexte import auteur_de
 from optiboul.core.infrastructure.journal import journaliser
@@ -129,6 +130,7 @@ def _bloque(utilisateur: User) -> RefusConnexion:
 def ouvrir_session(request: HttpRequest, identifie: Identifie) -> None:
     login(request, identifie.utilisateur, backend=BACKEND)
     request.session[SESSION_VIA] = identifie.via
+    request.session["optiboul_derniere_activite"] = timezone.now().isoformat()
     journaliser(
         "connexion.reussie",
         auteur=auteur_de(request),
