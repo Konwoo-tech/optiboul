@@ -49,6 +49,11 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   wait-for-it \
   # sauvegardes de la base (pg_dump, US-142)
   postgresql-client \
+  # PDF (WeasyPrint, spécification §4.1)
+  libpango-1.0-0 \
+  libpangoft2-1.0-0 \
+  libharfbuzz-subset0 \
+  fonts-dejavu-core \
   # cleaning up unused files
   && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
   && rm -rf /var/lib/apt/lists/*

@@ -8,5 +8,7 @@ class CaisseConfig(AppConfig):
 
     def ready(self) -> None:
         from .infrastructure import cloture  # noqa: PLC0415
+        from .infrastructure import passation  # noqa: PLC0415
 
         cloture.enregistrer()
+        passation.enregistrer()

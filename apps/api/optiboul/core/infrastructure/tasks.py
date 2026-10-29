@@ -148,3 +148,11 @@ def rappel_cloture_semaine() -> int:
         message=message,
         lien="/gestion/semaines",
     )
+
+
+@shared_task(name="core.passation")
+def passation(semaine_id: int) -> int:
+    """Après la clôture (US-034) : édite le rapport et l'envoie au gérant suivant."""
+    from .passation import produire  # noqa: PLC0415 : WeasyPrint chargé au besoin
+
+    return produire(semaine_id).pk

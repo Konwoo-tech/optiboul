@@ -1,0 +1,151 @@
+{% load optiboul %}
+
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Passation {{ code }}</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 18mm 16mm;
+
+        @bottom-right {
+          content: "Page " counter(page) " / " counter(pages);
+          font-size: 8pt;
+          color: #5A3220;
+        }
+      }
+
+      body {
+        font-family: "DejaVu Sans", sans-serif;
+        font-size: 10pt;
+        color: #2b1a10;
+      }
+
+      h1 {
+        color: #5A3220;
+        font-size: 18pt;
+        margin: 0 0 2mm;
+      }
+
+      h2 {
+        color: #5A3220;
+        font-size: 12pt;
+        border-bottom: 2px solid #F2B705;
+        padding-bottom: 1mm;
+        margin-top: 7mm;
+      }
+
+      .entete {
+        color: #5A3220;
+        margin-bottom: 4mm;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 2mm;
+      }
+
+      th {
+        text-align: left;
+        background: #FFF4DC;
+        color: #5A3220;
+        padding: 1.5mm 2mm;
+      }
+
+      td {
+        padding: 1.5mm 2mm;
+        border-bottom: 0.3mm solid #eadfc8;
+      }
+
+      .montant {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .manque {
+        color: #b3261e;
+      }
+
+      .absent {
+        color: #8a7a6a;
+        font-style: italic;
+      }
+
+      .total td {
+        font-weight: bold;
+        border-top: 0.5mm solid #5A3220;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Rapport de passation · semaine {{ code }}</h1>
+    <div class="entete">
+      Boulangerie du Faubourg · du {{ du|date:"d/m/Y" }} au {{ au|date:"d/m/Y" }}
+      <br />
+      Gérant : {{ gerant|default:"—" }} · Responsable de production : {{ production|default:"—" }}
+      <br />
+      {% if destinataire %}
+        Pour {{ destinataire }}, gérant de la semaine {{ code_suivante }}.
+      {% else %}
+        Semaine suivante : gérant non encore affecté.
+      {% endif %}
+    </div>
+    {% for section in sections %}
+      <h2>{{ section.titre }}</h2>
+      {% if section.contenu is None %}
+        <p class="absent">Non disponible : ce module n'est pas encore en service.</p>
+      {% elif section.cle == "caisses" %}
+        {% if section.contenu.lignes %}
+          <table>
+            <tr>
+              <th>Jour</th>
+              <th>Créneau</th>
+              <th>Caissière</th>
+              <th class="montant">Compté</th>
+              <th class="montant">Écart</th>
+            </tr>
+            {% for ligne in section.contenu.lignes %}
+              <tr>
+                <td>{{ ligne.jour|date:"D d/m" }}</td>
+                <td>{{ ligne.creneau }}</td>
+                <td>{{ ligne.caissiere }}</td>
+                <td class="montant">{{ ligne.compte|fcfa }}</td>
+                <td class="montant {% if ligne.ecart < 0 %}manque{% endif %}">{{ ligne.ecart|fcfa }}</td>
+              </tr>
+            {% endfor %}
+            <tr class="total">
+              <td colspan="4">Écart cumulé</td>
+              <td class="montant {% if section.contenu.ecart_cumule < 0 %}manque{% endif %}">
+                {{ section.contenu.ecart_cumule|fcfa }}
+              </td>
+            </tr>
+          </table>
+        {% else %}
+          <p class="absent">Aucune caisse fermée cette semaine.</p>
+        {% endif %}
+      {% else %}
+        <table>
+          {% for libelle, valeur in section.contenu.items %}
+            <tr>
+              <td>{{ libelle }}</td>
+              <td class="montant">{{ valeur }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% endif %}
+    {% endfor %}
+    <h2>Incidents</h2>
+    {% if incidents %}
+      <ul>
+        {% for incident in incidents %}<li>{{ incident }}</li>{% endfor %}
+      </ul>
+    {% else %}
+      <p class="absent">Aucun incident.</p>
+    {% endif %}
+    <p class="absent">Édité le {{ edite_le|date:"d/m/Y à H:i" }}.</p>
+  </body>
+</html>

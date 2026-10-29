@@ -213,3 +213,33 @@ class CreneauPlanning(models.Model):
 
     def __str__(self) -> str:
         return f"{self.jour:%d/%m} {self.creneau} : {self.caissiere}"
+
+
+class RapportPassation(models.Model):
+    """Rapport de passation d'une semaine clôturée (US-034), en PDF."""
+
+    semaine = models.OneToOneField(
+        Semaine,
+        on_delete=models.PROTECT,
+        related_name="passation",
+        verbose_name=_("semaine"),
+    )
+    fichier = models.FileField(_("fichier PDF"), upload_to="passations/")
+    destinataire = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("gérant de la semaine suivante"),
+    )
+    cree_le = models.DateTimeField(_("édité le"), default=timezone.now)
+
+    class Meta:
+        db_table = "rapport_passation"
+        ordering = ["-cree_le"]
+        verbose_name = _("rapport de passation")
+        verbose_name_plural = _("rapports de passation")
+
+    def __str__(self) -> str:
+        return f"Passation S{self.semaine.numero:02d} {self.semaine.annee}"

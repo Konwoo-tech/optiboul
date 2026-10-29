@@ -37,7 +37,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 RUN apt-get update && apt-get install --no-install-recommends -y \
   sudo git bash-completion nano ssh \
   # sauvegardes de la base (pg_dump, US-142)
-  postgresql-client
+  postgresql-client \
+  # PDF (WeasyPrint, spécification §4.1)
+  libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core
 
 # Create devcontainer user and add it to sudoers
 RUN groupadd --gid 1000 dev-user \

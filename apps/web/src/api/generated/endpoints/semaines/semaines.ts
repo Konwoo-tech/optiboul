@@ -870,7 +870,116 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getSemainesOuvrirCreateMutationOptions(options), queryClient);
     }
-    export type semainesPlanningRetrieveResponse200 = {
+    export type semainesPassationRetrieveResponse200 = {
+  data: Blob
+  status: 200
+}
+
+export type semainesPassationRetrieveResponseSuccess = (semainesPassationRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type semainesPassationRetrieveResponse = (semainesPassationRetrieveResponseSuccess)
+
+export const getSemainesPassationRetrieveUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/semaines/${id}/passation/`
+}
+
+/**
+ * Rapport de passation en PDF : caisses, dettes, stock bas, incidents.
+ */
+export const semainesPassationRetrieve = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<semainesPassationRetrieveResponse> => {
+
+  return optiboulFetch<semainesPassationRetrieveResponse>(getSemainesPassationRetrieveUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSemainesPassationRetrieveQueryKey = (id: number,) => {
+    return [
+    `/api/v1/semaines/${id}/passation/`
+    ] as const;
+    }
+
+
+export const getSemainesPassationRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof semainesPassationRetrieve>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPassationRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSemainesPassationRetrieveQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof semainesPassationRetrieve>>> = ({ signal }) => semainesPassationRetrieve(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof semainesPassationRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SemainesPassationRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof semainesPassationRetrieve>>>
+export type SemainesPassationRetrieveQueryError = unknown
+
+
+export function useSemainesPassationRetrieve<TData = Awaited<ReturnType<typeof semainesPassationRetrieve>>, TError = unknown>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPassationRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof semainesPassationRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof semainesPassationRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSemainesPassationRetrieve<TData = Awaited<ReturnType<typeof semainesPassationRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPassationRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof semainesPassationRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof semainesPassationRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSemainesPassationRetrieve<TData = Awaited<ReturnType<typeof semainesPassationRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPassationRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useSemainesPassationRetrieve<TData = Awaited<ReturnType<typeof semainesPassationRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPassationRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSemainesPassationRetrieveQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type semainesPlanningRetrieveResponse200 = {
   data: Planning
   status: 200
 }

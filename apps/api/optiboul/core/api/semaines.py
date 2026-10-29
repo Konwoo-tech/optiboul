@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.http import FileResponse
 from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
@@ -29,7 +30,9 @@ from optiboul.core.domain.planning import creneaux
 from optiboul.core.domain.sauvegardes import Declencheur
 from optiboul.core.domain.semaines import bornes
 from optiboul.core.domain.semaines import code
+from optiboul.core.infrastructure import tasks as taches
 from optiboul.core.infrastructure.journal import journal
+from optiboul.core.infrastructure.models import RapportPassation
 from optiboul.core.infrastructure.models import Semaine
 from optiboul.core.infrastructure.sauvegardes import demander_sauvegarde
 from optiboul.core.infrastructure.semaines import depot_planning
@@ -38,6 +41,7 @@ from optiboul.core.infrastructure.semaines import depot_semaines
 from .contexte import auteur_de
 from .erreurs import ProblemeSerializer
 from .erreurs import probleme
+from .permissions import DIRECTION
 from .permissions import ProfilParmi
 
 if TYPE_CHECKING:
@@ -355,9 +359,30 @@ class SemainesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
                     maintenant=timezone.now(),
                 )
                 demander_sauvegarde(Declencheur.CLOTURE_SEMAINE)
+                # Le rapport de passation part au gérant suivant (US-034).
+                transaction.on_commit(lambda: taches.passation.delay(semaine_id))
         except RefusMetier as refus:
             return probleme(refus)
         return Response(SemaineSerializer(self.get_queryset().get(pk=semaine_id)).data)
+
+    @extend_schema(responses={(200, "application/pdf"): OpenApiTypes.BINARY})
+    @action(detail=True, permission_classes=[ProfilParmi(*DIRECTION)])
+    def passation(self, request: Request, pk: str) -> Response | FileResponse:
+        """Rapport de passation en PDF : caisses, dettes, stock bas, incidents."""
+        semaine = self.get_object()
+        if semaine.statut != "cloturee":
+            message = "Le rapport de passation suit la clôture de la semaine."
+            return probleme(RefusMetier("semaine_non_cloturee", message))
+        rapport = RapportPassation.objects.filter(semaine=semaine).first()
+        if rapport is None:
+            from optiboul.core.infrastructure.passation import produire  # noqa: PLC0415
+
+            rapport = produire(semaine.pk)
+        return FileResponse(
+            rapport.fichier.open("rb"),
+            content_type="application/pdf",
+            filename=f"passation-{code(semaine.numero)}-{semaine.annee}.pdf",
+        )
 
     @extend_schema(methods=["GET"], responses=PlanningSerializer)
     @extend_schema(
