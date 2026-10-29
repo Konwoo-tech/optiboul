@@ -29,6 +29,7 @@ import type {
   ConnexionCode,
   ConnexionEmail,
   EnvoiCode,
+  Invitation,
   PersonneDuPoste,
   Probleme,
   ResultatConnexion,
@@ -503,6 +504,109 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getConnexionEmailCreateMutationOptions(options), queryClient);
+    }
+    export type connexionInvitationCreateResponse204 = {
+  data: void
+  status: 204
+}
+
+export type connexionInvitationCreateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
+export type connexionInvitationCreateResponseSuccess = (connexionInvitationCreateResponse204) & {
+  headers: Headers;
+};
+export type connexionInvitationCreateResponseError = (connexionInvitationCreateResponse400) & {
+  headers: Headers;
+};
+
+export type connexionInvitationCreateResponse = (connexionInvitationCreateResponseSuccess | connexionInvitationCreateResponseError)
+
+export const getConnexionInvitationCreateUrl = () => {
+
+
+
+
+  return `/api/v1/connexion/invitation/`
+}
+
+/**
+ * Lien de l'invitation (US-020) : la personne choisit son mot de passe.
+ */
+export const connexionInvitationCreate = async (invitation: Invitation, options?: Parameters<typeof optiboulFetch>[1]): Promise<connexionInvitationCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<connexionInvitationCreateResponse>(getConnexionInvitationCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(invitation)
+  }
+);}
+
+
+
+
+
+export const getConnexionInvitationCreateMutationKey = () => ['connexionInvitationCreate'] as const;
+
+export const getConnexionInvitationCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionInvitationCreate>>, TError,ConnexionInvitationCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof connexionInvitationCreate>>, TError,ConnexionInvitationCreateMutationVariables, TContext> => {
+
+const mutationKey = getConnexionInvitationCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof connexionInvitationCreate>>, ConnexionInvitationCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  connexionInvitationCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConnexionInvitationCreateMutationResult = NonNullable<Awaited<ReturnType<typeof connexionInvitationCreate>>>
+    export type ConnexionInvitationCreateMutationBody = Invitation
+    export type ConnexionInvitationCreateMutationError = Probleme
+    export type ConnexionInvitationCreateMutationVariables = {data: Invitation}
+
+    export const useConnexionInvitationCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionInvitationCreate>>, TError,ConnexionInvitationCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof connexionInvitationCreate>>,
+        TError,
+        ConnexionInvitationCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getConnexionInvitationCreateMutationOptions(options), queryClient);
     }
     export type connexionOtpEnvoyerCreateResponse200 = {
   data: CodeEnvoye

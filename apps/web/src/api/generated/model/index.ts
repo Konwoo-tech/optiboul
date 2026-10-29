@@ -6,13 +6,17 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './acces.ts';
+export * from './apercu.ts';
 export * from './brouillon.ts';
 export * from './canalEnum.ts';
 export * from './changementGroupe.ts';
+export * from './code.ts';
 export * from './codeEnvoye.ts';
 export * from './codesSecours.ts';
 export * from './codeTotp.ts';
 export * from './compte.ts';
+export * from './compteCree.ts';
 export * from './connexionCode.ts';
 export * from './connexionEmail.ts';
 export * from './envoiCode.ts';
@@ -20,9 +24,11 @@ export * from './etatMfa.ts';
 export * from './etatSauvegardes.ts';
 export * from './groupe.ts';
 export * from './groupesListParams.ts';
+export * from './invitation.ts';
 export * from './journalListParams.ts';
 export * from './ligneJournal.ts';
 export * from './modification.ts';
+export * from './nouveauCompte.ts';
 export * from './nullEnum.ts';
 export * from './paginatedCompteList.ts';
 export * from './paginatedGroupeList.ts';

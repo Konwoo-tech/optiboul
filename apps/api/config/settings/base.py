@@ -419,6 +419,12 @@ OPTIBOUL_PASSERELLES: dict[str, str | None] = {
     "whatsapp": env("OPTIBOUL_PASSERELLE_WHATSAPP", default=None),
 }
 
+# Adresse de l'application web, pour les liens envoyés (invitation, US-020).
+OPTIBOUL_URL_APPLICATION = env(
+    "OPTIBOUL_URL_APPLICATION",
+    default="https://optiboul.local",
+)
+
 # Sauvegardes (US-142) : copies locales, puis copie chiffrée sur S3 (ADR-14).
 OPTIBOUL_DOSSIER_SAUVEGARDES = env(
     "OPTIBOUL_DOSSIER_SAUVEGARDES",

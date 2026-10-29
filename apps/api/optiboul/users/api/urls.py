@@ -2,6 +2,7 @@ from django.urls import path
 from rest_framework.routers import SimpleRouter
 
 from .brouillons import BrouillonsViewSet
+from .connexion import accepter_invitation
 from .connexion import annuler_identification
 from .connexion import changer_utilisateur
 from .connexion import connexion_par_code
@@ -43,5 +44,6 @@ urlpatterns = [
         name="connexion-changer-utilisateur",
     ),
     path("connexion/session/", session_en_cours, name="connexion-session"),
+    path("connexion/invitation/", accepter_invitation, name="connexion-invitation"),
     *router.urls,
 ]

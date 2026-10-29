@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.contrib.auth import logout
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.middleware.csrf import get_token
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
@@ -21,6 +23,7 @@ from optiboul.core.api.contexte import entree_de
 from optiboul.core.application.journal import Entree
 from optiboul.core.infrastructure.journal import journaliser
 from optiboul.core.infrastructure.parametres import parametre
+from optiboul.users import comptes
 from optiboul.users import connexion
 from optiboul.users import double_auth
 from optiboul.users.models import Profil
@@ -279,3 +282,44 @@ def changer_utilisateur(request: Request) -> Response:
     )
     logout(request._request)  # noqa: SLF001
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class InvitationSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    jeton = serializers.CharField()
+    motDePasse = serializers.CharField(trim_whitespace=False)  # noqa: N815
+
+
+@extend_schema(
+    request=InvitationSerializer,
+    responses={204: None, 400: ProblemeSerializer},
+)
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([LimiteParPoste])
+def accepter_invitation(request: Request) -> Response:
+    """Lien de l'invitation (US-020) : la personne choisit son mot de passe."""
+    exiger_csrf(request)
+    corps = InvitationSerializer(data=request.data)
+    corps.is_valid(raise_exception=True)
+    donnees = corps.validated_data
+    try:
+        validate_password(donnees["motDePasse"])
+    except DjangoValidationError as erreur:
+        return Response(
+            {"detail": " ".join(erreur.messages), "code": "mot_de_passe_faible"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if comptes.accepter_invitation(
+        donnees["uid"],
+        donnees["jeton"],
+        donnees["motDePasse"],
+    ):
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(
+        {
+            "detail": "Lien d'invitation invalide ou expiré.",
+            "code": "invitation_invalide",
+        },
+        status=status.HTTP_400_BAD_REQUEST,
+    )

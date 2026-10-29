@@ -25,8 +25,13 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  Acces,
+  Apercu,
   ChangementGroupe,
+  Code,
   Compte,
+  CompteCree,
+  NouveauCompte,
   PaginatedCompteList,
   UtilisateursListParams
 } from '../../model';
@@ -166,7 +171,100 @@ export function useUtilisateursList<TData = Awaited<ReturnType<typeof utilisateu
 
 
 
-export type utilisateursRetrieveResponse200 = {
+export type utilisateursCreateResponse201 = {
+  data: CompteCree
+  status: 201
+}
+
+export type utilisateursCreateResponseSuccess = (utilisateursCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type utilisateursCreateResponse = (utilisateursCreateResponseSuccess)
+
+export const getUtilisateursCreateUrl = () => {
+
+
+
+
+  return `/api/v1/utilisateurs/`
+}
+
+export const utilisateursCreate = async (nouveauCompte: NouveauCompte, options?: Parameters<typeof optiboulFetch>[1]): Promise<utilisateursCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<utilisateursCreateResponse>(getUtilisateursCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(nouveauCompte)
+  }
+);}
+
+
+
+
+
+export const getUtilisateursCreateMutationKey = () => ['utilisateursCreate'] as const;
+
+export const getUtilisateursCreateMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursCreate>>, TError,UtilisateursCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof utilisateursCreate>>, TError,UtilisateursCreateMutationVariables, TContext> => {
+
+const mutationKey = getUtilisateursCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof utilisateursCreate>>, UtilisateursCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  utilisateursCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UtilisateursCreateMutationResult = NonNullable<Awaited<ReturnType<typeof utilisateursCreate>>>
+    export type UtilisateursCreateMutationBody = NouveauCompte
+    export type UtilisateursCreateMutationError = unknown
+    export type UtilisateursCreateMutationVariables = {data: NouveauCompte}
+
+    export const useUtilisateursCreate = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursCreate>>, TError,UtilisateursCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof utilisateursCreate>>,
+        TError,
+        UtilisateursCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUtilisateursCreateMutationOptions(options), queryClient);
+    }
+    export type utilisateursRetrieveResponse200 = {
   data: Compte
   status: 200
 }
@@ -272,7 +370,104 @@ export function useUtilisateursRetrieve<TData = Awaited<ReturnType<typeof utilis
 
 
 
-export type utilisateursDebloquerCreateResponse200 = {
+export type utilisateursCodeCreateResponse204 = {
+  data: void
+  status: 204
+}
+
+export type utilisateursCodeCreateResponseSuccess = (utilisateursCodeCreateResponse204) & {
+  headers: Headers;
+};
+;
+
+export type utilisateursCodeCreateResponse = (utilisateursCodeCreateResponseSuccess)
+
+export const getUtilisateursCodeCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/utilisateurs/${id}/code/`
+}
+
+/**
+ * Définit ou réinitialise le code à 4 chiffres du comptoir.
+ */
+export const utilisateursCodeCreate = async (id: number,
+    code: Code, options?: Parameters<typeof optiboulFetch>[1]): Promise<utilisateursCodeCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<utilisateursCodeCreateResponse>(getUtilisateursCodeCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(code)
+  }
+);}
+
+
+
+
+
+export const getUtilisateursCodeCreateMutationKey = () => ['utilisateursCodeCreate'] as const;
+
+export const getUtilisateursCodeCreateMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursCodeCreate>>, TError,UtilisateursCodeCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof utilisateursCodeCreate>>, TError,UtilisateursCodeCreateMutationVariables, TContext> => {
+
+const mutationKey = getUtilisateursCodeCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof utilisateursCodeCreate>>, UtilisateursCodeCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  utilisateursCodeCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UtilisateursCodeCreateMutationResult = NonNullable<Awaited<ReturnType<typeof utilisateursCodeCreate>>>
+    export type UtilisateursCodeCreateMutationBody = Code
+    export type UtilisateursCodeCreateMutationError = unknown
+    export type UtilisateursCodeCreateMutationVariables = {id: number;data: Code}
+
+    export const useUtilisateursCodeCreate = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursCodeCreate>>, TError,UtilisateursCodeCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof utilisateursCodeCreate>>,
+        TError,
+        UtilisateursCodeCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUtilisateursCodeCreateMutationOptions(options), queryClient);
+    }
+    export type utilisateursDebloquerCreateResponse200 = {
   data: Compte
   status: 200
 }
@@ -447,4 +642,100 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUtilisateursGroupeCreateMutationOptions(options), queryClient);
+    }
+    export type utilisateursApercuCreateResponse200 = {
+  data: Acces
+  status: 200
+}
+
+export type utilisateursApercuCreateResponseSuccess = (utilisateursApercuCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type utilisateursApercuCreateResponse = (utilisateursApercuCreateResponseSuccess)
+
+export const getUtilisateursApercuCreateUrl = () => {
+
+
+
+
+  return `/api/v1/utilisateurs/apercu/`
+}
+
+/**
+ * Étape 2 : ce que le groupe choisi donnera à voir et à faire (CdC §3.3).
+ */
+export const utilisateursApercuCreate = async (apercu: Apercu, options?: Parameters<typeof optiboulFetch>[1]): Promise<utilisateursApercuCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<utilisateursApercuCreateResponse>(getUtilisateursApercuCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(apercu)
+  }
+);}
+
+
+
+
+
+export const getUtilisateursApercuCreateMutationKey = () => ['utilisateursApercuCreate'] as const;
+
+export const getUtilisateursApercuCreateMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursApercuCreate>>, TError,UtilisateursApercuCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof utilisateursApercuCreate>>, TError,UtilisateursApercuCreateMutationVariables, TContext> => {
+
+const mutationKey = getUtilisateursApercuCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof utilisateursApercuCreate>>, UtilisateursApercuCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  utilisateursApercuCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UtilisateursApercuCreateMutationResult = NonNullable<Awaited<ReturnType<typeof utilisateursApercuCreate>>>
+    export type UtilisateursApercuCreateMutationBody = Apercu
+    export type UtilisateursApercuCreateMutationError = unknown
+    export type UtilisateursApercuCreateMutationVariables = {data: Apercu}
+
+    export const useUtilisateursApercuCreate = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursApercuCreate>>, TError,UtilisateursApercuCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof utilisateursApercuCreate>>,
+        TError,
+        UtilisateursApercuCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUtilisateursApercuCreateMutationOptions(options), queryClient);
     }
