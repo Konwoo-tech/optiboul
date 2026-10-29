@@ -929,6 +929,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/semaines/{id}/planning/:
+    get:
+      operationId: semaines_planning_retrieve
+      description: 'Planning des caisses : 7 jours, jour et nuit, une caissière par
+        créneau.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) semaine.
+        required: true
+      tags:
+      - semaines
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Planning'
+          description: ''
+    put:
+      operationId: semaines_planning_update
+      description: 'Planning des caisses : 7 jours, jour et nuit, une caissière par
+        créneau.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) semaine.
+        required: true
+      tags:
+      - semaines
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Placement'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Placement'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Placement'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Planning'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/semaines/rotation/:
     get:
       operationId: semaines_rotation_retrieve
@@ -1473,6 +1536,20 @@ components:
       - is_active
       - name
       - profil
+    ConflitPlanning:
+      type: object
+      properties:
+        genre:
+          $ref: '#/components/schemas/GenreEnum'
+        jour:
+          type: string
+          format: date
+        caissiere:
+          type: integer
+      required:
+      - caissiere
+      - genre
+      - jour
     ConnexionCode:
       type: object
       properties:
@@ -1496,6 +1573,30 @@ components:
       required:
       - email
       - motDePasse
+    Creneau:
+      type: object
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          $ref: '#/components/schemas/CreneauEnum'
+        caissiere:
+          allOf:
+          - $ref: '#/components/schemas/Personne'
+          nullable: true
+      required:
+      - caissiere
+      - creneau
+      - jour
+    CreneauEnum:
+      enum:
+      - jour
+      - nuit
+      type: string
+      description: |-
+        * `jour` - jour
+        * `nuit` - nuit
     EnvoiCode:
       type: object
       properties:
@@ -1533,6 +1634,14 @@ components:
       - derniere_cloud
       - derniere_locale
       - seuil_alerte_heures
+    GenreEnum:
+      enum:
+      - jour_et_nuit
+      - nuit_puis_jour
+      type: string
+      description: |-
+        * `jour_et_nuit` - jour_et_nuit
+        * `nuit_puis_jour` - nuit_puis_jour
     Groupe:
       type: object
       properties:
@@ -1939,6 +2048,21 @@ components:
       - id
       - nom
       - profil
+    Placement:
+      type: object
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          $ref: '#/components/schemas/CreneauEnum'
+        caissiere:
+          type: integer
+          nullable: true
+      required:
+      - caissiere
+      - creneau
+      - jour
     Planification:
       type: object
       properties:
@@ -1959,6 +2083,26 @@ components:
       required:
       - annee
       - numero
+    Planning:
+      type: object
+      properties:
+        creneaux:
+          type: array
+          items:
+            $ref: '#/components/schemas/Creneau'
+        vides:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        conflits:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConflitPlanning'
+      required:
+      - conflits
+      - creneaux
+      - vides
     Poste:
       type: object
       properties:

@@ -18,12 +18,16 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from optiboul.core.application import planning as cas_planning
 from optiboul.core.application import semaines as cas
 from optiboul.core.domain.erreurs import RefusMetier
+from optiboul.core.domain.planning import Creneau
+from optiboul.core.domain.planning import creneaux
 from optiboul.core.domain.semaines import bornes
 from optiboul.core.domain.semaines import code
 from optiboul.core.infrastructure.journal import journal
 from optiboul.core.infrastructure.models import Semaine
+from optiboul.core.infrastructure.semaines import depot_planning
 from optiboul.core.infrastructure.semaines import depot_semaines
 
 from .contexte import auteur_de
@@ -126,6 +130,58 @@ class AffectationsSerializer(serializers.Serializer):
     )
 
 
+class CreneauSerializer(serializers.Serializer):
+    jour = serializers.DateField()
+    creneau = serializers.ChoiceField(choices=[c.value for c in Creneau])
+    caissiere = PersonneSerializer(allow_null=True)
+
+
+class ConflitPlanningSerializer(serializers.Serializer):
+    genre = serializers.ChoiceField(choices=["jour_et_nuit", "nuit_puis_jour"])
+    jour = serializers.DateField()
+    caissiere = serializers.IntegerField()
+
+
+class PlanningSerializer(serializers.Serializer):
+    creneaux = CreneauSerializer(many=True)
+    vides = serializers.ListField(child=serializers.DictField())
+    conflits = ConflitPlanningSerializer(many=True)
+
+
+class PlacementSerializer(serializers.Serializer):
+    jour = serializers.DateField()
+    creneau = serializers.ChoiceField(choices=[c.value for c in Creneau])
+    caissiere = serializers.PrimaryKeyRelatedField(
+        queryset=Utilisateur.objects.all(),
+        allow_null=True,
+    )
+
+
+def _planning(semaine: cas.EtatSemaine) -> dict:
+    etat = cas_planning.etat(depot_planning, semaine)
+    affectations = etat.affectations
+    personnes = Utilisateur.objects.in_bulk(
+        [c for c in affectations.values() if c is not None],
+    )
+    periode = bornes(semaine.annee, semaine.numero)
+    return {
+        "creneaux": [
+            {
+                "jour": jour,
+                "creneau": creneau,
+                "caissiere": (
+                    PersonneSerializer(personnes[affectations[(jour, creneau)]]).data
+                    if affectations.get((jour, creneau)) is not None
+                    else None
+                ),
+            }
+            for jour, creneau in creneaux(periode)
+        ],
+        "vides": [{"jour": jour, "creneau": creneau} for jour, creneau in etat.vides],
+        "conflits": etat.conflits,
+    }
+
+
 class RotationSerializer(serializers.Serializer):
     gerant = serializers.IntegerField(allow_null=True)
     production = serializers.IntegerField(allow_null=True)
@@ -146,7 +202,7 @@ class SemainesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     )
 
     def get_permissions(self):
-        if self.action in {"list", "retrieve"}:
+        if self.action in {"list", "retrieve", "planning"}:
             return [IsAuthenticated()]
         return [ProfilParmi("proprietaire")()]
 
@@ -230,7 +286,39 @@ class SemainesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
             )
         except RefusMetier as refus:
             return probleme(refus)
+        # Le planning des caisses suit, décalé de 7 jours (US-031).
+        cas_planning.copier_precedent(depot_planning, depot_semaines, semaine=semaine)
         return self._reponse(semaine, conflits, status.HTTP_200_OK)
+
+    @extend_schema(methods=["GET"], responses=PlanningSerializer)
+    @extend_schema(
+        methods=["PUT"],
+        request=PlacementSerializer,
+        responses={200: PlanningSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["get", "put"])
+    def planning(self, request: Request, pk: str) -> Response:
+        """Planning des caisses : 7 jours, jour et nuit, une caissière par créneau."""
+        semaine = depot_semaines.obtenir(self.get_object().pk)
+        assert semaine is not None
+        if request.method == "PUT":
+            corps = PlacementSerializer(data=request.data)
+            corps.is_valid(raise_exception=True)
+            donnees = corps.validated_data
+            try:
+                cas_planning.placer(
+                    depot_planning,
+                    depot_semaines,
+                    journal,
+                    semaine=semaine,
+                    jour=donnees["jour"],
+                    creneau=Creneau(donnees["creneau"]),
+                    caissiere=_pk(donnees["caissiere"]),
+                    auteur=auteur_de(request),
+                )
+            except RefusMetier as refus:
+                return probleme(refus)
+        return Response(_planning(semaine))
 
     @extend_schema(
         parameters=[

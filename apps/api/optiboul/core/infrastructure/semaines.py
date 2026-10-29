@@ -7,11 +7,16 @@ from typing import TYPE_CHECKING
 from django.contrib.auth import get_user_model
 
 from optiboul.core.application.semaines import EtatSemaine
+from optiboul.core.domain.planning import Creneau
 from optiboul.core.domain.semaines import Statut
 
+from .models import CreneauPlanning
 from .models import Semaine
 
 if TYPE_CHECKING:
+    from datetime import date
+
+    from optiboul.core.domain.planning import Affectations
     from optiboul.core.domain.semaines import Bornes
 
 
@@ -77,3 +82,30 @@ class DepotSemainesDjango:
 
 
 depot_semaines = DepotSemainesDjango()
+
+
+class DepotPlanningDjango:
+    def lire(self, semaine_id: int) -> Affectations:
+        return {
+            (ligne.jour, Creneau(ligne.creneau)): ligne.caissiere_id
+            for ligne in CreneauPlanning.objects.filter(semaine_id=semaine_id)
+        }
+
+    def placer(
+        self,
+        semaine_id: int,
+        jour: date,
+        creneau: Creneau,
+        caissiere: int | None,
+    ) -> None:
+        if caissiere is None:
+            CreneauPlanning.objects.filter(jour=jour, creneau=creneau).delete()
+            return
+        CreneauPlanning.objects.update_or_create(
+            jour=jour,
+            creneau=creneau,
+            defaults={"semaine_id": semaine_id, "caissiere_id": caissiere},
+        )
+
+
+depot_planning = DepotPlanningDjango()

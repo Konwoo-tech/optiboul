@@ -179,3 +179,37 @@ class Semaine(models.Model):
 
     def __str__(self) -> str:
         return f"S{self.numero:02d} {self.annee}"
+
+
+class CreneauPlanning(models.Model):
+    """Caissière prévue sur un créneau (US-031) ; une seule par jour et par créneau."""
+
+    semaine = models.ForeignKey(
+        Semaine,
+        on_delete=models.CASCADE,
+        related_name="planning",
+        verbose_name=_("semaine"),
+    )
+    jour = models.DateField(_("jour"))
+    creneau = models.CharField(_("créneau"), max_length=4)
+    caissiere = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="creneaux_planifies",
+        verbose_name=_("caissière"),
+    )
+
+    class Meta:
+        db_table = "creneau_planning"
+        ordering = ["jour", "creneau"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["jour", "creneau"],
+                name="une_caissiere_par_creneau",
+            ),
+        ]
+        verbose_name = _("créneau du planning")
+        verbose_name_plural = _("planning des caisses")
+
+    def __str__(self) -> str:
+        return f"{self.jour:%d/%m} {self.creneau} : {self.caissiere}"

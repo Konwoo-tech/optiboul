@@ -27,7 +27,9 @@ import type {
 import type {
   Affectations,
   PaginatedSemaineList,
+  Placement,
   Planification,
+  Planning,
   Probleme,
   Rotation,
   Semaine,
@@ -563,6 +565,219 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getSemainesCopierPrecedenteCreateMutationOptions(options), queryClient);
+    }
+    export type semainesPlanningRetrieveResponse200 = {
+  data: Planning
+  status: 200
+}
+
+export type semainesPlanningRetrieveResponseSuccess = (semainesPlanningRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type semainesPlanningRetrieveResponse = (semainesPlanningRetrieveResponseSuccess)
+
+export const getSemainesPlanningRetrieveUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/semaines/${id}/planning/`
+}
+
+/**
+ * Planning des caisses : 7 jours, jour et nuit, une caissière par créneau.
+ */
+export const semainesPlanningRetrieve = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<semainesPlanningRetrieveResponse> => {
+
+  return optiboulFetch<semainesPlanningRetrieveResponse>(getSemainesPlanningRetrieveUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSemainesPlanningRetrieveQueryKey = (id: number,) => {
+    return [
+    `/api/v1/semaines/${id}/planning/`
+    ] as const;
+    }
+
+
+export const getSemainesPlanningRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof semainesPlanningRetrieve>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPlanningRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSemainesPlanningRetrieveQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof semainesPlanningRetrieve>>> = ({ signal }) => semainesPlanningRetrieve(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof semainesPlanningRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SemainesPlanningRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof semainesPlanningRetrieve>>>
+export type SemainesPlanningRetrieveQueryError = unknown
+
+
+export function useSemainesPlanningRetrieve<TData = Awaited<ReturnType<typeof semainesPlanningRetrieve>>, TError = unknown>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPlanningRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof semainesPlanningRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof semainesPlanningRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSemainesPlanningRetrieve<TData = Awaited<ReturnType<typeof semainesPlanningRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPlanningRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof semainesPlanningRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof semainesPlanningRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSemainesPlanningRetrieve<TData = Awaited<ReturnType<typeof semainesPlanningRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPlanningRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useSemainesPlanningRetrieve<TData = Awaited<ReturnType<typeof semainesPlanningRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPlanningRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSemainesPlanningRetrieveQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type semainesPlanningUpdateResponse200 = {
+  data: Planning
+  status: 200
+}
+
+export type semainesPlanningUpdateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type semainesPlanningUpdateResponseSuccess = (semainesPlanningUpdateResponse200) & {
+  headers: Headers;
+};
+export type semainesPlanningUpdateResponseError = (semainesPlanningUpdateResponse409) & {
+  headers: Headers;
+};
+
+export type semainesPlanningUpdateResponse = (semainesPlanningUpdateResponseSuccess | semainesPlanningUpdateResponseError)
+
+export const getSemainesPlanningUpdateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/semaines/${id}/planning/`
+}
+
+/**
+ * Planning des caisses : 7 jours, jour et nuit, une caissière par créneau.
+ */
+export const semainesPlanningUpdate = async (id: number,
+    placement: Placement, options?: Parameters<typeof optiboulFetch>[1]): Promise<semainesPlanningUpdateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<semainesPlanningUpdateResponse>(getSemainesPlanningUpdateUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(placement)
+  }
+);}
+
+
+
+
+
+export const getSemainesPlanningUpdateMutationKey = () => ['semainesPlanningUpdate'] as const;
+
+export const getSemainesPlanningUpdateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof semainesPlanningUpdate>>, TError,SemainesPlanningUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof semainesPlanningUpdate>>, TError,SemainesPlanningUpdateMutationVariables, TContext> => {
+
+const mutationKey = getSemainesPlanningUpdateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof semainesPlanningUpdate>>, SemainesPlanningUpdateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  semainesPlanningUpdate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SemainesPlanningUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof semainesPlanningUpdate>>>
+    export type SemainesPlanningUpdateMutationBody = Placement
+    export type SemainesPlanningUpdateMutationError = Probleme
+    export type SemainesPlanningUpdateMutationVariables = {id: number;data: Placement}
+
+    export const useSemainesPlanningUpdate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof semainesPlanningUpdate>>, TError,SemainesPlanningUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof semainesPlanningUpdate>>,
+        TError,
+        SemainesPlanningUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSemainesPlanningUpdateMutationOptions(options), queryClient);
     }
     export type semainesRotationRetrieveResponse200 = {
   data: Rotation
