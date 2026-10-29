@@ -12,6 +12,19 @@ export interface LignePlan {
   pains_par_sac: number;
   /** Pains commandés. */
   commandes: number;
+  /** Pains des habituels sans commande. */
+  habituels: number;
+  /** Pains au guichet, moyenne. */
+  guichet: number;
+  /** Demande estimée : les trois sources. */
+  estimee: number;
+  /** Sacs pour les commandes. */
+  base: number;
+  /** Sacs ajoutés par le chef. */
+  supplement: number;
+  /** Sacs à ajouter pour la demande estimée. */
+  besoin: number;
+  au_dessus_du_plan: boolean;
   sacs: number;
   /** Pains prévus : sacs fois pains par sac. */
   prevus: number;

@@ -8,6 +8,7 @@ from django.urls import reverse
 from optiboul.conftest import MARDI
 from optiboul.core.infrastructure.models import LigneJournal
 from optiboul.notifications.infrastructure.models import Notification
+from optiboul.production.domain.plan import Demande
 from optiboul.production.domain.plan import Rendement
 from optiboul.production.domain.plan import ligne
 from optiboul.production.domain.plan import moyenne
@@ -44,10 +45,25 @@ def test_session_de_production(heure, minute, attendue):
 
 
 def test_ligne_du_plan():
-    plan = ligne("BAG", BAGUETTE, 700, Decimal(3))
+    plan = ligne("BAG", BAGUETTE, Demande(commandes=700), Decimal(3))
     assert (plan.sacs, plan.prevus, plan.boules) == (3, 945, 48)
-    vide = ligne("BAG", BAGUETTE, 0, None)
+    vide = ligne("BAG", BAGUETTE, Demande(), None)
     assert (vide.sacs, vide.prevus, vide.boules) == (0, 0, 0)
+
+
+def test_trois_sources_et_supplement():
+    demande = Demande(commandes=700, habituels=300, guichet=30)
+    assert demande.estimee == 1_030
+    sans = ligne("BAG", BAGUETTE, demande, None)
+    assert (sans.base, sans.sacs, sans.besoin, sans.au_dessus_du_plan) == (
+        3,
+        3,
+        1,
+        True,
+    )
+    avec = ligne("BAG", BAGUETTE, demande, None, supplement=1)
+    assert (avec.base, avec.sacs, avec.prevus) == (3, 4, 1_260)
+    assert (avec.besoin, avec.au_dessus_du_plan) == (0, False)
 
 
 def test_moyennes_des_dernieres_sessions():
@@ -82,6 +98,13 @@ def test_plan_calcule_depuis_les_commandes(
         "version_fiche": 1,
         "pains_par_sac": 315,
         "commandes": 700,
+        "habituels": 0,
+        "guichet": 0,
+        "estimee": 700,
+        "base": 3,
+        "supplement": 0,
+        "besoin": 0,
+        "au_dessus_du_plan": False,
         "sacs": 3,
         "prevus": 945,
         "boules": 48,
@@ -112,6 +135,8 @@ def test_proposer_le_plan(
         "jour": "2026-10-27",
         "creneau": "nuit",
         "sacs": {"BAG": 3, "KO": 1},
+        "supplement": {},
+        "motif": "",
     }
     prevenus = set(
         Notification.objects.filter(genre="plan.propose").values_list(

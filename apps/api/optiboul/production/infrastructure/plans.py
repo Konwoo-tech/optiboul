@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from decimal import ROUND_HALF_UP
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from django.db.models import Q
@@ -16,7 +18,11 @@ from optiboul.production.application.plans import PlanEnregistre
 from optiboul.production.domain.plan import VALIDES
 from optiboul.production.domain.plan import Rendement
 from optiboul.production.domain.plan import StatutPlan
+from optiboul.ventes.application import habitudes
+from optiboul.ventes.infrastructure.commandes import depots as depots_ventes
+from optiboul.ventes.infrastructure.habitudes import historique
 from optiboul.ventes.infrastructure.models import LigneCommande
+from optiboul.ventes.infrastructure.models import MouvementInterne
 
 from .models import LignePlanProduction
 from .models import PlanProduction
@@ -50,6 +56,12 @@ class DepotPlansDjango:
             id=plan.pk,
             statut=StatutPlan(plan.statut),
             sacs={item.produit.code: item.sacs for item in plan.lignes.all()},
+            supplement={
+                item.produit.code: item.supplement
+                for item in plan.lignes.all()
+                if item.supplement
+            },
+            motif=plan.motif_supplement,
         )
 
     def sacs_valides(self, sessions: list[Session]) -> list[dict[str, int]]:
@@ -62,12 +74,13 @@ class DepotPlansDjango:
             for plan in plans
         ]
 
-    def enregistrer(
+    def enregistrer(  # noqa: PLR0913
         self,
         *,
         session: Session,
         semaine: int,
         lignes: list[LignePlan],
+        motif: str,
         auteur: int,
         le: datetime,
     ) -> int:
@@ -77,6 +90,7 @@ class DepotPlansDjango:
             defaults={
                 "semaine_id": semaine,
                 "statut": StatutPlan.PROPOSE,
+                "motif_supplement": motif,
                 "propose_par_id": auteur,
                 "propose_le": le,
             },
@@ -89,6 +103,9 @@ class DepotPlansDjango:
                 produit_id=produits[item.code],
                 fiche_id=item.rendement.fiche,
                 commandes=item.commandes,
+                habituels=item.demande.habituels,
+                guichet=item.demande.guichet,
+                supplement=item.supplement,
                 sacs=item.sacs,
                 pains_prevus=item.prevus,
                 boules=item.boules,
@@ -122,6 +139,39 @@ class SourcesDjango:
             .annotate(pains=Sum("quantite"))
         )
         return {item["produit__code"]: item["pains"] for item in lignes}
+
+    def habituels(self, session: Session, nombre: int) -> dict[str, int]:
+        pains: dict[str, int] = {}
+        for habituel in habitudes.habituels(
+            depots_ventes,
+            historique,
+            session=session,
+            nombre=nombre,
+        ):
+            for code, quantite in habituel.commande.items():
+                pains[code] = pains.get(code, 0) + quantite
+        return pains
+
+    def guichet(self, sessions: list[Session]) -> dict[str, int]:
+        if not sessions:
+            return {}
+        filtre = Q(pk__in=[])
+        for session in sessions:
+            filtre |= Q(caisse__jour=session.jour, caisse__creneau=session.creneau)
+        ventes = (
+            MouvementInterne.objects.filter(filtre, genre="vente_guichet")
+            .values("produit__code")
+            .annotate(pains=Sum("quantite"))
+        )
+        return {
+            item["produit__code"]: int(
+                (Decimal(item["pains"]) / len(sessions)).quantize(
+                    Decimal(1),
+                    ROUND_HALF_UP,
+                ),
+            )
+            for item in ventes
+        }
 
 
 def nombre_de_sessions() -> int:

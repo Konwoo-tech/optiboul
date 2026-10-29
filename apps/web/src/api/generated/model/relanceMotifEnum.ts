@@ -10,10 +10,10 @@
  * * `dette` - dette
  * * `commande` - commande habituelle
  */
-export type MotifEnum = typeof MotifEnum[keyof typeof MotifEnum];
+export type RelanceMotifEnum = typeof RelanceMotifEnum[keyof typeof RelanceMotifEnum];
 
 
-export const MotifEnum = {
+export const RelanceMotifEnum = {
   dette: 'dette',
   commande: 'commande',
 } as const;

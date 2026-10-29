@@ -19,6 +19,15 @@ from optiboul.ventes.domain.commandes import Session
 from .fiches import boules
 
 
+class MotifSupplement(StrEnum):
+    """Pourquoi le chef ajoute des sacs (CdC §5.5)."""
+
+    HABITUELS = "habituels"
+    GUICHET = "guichet"
+    MARCHE = "marche"  # marché ou événement
+    TARDIVE = "tardive"  # commande tardive
+
+
 class StatutPlan(StrEnum):
     PROPOSE = "propose"
     VALIDE = "valide"
@@ -50,14 +59,43 @@ class Rendement:
 
 
 @dataclass(frozen=True)
+class Demande:
+    """Les trois sources du plan, en pains (CdC §5.5)."""
+
+    commandes: int = 0
+    habituels: int = 0  # clients habituels sans commande
+    guichet: int = 0  # ventes au guichet, moyenne des dernières sessions
+
+    @property
+    def estimee(self) -> int:
+        return self.commandes + self.habituels + self.guichet
+
+
+@dataclass(frozen=True)
 class LignePlan:
     code: str
     rendement: Rendement
-    commandes: int  # pains commandés
+    demande: Demande
+    base: int  # sacs pour les commandes
+    supplement: int  # sacs ajoutés par le chef de production
     sacs: int
     prevus: int  # pains prévus : sacs fois pains par sac
     boules: int
     moyenne_sacs: Decimal | None  # dernières sessions du même type
+
+    @property
+    def commandes(self) -> int:
+        return self.demande.commandes
+
+    @property
+    def besoin(self) -> int:
+        """Sacs qui manquent pour couvrir la demande estimée."""
+        necessaires = sacs_pour(self.demande.estimee, self.rendement.pains_par_sac)
+        return max(0, necessaires - self.sacs)
+
+    @property
+    def au_dessus_du_plan(self) -> bool:
+        return self.demande.estimee > self.prevus
 
 
 def sacs_pour(pains: int, pains_par_sac: int) -> int:
@@ -67,16 +105,21 @@ def sacs_pour(pains: int, pains_par_sac: int) -> int:
 def ligne(
     code: str,
     rendement: Rendement,
-    commandes: int,
+    demande: Demande,
     moyenne_sacs: Decimal | None,
+    supplement: int = 0,
 ) -> LignePlan:
-    """Sacs arrondis au sac supérieur, pains prévus et boules à façonner."""
-    sacs = sacs_pour(commandes, rendement.pains_par_sac)
+    """Sacs des commandes arrondis au sac supérieur, plus le supplément du chef ;
+    pains prévus et boules à façonner."""
+    base = sacs_pour(demande.commandes, rendement.pains_par_sac)
+    sacs = base + supplement
     prevus = sacs * rendement.pains_par_sac
     return LignePlan(
         code=code,
         rendement=rendement,
-        commandes=commandes,
+        demande=demande,
+        base=base,
+        supplement=supplement,
         sacs=sacs,
         prevus=prevus,
         boules=boules(prevus, rendement.pains_par_boule),

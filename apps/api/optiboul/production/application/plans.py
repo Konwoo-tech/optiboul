@@ -1,4 +1,4 @@
-"""Cas d'usage du plan de production (US-081, CdC §5.5, R4)."""
+"""Cas d'usage du plan de production (US-081, US-086, CdC §5.5, R4)."""
 
 from __future__ import annotations
 
@@ -8,6 +8,8 @@ from typing import Protocol
 
 from optiboul.core.application.journal import Evenement
 from optiboul.core.domain.erreurs import RefusMetier
+from optiboul.production.domain.plan import Demande
+from optiboul.production.domain.plan import MotifSupplement
 from optiboul.production.domain.plan import StatutPlan
 from optiboul.production.domain.plan import ligne
 from optiboul.production.domain.plan import moyenne
@@ -33,6 +35,8 @@ class PlanEnregistre:
     id: int
     statut: StatutPlan
     sacs: dict[str, int]
+    supplement: dict[str, int]
+    motif: str
 
 
 class DepotPlans(Protocol):
@@ -42,12 +46,13 @@ class DepotPlans(Protocol):
         """Sacs par produit des plans validés (ou provisoires) de ces sessions."""
         ...
 
-    def enregistrer(
+    def enregistrer(  # noqa: PLR0913
         self,
         *,
         session: Session,
         semaine: int,
         lignes: list[LignePlan],
+        motif: str,
         auteur: int,
         le: datetime,
     ) -> int:
@@ -62,6 +67,14 @@ class Sources(Protocol):
 
     def commandes(self, session: Session) -> dict[str, int]:
         """Pains commandés par produit pour la session."""
+        ...
+
+    def habituels(self, session: Session, nombre: int) -> dict[str, int]:
+        """Pains habituels des clients qui n'ont pas encore commandé (O18)."""
+        ...
+
+    def guichet(self, sessions: list[Session]) -> dict[str, int]:
+        """Ventes au guichet par produit, moyenne arrondie sur ces sessions."""
         ...
 
 
@@ -83,15 +96,43 @@ class PlanCalcule:
     moyenne_sacs: Decimal | None  # total des dernières sessions du même type
     enregistre: PlanEnregistre | None
 
+    @property
+    def alerte(self) -> bool:
+        """La demande estimée dépasse le plan pour au moins un produit (CdC §5.13)."""
+        return any(item.au_dessus_du_plan for item in self.lignes)
 
-def calculer(depots: Depots, *, session: Session, nombre: int) -> PlanCalcule:
-    """Sacs, pains et boules par produit depuis les commandes, comparés aux N
-    dernières sessions du même type (R4)."""
-    historique = depots.plans.sacs_valides(sessions_precedentes(session, nombre))
+
+def calculer(
+    depots: Depots,
+    *,
+    session: Session,
+    nombre: int,
+    supplement: dict[str, int] | None = None,
+) -> PlanCalcule:
+    """Les trois sources du plan, chacune affichée : commandes, demande estimée
+    (habituels sans commande, guichet moyen des N dernières sessions du même type)
+    et supplément du chef ; comparées aux N dernières sessions (R4)."""
+    passees = sessions_precedentes(session, nombre)
+    historique = depots.plans.sacs_valides(passees)
     moyennes = moyennes_par_produit(historique)
+    enregistre = depots.plans.obtenir(session)
+    if supplement is None:
+        supplement = enregistre.supplement if enregistre else {}
     commandes = depots.sources.commandes(session)
+    habituels = depots.sources.habituels(session, nombre)
+    guichet = depots.sources.guichet(passees)
     lignes = [
-        ligne(code, rendement, commandes.get(code, 0), moyennes.get(code))
+        ligne(
+            code,
+            rendement,
+            Demande(
+                commandes.get(code, 0),
+                habituels.get(code, 0),
+                guichet.get(code, 0),
+            ),
+            moyennes.get(code),
+            supplement.get(code, 0),
+        )
         for code, rendement in depots.sources.rendements().items()
     ]
     return PlanCalcule(
@@ -100,8 +141,28 @@ def calculer(depots: Depots, *, session: Session, nombre: int) -> PlanCalcule:
         sacs=sum(item.sacs for item in lignes),
         prevus=sum(item.prevus for item in lignes),
         moyenne_sacs=moyenne([sum(plan.values()) for plan in historique]),
-        enregistre=depots.plans.obtenir(session),
+        enregistre=enregistre,
     )
+
+
+def verifier_supplement(
+    supplement: dict[str, int],
+    motif: str | None,
+    produits: set[str],
+) -> str:
+    """Des sacs entiers positifs de produits connus ; un motif dès qu'il y en a."""
+    if inconnus := sorted(set(supplement) - produits):
+        message = f"Produits inconnus ou inactifs : {', '.join(inconnus)}."
+        raise RefusMetier("produit_inconnu", message, produits=inconnus)
+    if any(sacs < 0 for sacs in supplement.values()):
+        message = "Le supplément se compte en sacs positifs."
+        raise RefusMetier("quantite_invalide", message)
+    if not any(supplement.values()):
+        return ""
+    if motif not in {m.value for m in MotifSupplement}:
+        message = "Le motif du supplément est obligatoire (habituels, guichet…)."
+        raise RefusMetier("motif_obligatoire", message)
+    return motif
 
 
 def responsable_de(depots: Depots, auteur: Auteur) -> EtatSemaine:
@@ -116,21 +177,30 @@ def responsable_de(depots: Depots, auteur: Auteur) -> EtatSemaine:
     return semaine
 
 
-def proposer(
+def proposer(  # noqa: PLR0913
     depots: Depots,
     *,
     session: Session,
     nombre: int,
     auteur: Auteur,
     maintenant: datetime,
+    supplement: dict[str, int] | None = None,
+    motif: str | None = None,
 ) -> PlanCalcule:
-    """Le plan calculé devient le plan proposé de la session ; le gérant est prévenu."""
+    """Le plan calculé, avec le supplément du chef, devient le plan proposé ; le
+    gérant est prévenu, et l'alerte part si la demande estimée dépasse le plan."""
     semaine = responsable_de(depots, auteur)
     existant = depots.plans.obtenir(session)
     if existant is not None and existant.statut is not StatutPlan.PROPOSE:
         message = "Le plan de cette session est déjà validé."
         raise RefusMetier("plan_deja_valide", message)
-    plan = calculer(depots, session=session, nombre=nombre)
+    supplement = {code: sacs for code, sacs in (supplement or {}).items() if sacs}
+    motif_retenu = verifier_supplement(
+        supplement,
+        motif,
+        set(depots.sources.rendements()),
+    )
+    plan = calculer(depots, session=session, nombre=nombre, supplement=supplement)
     if plan.sacs == 0:
         message = "Aucun sac à pétrir : il n'y a pas encore de commande."
         raise RefusMetier("plan_vide", message)
@@ -139,6 +209,7 @@ def proposer(
         session=session,
         semaine=semaine.id,
         lignes=plan.lignes,
+        motif=motif_retenu,
         auteur=auteur.utilisateur_id,
         le=maintenant,
     )
@@ -153,9 +224,23 @@ def proposer(
                 "jour": session.jour.isoformat(),
                 "creneau": session.creneau,
                 "sacs": {item.code: item.sacs for item in plan.lignes if item.sacs},
+                "supplement": supplement,
+                "motif": motif_retenu,
             },
         ),
     )
+    if plan.alerte:
+        depassements = ", ".join(
+            f"{item.code} {item.demande.estimee} pains pour {item.prevus}"
+            for item in plan.lignes
+            if item.au_dessus_du_plan
+        )
+        depots.notificateur.notifier_type(
+            "plan.demande_superieure",
+            titre=f"Demande estimée au-dessus du plan ({session.creneau})",
+            message=depassements,
+            lien="/atelier/production",
+        )
     depots.notificateur.notifier_type(
         "plan.propose",
         titre=f"Plan de {session.creneau} du {session.jour:%d/%m} proposé",

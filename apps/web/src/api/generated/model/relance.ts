@@ -5,14 +5,14 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
-import type { MotifEnum } from './motifEnum.ts';
 import type { RelanceClient } from './relanceClient.ts';
 import type { RelanceEnvoi } from './relanceEnvoi.ts';
+import type { RelanceMotifEnum } from './relanceMotifEnum.ts';
 
 export interface Relance {
   readonly id: number;
   readonly client: RelanceClient;
-  readonly motif: MotifEnum;
+  readonly motif: RelanceMotifEnum;
   readonly montant: number;
   readonly automatique: boolean;
   readonly auteur: string;

@@ -117,6 +117,11 @@ class PlanProduction(models.Model):
     jour = models.DateField(_("jour de la session"))
     creneau = models.CharField(_("créneau"), max_length=4)
     statut = models.CharField(_("statut"), max_length=12, default="propose")
+    motif_supplement = models.CharField(
+        _("motif du supplément"),
+        max_length=12,
+        blank=True,
+    )
     propose_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -163,6 +168,10 @@ class LignePlanProduction(models.Model):
         verbose_name=_("version de fiche"),
     )
     commandes = models.PositiveIntegerField(_("pains commandés"))
+    # Demande estimée (CdC §5.5) : habituels sans commande, guichet moyen.
+    habituels = models.PositiveIntegerField(_("pains des habituels"), default=0)
+    guichet = models.PositiveIntegerField(_("pains au guichet"), default=0)
+    supplement = models.PositiveIntegerField(_("sacs de supplément"), default=0)
     sacs = models.PositiveIntegerField(_("sacs"))
     pains_prevus = models.PositiveIntegerField(_("pains prévus"))
     boules = models.PositiveIntegerField(_("boules"))

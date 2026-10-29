@@ -20,6 +20,9 @@ export interface Plan {
      * * `provisoire` - provisoire
      */
   statut: PlanStatutEnum | NullEnum | null;
+  motif_supplement: string;
+  /** Demande estimée au-dessus du plan. */
+  alerte: boolean;
   lignes: LignePlan[];
   sacs: number;
   prevus: number;

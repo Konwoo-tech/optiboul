@@ -1,4 +1,4 @@
-"""Plan de production (US-081, CdC §5.5, R4) : calculé, comparé, proposé."""
+"""Plan de production (US-081, US-086, CdC §5.5, R4) : trois sources, proposé."""
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.production.application import plans as cas
+from optiboul.production.domain.plan import MotifSupplement
 from optiboul.production.domain.plan import StatutPlan
 from optiboul.production.domain.plan import session_de_production
 from optiboul.production.infrastructure.plans import depots
@@ -56,11 +57,33 @@ class SessionProductionSerializer(serializers.Serializer):
         return session_de_production(timezone.now(), limites())
 
 
+class PropositionPlanSerializer(SessionProductionSerializer):
+    supplement = serializers.DictField(
+        child=serializers.IntegerField(min_value=0),
+        required=False,
+        help_text="Code du produit → sacs ajoutés par le chef de production.",
+    )
+    motif = serializers.ChoiceField(
+        choices=[m.value for m in MotifSupplement],
+        required=False,
+        help_text="Obligatoire avec un supplément.",
+    )
+
+
 class LignePlanSerializer(serializers.Serializer):
     code = serializers.CharField()
     version_fiche = serializers.IntegerField()
     pains_par_sac = serializers.IntegerField()
     commandes = serializers.IntegerField(help_text="Pains commandés.")
+    habituels = serializers.IntegerField(help_text="Pains des habituels sans commande.")
+    guichet = serializers.IntegerField(help_text="Pains au guichet, moyenne.")
+    estimee = serializers.IntegerField(help_text="Demande estimée : les trois sources.")
+    base = serializers.IntegerField(help_text="Sacs pour les commandes.")
+    supplement = serializers.IntegerField(help_text="Sacs ajoutés par le chef.")
+    besoin = serializers.IntegerField(
+        help_text="Sacs à ajouter pour la demande estimée.",
+    )
+    au_dessus_du_plan = serializers.BooleanField()
     sacs = serializers.IntegerField()
     prevus = serializers.IntegerField(
         help_text="Pains prévus : sacs fois pains par sac.",
@@ -82,6 +105,8 @@ class PlanSerializer(serializers.Serializer):
         allow_null=True,
         help_text="Vide : le plan n'est pas encore proposé.",
     )
+    motif_supplement = serializers.CharField(allow_blank=True)
+    alerte = serializers.BooleanField(help_text="Demande estimée au-dessus du plan.")
     lignes = LignePlanSerializer(many=True)
     sacs = serializers.IntegerField()
     prevus = serializers.IntegerField()
@@ -106,12 +131,21 @@ def projeter(plan: cas.PlanCalcule) -> dict[str, Any]:
         "jour": plan.session.jour,
         "creneau": plan.session.creneau,
         "statut": plan.enregistre.statut if plan.enregistre else None,
+        "motif_supplement": plan.enregistre.motif if plan.enregistre else "",
+        "alerte": plan.alerte,
         "lignes": [
             {
                 "code": item.code,
                 "version_fiche": item.rendement.version,
                 "pains_par_sac": item.rendement.pains_par_sac,
                 "commandes": item.commandes,
+                "habituels": item.demande.habituels,
+                "guichet": item.demande.guichet,
+                "estimee": item.demande.estimee,
+                "base": item.base,
+                "supplement": item.supplement,
+                "besoin": item.besoin,
+                "au_dessus_du_plan": item.au_dessus_du_plan,
                 "sacs": item.sacs,
                 "prevus": item.prevus,
                 "boules": item.boules,
@@ -152,13 +186,13 @@ class ProductionsViewSet(ViewSet):
         return Response(PlanSerializer(projeter(plan)).data)
 
     @extend_schema(
-        request=SessionProductionSerializer,
+        request=PropositionPlanSerializer,
         responses={200: PlanSerializer, 409: ProblemeSerializer},
     )
     @action(detail=False, methods=["post"])
     def proposer(self, request: Request) -> Response:
-        """Le responsable de production propose le plan ; le gérant est prévenu."""
-        corps = SessionProductionSerializer(data=request.data)
+        """Le chef ajoute un supplément motivé et propose ; le gérant est prévenu."""
+        corps = PropositionPlanSerializer(data=request.data)
         corps.is_valid(raise_exception=True)
         try:
             with transaction.atomic():
@@ -168,6 +202,8 @@ class ProductionsViewSet(ViewSet):
                     nombre=nombre_de_sessions(),
                     auteur=auteur_de(request),
                     maintenant=timezone.now(),
+                    supplement=corps.validated_data.get("supplement"),
+                    motif=corps.validated_data.get("motif"),
                 )
         except RefusMetier as refus:
             return probleme(refus)

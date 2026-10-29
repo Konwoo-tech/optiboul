@@ -28,7 +28,7 @@ import type {
   Plan,
   Probleme,
   ProductionsPlanRetrieveParams,
-  SessionProduction
+  PropositionPlan
 } from '../../model';
 
 import { optiboulFetch } from '../../../http.ts';
@@ -197,9 +197,9 @@ export const getProductionsProposerCreateUrl = () => {
 }
 
 /**
- * Le responsable de production propose le plan ; le gérant est prévenu.
+ * Le chef ajoute un supplément motivé et propose ; le gérant est prévenu.
  */
-export const productionsProposerCreate = async (sessionProduction?: SessionProduction, options?: Parameters<typeof optiboulFetch>[1]): Promise<productionsProposerCreateResponse> => {
+export const productionsProposerCreate = async (propositionPlan?: PropositionPlan, options?: Parameters<typeof optiboulFetch>[1]): Promise<productionsProposerCreateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -220,7 +220,7 @@ return optiboulFetch<productionsProposerCreateResponse>(getProductionsProposerCr
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(sessionProduction)
+    body: JSON.stringify(propositionPlan)
   }
 );}
 
@@ -258,9 +258,9 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type ProductionsProposerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof productionsProposerCreate>>>
-    export type ProductionsProposerCreateMutationBody = SessionProduction | undefined
+    export type ProductionsProposerCreateMutationBody = PropositionPlan | undefined
     export type ProductionsProposerCreateMutationError = Probleme
-    export type ProductionsProposerCreateMutationVariables = {data?: SessionProduction}
+    export type ProductionsProposerCreateMutationVariables = {data?: PropositionPlan}
 
     export const useProductionsProposerCreate = <TError = Probleme,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof productionsProposerCreate>>, TError,ProductionsProposerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}

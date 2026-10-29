@@ -2159,20 +2159,21 @@ paths:
   /api/v1/productions/proposer/:
     post:
       operationId: productions_proposer_create
-      description: Le responsable de production propose le plan ; le gérant est prévenu.
+      description: Le chef ajoute un supplément motivé et propose ; le gérant est
+        prévenu.
       tags:
       - productions
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SessionProduction'
+              $ref: '#/components/schemas/PropositionPlan'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/SessionProduction'
+              $ref: '#/components/schemas/PropositionPlan'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/SessionProduction'
+              $ref: '#/components/schemas/PropositionPlan'
       security:
       - cookieAuth: []
       responses:
@@ -4330,6 +4331,26 @@ components:
         commandes:
           type: integer
           description: Pains commandés.
+        habituels:
+          type: integer
+          description: Pains des habituels sans commande.
+        guichet:
+          type: integer
+          description: Pains au guichet, moyenne.
+        estimee:
+          type: integer
+          description: 'Demande estimée : les trois sources.'
+        base:
+          type: integer
+          description: Sacs pour les commandes.
+        supplement:
+          type: integer
+          description: Sacs ajoutés par le chef.
+        besoin:
+          type: integer
+          description: Sacs à ajouter pour la demande estimée.
+        au_dessus_du_plan:
+          type: boolean
         sacs:
           type: integer
         prevus:
@@ -4344,13 +4365,20 @@ components:
           nullable: true
           description: Sacs moyens des dernières sessions du même type.
       required:
+      - au_dessus_du_plan
+      - base
+      - besoin
       - boules
       - code
       - commandes
+      - estimee
+      - guichet
+      - habituels
       - moyenne_sacs
       - pains_par_sac
       - prevus
       - sacs
+      - supplement
       - version_fiche
     Livraison:
       type: object
@@ -4519,14 +4547,6 @@ components:
         valeur: {}
       required:
       - valeur
-    MotifEnum:
-      enum:
-      - dette
-      - commande
-      type: string
-      description: |-
-        * `dette` - dette
-        * `commande` - commande habituelle
     MouvementInterne:
       type: object
       properties:
@@ -5418,6 +5438,11 @@ components:
           oneOf:
           - $ref: '#/components/schemas/PlanStatutEnum'
           - $ref: '#/components/schemas/NullEnum'
+        motif_supplement:
+          type: string
+        alerte:
+          type: boolean
+          description: Demande estimée au-dessus du plan.
         lignes:
           type: array
           items:
@@ -5436,10 +5461,12 @@ components:
           nullable: true
           description: Écart des sacs à la moyenne, en %.
       required:
+      - alerte
       - creneau
       - ecart
       - jour
       - lignes
+      - motif_supplement
       - moyenne_sacs
       - prevus
       - sacs
@@ -5675,6 +5702,43 @@ components:
       - plafond
       - solde
       - solde_apres
+    PropositionPlan:
+      type: object
+      description: 'Sans jour ni créneau : la session dont les commandes sont closes.'
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          $ref: '#/components/schemas/CreneauEnum'
+        supplement:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+          description: Code du produit → sacs ajoutés par le chef de production.
+        motif:
+          allOf:
+          - $ref: '#/components/schemas/PropositionPlanMotifEnum'
+          description: |-
+            Obligatoire avec un supplément.
+
+            * `habituels` - habituels
+            * `guichet` - guichet
+            * `marche` - marche
+            * `tardive` - tardive
+    PropositionPlanMotifEnum:
+      enum:
+      - habituels
+      - guichet
+      - marche
+      - tardive
+      type: string
+      description: |-
+        * `habituels` - habituels
+        * `guichet` - guichet
+        * `marche` - marche
+        * `tardive` - tardive
     RaisonEnum:
       enum:
       - sans_telephone
@@ -5743,7 +5807,7 @@ components:
           readOnly: true
         motif:
           allOf:
-          - $ref: '#/components/schemas/MotifEnum'
+          - $ref: '#/components/schemas/RelanceMotifEnum'
           readOnly: true
         montant:
           type: integer
@@ -5798,6 +5862,14 @@ components:
           items:
             type: integer
           description: 'Sans liste : tous les habituels sans commande.'
+    RelanceMotifEnum:
+      enum:
+      - dette
+      - commande
+      type: string
+      description: |-
+        * `dette` - dette
+        * `commande` - commande habituelle
     Reouverture:
       type: object
       properties:
@@ -6114,15 +6186,6 @@ components:
       required:
       - inactiviteMinutes
       - via
-    SessionProduction:
-      type: object
-      description: 'Sans jour ni créneau : la session dont les commandes sont closes.'
-      properties:
-        jour:
-          type: string
-          format: date
-        creneau:
-          $ref: '#/components/schemas/CreneauEnum'
     SessionVente:
       type: object
       description: Session visée ; sans jour ni créneau, la prochaine dont l'heure
