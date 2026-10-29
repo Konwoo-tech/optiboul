@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import IntEnum
 from enum import StrEnum
 
 from optiboul.core.domain.erreurs import RefusMetier
@@ -34,3 +35,15 @@ def plafond_du_client(plafond_propre: int | None, plafond_general: int) -> int:
 def prix_du_client(tarif: int | None, prix_de_base: int | None) -> int | None:
     """Le tarif du client, sinon le prix de base du produit ; None : pas de prix."""
     return tarif if tarif is not None else prix_de_base
+
+
+class Sens(IntEnum):
+    """Sens d'un mouvement de compte : le solde négatif est une dette (R21)."""
+
+    DEBIT = -1  # livraison
+    CREDIT = 1  # encaissement
+
+
+def solde(mouvements: list[tuple[Sens, int]]) -> int:
+    """Le solde n'est jamais saisi : il est la somme des mouvements (R21)."""
+    return sum(sens * montant for sens, montant in mouvements)

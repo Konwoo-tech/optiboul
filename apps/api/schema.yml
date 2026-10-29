@@ -1037,6 +1037,165 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedLigneJournalList'
           description: ''
+  /api/v1/livraisons/:
+    get:
+      operationId: livraisons_list
+      description: Une caissière ne voit que les livraisons de ses caisses (CdC §5.2).
+      parameters:
+      - in: query
+        name: caisse
+        schema:
+          type: integer
+      - in: query
+        name: client
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - livraisons
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLivraisonList'
+          description: ''
+    post:
+      operationId: livraisons_create
+      description: Livraison sur la caisse en cours ; le compte du client est débité.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Clé unique de l'opération, générée par l'application web.
+        required: true
+      tags:
+      - livraisons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NouvelleLivraison'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NouvelleLivraison'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NouvelleLivraison'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Livraison'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/livraisons/{id}/:
+    get:
+      operationId: livraisons_retrieve
+      description: Une caissière ne voit que les livraisons de ses caisses (CdC §5.2).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) livraison.
+        required: true
+      tags:
+      - livraisons
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Livraison'
+          description: ''
+  /api/v1/livraisons/livrer-comme-commande/:
+    post:
+      operationId: livraisons_livrer_comme_commande_create
+      description: « Livrer comme commandé » en une touche (O3).
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Clé unique de l'opération, générée par l'application web.
+        required: true
+      tags:
+      - livraisons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientALivrer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ClientALivrer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ClientALivrer'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Livraison'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/livraisons/proposition/:
+    get:
+      operationId: livraisons_proposition_retrieve
+      description: Quantités commandées, prix du client, montant dû et solde après
+        livraison.
+      parameters:
+      - in: query
+        name: client
+        schema:
+          type: integer
+        required: true
+      tags:
+      - livraisons
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Proposition'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/matieres/:
     get:
       operationId: matieres_list
@@ -2400,6 +2559,11 @@ components:
         plafond_effectif:
           type: integer
           readOnly: true
+        solde:
+          type: integer
+          description: 'Somme des mouvements du compte, en FCFA ; négatif : dette
+            (R21).'
+          readOnly: true
         actif:
           type: boolean
         tarifs:
@@ -2421,7 +2585,15 @@ components:
       - nom
       - plafond_effectif
       - prix
+      - solde
       - tarifs
+    ClientALivrer:
+      type: object
+      properties:
+        client:
+          type: integer
+      required:
+      - client
     ClientResume:
       type: object
       properties:
@@ -2920,6 +3092,89 @@ components:
       - poste_id
       - poste_nom
       - profil
+    LigneLivree:
+      type: object
+      properties:
+        code:
+          type: string
+        quantite:
+          type: integer
+        prix_unitaire:
+          type: integer
+        montant:
+          type: integer
+      required:
+      - code
+      - montant
+      - prix_unitaire
+      - quantite
+    Livraison:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        numero:
+          type: integer
+          readOnly: true
+          title: Numéro du bon
+        caisse:
+          type: integer
+          readOnly: true
+        jour:
+          type: string
+          format: date
+        creneau:
+          type: string
+        client:
+          $ref: '#/components/schemas/ClientResume'
+        commande:
+          type: integer
+          readOnly: true
+          nullable: true
+        statut:
+          type: string
+          readOnly: true
+        lignes:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          readOnly: true
+        montant_du:
+          type: integer
+          readOnly: true
+          title: Montant dû (FCFA)
+        solde_avant:
+          type: integer
+          readOnly: true
+          title: Solde avant (FCFA)
+        solde_apres:
+          type: integer
+          readOnly: true
+          title: Solde après (FCFA)
+        cree_par:
+          type: string
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Livrée le
+      required:
+      - caisse
+      - client
+      - commande
+      - cree_le
+      - cree_par
+      - creneau
+      - id
+      - jour
+      - lignes
+      - montant_du
+      - numero
+      - solde_apres
+      - solde_avant
+      - statut
     Matiere:
       type: object
       properties:
@@ -3021,6 +3276,20 @@ components:
       - pains_par_sac
       - poids_boule
       - recette
+    NouvelleLivraison:
+      type: object
+      properties:
+        client:
+          type: integer
+        lignes:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+          description: Code du produit → pains livrés.
+      required:
+      - client
+      - lignes
     NullEnum:
       enum:
       - null
@@ -3189,6 +3458,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LigneJournal'
+    PaginatedLivraisonList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Livraison'
     PaginatedPosteList:
       type: object
       required:
@@ -3374,6 +3666,11 @@ components:
           title: Plafond propre (FCFA)
         plafond_effectif:
           type: integer
+          readOnly: true
+        solde:
+          type: integer
+          description: 'Somme des mouvements du compte, en FCFA ; négatif : dette
+            (R21).'
           readOnly: true
         actif:
           type: boolean
@@ -3679,6 +3976,34 @@ components:
         * `production` - Responsable de production
         * `proprietaire` - Propriétaire
         * `administrateur` - Administrateur
+    Proposition:
+      type: object
+      properties:
+        client:
+          type: integer
+        commande:
+          type: integer
+          nullable: true
+        lignes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LigneLivree'
+        montant_du:
+          type: integer
+        solde:
+          type: integer
+        solde_apres:
+          type: integer
+        plafond:
+          type: integer
+      required:
+      - client
+      - commande
+      - lignes
+      - montant_du
+      - plafond
+      - solde
+      - solde_apres
     Reouverture:
       type: object
       properties:

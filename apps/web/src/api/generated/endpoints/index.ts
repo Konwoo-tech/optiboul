@@ -5,6 +5,7 @@ export * from './commandes/commandes.ts';
 export * from './connexion/connexion.ts';
 export * from './groupes/groupes.ts';
 export * from './journal/journal.ts';
+export * from './livraisons/livraisons.ts';
 export * from './matieres/matieres.ts';
 export * from './mfa/mfa.ts';
 export * from './parametres/parametres.ts';

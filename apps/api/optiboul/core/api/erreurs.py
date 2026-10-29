@@ -24,6 +24,9 @@ STATUTS = {
     "commande_inconnue": status.HTTP_404_NOT_FOUND,
     "quantite_invalide": status.HTTP_400_BAD_REQUEST,
     "commande_vide": status.HTTP_400_BAD_REQUEST,
+    "cle_idempotence_absente": status.HTTP_400_BAD_REQUEST,
+    "caisse_d_une_autre": status.HTTP_403_FORBIDDEN,
+    "cle_idempotence_reutilisee": status.HTTP_422_UNPROCESSABLE_ENTITY,
 }
 
 

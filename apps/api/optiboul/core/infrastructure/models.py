@@ -1,6 +1,7 @@
 """Modèles Django de l'application core."""
 
 from django.conf import settings
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -243,3 +244,48 @@ class RapportPassation(models.Model):
 
     def __str__(self) -> str:
         return f"Passation S{self.semaine.numero:02d} {self.semaine.annee}"
+
+
+class SequenceNumero(models.Model):
+    """Compteur des numéros métier (bons, DEM-xxx…) : sans trou ni doublon (§4.2)."""
+
+    nom = models.CharField(_("nom"), max_length=30, primary_key=True)
+    dernier = models.PositiveIntegerField(_("dernier numéro"), default=0)
+
+    class Meta:
+        db_table = "sequence_numero"
+        verbose_name = _("séquence de numéros")
+        verbose_name_plural = _("séquences de numéros")
+
+    def __str__(self) -> str:
+        return f"{self.nom} : {self.dernier}"
+
+
+class RequeteIdempotente(models.Model):
+    """Réponse d'un POST d'argent, rejouée pour la même clé (spécification §4.2)."""
+
+    utilisateur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="+",
+        verbose_name=_("utilisateur"),
+    )
+    cle = models.CharField(_("clé"), max_length=100)
+    chemin = models.CharField(_("chemin"), max_length=200)
+    statut = models.PositiveSmallIntegerField(_("statut HTTP"), default=0)
+    reponse = models.JSONField(_("réponse"), null=True, encoder=DjangoJSONEncoder)
+    cree_le = models.DateTimeField(_("reçue le"), default=timezone.now)
+
+    class Meta:
+        db_table = "requete_idempotente"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["utilisateur", "cle"],
+                name="une_reponse_par_cle",
+            ),
+        ]
+        verbose_name = _("requête idempotente")
+        verbose_name_plural = _("requêtes idempotentes")
+
+    def __str__(self) -> str:
+        return f"{self.cle} · {self.chemin}"

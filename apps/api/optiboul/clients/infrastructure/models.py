@@ -1,5 +1,6 @@
 """Modèles Django de l'application clients."""
 
+from django.conf import settings
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 from django.utils import timezone
@@ -78,3 +79,46 @@ class TarifClient(models.Model):
 
     def __str__(self) -> str:
         return f"{self.client} · {self.produit.code} : {self.prix} FCFA"
+
+
+class MouvementCompte(models.Model):
+    """Registre du compte client, en ajout seul (R21) : le solde en est la somme."""
+
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.PROTECT,
+        related_name="mouvements",
+        verbose_name=_("client"),
+    )
+    semaine = models.ForeignKey(
+        "core.Semaine",
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("semaine"),
+    )
+    sens = models.SmallIntegerField(_("sens"), choices=[(-1, "débit"), (1, "crédit")])
+    montant = models.PositiveBigIntegerField(_("montant (FCFA)"))
+    source_type = models.CharField(_("origine"), max_length=30)
+    source_id = models.PositiveBigIntegerField(_("identifiant de l'origine"))
+    auteur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("auteur"),
+    )
+    cree_le = models.DateTimeField(_("enregistré le"), default=timezone.now)
+
+    class Meta:
+        db_table = "mouvement_compte"
+        ordering = ["cree_le", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name="mouvement_compte_montant_positif",
+            ),
+        ]
+        verbose_name = _("mouvement de compte")
+        verbose_name_plural = _("mouvements de compte")
+
+    def __str__(self) -> str:
+        return f"{self.client} {self.sens * self.montant:+} FCFA"

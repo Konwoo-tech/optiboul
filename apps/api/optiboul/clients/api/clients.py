@@ -23,6 +23,8 @@ from rest_framework.viewsets import GenericViewSet
 from optiboul.clients.domain.clients import plafond_du_client
 from optiboul.clients.domain.clients import prix_du_client
 from optiboul.clients.domain.clients import telephone_du_client
+from optiboul.clients.infrastructure.comptes import SOLDE
+from optiboul.clients.infrastructure.comptes import solde_de
 from optiboul.clients.infrastructure.models import Client
 from optiboul.clients.infrastructure.models import TarifClient
 from optiboul.core.api.contexte import auteur_de
@@ -48,6 +50,7 @@ Prix = serializers.DictField(
 
 
 class ClientSerializer(serializers.ModelSerializer[Client]):
+    solde = serializers.SerializerMethodField()
     plafond_effectif = serializers.SerializerMethodField()
     tarifs = serializers.SerializerMethodField()
     prix = serializers.SerializerMethodField()
@@ -62,11 +65,12 @@ class ClientSerializer(serializers.ModelSerializer[Client]):
             "lieu",
             "plafond",
             "plafond_effectif",
+            "solde",
             "actif",
             "tarifs",
             "prix",
         ]
-        read_only_fields = ["id", "plafond_effectif", "tarifs", "prix"]
+        read_only_fields = ["id", "plafond_effectif", "solde", "tarifs", "prix"]
 
     def validate_telephone(self, telephone: str) -> str:
         try:
@@ -79,6 +83,11 @@ class ClientSerializer(serializers.ModelSerializer[Client]):
             message = "Le nom du client est obligatoire."
             raise serializers.ValidationError(message)
         return nom.strip()
+
+    def get_solde(self, client: Client) -> int:
+        """Somme des mouvements du compte, en FCFA ; négatif : dette (R21)."""
+        solde = getattr(client, "solde", None)
+        return solde_de(client.pk) if solde is None else int(solde)
 
     def get_plafond_effectif(self, client: Client) -> int:
         return plafond_du_client(client.plafond, parametre("plafond_dette_client"))
@@ -148,7 +157,7 @@ class ClientsViewSet(
     """La caisse lit les clients ; le gérant et le propriétaire les gèrent."""
 
     serializer_class = ClientSerializer
-    queryset = Client.objects.prefetch_related("tarifs__produit")
+    queryset = Client.objects.prefetch_related("tarifs__produit").annotate(solde=SOLDE)
     http_method_names = ["get", "post", "put", "patch"]
 
     def get_permissions(self):

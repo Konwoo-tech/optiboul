@@ -25,6 +25,8 @@ export interface PatchedClient {
      */
   plafond?: number | null;
   readonly plafond_effectif?: number;
+  /** Somme des mouvements du compte, en FCFA ; négatif : dette (R21). */
+  readonly solde?: number;
   actif?: boolean;
   /** Prix propres au client, produit par produit. */
   readonly tarifs?: PatchedClientTarifs;

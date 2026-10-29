@@ -82,3 +82,88 @@ class LigneCommande(models.Model):
 
     def __str__(self) -> str:
         return f"{self.produit.code} : {self.quantite} pains"
+
+
+class Livraison(models.Model):
+    """Bon de livraison d'une caisse (CdC §5.3) ; le compte du client est débité."""
+
+    numero = models.PositiveIntegerField(_("numéro du bon"), unique=True)
+    semaine = models.ForeignKey(
+        "core.Semaine",
+        on_delete=models.PROTECT,
+        related_name="livraisons",
+        verbose_name=_("semaine"),
+    )
+    caisse = models.ForeignKey(
+        "caisse.Caisse",
+        on_delete=models.PROTECT,
+        related_name="livraisons",
+        verbose_name=_("caisse"),
+    )
+    client = models.ForeignKey(
+        "clients.Client",
+        on_delete=models.PROTECT,
+        related_name="livraisons",
+        verbose_name=_("client"),
+    )
+    commande = models.ForeignKey(
+        Commande,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="livraisons",
+        verbose_name=_("commande"),
+    )
+    statut = models.CharField(_("statut"), max_length=12, default="livree")
+    montant_du = models.PositiveBigIntegerField(_("montant dû (FCFA)"))
+    solde_avant = models.BigIntegerField(_("solde avant (FCFA)"))
+    solde_apres = models.BigIntegerField(_("solde après (FCFA)"))
+    cree_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("livrée par"),
+    )
+    cree_le = models.DateTimeField(_("livrée le"), default=timezone.now)
+
+    class Meta:
+        db_table = "livraison"
+        ordering = ["-cree_le", "-id"]
+        verbose_name = _("livraison")
+        verbose_name_plural = _("livraisons")
+
+    def __str__(self) -> str:
+        return f"Bon n° {self.numero} · {self.client}"
+
+
+class LigneLivraison(models.Model):
+    livraison = models.ForeignKey(
+        Livraison,
+        on_delete=models.CASCADE,
+        related_name="lignes",
+        verbose_name=_("livraison"),
+    )
+    produit = models.ForeignKey(
+        "production.Produit",
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("produit"),
+    )
+    quantite = models.PositiveIntegerField(_("pains"))
+    prix_unitaire = models.PositiveIntegerField(_("prix unitaire (FCFA)"))
+    montant = models.PositiveBigIntegerField(_("montant (FCFA)"))
+
+    class Meta:
+        db_table = "ligne_livraison"
+        ordering = ["produit__ordre"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(quantite__gt=0),
+                name="ligne_livraison_quantite_positive",
+            ),
+        ]
+        verbose_name = _("ligne de livraison")
+        verbose_name_plural = _("lignes de livraison")
+
+    def __str__(self) -> str:
+        return f"{self.produit.code} : {self.quantite} à {self.prix_unitaire} FCFA"
