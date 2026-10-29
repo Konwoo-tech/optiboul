@@ -156,3 +156,45 @@ class ReportDette(models.Model):
 
     def __str__(self) -> str:
         return f"{self.client} : {self.montant} FCFA"
+
+
+class Relance(models.Model):
+    """Relance WhatsApp d'un client (O11, O18), suivie par son envoi dans la file."""
+
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE,
+        related_name="relances",
+        verbose_name=_("client"),
+    )
+    motif = models.CharField(
+        _("motif"),
+        max_length=10,
+        choices=[("dette", "dette"), ("commande", "commande habituelle")],
+    )
+    message = models.ForeignKey(
+        "notifications.MessageSortant",
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("message"),
+    )
+    montant = models.BigIntegerField(_("dette relancée (FCFA)"), default=0)
+    automatique = models.BooleanField(_("automatique"), default=False)
+    auteur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("relancé par"),
+    )
+    cree_le = models.DateTimeField(_("relancé le"), default=timezone.now)
+
+    class Meta:
+        db_table = "relance"
+        ordering = ["-cree_le", "-id"]
+        verbose_name = _("relance")
+        verbose_name_plural = _("relances")
+
+    def __str__(self) -> str:
+        return f"{self.client} · {self.motif} · {self.cree_le:%d/%m %H:%M}"

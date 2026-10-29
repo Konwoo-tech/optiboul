@@ -7,8 +7,6 @@ from optiboul.clients.domain.clients import statut_dette
 from optiboul.clients.infrastructure.cloture import dettes_clients
 from optiboul.clients.infrastructure.cloture import reporter_dettes
 from optiboul.clients.infrastructure.cloture import section_dettes
-from optiboul.clients.infrastructure.models import Client
-from optiboul.clients.infrastructure.models import MouvementCompte
 from optiboul.core.application.cloture import Niveau
 from optiboul.core.application.journal import Auteur
 from optiboul.core.infrastructure.models import LigneJournal
@@ -35,29 +33,6 @@ def test_statut_et_jauge(solde, statut, part):
 def test_jauge_sans_plafond():
     assert jauge(-1, 0) == 100
     assert jauge(0, 0) == 0
-
-
-@pytest.fixture
-def comptes(s44, caissiere) -> dict[str, Client]:
-    """Mama doit 1 500, Raoul 3 000 (plafond dépassé), Rachel a 500 d'avance."""
-    clients = {}
-    for nom, solde, telephone in [
-        ("Mama Rasta", -1_500, "699112233"),
-        ("Raoul", -3_000, ""),
-        ("Rachel Boutique", 500, ""),
-    ]:
-        client = Client.objects.create(nom=nom, telephone=telephone)
-        MouvementCompte.objects.create(
-            client=client,
-            semaine=s44,
-            sens=1 if solde > 0 else -1,
-            montant=abs(solde),
-            source_type="reprise",
-            source_id=0,
-            auteur=caissiere,
-        )
-        clients[nom] = client
-    return clients
 
 
 @pytest.mark.django_db

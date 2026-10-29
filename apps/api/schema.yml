@@ -430,6 +430,56 @@ paths:
               schema:
                 $ref: '#/components/schemas/Client'
           description: ''
+  /api/v1/clients/{id}/relancer/:
+    post:
+      operationId: clients_relancer_create
+      description: Relance WhatsApp de la dette du client, par la file d'envoi (O15).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) client.
+        required: true
+      tags:
+      - clients
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultatRelance'
+          description: ''
+  /api/v1/clients/{id}/relances/:
+    get:
+      operationId: clients_relances_list
+      description: Relances du client, la plus récente d'abord, avec l'état de l'envoi.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) client.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - clients
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRelanceList'
+          description: ''
   /api/v1/clients/{id}/tarifs/:
     put:
       operationId: clients_tarifs_update
@@ -493,6 +543,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Dettes'
+          description: ''
+  /api/v1/clients/relancer-groupe/:
+    post:
+      operationId: clients_relancer_groupe_create
+      description: 'Relance groupée : chaque client qui doit et a un numéro reçoit
+        un message.'
+      tags:
+      - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelanceGroupee'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RelanceGroupee'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RelanceGroupee'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultatRelance'
           description: ''
   /api/v1/commandes/:
     get:
@@ -3456,8 +3534,13 @@ components:
           type: string
           format: date-time
           nullable: true
+        derniere_relance:
+          allOf:
+          - $ref: '#/components/schemas/Relance'
+          nullable: true
       required:
       - derniere_livraison
+      - derniere_relance
       - id
       - jauge
       - nom
@@ -3784,6 +3867,19 @@ components:
       - membres
       - nom
       - profil
+    Ignore:
+      type: object
+      properties:
+        client:
+          type: integer
+        nom:
+          type: string
+        raison:
+          $ref: '#/components/schemas/RaisonEnum'
+      required:
+      - client
+      - nom
+      - raison
     Invitation:
       type: object
       properties:
@@ -4040,6 +4136,14 @@ components:
         valeur: {}
       required:
       - valeur
+    MotifEnum:
+      enum:
+      - dette
+      - commande
+      type: string
+      description: |-
+        * `dette` - dette
+        * `commande` - commande habituelle
     MouvementInterne:
       type: object
       properties:
@@ -4535,6 +4639,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Produit'
+    PaginatedRelanceList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Relance'
     PaginatedSauvegardeList:
       type: object
       required:
@@ -5032,6 +5159,14 @@ components:
       - plafond
       - solde
       - solde_apres
+    RaisonEnum:
+      enum:
+      - sans_telephone
+      - sans_dette
+      type: string
+      description: |-
+        * `sans_telephone` - sans_telephone
+        * `sans_dette` - sans_dette
     Refus:
       type: object
       properties:
@@ -5042,6 +5177,58 @@ components:
           maxLength: 500
       required:
       - motif
+    Relance:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        client:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+        motif:
+          allOf:
+          - $ref: '#/components/schemas/MotifEnum'
+          readOnly: true
+        montant:
+          type: integer
+          readOnly: true
+          title: Dette relancée (FCFA)
+        automatique:
+          type: boolean
+          readOnly: true
+        auteur:
+          type: string
+          readOnly: true
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Relancé le
+        envoi:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+      required:
+      - auteur
+      - automatique
+      - client
+      - cree_le
+      - envoi
+      - id
+      - montant
+      - motif
+    RelanceGroupee:
+      type: object
+      properties:
+        clients:
+          type: array
+          items:
+            type: integer
+          minItems: 1
+      required:
+      - clients
     Reouverture:
       type: object
       properties:
@@ -5089,6 +5276,20 @@ components:
       required:
       - caisse
       - resultat
+    ResultatRelance:
+      type: object
+      properties:
+        relances:
+          type: array
+          items:
+            $ref: '#/components/schemas/Relance'
+        ignores:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ignore'
+      required:
+      - ignores
+      - relances
     Rotation:
       type: object
       properties:

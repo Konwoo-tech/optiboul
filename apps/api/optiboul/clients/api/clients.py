@@ -32,8 +32,10 @@ from optiboul.clients.domain.clients import telephone_du_client
 from optiboul.clients.infrastructure.comptes import SOLDE
 from optiboul.clients.infrastructure.comptes import solde_de
 from optiboul.clients.infrastructure.models import Client
+from optiboul.clients.infrastructure.models import Relance
 from optiboul.clients.infrastructure.models import ReportDette
 from optiboul.clients.infrastructure.models import TarifClient
+from optiboul.clients.infrastructure.relances import relancer_dettes
 from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.erreurs import ProblemeSerializer
 from optiboul.core.api.erreurs import probleme
@@ -47,6 +49,8 @@ from optiboul.notifications.domain.envois import masquer_telephone
 from optiboul.production.infrastructure.models import Produit
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from django.db.models import QuerySet
     from rest_framework.request import Request
 
@@ -121,6 +125,65 @@ class ClientSerializer(serializers.ModelSerializer[Client]):
         return donnees
 
 
+class ClientResumeSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nom = serializers.CharField()
+
+
+class EtatEnvoiSerializer(serializers.Serializer):
+    statut = serializers.CharField(help_text="en_attente, envoye ou echec (O15).")
+    envoye_le = serializers.DateTimeField(allow_null=True)
+
+
+class RelanceSerializer(serializers.ModelSerializer[Relance]):
+    client = serializers.SerializerMethodField()
+    auteur = serializers.SerializerMethodField()
+    envoi = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Relance
+        fields = [
+            "id",
+            "client",
+            "motif",
+            "montant",
+            "automatique",
+            "auteur",
+            "cree_le",
+            "envoi",
+        ]
+        read_only_fields = fields
+
+    @extend_schema(responses=ClientResumeSerializer)
+    def get_client(self, relance: Relance) -> dict[str, Any]:
+        return {"id": relance.client_id, "nom": relance.client.nom}
+
+    def get_auteur(self, relance: Relance) -> str:
+        return relance.auteur.name if relance.auteur else "Automatique"
+
+    @extend_schema(responses=EtatEnvoiSerializer)
+    def get_envoi(self, relance: Relance) -> dict[str, Any]:
+        return {
+            "statut": relance.message.statut,
+            "envoye_le": relance.message.envoye_le,
+        }
+
+
+class IgnoreSerializer(serializers.Serializer):
+    client = serializers.IntegerField()
+    nom = serializers.CharField()
+    raison = serializers.ChoiceField(choices=["sans_telephone", "sans_dette"])
+
+
+class ResultatRelanceSerializer(serializers.Serializer):
+    relances = RelanceSerializer(many=True)
+    ignores = IgnoreSerializer(many=True)
+
+
+class RelanceGroupeeSerializer(serializers.Serializer):
+    clients = serializers.ListField(child=serializers.IntegerField(), min_length=1)
+
+
 class DetteSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     nom = serializers.CharField()
@@ -134,6 +197,7 @@ class DetteSerializer(serializers.Serializer):
         help_text="Dette reportée d'une semaine close (R20).",
     )
     derniere_livraison = serializers.DateTimeField(allow_null=True)
+    derniere_relance = RelanceSerializer(allow_null=True)
 
 
 class DettesSerializer(serializers.Serializer):
@@ -261,6 +325,17 @@ class ClientsViewSet(
             .filter(solde__lt=0)
             .order_by("solde", "nom")
         )
+        relances: dict[int, Relance] = {}
+        for relance in (
+            Relance.objects.filter(motif="dette")
+            .select_related(
+                "client",
+                "auteur",
+                "message",
+            )
+            .order_by("cree_le", "id")
+        ):
+            relances[relance.client_id] = relance
         lignes = []
         for client in debiteurs:
             plafond = plafond_du_client(client.plafond, plafond_general)
@@ -282,6 +357,7 @@ class ClientsViewSet(
                     "statut": statut,
                     "reportee": client.reportee,
                     "derniere_livraison": client.derniere_livraison,
+                    "derniere_relance": relances.get(client.pk),
                 },
             )
         return Response(
@@ -293,6 +369,50 @@ class ClientsViewSet(
                 },
             ).data,
         )
+
+    def _relancer(self, request: Request, clients: Sequence[Client]) -> Response:
+        with transaction.atomic():
+            resultat = relancer_dettes([*clients], auteur=auteur_de(request))
+        return Response(
+            ResultatRelanceSerializer(
+                {
+                    "relances": resultat.relances,
+                    "ignores": [
+                        {"client": client.pk, "nom": client.nom, "raison": raison}
+                        for client, raison in resultat.ignores
+                    ],
+                },
+            ).data,
+        )
+
+    @extend_schema(request=None, responses=ResultatRelanceSerializer)
+    @action(detail=True, methods=["post"])
+    def relancer(self, request: Request, pk: str) -> Response:
+        """Relance WhatsApp de la dette du client, par la file d'envoi (O15)."""
+        return self._relancer(request, [self.get_object()])
+
+    @extend_schema(
+        request=RelanceGroupeeSerializer,
+        responses=ResultatRelanceSerializer,
+    )
+    @action(detail=False, methods=["post"], url_path="relancer-groupe")
+    def relancer_groupe(self, request: Request) -> Response:
+        """Relance groupée : chaque client qui doit et a un numéro reçoit un message."""
+        corps = RelanceGroupeeSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        clients = list(Client.objects.filter(pk__in=corps.validated_data["clients"]))
+        return self._relancer(request, clients)
+
+    @extend_schema(responses=RelanceSerializer(many=True))
+    @action(detail=True)
+    def relances(self, request: Request, pk: str) -> Response:
+        """Relances du client, la plus récente d'abord, avec l'état de l'envoi."""
+        relances = Relance.objects.filter(client=self.get_object()).select_related(
+            "client",
+            "auteur",
+            "message",
+        )
+        return Response(RelanceSerializer(relances, many=True).data)
 
     @extend_schema(
         request=TarifsSerializer,

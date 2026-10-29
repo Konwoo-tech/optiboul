@@ -28,10 +28,14 @@ import type {
   Client,
   ClientsDettesRetrieveParams,
   ClientsListParams,
+  ClientsRelancesListParams,
   Dettes,
   PaginatedClientList,
+  PaginatedRelanceList,
   PatchedClient,
   Probleme,
+  RelanceGroupee,
+  ResultatRelance,
   Tarifs
 } from '../../model';
 
@@ -599,7 +603,213 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getClientsPartialUpdateMutationOptions(options), queryClient);
     }
-    export type clientsTarifsUpdateResponse200 = {
+    export type clientsRelancerCreateResponse200 = {
+  data: ResultatRelance
+  status: 200
+}
+
+export type clientsRelancerCreateResponseSuccess = (clientsRelancerCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type clientsRelancerCreateResponse = (clientsRelancerCreateResponseSuccess)
+
+export const getClientsRelancerCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/clients/${id}/relancer/`
+}
+
+/**
+ * Relance WhatsApp de la dette du client, par la file d'envoi (O15).
+ */
+export const clientsRelancerCreate = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsRelancerCreateResponse> => {
+
+  return optiboulFetch<clientsRelancerCreateResponse>(getClientsRelancerCreateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getClientsRelancerCreateMutationKey = () => ['clientsRelancerCreate'] as const;
+
+export const getClientsRelancerCreateMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsRelancerCreate>>, TError,ClientsRelancerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof clientsRelancerCreate>>, TError,ClientsRelancerCreateMutationVariables, TContext> => {
+
+const mutationKey = getClientsRelancerCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clientsRelancerCreate>>, ClientsRelancerCreateMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  clientsRelancerCreate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClientsRelancerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof clientsRelancerCreate>>>
+
+    export type ClientsRelancerCreateMutationError = unknown
+    export type ClientsRelancerCreateMutationVariables = {id: number}
+
+    export const useClientsRelancerCreate = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsRelancerCreate>>, TError,ClientsRelancerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof clientsRelancerCreate>>,
+        TError,
+        ClientsRelancerCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getClientsRelancerCreateMutationOptions(options), queryClient);
+    }
+    export type clientsRelancesListResponse200 = {
+  data: PaginatedRelanceList
+  status: 200
+}
+
+export type clientsRelancesListResponseSuccess = (clientsRelancesListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type clientsRelancesListResponse = (clientsRelancesListResponseSuccess)
+
+export const getClientsRelancesListUrl = (id: number,
+    params?: ClientsRelancesListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/clients/${id}/relances/?${stringifiedParams}` : `/api/v1/clients/${id}/relances/`
+}
+
+/**
+ * Relances du client, la plus récente d'abord, avec l'état de l'envoi.
+ */
+export const clientsRelancesList = async (id: number,
+    params?: ClientsRelancesListParams, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsRelancesListResponse> => {
+
+  return optiboulFetch<clientsRelancesListResponse>(getClientsRelancesListUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getClientsRelancesListQueryKey = (id: number,
+    params?: ClientsRelancesListParams,) => {
+    return [
+    `/api/v1/clients/${id}/relances/`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getClientsRelancesListQueryOptions = <TData = Awaited<ReturnType<typeof clientsRelancesList>>, TError = unknown>(id: number,
+    params?: ClientsRelancesListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsRelancesList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getClientsRelancesListQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof clientsRelancesList>>> = ({ signal }) => clientsRelancesList(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof clientsRelancesList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ClientsRelancesListQueryResult = NonNullable<Awaited<ReturnType<typeof clientsRelancesList>>>
+export type ClientsRelancesListQueryError = unknown
+
+
+export function useClientsRelancesList<TData = Awaited<ReturnType<typeof clientsRelancesList>>, TError = unknown>(
+ id: number,
+    params: undefined |  ClientsRelancesListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsRelancesList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof clientsRelancesList>>,
+          TError,
+          Awaited<ReturnType<typeof clientsRelancesList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useClientsRelancesList<TData = Awaited<ReturnType<typeof clientsRelancesList>>, TError = unknown>(
+ id: number,
+    params?: ClientsRelancesListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsRelancesList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof clientsRelancesList>>,
+          TError,
+          Awaited<ReturnType<typeof clientsRelancesList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useClientsRelancesList<TData = Awaited<ReturnType<typeof clientsRelancesList>>, TError = unknown>(
+ id: number,
+    params?: ClientsRelancesListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsRelancesList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useClientsRelancesList<TData = Awaited<ReturnType<typeof clientsRelancesList>>, TError = unknown>(
+ id: number,
+    params?: ClientsRelancesListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsRelancesList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getClientsRelancesListQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type clientsTarifsUpdateResponse200 = {
   data: Client
   status: 200
 }
@@ -819,3 +1029,99 @@ export function useClientsDettesRetrieve<TData = Awaited<ReturnType<typeof clien
 
 
 
+export type clientsRelancerGroupeCreateResponse200 = {
+  data: ResultatRelance
+  status: 200
+}
+
+export type clientsRelancerGroupeCreateResponseSuccess = (clientsRelancerGroupeCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type clientsRelancerGroupeCreateResponse = (clientsRelancerGroupeCreateResponseSuccess)
+
+export const getClientsRelancerGroupeCreateUrl = () => {
+
+
+
+
+  return `/api/v1/clients/relancer-groupe/`
+}
+
+/**
+ * Relance groupée : chaque client qui doit et a un numéro reçoit un message.
+ */
+export const clientsRelancerGroupeCreate = async (relanceGroupee: RelanceGroupee, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsRelancerGroupeCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<clientsRelancerGroupeCreateResponse>(getClientsRelancerGroupeCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(relanceGroupee)
+  }
+);}
+
+
+
+
+
+export const getClientsRelancerGroupeCreateMutationKey = () => ['clientsRelancerGroupeCreate'] as const;
+
+export const getClientsRelancerGroupeCreateMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsRelancerGroupeCreate>>, TError,ClientsRelancerGroupeCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof clientsRelancerGroupeCreate>>, TError,ClientsRelancerGroupeCreateMutationVariables, TContext> => {
+
+const mutationKey = getClientsRelancerGroupeCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clientsRelancerGroupeCreate>>, ClientsRelancerGroupeCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  clientsRelancerGroupeCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClientsRelancerGroupeCreateMutationResult = NonNullable<Awaited<ReturnType<typeof clientsRelancerGroupeCreate>>>
+    export type ClientsRelancerGroupeCreateMutationBody = RelanceGroupee
+    export type ClientsRelancerGroupeCreateMutationError = unknown
+    export type ClientsRelancerGroupeCreateMutationVariables = {data: RelanceGroupee}
+
+    export const useClientsRelancerGroupeCreate = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsRelancerGroupeCreate>>, TError,ClientsRelancerGroupeCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof clientsRelancerGroupeCreate>>,
+        TError,
+        ClientsRelancerGroupeCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getClientsRelancerGroupeCreateMutationOptions(options), queryClient);
+    }

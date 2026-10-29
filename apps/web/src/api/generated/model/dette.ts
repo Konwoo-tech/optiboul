@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DetteStatutEnum } from './detteStatutEnum.ts';
+import type { Relance } from './relance.ts';
 
 export interface Dette {
   id: number;
@@ -21,4 +22,5 @@ export interface Dette {
   reportee: boolean;
   /** @nullable */
   derniere_livraison: string | null;
+  derniere_relance: Relance | null;
 }

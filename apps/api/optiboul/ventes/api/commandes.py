@@ -17,6 +17,7 @@ from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from optiboul.clients.api.clients import ClientResumeSerializer
 from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.erreurs import ProblemeSerializer
 from optiboul.core.api.erreurs import probleme
@@ -44,11 +45,6 @@ Lignes = serializers.DictField(
     child=serializers.IntegerField(min_value=0),
     help_text="Code du produit → pains commandés.",
 )
-
-
-class ClientResumeSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    nom = serializers.CharField()
 
 
 class CommandeSerializer(serializers.ModelSerializer[Commande]):

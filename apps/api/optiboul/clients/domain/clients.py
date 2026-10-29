@@ -68,3 +68,11 @@ def jauge(solde: int, plafond: int) -> int:
     if plafond <= 0:
         return 100 if dette else 0
     return round(dette * 100 / plafond)
+
+
+def texte_relance(nom: str, echeance: str, montant: str) -> str:
+    """Message WhatsApp d'une relance de dette, à régler avant l'échéance (R6)."""
+    return (
+        f"Bonjour {nom}, la Boulangerie du Faubourg vous rappelle votre solde de "
+        f"{montant}, à régler au plus tard {echeance}. Merci !"
+    )
