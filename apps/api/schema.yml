@@ -1125,6 +1125,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/connexion/google/:
+    post:
+      operationId: connexion_google_create
+      description: Seuls les Gmail enregistrés ; la double authentification suit (CdC
+        §4.1).
+      tags:
+      - connexion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnexionGoogle'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ConnexionGoogle'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ConnexionGoogle'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultatConnexion'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/connexion/invitation/:
     post:
       operationId: connexion_invitation_create
@@ -5096,6 +5131,14 @@ components:
       required:
       - email
       - motDePasse
+    ConnexionGoogle:
+      type: object
+      properties:
+        jeton:
+          type: string
+          description: Jeton d'identité de Google Identity Services.
+      required:
+      - jeton
     Consommation:
       type: object
       properties:

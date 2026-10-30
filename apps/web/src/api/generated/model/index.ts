@@ -59,6 +59,7 @@ export * from './conflitPlanning.ts';
 export * from './conflitPlanningGenreEnum.ts';
 export * from './connexionCode.ts';
 export * from './connexionEmail.ts';
+export * from './connexionGoogle.ts';
 export * from './consommation.ts';
 export * from './consommationQuantites.ts';
 export * from './controle.ts';

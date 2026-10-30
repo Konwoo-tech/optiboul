@@ -5,6 +5,7 @@ from .brouillons import BrouillonsViewSet
 from .connexion import accepter_invitation
 from .connexion import annuler_identification
 from .connexion import changer_utilisateur
+from .connexion import connexion_google
 from .connexion import connexion_par_code
 from .connexion import connexion_par_email
 from .connexion import deconnexion
@@ -35,6 +36,7 @@ urlpatterns = [
     ),
     path("connexion/code/", connexion_par_code, name="connexion-code"),
     path("connexion/email/", connexion_par_email, name="connexion-email"),
+    path("connexion/google/", connexion_google, name="connexion-google"),
     path("connexion/otp/envoyer/", envoyer_code, name="connexion-otp-envoyer"),
     path("connexion/otp/verifier/", verifier_code, name="connexion-otp-verifier"),
     path("connexion/totp/", verifier_application, name="connexion-totp"),

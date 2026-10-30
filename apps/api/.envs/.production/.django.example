@@ -33,6 +33,9 @@ OPTIBOUL_CLE_SAUVEGARDE=
 # Passerelles SMS / WhatsApp (chemin Python d'une classe), fournisseur à choisir.
 OPTIBOUL_PASSERELLE_SMS=
 OPTIBOUL_PASSERELLE_WHATSAPP=
+# Connexion avec Google (US-013) : identifiant OAuth du client web (console Google
+# Cloud). Vide : la connexion avec Google est désactivée.
+OPTIBOUL_GOOGLE_CLIENT_ID=
 
 # django-allauth
 # ------------------------------------------------------------------------------

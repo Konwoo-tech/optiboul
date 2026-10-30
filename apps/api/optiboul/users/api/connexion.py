@@ -27,6 +27,7 @@ from optiboul.core.infrastructure.parametres import parametre
 from optiboul.users import comptes
 from optiboul.users import connexion
 from optiboul.users import double_auth
+from optiboul.users import google
 from optiboul.users import mot_de_passe
 from optiboul.users.models import Profil
 from optiboul.users.verrouillage import LimiteParCompte
@@ -279,6 +280,31 @@ def changer_utilisateur(request: Request) -> Response:
     )
     logout(request._request)  # noqa: SLF001
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ConnexionGoogleSerializer(serializers.Serializer):
+    jeton = serializers.CharField(
+        help_text="Jeton d'identité de Google Identity Services.",
+    )
+
+
+@extend_schema(
+    request=ConnexionGoogleSerializer,
+    responses={200: ResultatConnexionSerializer, 403: ProblemeSerializer},
+)
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([LimiteParPoste])
+def connexion_google(request: Request) -> Response:
+    """Seuls les Gmail enregistrés ; la double authentification suit (CdC §4.1)."""
+    exiger_csrf(request)
+    corps = ConnexionGoogleSerializer(data=request.data)
+    corps.is_valid(raise_exception=True)
+    try:
+        identifie = google.identifier(corps.validated_data["jeton"], auteur_de(request))
+    except connexion.RefusConnexion as refus:
+        return probleme(refus)
+    return _terminer_ou_demander(request, identifie)
 
 
 class MotDePasseOublieSerializer(serializers.Serializer):

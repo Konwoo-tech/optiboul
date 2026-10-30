@@ -47,6 +47,9 @@ REFUS: dict[str, tuple[str, int]] = {
     "code_expire": ("Ce code a expiré : demandez-en un nouveau.", 400),
     "renvoi_trop_tot": ("Patientez avant de renvoyer un code.", 429),
     "telephone_absent": ("Aucun numéro enregistré : utilisez un code de secours.", 400),
+    "google_invalide": ("Connexion Google refusée : réessayez.", 400),
+    "google_indisponible": ("Connexion Google indisponible pour le moment.", 503),
+    "compte_inconnu": ("Compte Google non autorisé.", 403),
 }
 
 

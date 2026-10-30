@@ -437,6 +437,9 @@ OPTIBOUL_PASSERELLES: dict[str, str | None] = {
     "whatsapp": env("OPTIBOUL_PASSERELLE_WHATSAPP", default=None),
 }
 
+# Connexion avec Google (US-013) : identifiant OAuth du client web ; vide, désactivée.
+OPTIBOUL_GOOGLE_CLIENT_ID = env("OPTIBOUL_GOOGLE_CLIENT_ID", default="")
+
 # Adresse de l'application web, pour les liens envoyés (invitation, US-020).
 OPTIBOUL_URL_APPLICATION = env(
     "OPTIBOUL_URL_APPLICATION",
