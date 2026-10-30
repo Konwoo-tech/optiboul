@@ -13,4 +13,4 @@
 
 La documentation technique de l'API (Sphinx, générée par Cookiecutter Django) est dans [`apps/api/docs`](../apps/api/docs).
 
-Exploitation : [restaurer une sauvegarde](restauration.md).
+Exploitation : [restaurer une sauvegarde](restauration.md), [accès distant par le tunnel](acces-distant.md).
