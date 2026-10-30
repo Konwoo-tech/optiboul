@@ -127,6 +127,33 @@ def decision_automatique(
     return StatutPlan.PROVISOIRE
 
 
+class StatutSupplement(StrEnum):
+    AUTO_ACCORDE = "auto_accorde"  # supplément faible, accordé sans attendre (O17)
+    DEMANDE = "demande"  # au-delà du seuil : accord du gérant (R15)
+    ACCORDE = "accorde"
+    REFUSE = "refuse"
+
+
+def supplement_faible(  # noqa: PLR0913
+    supplement: dict[str, int],
+    *,
+    sacs_du_plan: int,
+    farine_necessaire: Decimal,
+    farine_en_stock: Decimal,
+    seuil_sacs: int,
+    seuil_pourcentage: int,
+) -> bool:
+    """O17 : au plus 1 sac par produit et 10 % du plan (paramètres), farine
+    suffisante ; sinon le gérant décide (R15)."""
+    total = sum(supplement.values())
+    return (
+        total > 0
+        and all(sacs <= seuil_sacs for sacs in supplement.values())
+        and total * 100 <= sacs_du_plan * seuil_pourcentage
+        and farine_necessaire <= farine_en_stock
+    )
+
+
 def sacs_pour(pains: int, pains_par_sac: int) -> int:
     return ceil(pains / pains_par_sac) if pains > 0 else 0
 

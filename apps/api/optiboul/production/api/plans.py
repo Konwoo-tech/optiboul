@@ -25,6 +25,7 @@ from optiboul.core.domain.sauvegardes import Declencheur
 from optiboul.core.infrastructure.sauvegardes import demander_sauvegarde
 from optiboul.production.application import plans as cas
 from optiboul.production.application import productions as cas_production
+from optiboul.production.application import supplements as cas_supplements
 from optiboul.production.domain.plan import MotifSupplement
 from optiboul.production.domain.plan import StatutPlan
 from optiboul.production.domain.plan import heure_validation_auto
@@ -37,6 +38,9 @@ from optiboul.production.infrastructure.plans import depots
 from optiboul.production.infrastructure.plans import nombre_de_sessions
 from optiboul.production.infrastructure.plans import petrissage
 from optiboul.production.infrastructure.productions import depots as depots_production
+from optiboul.production.infrastructure.supplements import depots as depots_supplements
+from optiboul.production.infrastructure.supplements import seuils
+from optiboul.stocks.infrastructure.stocks import stock
 from optiboul.ventes.domain.commandes import JOUR
 from optiboul.ventes.domain.commandes import NUIT
 from optiboul.ventes.domain.commandes import Session
@@ -123,6 +127,11 @@ class PlanSerializer(serializers.Serializer):
         help_text="T-15 min avant le pétrissage : sans réponse, décision automatique.",
     )
     alerte = serializers.BooleanField(help_text="Demande estimée au-dessus du plan.")
+    farine_en_stock = serializers.DecimalField(
+        max_digits=14,
+        decimal_places=3,
+        help_text="Stock de farine, en kg, pour décider d'un supplément.",
+    )
     lignes = LignePlanSerializer(many=True)
     sacs = serializers.IntegerField()
     prevus = serializers.IntegerField()
@@ -160,6 +169,7 @@ def projeter(plan: cas.PlanCalcule) -> dict[str, Any]:
             petrissage(plan.session.creneau),
         ),
         "alerte": plan.alerte,
+        "farine_en_stock": stock.quantites().get("farine", Decimal(0)),
         "lignes": [
             {
                 "code": item.code,
@@ -213,6 +223,21 @@ class ProductionSerializer(serializers.Serializer):
     prevus = serializers.IntegerField()
     realise = serializers.IntegerField()
     reste = serializers.IntegerField()
+
+
+class SupplementSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    statut = serializers.CharField(
+        help_text="auto_accorde (O17), demande, accorde ou refuse.",
+    )
+    sacs = serializers.DictField(child=serializers.IntegerField())
+    motif = serializers.CharField()
+    farine_necessaire = serializers.DecimalField(max_digits=12, decimal_places=3)
+    farine_en_stock = serializers.DecimalField(max_digits=14, decimal_places=3)
+    demande = serializers.CharField(
+        allow_blank=True,
+        help_text="DEM-xxx au-delà du seuil.",
+    )
 
 
 class FourneeSaisieSerializer(serializers.Serializer):
@@ -305,6 +330,31 @@ class ProductionsViewSet(ViewSet):
         if self.action == "valider":
             return [ProfilParmi(*DIRECTION)()]
         return [ProfilParmi("production")()]
+
+    @extend_schema(
+        request=PropositionPlanSerializer,
+        responses={201: SupplementSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=False, methods=["post"])
+    def supplement(self, request: Request) -> Response:
+        """Après validation : accordé tout de suite sous le seuil (O17), sinon demandé
+        au gérant (R15)."""
+        corps = PropositionPlanSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        try:
+            with transaction.atomic():
+                etat = cas_supplements.ajouter(
+                    depots_supplements,
+                    session=corps.session(),
+                    sacs=corps.validated_data.get("supplement", {}),
+                    motif=corps.validated_data.get("motif"),
+                    auteur=auteur_de(request),
+                    maintenant=timezone.now(),
+                    seuils=seuils(),
+                )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(SupplementSerializer(vars(etat)).data, status=201)
 
     def _production(self, appel) -> Response:
         try:

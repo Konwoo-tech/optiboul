@@ -325,3 +325,44 @@ class Consommation(models.Model):
 
     def __str__(self) -> str:
         return f"{self.matiere} : {self.quantite}"
+
+
+class SupplementProduction(models.Model):
+    """Sacs ajoutés après la validation du plan, avec un motif (CdC §5.5, R15, O17)."""
+
+    plan = models.ForeignKey(
+        PlanProduction,
+        on_delete=models.PROTECT,
+        related_name="supplements",
+        verbose_name=_("plan"),
+    )
+    sacs = models.JSONField(_("sacs par produit"))
+    motif = models.CharField(_("motif"), max_length=12)
+    statut = models.CharField(_("statut"), max_length=12)
+    farine_necessaire = models.DecimalField(
+        _("farine nécessaire (kg)"),
+        max_digits=12,
+        decimal_places=3,
+    )
+    farine_en_stock = models.DecimalField(
+        _("farine en stock (kg)"),
+        max_digits=14,
+        decimal_places=3,
+    )
+    auteur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("demandé par"),
+    )
+    cree_le = models.DateTimeField(_("demandé le"), default=timezone.now)
+    decide_par = models.CharField(_("décidé par"), max_length=255, blank=True)
+
+    class Meta:
+        db_table = "supplement_production"
+        ordering = ["-cree_le", "-id"]
+        verbose_name = _("supplément de production")
+        verbose_name_plural = _("suppléments de production")
+
+    def __str__(self) -> str:
+        return f"Supplément {self.sacs} · {self.statut}"

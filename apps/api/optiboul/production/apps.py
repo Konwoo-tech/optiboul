@@ -8,5 +8,7 @@ class ProductionConfig(AppConfig):
 
     def ready(self) -> None:
         from .infrastructure import cloture  # noqa: PLC0415
+        from .infrastructure import supplements  # noqa: PLC0415
 
         cloture.enregistrer()
+        supplements.enregistrer()

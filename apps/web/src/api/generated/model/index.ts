@@ -211,6 +211,8 @@ export * from './sessionProduction.ts';
 export * from './sessionVente.ts';
 export * from './stock.ts';
 export * from './stockQuantites.ts';
+export * from './supplement.ts';
+export * from './supplementSacs.ts';
 export * from './tarifs.ts';
 export * from './tarifsTarifs.ts';
 export * from './totaux.ts';

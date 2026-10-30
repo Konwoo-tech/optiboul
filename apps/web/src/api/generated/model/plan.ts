@@ -29,6 +29,11 @@ export interface Plan {
   heure_validation_auto: string;
   /** Demande estimée au-dessus du plan. */
   alerte: boolean;
+  /**
+     * Stock de farine, en kg, pour décider d'un supplément.
+     * @pattern ^-?\d{0,11}(?:\.\d{0,3})?$
+     */
+  farine_en_stock: string;
   lignes: LignePlan[];
   sacs: number;
   prevus: number;

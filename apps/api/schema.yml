@@ -2438,6 +2438,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResteAProduire'
           description: ''
+  /api/v1/productions/supplement/:
+    post:
+      operationId: productions_supplement_create
+      description: |-
+        Après validation : accordé tout de suite sous le seuil (O17), sinon demandé
+        au gérant (R15).
+      tags:
+      - productions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PropositionPlan'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PropositionPlan'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PropositionPlan'
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Supplement'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/productions/valider/:
     post:
       operationId: productions_valider_create
@@ -5874,6 +5908,11 @@ components:
         alerte:
           type: boolean
           description: Demande estimée au-dessus du plan.
+        farine_en_stock:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          description: Stock de farine, en kg, pour décider d'un supplément.
         lignes:
           type: array
           items:
@@ -5895,6 +5934,7 @@ components:
       - alerte
       - creneau
       - ecart
+      - farine_en_stock
       - heure_validation_auto
       - jour
       - lignes
@@ -6754,6 +6794,39 @@ components:
           description: Code de la matière → stock, dans l'unité de la matière.
       required:
       - quantites
+    Supplement:
+      type: object
+      properties:
+        id:
+          type: integer
+        statut:
+          type: string
+          description: auto_accorde (O17), demande, accorde ou refuse.
+        sacs:
+          type: object
+          additionalProperties:
+            type: integer
+        motif:
+          type: string
+        farine_necessaire:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        farine_en_stock:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+        demande:
+          type: string
+          description: DEM-xxx au-delà du seuil.
+      required:
+      - demande
+      - farine_en_stock
+      - farine_necessaire
+      - id
+      - motif
+      - sacs
+      - statut
     Tarifs:
       type: object
       properties:
