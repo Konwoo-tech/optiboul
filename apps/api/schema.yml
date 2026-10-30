@@ -1290,6 +1290,97 @@ paths:
                 items:
                   $ref: '#/components/schemas/Demande'
           description: ''
+  /api/v1/depenses/:
+    get:
+      operationId: depenses_list
+      description: La caisse et la production voient leurs dépenses ; la direction
+        toutes.
+      parameters:
+      - in: query
+        name: categorie
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - in: query
+        name: semaine
+        schema:
+          type: integer
+      - in: query
+        name: statut
+        schema:
+          type: string
+      tags:
+      - depenses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDepenseList'
+          description: ''
+    post:
+      operationId: depenses_create
+      description: DEP-xxxx ; avec la photo du justificatif ; la caisse paie si choisie.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Clé unique de l'opération, générée par l'application web.
+        required: true
+      tags:
+      - depenses
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NouvelleDepense'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Depense'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/depenses/{id}/:
+    get:
+      operationId: depenses_retrieve
+      description: La caisse et la production voient leurs dépenses ; la direction
+        toutes.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) dépense.
+        required: true
+      tags:
+      - depenses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Depense'
+          description: ''
   /api/v1/encaissements/:
     get:
       operationId: encaissements_list
@@ -3979,6 +4070,28 @@ components:
         * `application` - application
         * `sms` - sms
         * `whatsapp` - whatsapp
+    CategorieEnum:
+      enum:
+      - matieres
+      - salaires
+      - electricite
+      - eau
+      - administration
+      - technique
+      - petit_materiel
+      - lait
+      - extra
+      type: string
+      description: |-
+        * `matieres` - Matières premières
+        * `salaires` - Salaires
+        * `electricite` - Électricité
+        * `eau` - Eau
+        * `administration` - Administration
+        * `technique` - Technique
+        * `petit_materiel` - Petit matériel
+        * `lait` - Lait supplément salaire
+        * `extra` - Extra
     ChangementGroupe:
       type: object
       properties:
@@ -4486,6 +4599,122 @@ components:
       - type_libelle
       - valideurs
       - via
+    Depense:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        numero:
+          type: integer
+          readOnly: true
+          title: Numéro
+        code:
+          type: string
+          description: « DEP-0042 ».
+          readOnly: true
+        semaine:
+          type: integer
+          readOnly: true
+        categorie:
+          allOf:
+          - $ref: '#/components/schemas/CategorieEnum'
+          readOnly: true
+          title: Catégorie
+        libelle:
+          type: string
+          readOnly: true
+          title: Libellé
+        montant:
+          type: integer
+          readOnly: true
+          title: Montant (FCFA)
+        paye_par:
+          allOf:
+          - $ref: '#/components/schemas/DepensePayeParEnum'
+          readOnly: true
+          title: Payé par
+        caisse:
+          type: integer
+          readOnly: true
+          nullable: true
+        rattachement:
+          allOf:
+          - $ref: '#/components/schemas/RattachementEnum'
+          readOnly: true
+        production_jour:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+          title: Session de production
+        production_creneau:
+          type: string
+          readOnly: true
+          title: Créneau
+        matiere:
+          type: string
+          nullable: true
+        quantite:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          readOnly: true
+          nullable: true
+          title: Quantité entrée en stock
+        fournisseur:
+          type: string
+          readOnly: true
+          title: Fournisseur ou marché
+        justificatif:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+        statut:
+          type: string
+          readOnly: true
+        auteur:
+          type: string
+        auteur_profil:
+          type: string
+          readOnly: true
+          title: Profil de l'auteur
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Saisie le
+      required:
+      - auteur
+      - auteur_profil
+      - caisse
+      - categorie
+      - code
+      - cree_le
+      - fournisseur
+      - id
+      - justificatif
+      - libelle
+      - montant
+      - numero
+      - paye_par
+      - production_creneau
+      - production_jour
+      - quantite
+      - rattachement
+      - semaine
+      - statut
+    DepensePayeParEnum:
+      enum:
+      - caisse
+      - banque
+      - mobile
+      type: string
+      description: |-
+        * `caisse` - caisse
+        * `banque` - banque
+        * `mobile` - mobile money
     Dette:
       type: object
       properties:
@@ -5570,6 +5799,55 @@ components:
       - client
       - mode
       - montant
+    NouvelleDepense:
+      type: object
+      properties:
+        categorie:
+          $ref: '#/components/schemas/CategorieEnum'
+        libelle:
+          type: string
+          maxLength: 200
+        montant:
+          type: integer
+          minimum: 1
+        paye_par:
+          $ref: '#/components/schemas/NouvelleDepensePayeParEnum'
+        rattachement:
+          $ref: '#/components/schemas/RattachementEnum'
+        matiere:
+          type: string
+          default: ''
+          maxLength: 30
+        quantite:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          nullable: true
+        fournisseur:
+          type: string
+          default: ''
+          description: Fournisseur ou marché, pour un achat qui entre en stock.
+          maxLength: 150
+        justificatif:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - categorie
+      - libelle
+      - montant
+      - paye_par
+      - rattachement
+    NouvelleDepensePayeParEnum:
+      enum:
+      - caisse
+      - banque
+      - mobile
+      type: string
+      description: |-
+        * `caisse` - caisse
+        * `banque` - banque
+        * `mobile` - mobile
     NouvelleFiche:
       type: object
       properties:
@@ -5745,6 +6023,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Demande'
+    PaginatedDepenseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Depense'
     PaginatedEncaissementList:
       type: object
       required:
@@ -6802,6 +7103,16 @@ components:
       - automatique
       - cree_le
       - statut
+    RattachementEnum:
+      enum:
+      - production
+      - semaine
+      - stock
+      type: string
+      description: |-
+        * `production` - production
+        * `semaine` - semaine
+        * `stock` - stock
     ReceptionFaite:
       type: object
       properties:

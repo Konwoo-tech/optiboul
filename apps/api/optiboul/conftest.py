@@ -124,3 +124,14 @@ def horloge():
     """Fige l'heure au mardi 08:00 de la semaine 44 (heure de Yaoundé)."""
     with mock.patch("django.utils.timezone.now", return_value=MARDI_8H) as maintenant:
         yield maintenant
+
+
+@pytest.fixture
+def caisse_ouverte(client_de, caissiere, planning_rachel, horloge):
+    """La caisse de jour du mardi, ouverte par Rachel avec 20 000 FCFA de fonds."""
+    from django.urls import reverse  # noqa: PLC0415
+
+    from optiboul.caisse.infrastructure.models import Caisse  # noqa: PLC0415
+
+    reponse = client_de(caissiere).post(reverse("api:caisse-ouvrir"), {"fonds": 20_000})
+    return Caisse.objects.get(pk=reponse.json()["id"])
