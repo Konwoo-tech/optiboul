@@ -8,14 +8,25 @@ from typing import Any
 from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from optiboul.core.api.contexte import auteur_de
+from optiboul.core.api.erreurs import ProblemeSerializer
+from optiboul.core.api.erreurs import probleme
+from optiboul.core.api.idempotence import PARAMETRE as IDEMPOTENCE
+from optiboul.core.api.idempotence import idempotent
 from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import ProfilParmi
+from optiboul.core.domain.erreurs import RefusMetier
+from optiboul.stocks.application import saisies as cas
+from optiboul.stocks.domain.stocks import GenreMouvementStock
+from optiboul.stocks.domain.stocks import Sens
 from optiboul.stocks.infrastructure.models import MouvementStock
+from optiboul.stocks.infrastructure.saisies import depots
 from optiboul.stocks.infrastructure.stocks import stock
 
 if TYPE_CHECKING:
@@ -50,6 +61,23 @@ class StockSerializer(serializers.Serializer):
         child=serializers.DecimalField(max_digits=14, decimal_places=3),
         help_text="Code de la matière → stock, dans l'unité de la matière.",
     )
+
+
+class SaisieStockSerializer(serializers.Serializer):
+    matiere = serializers.CharField(max_length=30)
+    quantite = serializers.DecimalField(max_digits=12, decimal_places=3)
+    genre = serializers.ChoiceField(
+        choices=[GenreMouvementStock.PERTE.value, GenreMouvementStock.CORRECTION.value],
+    )
+    sens = serializers.ChoiceField(
+        choices=[(Sens.SORTIE.value, "sortie"), (Sens.ENTREE.value, "entrée")],
+        default=Sens.SORTIE.value,
+    )
+    motif = serializers.CharField(max_length=255, allow_blank=True)
+
+
+class SaisieEnregistreeSerializer(serializers.Serializer):
+    numero = serializers.IntegerField()
 
 
 class MouvementsStockViewSet(ListModelMixin, GenericViewSet):
@@ -87,3 +115,29 @@ class MouvementsStockViewSet(ListModelMixin, GenericViewSet):
     def stock(self, request: Request) -> Response:
         """Stock actuel de chaque matière suivie : somme de ses mouvements."""
         return Response(StockSerializer({"quantites": stock.quantites()}).data)
+
+    @extend_schema(
+        request=SaisieStockSerializer,
+        parameters=[IDEMPOTENCE],
+        responses={201: SaisieEnregistreeSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=False, methods=["post"])
+    @idempotent
+    def saisir(self, request: Request) -> Response:
+        """Perte, casse ou correction : le motif est obligatoire (US-092)."""
+        corps = SaisieStockSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        donnees = corps.validated_data
+        try:
+            numero = cas.saisir(
+                depots,
+                matiere=donnees["matiere"],
+                quantite=donnees["quantite"],
+                genre=GenreMouvementStock(donnees["genre"]),
+                sens=Sens(donnees["sens"]),
+                motif=donnees["motif"],
+                auteur=auteur_de(request),
+            )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response({"numero": numero}, status=status.HTTP_201_CREATED)

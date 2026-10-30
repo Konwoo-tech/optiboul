@@ -2620,6 +2620,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedMouvementStockList'
           description: ''
+  /api/v1/mouvements-stock/saisir/:
+    post:
+      operationId: mouvements_stock_saisir_create
+      description: 'Perte, casse ou correction : le motif est obligatoire (US-092).'
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Clé unique de l'opération, générée par l'application web.
+        required: true
+      tags:
+      - mouvements-stock
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaisieStock'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SaisieStock'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SaisieStock'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaisieEnregistree'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/mouvements-stock/stock/:
     get:
       operationId: mouvements_stock_stock_retrieve
@@ -8650,6 +8690,45 @@ components:
       required:
       - client
       - lignes
+    SaisieEnregistree:
+      type: object
+      properties:
+        numero:
+          type: integer
+      required:
+      - numero
+    SaisieStock:
+      type: object
+      properties:
+        matiere:
+          type: string
+          maxLength: 30
+        quantite:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        genre:
+          $ref: '#/components/schemas/SaisieStockGenreEnum'
+        sens:
+          allOf:
+          - $ref: '#/components/schemas/SensEnum'
+          default: -1
+        motif:
+          type: string
+          maxLength: 255
+      required:
+      - genre
+      - matiere
+      - motif
+      - quantite
+    SaisieStockGenreEnum:
+      enum:
+      - perte
+      - correction
+      type: string
+      description: |-
+        * `perte` - perte
+        * `correction` - correction
     Sante:
       type: object
       properties:
