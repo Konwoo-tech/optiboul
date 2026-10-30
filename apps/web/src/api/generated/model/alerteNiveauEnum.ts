@@ -7,15 +7,13 @@
  */
 
 /**
- * * `ok` - ok
- * * `surveiller` - surveiller
  * * `bloquant` - bloquant
+ * * `surveiller` - surveiller
  */
-export type NiveauEnum = typeof NiveauEnum[keyof typeof NiveauEnum];
+export type AlerteNiveauEnum = typeof AlerteNiveauEnum[keyof typeof AlerteNiveauEnum];
 
 
-export const NiveauEnum = {
-  ok: 'ok',
-  surveiller: 'surveiller',
+export const AlerteNiveauEnum = {
   bloquant: 'bloquant',
+  surveiller: 'surveiller',
 } as const;

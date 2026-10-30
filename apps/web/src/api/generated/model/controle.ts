@@ -5,10 +5,10 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
-import type { NiveauEnum } from './niveauEnum.ts';
+import type { ControleNiveauEnum } from './controleNiveauEnum.ts';
 
 export interface Controle {
   cle: string;
-  niveau: NiveauEnum;
+  niveau: ControleNiveauEnum;
   detail: string;
 }

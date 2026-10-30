@@ -19,6 +19,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/Accueil'
           description: ''
+  /api/v1/alertes/:
+    get:
+      operationId: alertes_list
+      description: Alertes du CdC §5.11, les bloquantes d'abord ; chacune ouvre son
+        détail.
+      tags:
+      - alertes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alerte'
+          description: ''
   /api/v1/brouillons/:
     get:
       operationId: brouillons_list
@@ -4366,6 +4384,37 @@ components:
       required:
       - gerant
       - production
+    Alerte:
+      type: object
+      properties:
+        type:
+          type: string
+        niveau:
+          $ref: '#/components/schemas/AlerteNiveauEnum'
+        titre:
+          type: string
+        detail:
+          type: string
+        nombre:
+          type: integer
+        lien:
+          type: string
+          description: Écran du détail à ouvrir.
+      required:
+      - detail
+      - lien
+      - niveau
+      - nombre
+      - titre
+      - type
+    AlerteNiveauEnum:
+      enum:
+      - bloquant
+      - surveiller
+      type: string
+      description: |-
+        * `bloquant` - bloquant
+        * `surveiller` - surveiller
     Apercu:
       type: object
       properties:
@@ -4935,13 +4984,23 @@ components:
         cle:
           type: string
         niveau:
-          $ref: '#/components/schemas/NiveauEnum'
+          $ref: '#/components/schemas/ControleNiveauEnum'
         detail:
           type: string
       required:
       - cle
       - detail
       - niveau
+    ControleNiveauEnum:
+      enum:
+      - ok
+      - surveiller
+      - bloquant
+      type: string
+      description: |-
+        * `ok` - ok
+        * `surveiller` - surveiller
+        * `bloquant` - bloquant
     Creneau:
       type: object
       properties:
@@ -6278,16 +6337,6 @@ components:
       - sens
       - source_id
       - source_type
-    NiveauEnum:
-      enum:
-      - ok
-      - surveiller
-      - bloquant
-      type: string
-      description: |-
-        * `ok` - ok
-        * `surveiller` - surveiller
-        * `bloquant` - bloquant
     Notification:
       type: object
       properties:

@@ -1,4 +1,5 @@
 export * from './accueil/accueil.ts';
+export * from './alertes/alertes.ts';
 export * from './brouillons/brouillons.ts';
 export * from './budgets/budgets.ts';
 export * from './caisses/caisses.ts';
