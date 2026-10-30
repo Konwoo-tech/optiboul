@@ -1,5 +1,7 @@
-from rest_framework.routers import SimpleRouter
+from django.urls import path
 
-router = SimpleRouter()
+from .accueil import accueil
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("accueil/", accueil, name="accueil"),
+]

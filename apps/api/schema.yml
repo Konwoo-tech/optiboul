@@ -4,6 +4,21 @@ info:
   version: 1.0.0
   description: API REST d'OptiBoul ERP (Boulangerie du Faubourg)
 paths:
+  /api/v1/accueil/:
+    get:
+      operationId: accueil_retrieve
+      description: L'écran d'arrivée du profil et son contenu (O10).
+      tags:
+      - accueil
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Accueil'
+          description: ''
   /api/v1/brouillons/:
     get:
       operationId: brouillons_list
@@ -4288,6 +4303,21 @@ components:
       properties:
         code_gerant:
           $ref: '#/components/schemas/CodeGerant'
+    Accueil:
+      type: object
+      properties:
+        profil:
+          type: string
+        ecran:
+          $ref: '#/components/schemas/EcranEnum'
+        contenu:
+          type: object
+          additionalProperties: {}
+          description: Ce que l'écran d'arrivée affiche.
+      required:
+      - contenu
+      - ecran
+      - profil
     AchatCourantEnum:
       enum:
       - bois
@@ -5212,6 +5242,20 @@ components:
       - clients
       - nombre
       - total
+    EcranEnum:
+      enum:
+      - administration
+      - ma_caisse
+      - ma_semaine
+      - plan_du_jour
+      - tableau_de_bord
+      type: string
+      description: |-
+        * `administration` - administration
+        * `ma_caisse` - ma_caisse
+        * `ma_semaine` - ma_semaine
+        * `plan_du_jour` - plan_du_jour
+        * `tableau_de_bord` - tableau_de_bord
     Emission:
       type: object
       properties:

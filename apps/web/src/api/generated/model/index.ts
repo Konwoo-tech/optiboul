@@ -8,6 +8,8 @@
 
 export * from './acces.ts';
 export * from './accord.ts';
+export * from './accueil.ts';
+export * from './accueilContenu.ts';
 export * from './achatCourantEnum.ts';
 export * from './affectations.ts';
 export * from './apercu.ts';
@@ -69,6 +71,7 @@ export * from './depensesListParams.ts';
 export * from './dette.ts';
 export * from './dettes.ts';
 export * from './detteStatutEnum.ts';
+export * from './ecranEnum.ts';
 export * from './emission.ts';
 export * from './encaissement.ts';
 export * from './encaissementEnregistre.ts';
