@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 # Codes qui ne sont pas des conflits d'état (409) : saisie invalide ou objet absent.
 STATUTS = {
+    "ligne_paie_inconnue": status.HTTP_404_NOT_FOUND,
     "manquant_inconnu": status.HTTP_404_NOT_FOUND,
     "justification_obligatoire": status.HTTP_400_BAD_REQUEST,
     "controle_inconnu": status.HTTP_404_NOT_FOUND,

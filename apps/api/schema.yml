@@ -1852,6 +1852,146 @@ paths:
               schema:
                 $ref: '#/components/schemas/Depense'
           description: ''
+  /api/v1/employes/:
+    get:
+      operationId: employes_list
+      description: 'Un employé n''est jamais supprimé : il est désactivé, ses paies
+        restent.'
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - employes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEmployeList'
+          description: ''
+    post:
+      operationId: employes_create
+      description: 'Un employé n''est jamais supprimé : il est désactivé, ses paies
+        restent.'
+      tags:
+      - employes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Employe'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Employe'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Employe'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employe'
+          description: ''
+  /api/v1/employes/{id}/:
+    get:
+      operationId: employes_retrieve
+      description: 'Un employé n''est jamais supprimé : il est désactivé, ses paies
+        restent.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) employé.
+        required: true
+      tags:
+      - employes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employe'
+          description: ''
+    put:
+      operationId: employes_update
+      description: 'Un employé n''est jamais supprimé : il est désactivé, ses paies
+        restent.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) employé.
+        required: true
+      tags:
+      - employes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Employe'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Employe'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Employe'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employe'
+          description: ''
+    patch:
+      operationId: employes_partial_update
+      description: 'Un employé n''est jamais supprimé : il est désactivé, ses paies
+        restent.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) employé.
+        required: true
+      tags:
+      - employes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmploye'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEmploye'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmploye'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employe'
+          description: ''
   /api/v1/encaissements/:
     get:
       operationId: encaissements_list
@@ -3185,6 +3325,123 @@ paths:
               schema:
                 type: string
                 format: binary
+          description: ''
+  /api/v1/paies/:
+    get:
+      operationId: paies_list
+      description: États de paie du plus récent au plus ancien.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - paies
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEtatPaieList'
+          description: ''
+  /api/v1/paies/{id}/:
+    get:
+      operationId: paies_retrieve
+      description: États de paie du plus récent au plus ancien.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) état de paie.
+        required: true
+      tags:
+      - paies
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EtatPaie'
+          description: ''
+  /api/v1/paies/lignes/{ligne}/:
+    put:
+      operationId: paies_lignes_update
+      description: Absences et avances, tant que l'état est en brouillon.
+      parameters:
+      - in: path
+        name: ligne
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - paies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifierLigne'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ModifierLigne'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ModifierLigne'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LignePaie'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/paies/preparer/:
+    post:
+      operationId: paies_preparer_create
+      description: 'Le brouillon du mois : une ligne par employé actif.'
+      tags:
+      - paies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Preparer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Preparer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Preparer'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EtatPaie'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
           description: ''
   /api/v1/parametres/:
     get:
@@ -6055,6 +6312,37 @@ components:
       - motif
       - objet_id
       - type
+    Employe:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          maxLength: 150
+        poste:
+          type: string
+          maxLength: 100
+        telephone:
+          type: string
+          title: Téléphone
+          maxLength: 20
+        salaire_base:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Salaire de base (FCFA)
+        utilisateur:
+          type: integer
+          nullable: true
+          title: Compte
+        actif:
+          type: boolean
+      required:
+      - id
+      - nom
+      - salaire_base
     Encaissement:
       type: object
       properties:
@@ -6262,6 +6550,33 @@ components:
       required:
       - codesSecoursRestants
       - totp
+    EtatPaie:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        mois:
+          type: string
+          format: date
+          readOnly: true
+        statut:
+          type: string
+          readOnly: true
+        total_net:
+          type: integer
+          readOnly: true
+        lignes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LignePaie'
+          readOnly: true
+      required:
+      - id
+      - lignes
+      - mois
+      - statut
+      - total_net
     EtatSauvegardes:
       type: object
       properties:
@@ -6856,6 +7171,56 @@ components:
       - montant
       - prix_unitaire
       - quantite
+    LignePaie:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        employe:
+          type: string
+        base:
+          type: integer
+          readOnly: true
+          title: Base (FCFA)
+        absences:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          readOnly: true
+          title: Jours d'absence
+        montant_absences:
+          type: integer
+          readOnly: true
+        avances:
+          type: integer
+          readOnly: true
+          title: Avances (FCFA)
+        penalites:
+          type: integer
+          readOnly: true
+        gains:
+          type: integer
+          readOnly: true
+        impaye:
+          type: integer
+          readOnly: true
+          title: Impayé antérieur (FCFA)
+        net:
+          type: integer
+          description: Base, moins absences, avances et pénalités, plus gains et impayé.
+          readOnly: true
+      required:
+      - absences
+      - avances
+      - base
+      - employe
+      - gains
+      - id
+      - impaye
+      - montant_absences
+      - net
+      - penalites
     LignePlan:
       type: object
       properties:
@@ -7273,6 +7638,18 @@ components:
         valeur: {}
       required:
       - valeur
+    ModifierLigne:
+      type: object
+      properties:
+        absences:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+        avances:
+          type: integer
+      required:
+      - absences
+      - avances
     MotDePasseOublie:
       type: object
       properties:
@@ -7799,6 +8176,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Depense'
+    PaginatedEmployeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Employe'
     PaginatedEncaissementList:
       type: object
       required:
@@ -7822,6 +8222,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Encaissement'
+    PaginatedEtatPaieList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EtatPaie'
     PaginatedFactureList:
       type: object
       required:
@@ -8483,6 +8906,33 @@ components:
           description: 'Prix appliqués à la livraison : le tarif du client, sinon
             le prix de base.'
           readOnly: true
+    PatchedEmploye:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          maxLength: 150
+        poste:
+          type: string
+          maxLength: 100
+        telephone:
+          type: string
+          title: Téléphone
+          maxLength: 20
+        salaire_base:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Salaire de base (FCFA)
+        utilisateur:
+          type: integer
+          nullable: true
+          title: Compte
+        actif:
+          type: boolean
     PatchedFournisseur:
       type: object
       properties:
@@ -8862,6 +9312,15 @@ components:
       - engage
       - plafond
       - reste
+    Preparer:
+      type: object
+      properties:
+        mois:
+          type: string
+          format: date
+          description: Un jour du mois de paie.
+      required:
+      - mois
     Probleme:
       type: object
       properties:
