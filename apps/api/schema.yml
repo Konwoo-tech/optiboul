@@ -1636,6 +1636,64 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/envois/:
+    get:
+      operationId: envois_list
+      description: 'La file d''envoi (O15) : chaque message, son état et ses tentatives.'
+      parameters:
+      - in: query
+        name: canal
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - in: query
+        name: statut
+        schema:
+          type: string
+          enum:
+          - echec
+          - en_attente
+          - envoye
+      tags:
+      - envois
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMessageList'
+          description: ''
+  /api/v1/envois/{id}/relancer/:
+    post:
+      operationId: envois_relancer_create
+      description: Un message en échec repart dans la file, ses tentatives remises
+        à zéro.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) message à
+          envoyer.
+        required: true
+      tags:
+      - envois
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+          description: ''
   /api/v1/envois/etat/:
     get:
       operationId: envois_etat_retrieve
@@ -5494,7 +5552,7 @@ components:
           readOnly: true
         statut:
           allOf:
-          - $ref: '#/components/schemas/EnvoiStatutEnum'
+          - $ref: '#/components/schemas/StatutEnvoiEnum'
           readOnly: true
         cree_le:
           type: string
@@ -5521,16 +5579,6 @@ components:
           $ref: '#/components/schemas/CanalEnum'
       required:
       - canal
-    EnvoiStatutEnum:
-      enum:
-      - en_attente
-      - envoye
-      - echec
-      type: string
-      description: |-
-        * `en_attente` - en_attente
-        * `envoye` - envoye
-        * `echec` - echec
     Especes:
       type: object
       properties:
@@ -6274,6 +6322,78 @@ components:
       - matiere
       - reelle
       - theorique
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        canal:
+          allOf:
+          - $ref: '#/components/schemas/CanalEnvoiEnum'
+          readOnly: true
+        destinataire:
+          type: string
+          description: Numéro masqué ; une adresse e-mail reste lisible.
+          readOnly: true
+        sujet:
+          type: string
+          readOnly: true
+        statut:
+          allOf:
+          - $ref: '#/components/schemas/StatutEnvoiEnum'
+          readOnly: true
+        tentatives:
+          type: integer
+          readOnly: true
+        prochain_essai:
+          type: string
+          format: date-time
+          readOnly: true
+        derniere_tentative:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Dernière tentative
+        derniere_erreur:
+          type: string
+          readOnly: true
+          title: Dernière erreur
+        objet_type:
+          type: string
+          readOnly: true
+          title: Type de l'objet
+        objet_id:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Objet
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+        envoye_le:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Envoyé le
+      required:
+      - canal
+      - cree_le
+      - derniere_erreur
+      - derniere_tentative
+      - destinataire
+      - envoye_le
+      - id
+      - objet_id
+      - objet_type
+      - prochain_essai
+      - statut
+      - sujet
+      - tentatives
     ModePaiementEnum:
       enum:
       - especes
@@ -6932,6 +7052,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Livraison'
+    PaginatedMessageList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
     PaginatedMouvementInterneList:
       type: object
       required:
@@ -8594,6 +8737,16 @@ components:
           format: date
         creneau:
           $ref: '#/components/schemas/CreneauEnum'
+    StatutEnvoiEnum:
+      enum:
+      - en_attente
+      - envoye
+      - echec
+      type: string
+      description: |-
+        * `en_attente` - en_attente
+        * `envoye` - envoye
+        * `echec` - echec
     Stock:
       type: object
       properties:

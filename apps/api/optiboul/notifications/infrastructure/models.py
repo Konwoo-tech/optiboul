@@ -9,6 +9,7 @@ from optiboul.notifications.domain.envois import Canal
 from optiboul.notifications.domain.envois import StatutEnvoi
 
 CANAUX = [(c.value, c.value) for c in Canal]
+STATUTS_ENVOI = [(s.value, s.value) for s in StatutEnvoi]
 
 
 class Notification(models.Model):
@@ -51,7 +52,7 @@ class MessageSortant(models.Model):
     statut = models.CharField(
         _("statut"),
         max_length=12,
-        choices=[(s.value, s.value) for s in StatutEnvoi],
+        choices=STATUTS_ENVOI,
         default=StatutEnvoi.EN_ATTENTE,
         db_index=True,
     )

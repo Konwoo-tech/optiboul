@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { CanalEnvoiEnum } from './canalEnvoiEnum.ts';
-import type { EnvoiStatutEnum } from './envoiStatutEnum.ts';
+import type { StatutEnvoiEnum } from './statutEnvoiEnum.ts';
 
 /**
  * État d'un envoi de la file : en attente, envoyé, échec (O15).
@@ -15,7 +15,7 @@ export interface Envoi {
   readonly id: number;
   readonly canal: CanalEnvoiEnum;
   readonly destinataire: string;
-  readonly statut: EnvoiStatutEnum;
+  readonly statut: StatutEnvoiEnum;
   readonly cree_le: string;
   /** @nullable */
   readonly envoye_le: string | null;

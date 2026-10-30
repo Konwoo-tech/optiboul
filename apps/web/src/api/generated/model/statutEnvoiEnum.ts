@@ -11,10 +11,10 @@
  * * `envoye` - envoye
  * * `echec` - echec
  */
-export type EnvoiStatutEnum = typeof EnvoiStatutEnum[keyof typeof EnvoiStatutEnum];
+export type StatutEnvoiEnum = typeof StatutEnvoiEnum[keyof typeof StatutEnvoiEnum];
 
 
-export const EnvoiStatutEnum = {
+export const StatutEnvoiEnum = {
   en_attente: 'en_attente',
   envoye: 'envoye',
   echec: 'echec',
