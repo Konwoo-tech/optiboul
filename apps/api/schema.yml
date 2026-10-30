@@ -1361,6 +1361,141 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/fournisseurs/:
+    get:
+      operationId: fournisseurs_list
+      description: 'Un fournisseur n''est jamais supprimé : il est désactivé.'
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - fournisseurs
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFournisseurList'
+          description: ''
+    post:
+      operationId: fournisseurs_create
+      description: 'Un fournisseur n''est jamais supprimé : il est désactivé.'
+      tags:
+      - fournisseurs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fournisseur'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Fournisseur'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Fournisseur'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fournisseur'
+          description: ''
+  /api/v1/fournisseurs/{id}/:
+    get:
+      operationId: fournisseurs_retrieve
+      description: 'Un fournisseur n''est jamais supprimé : il est désactivé.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) fournisseur.
+        required: true
+      tags:
+      - fournisseurs
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fournisseur'
+          description: ''
+    put:
+      operationId: fournisseurs_update
+      description: 'Un fournisseur n''est jamais supprimé : il est désactivé.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) fournisseur.
+        required: true
+      tags:
+      - fournisseurs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fournisseur'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Fournisseur'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Fournisseur'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fournisseur'
+          description: ''
+    patch:
+      operationId: fournisseurs_partial_update
+      description: 'Un fournisseur n''est jamais supprimé : il est désactivé.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) fournisseur.
+        required: true
+      tags:
+      - fournisseurs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFournisseur'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFournisseur'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFournisseur'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fournisseur'
+          description: ''
   /api/v1/groupes/:
     get:
       operationId: groupes_list
@@ -2723,6 +2858,115 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/receptions-planifiees/:
+    get:
+      operationId: receptions_planifiees_list
+      parameters:
+      - in: query
+        name: fournisseur
+        schema:
+          type: integer
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - in: query
+        name: statut
+        schema:
+          type: string
+          enum:
+          - annulee
+          - planifiee
+          - recue
+      tags:
+      - receptions-planifiees
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReceptionPlanifieeList'
+          description: ''
+    post:
+      operationId: receptions_planifiees_create
+      description: 'Le gérant planifie : fournisseur, matière, quantité, date prévue.'
+      tags:
+      - receptions-planifiees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceptionPlanifiee'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReceptionPlanifiee'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReceptionPlanifiee'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceptionPlanifiee'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/receptions-planifiees/{id}/:
+    get:
+      operationId: receptions_planifiees_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) réception
+          planifiée.
+        required: true
+      tags:
+      - receptions-planifiees
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceptionPlanifiee'
+          description: ''
+  /api/v1/receptions-planifiees/{id}/annuler/:
+    post:
+      operationId: receptions_planifiees_annuler_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) réception
+          planifiée.
+        required: true
+      tags:
+      - receptions-planifiees
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceptionPlanifiee'
           description: ''
   /api/v1/regles-notification/:
     get:
@@ -4520,6 +4764,39 @@ components:
       - pains
       - produit
       - saisie_le
+    Fournisseur:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          maxLength: 150
+        telephone:
+          type: string
+          title: Téléphone
+          maxLength: 20
+        conditions:
+          type: string
+          title: Conditions de paiement
+          maxLength: 255
+        matieres:
+          type: array
+          items:
+            type: string
+        actif:
+          type: boolean
+        prochaine_reception:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          readOnly: true
+      required:
+      - id
+      - matieres
+      - nom
+      - prochaine_reception
     Groupe:
       type: object
       properties:
@@ -5379,6 +5656,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Fiche'
+    PaginatedFournisseurList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Fournisseur'
     PaginatedGroupeList:
       type: object
       required:
@@ -5559,6 +5859,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Produit'
+    PaginatedReceptionPlanifieeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReceptionPlanifiee'
     PaginatedRelanceList:
       type: object
       required:
@@ -5758,6 +6081,34 @@ components:
             nullable: true
           description: 'Prix appliqués à la livraison : le tarif du client, sinon
             le prix de base.'
+          readOnly: true
+    PatchedFournisseur:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          maxLength: 150
+        telephone:
+          type: string
+          title: Téléphone
+          maxLength: 20
+        conditions:
+          type: string
+          title: Conditions de paiement
+          maxLength: 255
+        matieres:
+          type: array
+          items:
+            type: string
+        actif:
+          type: boolean
+        prochaine_reception:
+          type: object
+          additionalProperties: {}
+          nullable: true
           readOnly: true
     PatchedGroupe:
       type: object
@@ -6292,6 +6643,49 @@ components:
       required:
       - automatique
       - cree_le
+      - statut
+    ReceptionPlanifiee:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        fournisseur:
+          type: integer
+        fournisseur_nom:
+          type: string
+          readOnly: true
+        matiere:
+          type: string
+        quantite:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          title: Quantité prévue
+        prevue_le:
+          type: string
+          format: date
+          title: Date prévue
+        statut:
+          type: string
+          readOnly: true
+        planifiee_par:
+          type: string
+          readOnly: true
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Planifiée le
+      required:
+      - cree_le
+      - fournisseur
+      - fournisseur_nom
+      - id
+      - matiere
+      - planifiee_par
+      - prevue_le
+      - quantite
       - statut
     Refus:
       type: object
