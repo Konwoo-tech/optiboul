@@ -30,6 +30,9 @@ from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.api.permissions import profil_de
 from optiboul.core.domain.erreurs import RefusMetier
+from optiboul.core.infrastructure.parametres import parametre
+from optiboul.demandes.domain.demandes import numero_affiche as numero_affiche_demande
+from optiboul.demandes.infrastructure.models import Demande
 from optiboul.depenses.application import depenses as cas
 from optiboul.depenses.application.depenses import SAISISSENT
 from optiboul.depenses.domain.depenses import AchatCourant
@@ -56,6 +59,7 @@ TYPES_JUSTIFICATIF = ("image/", "application/pdf")
 
 class DepenseSerializer(serializers.ModelSerializer[Depense]):
     code = serializers.SerializerMethodField()
+    demande = serializers.SerializerMethodField()
     matiere = serializers.CharField(
         source="matiere.code",
         allow_null=True,
@@ -85,11 +89,21 @@ class DepenseSerializer(serializers.ModelSerializer[Depense]):
             "achat_courant",
             "pre_autorisation",
             "statut",
+            "demande",
             "auteur",
             "auteur_profil",
             "cree_le",
         ]
         read_only_fields = fields
+
+    def get_demande(self, depense: Depense) -> str | None:
+        """DEM-xxx de la demande d'accord, au-dessus du seuil (R8)."""
+        numero = (
+            Demande.objects.filter(type="depense", objet_id=depense.pk)
+            .values_list("numero", flat=True)
+            .first()
+        )
+        return numero_affiche_demande(numero) if numero is not None else None
 
     def get_code(self, depense: Depense) -> str:
         """« DEP-0042 »."""
@@ -266,6 +280,7 @@ class DepensesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
                     justificatif=corps.validated_data.get("justificatif"),
                     auteur=auteur_de(request),
                     maintenant=timezone.now(),
+                    seuil=parametre("seuil_validation_depenses"),
                 )
         except RefusMetier as refus:
             return probleme(refus)

@@ -44,6 +44,7 @@ class EtatDepense:
     numero: int
     statut: StatutDepense
     pre_autorisee: bool = False
+    demande: str = ""  # DEP au-dessus du seuil : DEM-xxx
 
     @property
     def code(self) -> str:
@@ -85,6 +86,34 @@ class DepotDepenses(Protocol):
 
     def plafonds(self, semaine: int) -> dict[str, int]: ...
 
+    def verrouiller_soumise(self, depense_id: int) -> DepenseSoumise | None:
+        """La dépense en attente d'accord, verrouillée."""
+        ...
+
+    def marquer(self, depense_id: int, statut: StatutDepense) -> None: ...
+
+
+@dataclass(frozen=True)
+class DepenseSoumise:
+    depense: NouvelleDepense
+    numero: int
+    caisse: int | None
+    semaine: int
+    auteur: int
+
+
+class Autorisations(Protocol):
+    def demander(
+        self,
+        depense_id: int,
+        *,
+        motif: str,
+        auteur: Auteur,
+        maintenant: datetime,
+    ) -> str:
+        """Émet la demande « dépense au-dessus du seuil » ; renvoie DEM-xxx."""
+        ...
+
 
 class Numeros(Protocol):
     def prochain(self, nom: str) -> int: ...
@@ -98,6 +127,7 @@ class Depots:
     semaines: DepotSemaines
     numeros: Numeros
     journal: Journal
+    autorisations: Autorisations
 
 
 def _caisse_qui_paie(depots: Depots, auteur: Auteur) -> int:
@@ -121,11 +151,15 @@ def saisir(  # noqa: PLR0913
     justificatif: Any,
     auteur: Auteur,
     maintenant: datetime,
-    statut: StatutDepense = StatutDepense.VALIDEE,
+    seuil: int | None = None,
     entree_en_stock: bool = True,
 ) -> EtatDepense:
     """DEP-xxxx rattachée à la semaine ouverte (R1) et à la production, à la semaine
-    ou au stock ; un achat en stock crée l'entrée, la caisse paie si choisie."""
+    ou au stock ; un achat en stock crée l'entrée, la caisse paie si choisie.
+
+    Au-delà du seuil (R8) et hors pré-autorisation, la dépense attend l'accord du
+    gérant (dépense de la caisse) ou du propriétaire (dépense du gérant) ; caisse et
+    stock ne bougent qu'à l'accord."""
     if auteur.profil not in SAISISSENT or auteur.utilisateur_id is None:
         message = "Votre profil ne saisit pas de dépense."
         raise RefusMetier("droit_insuffisant", message)
@@ -149,6 +183,10 @@ def saisir(  # noqa: PLR0913
             depense.montant,
         ):
             pre_autorisation = trouvee[0]
+    soumise = (
+        seuil is not None and depense.montant >= seuil and pre_autorisation is None
+    )
+    statut = StatutDepense.EN_ATTENTE if soumise else StatutDepense.VALIDEE
     numero = depots.numeros.prochain(SEQUENCE_DEPENSES)
     depense_id = depots.depenses.creer(
         numero=numero,
@@ -164,12 +202,71 @@ def saisir(  # noqa: PLR0913
         auteur=auteur,
         le=maintenant,
     )
+    demande = ""
+    if soumise:
+        demande = depots.autorisations.demander(
+            depense_id,
+            motif=f"{numero_affiche(numero)} · {depense.libelle.strip()}",
+            auteur=auteur,
+            maintenant=maintenant,
+        )
+    else:
+        _mouvementer(
+            depots,
+            depense=depense,
+            depense_id=depense_id,
+            numero=numero,
+            caisse=caisse,
+            semaine=semaine.id,
+            auteur=auteur.utilisateur_id,
+            entree_en_stock=entree_en_stock,
+        )
+    etat = EtatDepense(
+        depense_id,
+        numero,
+        statut,
+        pre_autorisation is not None,
+        demande,
+    )
+    depots.journal.enregistrer(
+        Evenement(
+            action="depense.saisie",
+            auteur=auteur,
+            objet_type="depense",
+            objet_id=str(depense_id),
+            apres={
+                "numero": etat.code,
+                "categorie": depense.categorie,
+                "montant": depense.montant,
+                "paye_par": depense.paye_par,
+                "rattachement": depense.rattachement,
+                "statut": statut,
+                "pre_autorisee": etat.pre_autorisee,
+                "demande": demande,
+            },
+        ),
+    )
+    return etat
+
+
+def _mouvementer(  # noqa: PLR0913
+    depots: Depots,
+    *,
+    depense: NouvelleDepense,
+    depense_id: int,
+    numero: int,
+    caisse: int | None,
+    semaine: int,
+    auteur: int,
+    entree_en_stock: bool = True,
+) -> None:
+    """La caisse paie si choisie ; un achat rattaché au stock entre en stock."""
     if caisse is not None:
         depots.caisses.ajouter_mouvement(
             caisse,
             genre=GenreMouvement.DEPENSE,
             montant=depense.montant,
-            auteur=auteur.utilisateur_id,
+            auteur=auteur,
             libelle=numero_affiche(numero),
             receveur=None,
         )
@@ -185,29 +282,57 @@ def saisir(  # noqa: PLR0913
             genre=GenreMouvementStock.ACHAT,
             source_type="depense",
             source_id=depense_id,
-            semaine=semaine.id,
-            auteur=auteur.utilisateur_id,
+            semaine=semaine,
+            auteur=auteur,
             motif=depense.fournisseur.strip(),
         )
-    etat = EtatDepense(depense_id, numero, statut, pre_autorisation is not None)
+
+
+def valideurs(profil_emetteur: str) -> tuple[str, ...]:
+    """R8 : le gérant valide pour la caisse et la production, le propriétaire pour
+    le gérant."""
+    return ("proprietaire",) if profil_emetteur == "gerant" else ("gerant",)
+
+
+def conclure(
+    depots: Depots,
+    *,
+    depense_id: int,
+    accord: bool,
+    decideur: Auteur,
+) -> None:
+    """La demande tranchée : accordée, la caisse et le stock bougent ; refusée, rien."""
+    soumise = depots.depenses.verrouiller_soumise(depense_id)
+    if soumise is None:
+        message = "Cette dépense n'attend plus de décision."
+        raise RefusMetier("depense_non_en_attente", message)
+    if accord:
+        if soumise.caisse is not None:
+            caisse = depots.caisses.verrouiller(soumise.caisse)
+            if caisse is None or not peut_saisir(caisse.statut):
+                message = "La caisse de cette dépense est fermée : faites-la rouvrir."
+                raise RefusMetier("caisse_fermee", message)
+        _mouvementer(
+            depots,
+            depense=soumise.depense,
+            depense_id=depense_id,
+            numero=soumise.numero,
+            caisse=soumise.caisse,
+            semaine=soumise.semaine,
+            auteur=soumise.auteur,
+        )
+    statut = StatutDepense.VALIDEE if accord else StatutDepense.REFUSEE
+    depots.depenses.marquer(depense_id, statut)
     depots.journal.enregistrer(
         Evenement(
-            action="depense.saisie",
-            auteur=auteur,
+            action=f"depense.{'validee' if accord else 'refusee'}",
+            auteur=decideur,
             objet_type="depense",
             objet_id=str(depense_id),
-            apres={
-                "numero": etat.code,
-                "categorie": depense.categorie,
-                "montant": depense.montant,
-                "paye_par": depense.paye_par,
-                "rattachement": depense.rattachement,
-                "statut": statut,
-                "pre_autorisee": etat.pre_autorisee,
-            },
+            avant={"statut": StatutDepense.EN_ATTENTE},
+            apres={"statut": statut},
         ),
     )
-    return etat
 
 
 FIXENT_LES_PRE_AUTORISATIONS = frozenset({"gerant", "proprietaire"})

@@ -11,10 +11,17 @@ from optiboul.caisse.infrastructure.caisses import depot_caisses
 from optiboul.core.infrastructure.journal import journal
 from optiboul.core.infrastructure.numeros import numeros
 from optiboul.core.infrastructure.semaines import depot_semaines
+from optiboul.depenses.application.depenses import DepenseSoumise
 from optiboul.depenses.application.depenses import Depots
+from optiboul.depenses.domain.depenses import Categorie
+from optiboul.depenses.domain.depenses import NouvelleDepense
+from optiboul.depenses.domain.depenses import PayePar
+from optiboul.depenses.domain.depenses import Rattachement
+from optiboul.depenses.domain.depenses import StatutDepense
 from optiboul.stocks.infrastructure.models import Matiere
 from optiboul.stocks.infrastructure.stocks import stock
 
+from .autorisations import autorisations
 from .models import Depense
 from .models import PreAutorisation
 
@@ -22,8 +29,6 @@ if TYPE_CHECKING:
     from datetime import datetime
 
     from optiboul.core.application.journal import Auteur
-    from optiboul.depenses.domain.depenses import NouvelleDepense
-    from optiboul.depenses.domain.depenses import StatutDepense
     from optiboul.ventes.domain.commandes import Session
 
 
@@ -110,6 +115,36 @@ class DepotDepensesDjango:
             ),
         )
 
+    def verrouiller_soumise(self, depense_id: int) -> DepenseSoumise | None:
+        depense = (
+            Depense.objects.select_for_update(of=("self",))
+            .select_related("matiere")
+            .filter(pk=depense_id, statut=StatutDepense.EN_ATTENTE)
+            .first()
+        )
+        if depense is None:
+            return None
+        return DepenseSoumise(
+            depense=NouvelleDepense(
+                categorie=Categorie(depense.categorie),
+                libelle=depense.libelle,
+                montant=depense.montant,
+                paye_par=PayePar(depense.paye_par),
+                rattachement=Rattachement(depense.rattachement),
+                matiere=depense.matiere.code if depense.matiere else "",
+                quantite=depense.quantite,
+                fournisseur=depense.fournisseur,
+                achat_courant=depense.achat_courant,
+            ),
+            numero=depense.numero,
+            caisse=depense.caisse_id,
+            semaine=depense.semaine_id,
+            auteur=depense.auteur_id,
+        )
+
+    def marquer(self, depense_id: int, statut: StatutDepense) -> None:
+        Depense.objects.filter(pk=depense_id).update(statut=statut)
+
 
 def engage(pre: PreAutorisation) -> int:
     """Dépenses non refusées rattachées à la pré-autorisation, en FCFA."""
@@ -128,4 +163,5 @@ depots = Depots(
     semaines=depot_semaines,
     numeros=numeros,
     journal=journal,
+    autorisations=autorisations,
 )

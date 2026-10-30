@@ -4876,6 +4876,11 @@ components:
         statut:
           type: string
           readOnly: true
+        demande:
+          type: string
+          nullable: true
+          description: DEM-xxx de la demande d'accord, au-dessus du seuil (R8).
+          readOnly: true
         auteur:
           type: string
         auteur_profil:
@@ -4895,6 +4900,7 @@ components:
       - categorie
       - code
       - cree_le
+      - demande
       - fournisseur
       - id
       - justificatif

@@ -39,6 +39,11 @@ export interface Depense {
   /** @nullable */
   readonly pre_autorisation: number | null;
   readonly statut: string;
+  /**
+     * DEM-xxx de la demande d'accord, au-dessus du seuil (R8).
+     * @nullable
+     */
+  readonly demande: string | null;
   auteur: string;
   readonly auteur_profil: string;
   readonly cree_le: string;
