@@ -12,4 +12,8 @@ export interface Especes {
   depenses: number;
   remises: number;
   attendu: number;
+  /** Plafond d'espèces en caisse (R18). */
+  plafond: number;
+  /** Au-delà du plafond : tout sauf le fonds ; 0 sinon. */
+  remise_proposee: number;
 }

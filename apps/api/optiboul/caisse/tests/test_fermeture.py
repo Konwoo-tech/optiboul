@@ -68,6 +68,8 @@ def test_detail_des_especes(client_de, caisse, caissiere, gerant):
         "depenses": 5_000,
         "remises": 100_000,
         "attendu": 77_500,
+        "plafond": 100_000,
+        "remise_proposee": 0,
     }
 
 

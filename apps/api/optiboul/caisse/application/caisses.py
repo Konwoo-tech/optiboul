@@ -372,3 +372,56 @@ def rouvrir(
         lien="/comptoir/caisses",
     )
     return _caisse(depots, caisse_id)
+
+
+REMETTENT = frozenset({"caissier", "gerant"})
+RECOIVENT = frozenset({"gerant", "proprietaire"})
+
+
+def remettre(  # noqa: PLR0913
+    depots: Depots,
+    *,
+    caisse_id: int,
+    montant: int,
+    receveur: int | None,
+    auteur: Auteur,
+    maintenant: datetime,
+) -> Especes:
+    """Remise au coffre ou au gérant (O4, R18) : montant, heure et receveur tracés ;
+    elle sort de l'attendu de la fermeture."""
+    caisse = _caisse(depots, caisse_id, verrou=True)
+    sienne = auteur.profil == "caissier" and auteur.utilisateur_id == caisse.caissiere
+    if not (sienne or auteur.profil == "gerant"):
+        message = "Seuls la caissière de cette caisse et le gérant font une remise."
+        raise RefusMetier("droit_insuffisant", message)
+    if receveur is not None and depots.semaines.profil(receveur) not in RECOIVENT:
+        message = "Le receveur est le coffre, le gérant ou le propriétaire."
+        raise RefusMetier("receveur_invalide", message)
+    disponible = especes(depots, caisse_id).attendu
+    if montant > disponible:
+        message = f"Il n'y a que {disponible} FCFA d'espèces dans la caisse."
+        raise RefusMetier("montant_invalide", message, disponible=disponible)
+    enregistrer_mouvement(
+        depots,
+        caisse_id=caisse_id,
+        genre=GenreMouvement.REMISE,
+        montant=montant,
+        auteur=auteur,
+        libelle="Remise au coffre" if receveur is None else "Remise au gérant",
+        receveur=receveur,
+    )
+    depots.journal.enregistrer(
+        Evenement(
+            action="caisse.remise",
+            auteur=auteur,
+            objet_type="caisse",
+            objet_id=str(caisse_id),
+            apres={
+                "montant": montant,
+                "receveur": receveur,
+                "vers": "coffre" if receveur is None else "personne",
+                "heure": maintenant.isoformat(),
+            },
+        ),
+    )
+    return especes(depots, caisse_id)

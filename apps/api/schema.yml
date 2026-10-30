@@ -246,6 +246,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/caisses/{id}/remettre/:
+    post:
+      operationId: caisses_remettre_create
+      description: Remise au coffre ou au gérant (O4) ; receveur et heure tracés.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Clé unique de l'opération, générée par l'application web.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) caisse.
+        required: true
+      tags:
+      - caisses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Remise'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Remise'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Remise'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Especes'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/caisses/{id}/rouvrir/:
     post:
       operationId: caisses_rouvrir_create
@@ -5241,11 +5287,19 @@ components:
           type: integer
         attendu:
           type: integer
+        plafond:
+          type: integer
+          description: Plafond d'espèces en caisse (R18).
+        remise_proposee:
+          type: integer
+          description: 'Au-delà du plafond : tout sauf le fonds ; 0 sinon.'
       required:
       - attendu
       - depenses
       - especes
       - fonds
+      - plafond
+      - remise_proposee
       - remises
     EtatMfa:
       type: object
@@ -7769,6 +7823,18 @@ components:
       description: |-
         * `dette` - dette
         * `commande` - commande habituelle
+    Remise:
+      type: object
+      properties:
+        montant:
+          type: integer
+          minimum: 1
+        receveur:
+          type: integer
+          nullable: true
+          description: 'Le gérant ou le propriétaire qui reçoit ; vide : le coffre.'
+      required:
+      - montant
     Reouverture:
       type: object
       properties:

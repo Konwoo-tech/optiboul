@@ -74,3 +74,8 @@ def totaux(mouvements: list[tuple[GenreMouvement, int]]) -> dict[GenreMouvement,
 def peut_saisir(statut: StatutCaisse) -> bool:
     """La fermeture verrouille toutes les saisies de la caisse (CdC §5.2)."""
     return statut in EN_COURS
+
+
+def remise_proposee(attendu: int, fonds: int, plafond: int) -> int:
+    """R18 : au-delà du plafond d'espèces, remettre tout sauf le fonds de caisse."""
+    return max(0, attendu - fonds) if attendu > plafond else 0

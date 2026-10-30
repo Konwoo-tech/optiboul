@@ -225,6 +225,7 @@ export * from './relanceEnvoi.ts';
 export * from './relanceGroupee.ts';
 export * from './relanceHabituels.ts';
 export * from './relanceMotifEnum.ts';
+export * from './remise.ts';
 export * from './reouverture.ts';
 export * from './reprise.ts';
 export * from './resteAProduire.ts';

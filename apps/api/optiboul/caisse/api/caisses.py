@@ -18,11 +18,14 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from optiboul.caisse.application import caisses as cas
+from optiboul.caisse.domain.caisses import remise_proposee
 from optiboul.caisse.infrastructure.caisses import depots
 from optiboul.caisse.infrastructure.models import Caisse
 from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.erreurs import ProblemeSerializer
 from optiboul.core.api.erreurs import probleme
+from optiboul.core.api.idempotence import PARAMETRE as IDEMPOTENCE
+from optiboul.core.api.idempotence import idempotent
 from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.api.permissions import profil_de
@@ -88,6 +91,28 @@ class EspecesSerializer(serializers.Serializer):
     depenses = serializers.IntegerField()
     remises = serializers.IntegerField()
     attendu = serializers.IntegerField()
+    plafond = serializers.IntegerField(help_text="Plafond d'espèces en caisse (R18).")
+    remise_proposee = serializers.IntegerField(
+        help_text="Au-delà du plafond : tout sauf le fonds ; 0 sinon.",
+    )
+
+
+class RemiseSerializer(serializers.Serializer):
+    montant = serializers.IntegerField(min_value=1)
+    receveur = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        help_text="Le gérant ou le propriétaire qui reçoit ; vide : le coffre.",
+    )
+
+
+def _especes(detail: cas.Especes) -> dict[str, int]:
+    plafond = parametre("plafond_especes")
+    return {
+        **vars(detail),
+        "plafond": plafond,
+        "remise_proposee": remise_proposee(detail.attendu, detail.fonds, plafond),
+    }
 
 
 class FermetureSerializer(serializers.Serializer):
@@ -174,7 +199,36 @@ class CaissesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     def especes(self, request: Request, pk: str) -> Response:
         """Fonds, espèces encaissées, dépenses, remises et attendu de la caisse."""
         detail = cas.especes(depots, self.get_object().pk)
-        return Response(EspecesSerializer(detail).data)
+        return Response(EspecesSerializer(_especes(detail)).data)
+
+    @extend_schema(
+        request=RemiseSerializer,
+        parameters=[IDEMPOTENCE],
+        responses={201: EspecesSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"])
+    @idempotent
+    def remettre(self, request: Request, pk: str) -> Response:
+        """Remise au coffre ou au gérant (O4) ; receveur et heure tracés."""
+        corps = RemiseSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        caisse_id = self.get_object().pk
+        try:
+            with transaction.atomic():
+                detail = cas.remettre(
+                    depots,
+                    caisse_id=caisse_id,
+                    montant=corps.validated_data["montant"],
+                    receveur=corps.validated_data.get("receveur"),
+                    auteur=auteur_de(request),
+                    maintenant=timezone.now(),
+                )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(
+            EspecesSerializer(_especes(detail)).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     @extend_schema(
         request=FermetureSerializer,
