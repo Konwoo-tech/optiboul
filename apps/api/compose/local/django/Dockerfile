@@ -33,11 +33,19 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock:rw \
     uv sync
 
+# Client PostgreSQL de la version du serveur : pg_dump refuse un serveur plus récent.
+RUN apt-get update && apt-get install --no-install-recommends -y ca-certificates curl \
+  && install -d /usr/share/postgresql-common/pgdg \
+  && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+    https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+  && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+    > /etc/apt/sources.list.d/pgdg.list
+
 # devcontainer dependencies and utils
 RUN apt-get update && apt-get install --no-install-recommends -y \
   sudo git bash-completion nano ssh \
   # sauvegardes de la base (pg_dump, US-142)
-  postgresql-client \
+  postgresql-client-16 \
   # PDF (WeasyPrint, spécification §4.1)
   libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0 fonts-dejavu-core
 

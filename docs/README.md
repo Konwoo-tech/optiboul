@@ -12,3 +12,5 @@
 > **Architecture : les ADR priment.** La spécification technique v3 décrit encore cinq applications web, `backend/` et `packages/`. Les décisions prises depuis font foi : `apps/api` (ADR-17), une seule application web `apps/web` à espaces selon le profil (ADR-18), pas d'application mobile (ADR-19), `apps/web` autonome (ADR-20).
 
 La documentation technique de l'API (Sphinx, générée par Cookiecutter Django) est dans [`apps/api/docs`](../apps/api/docs).
+
+Exploitation : [restaurer une sauvegarde](restauration.md).
