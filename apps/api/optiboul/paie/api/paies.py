@@ -165,6 +165,10 @@ class EtatPaieSerializer(serializers.ModelSerializer[EtatPaie]):
         return sum(calcul_de(ligne).net for ligne in etat.lignes.all())
 
 
+class DemandeDePaieSerializer(serializers.Serializer):
+    demande = serializers.CharField(help_text="DEM-xxx de la validation.")
+
+
 class PreparerSerializer(serializers.Serializer):
     mois = serializers.DateField(help_text="Un jour du mois de paie.")
 
@@ -210,6 +214,25 @@ class PaiesViewSet(
             EtatPaieSerializer(self.get_queryset().get(pk=etat)).data,
             status=status.HTTP_201_CREATED,
         )
+
+    @extend_schema(
+        request=None,
+        responses={200: DemandeDePaieSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"])
+    def soumettre(self, request: Request, pk: str) -> Response:
+        """Le brouillon part au propriétaire (CdC §5.9) ; une demande est liée."""
+        try:
+            with transaction.atomic():
+                demande = cas.soumettre(
+                    depots,
+                    etat_id=int(pk),
+                    auteur=auteur_de(request),
+                    maintenant=timezone.now(),
+                )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response({"demande": demande})
 
     @extend_schema(
         request=ModifierLigneSerializer,

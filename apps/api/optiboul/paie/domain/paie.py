@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from datetime import datetime
 from datetime import timedelta
 from decimal import ROUND_HALF_UP
 from decimal import Decimal
 from enum import StrEnum
 
 JOURS_DU_MOIS = 26
+DELAI_AVANT_PAIE = 2
 
 
 class GenreElement(StrEnum):
@@ -50,6 +52,15 @@ class Calcul:
             + self.gains
             + self.impaye
         )
+
+
+def echeance_validation(emise_le: datetime, jour_de_paie: int) -> datetime:
+    """Deux jours avant le jour de paie (CdC §5.9), ce mois-ci ou le suivant."""
+    limite = emise_le.replace(day=jour_de_paie) - timedelta(days=DELAI_AVANT_PAIE)
+    if limite > emise_le:
+        return limite
+    suivant = (emise_le.replace(day=1) + timedelta(days=31)).replace(day=jour_de_paie)
+    return suivant - timedelta(days=DELAI_AVANT_PAIE)
 
 
 def mois_precedent(mois: date) -> date:

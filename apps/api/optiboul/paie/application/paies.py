@@ -31,6 +31,12 @@ class DepotPaie(Protocol):
 
     def statut_de_la_ligne(self, ligne_id: int) -> StatutPaie | None: ...
 
+    def statut(self, etat_id: int) -> StatutPaie | None:
+        """Le statut de l'état, verrouillé."""
+        ...
+
+    def marquer(self, etat_id: int, statut: StatutPaie) -> None: ...
+
     def modifier_ligne(
         self,
         ligne_id: int,
@@ -63,10 +69,21 @@ class DepotPaie(Protocol):
     def retirer_element(self, element_id: int) -> None: ...
 
 
+class Autorisations(Protocol):
+    def demander(
+        self,
+        etat_id: int,
+        *,
+        auteur: Auteur,
+        maintenant: datetime,
+    ) -> str: ...
+
+
 @dataclass(frozen=True)
 class Depots:
     paie: DepotPaie
     journal: Journal
+    autorisations: Autorisations
 
 
 def _gerant(auteur: Auteur) -> int:
@@ -91,6 +108,47 @@ def preparer(depots: Depots, *, mois: date, auteur: Auteur) -> int:
         ),
     )
     return etat
+
+
+def soumettre(
+    depots: Depots,
+    *,
+    etat_id: int,
+    auteur: Auteur,
+    maintenant: datetime,
+) -> str:
+    """Le gérant soumet l'état ; le propriétaire le valide (CdC §5.9, §5.10)."""
+    _gerant(auteur)
+    statut = depots.paie.statut(etat_id)
+    if statut is None:
+        raise RefusMetier("paie_inconnue", "Cet état de paie n'existe pas.")
+    if statut is not StatutPaie.BROUILLON:
+        message = "L'état de paie n'est plus en brouillon."
+        raise RefusMetier("paie_non_brouillon", message)
+    depots.paie.marquer(etat_id, StatutPaie.SOUMIS)
+    depots.journal.enregistrer(
+        Evenement(
+            action="paie.soumise",
+            auteur=auteur,
+            objet_type="etat_paie",
+            objet_id=str(etat_id),
+            avant={"statut": StatutPaie.BROUILLON},
+            apres={"statut": StatutPaie.SOUMIS},
+        ),
+    )
+    return depots.autorisations.demander(
+        etat_id,
+        auteur=auteur,
+        maintenant=maintenant,
+    )
+
+
+def conclure(depots: Depots, *, etat_id: int, accord: bool) -> None:
+    """L'accord valide l'état ; le refus le rend au gérant, en brouillon."""
+    depots.paie.marquer(
+        etat_id,
+        StatutPaie.VALIDE if accord else StatutPaie.BROUILLON,
+    )
 
 
 def exiger_brouillon(depots: Depots, ligne_id: int) -> None:

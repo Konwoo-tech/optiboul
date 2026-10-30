@@ -76,6 +76,7 @@ export * from './coutDeRevient.ts';
 export * from './creneau.ts';
 export * from './creneauEnum.ts';
 export * from './demande.ts';
+export * from './demandeDePaie.ts';
 export * from './demandeEmetteur.ts';
 export * from './demandesListParams.ts';
 export * from './demandesListStatut.ts';

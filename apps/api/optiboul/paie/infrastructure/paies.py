@@ -4,11 +4,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.infrastructure.journal import journal
+from optiboul.core.infrastructure.parametres import parametre
+from optiboul.demandes.application import demandes as circuit
+from optiboul.demandes.application.demandes import ObjetLie
+from optiboul.demandes.application.demandes import TypeDemande
 from optiboul.paie.application.paies import Depots
+from optiboul.paie.application.paies import conclure
 from optiboul.paie.domain.paie import Calcul
 from optiboul.paie.domain.paie import GenreElement
 from optiboul.paie.domain.paie import StatutPaie
+from optiboul.paie.domain.paie import echeance_validation
 from optiboul.paie.domain.paie import montant_absences
 
 from .models import ElementPaie
@@ -18,7 +25,13 @@ from .models import LignePaie
 
 if TYPE_CHECKING:
     from datetime import date
+    from datetime import datetime
     from decimal import Decimal
+
+    from optiboul.core.application.journal import Auteur
+    from optiboul.demandes.application.demandes import EtatDemande
+
+PAIE = "paie"
 
 
 def calcul_de(ligne: LignePaie) -> Calcul:
@@ -52,6 +65,13 @@ class DepotPaieDjango:
             .first()
         )
         return StatutPaie(statut) if statut else None
+
+    def statut(self, etat_id: int) -> StatutPaie | None:
+        etat = EtatPaie.objects.select_for_update().filter(pk=etat_id).first()
+        return StatutPaie(etat.statut) if etat else None
+
+    def marquer(self, etat_id: int, statut: StatutPaie) -> None:
+        EtatPaie.objects.filter(pk=etat_id).update(statut=statut)
 
     def modifier_ligne(
         self,
@@ -107,4 +127,67 @@ class DepotPaieDjango:
         ElementPaie.objects.filter(pk=element_id).delete()
 
 
-depots = Depots(paie=DepotPaieDjango(), journal=journal)
+def _preparer(etat_id: int, auteur: Auteur) -> ObjetLie:
+    etat = EtatPaie.objects.filter(pk=etat_id, statut=StatutPaie.SOUMIS).first()
+    if etat is None:
+        raise RefusMetier("objet_inconnu", "Aucun état de paie à valider.")
+    lignes = etat.lignes.prefetch_related("elements")
+    total = sum(calcul_de(ligne).net for ligne in lignes)
+    return ObjetLie(
+        f"Paie de {etat.mois:%m/%Y}",
+        {"mois": etat.mois.isoformat(), "total_net": total, "lignes": len(lignes)},
+    )
+
+
+def _conclure(demande: EtatDemande, *, accord: bool) -> None:
+    conclure(depots, etat_id=demande.objet_id, accord=accord)
+
+
+def _echeance(emise_le: datetime) -> datetime:
+    return echeance_validation(emise_le, parametre("jour_de_paie"))
+
+
+TYPE_PAIE = TypeDemande(
+    cle=PAIE,
+    libelle="État de paie",
+    objet_type="etat_paie",
+    emetteurs=frozenset({"gerant"}),
+    valideurs=lambda profil: ("proprietaire",),
+    preparer=_preparer,
+    sur_accord=lambda demande, qui: _conclure(demande, accord=True),
+    sur_refus=lambda demande, qui: _conclure(demande, accord=False),
+    echeance=_echeance,
+    lien="/gestion/paie",
+)
+
+
+class AutorisationsDjango:
+    def demander(
+        self,
+        etat_id: int,
+        *,
+        auteur: Auteur,
+        maintenant: datetime,
+    ) -> str:
+        from optiboul.demandes.infrastructure.demandes import depots as depots_demandes  # noqa: PLC0415
+
+        etat = EtatPaie.objects.get(pk=etat_id)
+        return circuit.emettre(
+            depots_demandes,
+            type_cle=PAIE,
+            objet_id=etat_id,
+            motif=f"Paie de {etat.mois:%m/%Y} à valider",
+            auteur=auteur,
+            maintenant=maintenant,
+        ).code
+
+
+depots = Depots(
+    paie=DepotPaieDjango(),
+    journal=journal,
+    autorisations=AutorisationsDjango(),
+)
+
+
+def enregistrer() -> None:
+    circuit.enregistrer_type(TYPE_PAIE)

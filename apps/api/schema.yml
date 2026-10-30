@@ -3370,6 +3370,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/EtatPaie'
           description: ''
+  /api/v1/paies/{id}/soumettre/:
+    post:
+      operationId: paies_soumettre_create
+      description: Le brouillon part au propriétaire (CdC §5.9) ; une demande est
+        liée.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) état de paie.
+        required: true
+      tags:
+      - paies
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemandeDePaie'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/paies/elements/{element}/:
     put:
       operationId: paies_elements_update
@@ -6171,6 +6200,14 @@ components:
       - type_libelle
       - valideurs
       - via
+    DemandeDePaie:
+      type: object
+      properties:
+        demande:
+          type: string
+          description: DEM-xxx de la validation.
+      required:
+      - demande
     Depense:
       type: object
       properties:

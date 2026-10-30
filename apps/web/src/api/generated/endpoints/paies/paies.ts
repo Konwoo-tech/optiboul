@@ -25,6 +25,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  DemandeDePaie,
   ElementPaie,
   EtatPaie,
   LignePaie,
@@ -284,7 +285,96 @@ export function usePaiesRetrieve<TData = Awaited<ReturnType<typeof paiesRetrieve
 
 
 
-export type paiesElementsUpdateResponse200 = {
+export type paiesSoumettreCreateResponse200 = {
+  data: DemandeDePaie
+  status: 200
+}
+
+export type paiesSoumettreCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type paiesSoumettreCreateResponseSuccess = (paiesSoumettreCreateResponse200) & {
+  headers: Headers;
+};
+export type paiesSoumettreCreateResponseError = (paiesSoumettreCreateResponse409) & {
+  headers: Headers;
+};
+
+export type paiesSoumettreCreateResponse = (paiesSoumettreCreateResponseSuccess | paiesSoumettreCreateResponseError)
+
+export const getPaiesSoumettreCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/paies/${id}/soumettre/`
+}
+
+/**
+ * Le brouillon part au propriétaire (CdC §5.9) ; une demande est liée.
+ */
+export const paiesSoumettreCreate = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<paiesSoumettreCreateResponse> => {
+
+  return optiboulFetch<paiesSoumettreCreateResponse>(getPaiesSoumettreCreateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getPaiesSoumettreCreateMutationKey = () => ['paiesSoumettreCreate'] as const;
+
+export const getPaiesSoumettreCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesSoumettreCreate>>, TError,PaiesSoumettreCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof paiesSoumettreCreate>>, TError,PaiesSoumettreCreateMutationVariables, TContext> => {
+
+const mutationKey = getPaiesSoumettreCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof paiesSoumettreCreate>>, PaiesSoumettreCreateMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  paiesSoumettreCreate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PaiesSoumettreCreateMutationResult = NonNullable<Awaited<ReturnType<typeof paiesSoumettreCreate>>>
+
+    export type PaiesSoumettreCreateMutationError = Probleme
+    export type PaiesSoumettreCreateMutationVariables = {id: number}
+
+    export const usePaiesSoumettreCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesSoumettreCreate>>, TError,PaiesSoumettreCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof paiesSoumettreCreate>>,
+        TError,
+        PaiesSoumettreCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPaiesSoumettreCreateMutationOptions(options), queryClient);
+    }
+    export type paiesElementsUpdateResponse200 = {
   data: ElementPaie
   status: 200
 }

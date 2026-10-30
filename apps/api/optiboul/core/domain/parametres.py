@@ -281,6 +281,16 @@ CATALOGUE: tuple[Definition, ...] = (
         "O18",
     ),
     Definition(
+        "jour_de_paie",
+        "Jour de paie du mois",
+        Genre.ENTIER,
+        28,
+        "jour",
+        "Paie",
+        minimum=1,
+        maximum=28,
+    ),
+    Definition(
         "stock_sessions_bas",
         "Stock bas : sessions restantes",
         Genre.ENTIER,
