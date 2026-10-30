@@ -825,6 +825,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/Dettes'
           description: ''
+  /api/v1/clients/importer/:
+    post:
+      operationId: clients_importer_create
+      description: 'Reprise du classeur (US-150) : simuler, relire le rapport, confirmer.'
+      tags:
+      - clients
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportClasseur'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RapportImport'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/clients/relancer-groupe/:
     post:
       operationId: clients_relancer_groupe_create
@@ -6668,6 +6695,19 @@ components:
       - statut
       - telephone
       - type
+    DettePlafond:
+      type: object
+      properties:
+        nom:
+          type: string
+        dette:
+          type: integer
+        plafond:
+          type: integer
+      required:
+      - dette
+      - nom
+      - plafond
     DetteStatutEnum:
       enum:
       - a_jour
@@ -7333,6 +7373,19 @@ components:
       - client
       - nom
       - raison
+    ImportClasseur:
+      type: object
+      properties:
+        fichier:
+          type: string
+          format: uri
+          description: Feuilles « Clients » et « Tarifs ».
+        confirmer:
+          type: boolean
+          default: false
+          description: 'Faux par défaut : simulation, rien n''est gardé.'
+      required:
+      - fichier
     Indicateurs:
       type: object
       properties:
@@ -10180,6 +10233,32 @@ components:
       - automatique
       - cree_le
       - statut
+    RapportImport:
+      type: object
+      properties:
+        simulation:
+          type: boolean
+        clients:
+          type: integer
+        tarifs:
+          type: integer
+        soldes:
+          type: integer
+        rejets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rejet'
+        dettes_au_dela_du_plafond:
+          type: array
+          items:
+            $ref: '#/components/schemas/DettePlafond'
+      required:
+      - clients
+      - dettes_au_dela_du_plafond
+      - rejets
+      - simulation
+      - soldes
+      - tarifs
     RattachementEnum:
       enum:
       - production
@@ -10337,6 +10416,19 @@ components:
       - genre
       - libelle
       - profils
+    Rejet:
+      type: object
+      properties:
+        feuille:
+          type: string
+        ligne:
+          type: integer
+        raison:
+          type: string
+      required:
+      - feuille
+      - ligne
+      - raison
     Relance:
       type: object
       properties:

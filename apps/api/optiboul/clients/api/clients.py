@@ -25,6 +25,7 @@ from rest_framework import mixins
 from rest_framework import serializers
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
@@ -44,6 +45,7 @@ from optiboul.clients.infrastructure.relances import relancer_dettes
 from optiboul.clients.infrastructure.releves import envoyer as envoyer_le_releve
 from optiboul.clients.infrastructure.releves import pdf as pdf_releve
 from optiboul.clients.infrastructure.releves import releve_de
+from optiboul.clients.infrastructure.reprise import importer as importer_classeur
 from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.erreurs import ProblemeSerializer
 from optiboul.core.api.erreurs import probleme
@@ -246,6 +248,36 @@ class ReleveSerializer(serializers.Serializer):
     solde_final = serializers.IntegerField()
 
 
+class ImportClasseurSerializer(serializers.Serializer):
+    fichier = serializers.FileField(help_text="Feuilles « Clients » et « Tarifs ».")
+    confirmer = serializers.BooleanField(
+        required=False,
+        default=False,
+        help_text="Faux par défaut : simulation, rien n'est gardé.",
+    )
+
+
+class RejetSerializer(serializers.Serializer):
+    feuille = serializers.CharField()
+    ligne = serializers.IntegerField()
+    raison = serializers.CharField()
+
+
+class DettePlafondSerializer(serializers.Serializer):
+    nom = serializers.CharField()
+    dette = serializers.IntegerField()
+    plafond = serializers.IntegerField()
+
+
+class RapportImportSerializer(serializers.Serializer):
+    simulation = serializers.BooleanField()
+    clients = serializers.IntegerField()
+    tarifs = serializers.IntegerField()
+    soldes = serializers.IntegerField()
+    rejets = RejetSerializer(many=True)
+    dettes_au_dela_du_plafond = DettePlafondSerializer(many=True)
+
+
 class TarifsSerializer(serializers.Serializer):
     tarifs = serializers.DictField(
         child=serializers.IntegerField(min_value=0, allow_null=True),
@@ -302,6 +334,8 @@ class ClientsViewSet(
             "envoyer_releve",
         }:
             return [ProfilParmi("caissier", *DIRECTION)()]
+        if self.action == "importer":
+            return [ProfilParmi("administrateur")()]
         return [ProfilParmi(*DIRECTION)()]
 
     def get_serializer_context(self) -> dict[str, Any]:
@@ -449,6 +483,34 @@ class ClientsViewSet(
         corps.is_valid(raise_exception=True)
         clients = list(Client.objects.filter(pk__in=corps.validated_data["clients"]))
         return self._relancer(request, clients)
+
+    @extend_schema(
+        request={"multipart/form-data": ImportClasseurSerializer},
+        responses={200: RapportImportSerializer, 400: ProblemeSerializer},
+    )
+    @action(
+        detail=False,
+        methods=["post"],
+        parser_classes=[MultiPartParser],
+    )
+    def importer(self, request: Request) -> Response:
+        """Reprise du classeur (US-150) : simuler, relire le rapport, confirmer."""
+        corps = ImportClasseurSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        confirmer = corps.validated_data["confirmer"]
+        try:
+            rapport = importer_classeur(
+                corps.validated_data["fichier"],
+                confirmer=confirmer,
+                auteur=auteur_de(request),
+            )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(
+            RapportImportSerializer(
+                {**vars(rapport), "simulation": not confirmer},
+            ).data,
+        )
 
     def _periode(self, donnees: Any) -> tuple[date, date]:
         periode = PeriodeSerializer(data=donnees)

@@ -32,11 +32,13 @@ import type {
   ClientsRelevePdfRetrieveParams,
   ClientsReleveRetrieveParams,
   Dettes,
+  ImportClasseur,
   PaginatedClientList,
   PaginatedRelanceList,
   PatchedClient,
   Periode,
   Probleme,
+  RapportImport,
   RelanceGroupee,
   Releve,
   ResultatRelance,
@@ -1385,7 +1387,101 @@ export function useClientsDettesRetrieve<TData = Awaited<ReturnType<typeof clien
 
 
 
-export type clientsRelancerGroupeCreateResponse200 = {
+export type clientsImporterCreateResponse200 = {
+  data: RapportImport
+  status: 200
+}
+
+export type clientsImporterCreateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
+export type clientsImporterCreateResponseSuccess = (clientsImporterCreateResponse200) & {
+  headers: Headers;
+};
+export type clientsImporterCreateResponseError = (clientsImporterCreateResponse400) & {
+  headers: Headers;
+};
+
+export type clientsImporterCreateResponse = (clientsImporterCreateResponseSuccess | clientsImporterCreateResponseError)
+
+export const getClientsImporterCreateUrl = () => {
+
+
+
+
+  return `/api/v1/clients/importer/`
+}
+
+/**
+ * Reprise du classeur (US-150) : simuler, relire le rapport, confirmer.
+ */
+export const clientsImporterCreate = async (importClasseur: ImportClasseur, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsImporterCreateResponse> => {
+    const formData = new FormData();
+formData.append(`fichier`, importClasseur.fichier);
+if(importClasseur.confirmer !== undefined) {
+ formData.append(`confirmer`, importClasseur.confirmer.toString())
+ }
+
+  return optiboulFetch<clientsImporterCreateResponse>(getClientsImporterCreateUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getClientsImporterCreateMutationKey = () => ['clientsImporterCreate'] as const;
+
+export const getClientsImporterCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsImporterCreate>>, TError,ClientsImporterCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof clientsImporterCreate>>, TError,ClientsImporterCreateMutationVariables, TContext> => {
+
+const mutationKey = getClientsImporterCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clientsImporterCreate>>, ClientsImporterCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  clientsImporterCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClientsImporterCreateMutationResult = NonNullable<Awaited<ReturnType<typeof clientsImporterCreate>>>
+    export type ClientsImporterCreateMutationBody = ImportClasseur
+    export type ClientsImporterCreateMutationError = Probleme
+    export type ClientsImporterCreateMutationVariables = {data: ImportClasseur}
+
+    export const useClientsImporterCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsImporterCreate>>, TError,ClientsImporterCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof clientsImporterCreate>>,
+        TError,
+        ClientsImporterCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getClientsImporterCreateMutationOptions(options), queryClient);
+    }
+    export type clientsRelancerGroupeCreateResponse200 = {
   data: ResultatRelance
   status: 200
 }
