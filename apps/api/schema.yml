@@ -3977,6 +3977,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/Rotation'
           description: ''
+  /api/v1/tableau-de-bord/:
+    get:
+      operationId: tableau_de_bord_retrieve
+      description: Recette, taux d'encaissement, dettes, écart de caisse et graphiques
+        du mois.
+      parameters:
+      - in: query
+        name: mois
+        schema:
+          type: string
+        description: AAAA-MM ; ce mois-ci
+      tags:
+      - tableau-de-bord
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TableauDeBord'
+          description: ''
   /api/v1/users/:
     get:
       operationId: users_list
@@ -4390,6 +4412,19 @@ components:
       - depense
       - lignes
       - mois
+    BudgetCategorie:
+      type: object
+      properties:
+        categorie:
+          type: string
+        budget:
+          type: integer
+        depense:
+          type: integer
+      required:
+      - budget
+      - categorie
+      - depense
     Caisse:
       type: object
       properties:
@@ -5657,6 +5692,25 @@ components:
       - matieres
       - nom
       - prochaine_reception
+    Graphiques:
+      type: object
+      properties:
+        recette_par_session:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecetteSession'
+        production_par_produit:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductionProduit'
+        budget_par_categorie:
+          type: array
+          items:
+            $ref: '#/components/schemas/BudgetCategorie'
+      required:
+      - budget_par_categorie
+      - production_par_produit
+      - recette_par_session
     Groupe:
       type: object
       properties:
@@ -5718,6 +5772,31 @@ components:
       - client
       - nom
       - raison
+    Indicateurs:
+      type: object
+      properties:
+        recette:
+          type: integer
+          description: Encaissements du mois, en FCFA.
+        ventes:
+          type: integer
+          description: Montant dû des livraisons du mois.
+        taux_encaissement:
+          type: integer
+          nullable: true
+        dettes_clients:
+          type: integer
+        dettes_fournisseurs:
+          type: integer
+        ecart_caisse_cumule:
+          type: integer
+      required:
+      - dettes_clients
+      - dettes_fournisseurs
+      - ecart_caisse_cumule
+      - recette
+      - taux_encaissement
+      - ventes
     Invitation:
       type: object
       properties:
@@ -7595,6 +7674,16 @@ components:
       - realise
       - reste
       - statut
+    ProductionProduit:
+      type: object
+      properties:
+        code:
+          type: string
+        pains:
+          type: integer
+      required:
+      - code
+      - pains
     Produit:
       type: object
       properties:
@@ -7884,6 +7973,20 @@ components:
           description: FCFA par unité de la matière ; la farine suit le prix du sac.
       required:
       - quantite
+    RecetteSession:
+      type: object
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          type: string
+        recette:
+          type: integer
+      required:
+      - creneau
+      - jour
+      - recette
     Refus:
       type: object
       properties:
@@ -8430,6 +8533,19 @@ components:
       - motif
       - sacs
       - statut
+    TableauDeBord:
+      type: object
+      properties:
+        mois:
+          type: string
+        indicateurs:
+          $ref: '#/components/schemas/Indicateurs'
+        graphiques:
+          $ref: '#/components/schemas/Graphiques'
+      required:
+      - graphiques
+      - indicateurs
+      - mois
     Tarifs:
       type: object
       properties:

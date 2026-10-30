@@ -29,5 +29,6 @@ export * from './regles-notification/regles-notification.ts';
 export * from './sante/sante.ts';
 export * from './sauvegardes/sauvegardes.ts';
 export * from './semaines/semaines.ts';
+export * from './tableau-de-bord/tableau-de-bord.ts';
 export * from './users/users.ts';
 export * from './utilisateurs/utilisateurs.ts';
