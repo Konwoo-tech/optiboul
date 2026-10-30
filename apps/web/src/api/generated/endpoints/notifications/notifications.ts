@@ -26,7 +26,9 @@ import type {
 
 import type {
   Compteur,
+  GroupeNotifications,
   Marquage,
+  MarquerGroupeNotifications,
   Notification,
   NotificationsListParams,
   PaginatedNotificationList
@@ -252,6 +254,102 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getNotificationsMarquerLueCreateMutationOptions(options), queryClient);
     }
+    export type notificationsMarquerGroupeLuCreateResponse200 = {
+  data: Marquage
+  status: 200
+}
+
+export type notificationsMarquerGroupeLuCreateResponseSuccess = (notificationsMarquerGroupeLuCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type notificationsMarquerGroupeLuCreateResponse = (notificationsMarquerGroupeLuCreateResponseSuccess)
+
+export const getNotificationsMarquerGroupeLuCreateUrl = () => {
+
+
+
+
+  return `/api/v1/notifications/marquer-groupe-lu/`
+}
+
+/**
+ * Chacun ne voit que ses notifications ; chacune ouvre l'écran concerné (lien).
+ */
+export const notificationsMarquerGroupeLuCreate = async (marquerGroupeNotifications: MarquerGroupeNotifications, options?: Parameters<typeof optiboulFetch>[1]): Promise<notificationsMarquerGroupeLuCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<notificationsMarquerGroupeLuCreateResponse>(getNotificationsMarquerGroupeLuCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(marquerGroupeNotifications)
+  }
+);}
+
+
+
+
+
+export const getNotificationsMarquerGroupeLuCreateMutationKey = () => ['notificationsMarquerGroupeLuCreate'] as const;
+
+export const getNotificationsMarquerGroupeLuCreateMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof notificationsMarquerGroupeLuCreate>>, TError,NotificationsMarquerGroupeLuCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof notificationsMarquerGroupeLuCreate>>, TError,NotificationsMarquerGroupeLuCreateMutationVariables, TContext> => {
+
+const mutationKey = getNotificationsMarquerGroupeLuCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof notificationsMarquerGroupeLuCreate>>, NotificationsMarquerGroupeLuCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  notificationsMarquerGroupeLuCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type NotificationsMarquerGroupeLuCreateMutationResult = NonNullable<Awaited<ReturnType<typeof notificationsMarquerGroupeLuCreate>>>
+    export type NotificationsMarquerGroupeLuCreateMutationBody = MarquerGroupeNotifications
+    export type NotificationsMarquerGroupeLuCreateMutationError = unknown
+    export type NotificationsMarquerGroupeLuCreateMutationVariables = {data: MarquerGroupeNotifications}
+
+    export const useNotificationsMarquerGroupeLuCreate = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof notificationsMarquerGroupeLuCreate>>, TError,NotificationsMarquerGroupeLuCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof notificationsMarquerGroupeLuCreate>>,
+        TError,
+        NotificationsMarquerGroupeLuCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getNotificationsMarquerGroupeLuCreateMutationOptions(options), queryClient);
+    }
     export type notificationsNonLuesRetrieveResponse200 = {
   data: Compteur
   status: 200
@@ -350,6 +448,115 @@ export function useNotificationsNonLuesRetrieve<TData = Awaited<ReturnType<typeo
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getNotificationsNonLuesRetrieveQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type notificationsRegroupeesListResponse200 = {
+  data: GroupeNotifications[]
+  status: 200
+}
+
+export type notificationsRegroupeesListResponseSuccess = (notificationsRegroupeesListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type notificationsRegroupeesListResponse = (notificationsRegroupeesListResponseSuccess)
+
+export const getNotificationsRegroupeesListUrl = () => {
+
+
+
+
+  return `/api/v1/notifications/regroupees/`
+}
+
+/**
+ * Une ligne par type et par heure, pour ne pas noyer la nuit (US-073).
+ */
+export const notificationsRegroupeesList = async ( options?: Parameters<typeof optiboulFetch>[1]): Promise<notificationsRegroupeesListResponse> => {
+
+  return optiboulFetch<notificationsRegroupeesListResponse>(getNotificationsRegroupeesListUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getNotificationsRegroupeesListQueryKey = () => {
+    return [
+    `/api/v1/notifications/regroupees/`
+    ] as const;
+    }
+
+
+export const getNotificationsRegroupeesListQueryOptions = <TData = Awaited<ReturnType<typeof notificationsRegroupeesList>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsRegroupeesList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getNotificationsRegroupeesListQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof notificationsRegroupeesList>>> = ({ signal }) => notificationsRegroupeesList({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof notificationsRegroupeesList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type NotificationsRegroupeesListQueryResult = NonNullable<Awaited<ReturnType<typeof notificationsRegroupeesList>>>
+export type NotificationsRegroupeesListQueryError = unknown
+
+
+export function useNotificationsRegroupeesList<TData = Awaited<ReturnType<typeof notificationsRegroupeesList>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsRegroupeesList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof notificationsRegroupeesList>>,
+          TError,
+          Awaited<ReturnType<typeof notificationsRegroupeesList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useNotificationsRegroupeesList<TData = Awaited<ReturnType<typeof notificationsRegroupeesList>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsRegroupeesList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof notificationsRegroupeesList>>,
+          TError,
+          Awaited<ReturnType<typeof notificationsRegroupeesList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useNotificationsRegroupeesList<TData = Awaited<ReturnType<typeof notificationsRegroupeesList>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsRegroupeesList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useNotificationsRegroupeesList<TData = Awaited<ReturnType<typeof notificationsRegroupeesList>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof notificationsRegroupeesList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getNotificationsRegroupeesListQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

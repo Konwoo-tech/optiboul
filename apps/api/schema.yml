@@ -3064,6 +3064,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/Notification'
           description: ''
+  /api/v1/notifications/marquer-groupe-lu/:
+    post:
+      operationId: notifications_marquer_groupe_lu_create
+      description: Chacun ne voit que ses notifications ; chacune ouvre l'écran concerné
+        (lien).
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarquerGroupeNotifications'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MarquerGroupeNotifications'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MarquerGroupeNotifications'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Marquage'
+          description: ''
   /api/v1/notifications/non-lues/:
     get:
       operationId: notifications_non_lues_retrieve
@@ -3078,6 +3106,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Compteur'
+          description: ''
+  /api/v1/notifications/regroupees/:
+    get:
+      operationId: notifications_regroupees_list
+      description: Une ligne par type et par heure, pour ne pas noyer la nuit (US-073).
+      tags:
+      - notifications
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GroupeNotifications'
           description: ''
   /api/v1/notifications/tout-marquer-lu/:
     post:
@@ -6468,6 +6513,30 @@ components:
       - membres
       - nom
       - profil
+    GroupeNotifications:
+      type: object
+      properties:
+        genre:
+          type: string
+        heure:
+          type: string
+          format: date-time
+        titre:
+          type: string
+          description: Titre de la plus récente.
+        lien:
+          type: string
+        nombre:
+          type: integer
+        non_lues:
+          type: integer
+      required:
+      - genre
+      - heure
+      - lien
+      - nombre
+      - non_lues
+      - titre
     Habituel:
       type: object
       properties:
@@ -7036,6 +7105,17 @@ components:
           type: integer
       required:
       - marquees
+    MarquerGroupeNotifications:
+      type: object
+      properties:
+        genre:
+          type: string
+        heure:
+          type: string
+          format: date-time
+      required:
+      - genre
+      - heure
     Matiere:
       type: object
       properties:

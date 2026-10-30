@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -20,6 +21,8 @@ from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.permissions import TOUS_LES_PROFILS
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.infrastructure.journal import journaliser
+from optiboul.notifications.domain.regroupement import Avis
+from optiboul.notifications.domain.regroupement import regrouper
 from optiboul.notifications.domain.routage import REGLES_DE_DEPART
 from optiboul.notifications.domain.routage import CanalNotification
 from optiboul.notifications.infrastructure.envois import regle
@@ -31,6 +34,7 @@ if TYPE_CHECKING:
     from rest_framework.request import Request
 
 REGLENT_LES_NOTIFICATIONS = ("proprietaire", "administrateur")
+LIMITE_REGROUPEMENT = 500
 
 
 class NotificationSerializer(serializers.ModelSerializer[Notification]):
@@ -51,6 +55,20 @@ class CompteurSerializer(serializers.Serializer):
 
 class MarquageSerializer(serializers.Serializer):
     marquees = serializers.IntegerField()
+
+
+class GroupeNotificationsSerializer(serializers.Serializer):
+    genre = serializers.CharField()
+    heure = serializers.DateTimeField()
+    titre = serializers.CharField(help_text="Titre de la plus récente.")
+    lien = serializers.CharField()
+    nombre = serializers.IntegerField()
+    non_lues = serializers.IntegerField()
+
+
+class MarquerGroupeNotificationsSerializer(serializers.Serializer):
+    genre = serializers.CharField()
+    heure = serializers.DateTimeField()
 
 
 class NotificationsViewSet(ListModelMixin, GenericViewSet):
@@ -84,6 +102,48 @@ class NotificationsViewSet(ListModelMixin, GenericViewSet):
             lue_le=None,
         ).count()
         return Response({"non_lues": nombre})
+
+    @extend_schema(responses=GroupeNotificationsSerializer(many=True))
+    @action(detail=False, pagination_class=None)
+    def regroupees(self, request: Request) -> Response:
+        """Une ligne par type et par heure, pour ne pas noyer la nuit (US-073)."""
+        notifications = self.get_queryset()[:LIMITE_REGROUPEMENT]
+        groupes = regrouper(
+            [
+                Avis(
+                    genre=n.genre,
+                    titre=n.titre,
+                    lien=n.lien,
+                    le=timezone.localtime(n.cree_le),
+                    lu=n.lue_le is not None,
+                )
+                for n in notifications
+            ],
+        )
+        return Response(GroupeNotificationsSerializer(groupes, many=True).data)
+
+    @extend_schema(
+        request=MarquerGroupeNotificationsSerializer,
+        responses=MarquageSerializer,
+    )
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="marquer-groupe-lu",
+        url_name="marquer-groupe-lu",
+    )
+    def marquer_groupe_lu(self, request: Request) -> Response:
+        corps = MarquerGroupeNotificationsSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        debut = corps.validated_data["heure"]
+        marquees = Notification.objects.filter(
+            destinataire_id=request.user.pk,
+            genre=corps.validated_data["genre"],
+            cree_le__gte=debut,
+            cree_le__lt=debut + timedelta(hours=1),
+            lue_le=None,
+        ).update(lue_le=timezone.now())
+        return Response({"marquees": marquees})
 
     @extend_schema(request=None, responses=NotificationSerializer)
     @action(detail=True, methods=["post"], url_path="marquer-lue")

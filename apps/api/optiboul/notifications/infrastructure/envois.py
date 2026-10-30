@@ -17,6 +17,7 @@ from optiboul.notifications.domain.envois import Canal
 from optiboul.notifications.domain.envois import StatutEnvoi
 from optiboul.notifications.domain.envois import delai_avant_nouvel_essai
 from optiboul.notifications.domain.envois import statut_apres_echec
+from optiboul.notifications.domain.regroupement import heure_de
 from optiboul.notifications.domain.routage import PAR_GENRE
 from optiboul.notifications.domain.routage import CanalNotification
 from optiboul.notifications.domain.routage import Regle
@@ -79,6 +80,12 @@ class NotificateurDjango:
         """Aux seuls rôles concernés (CdC §5.13) ; SMS ou WhatsApp en plus si la règle
         le prévoit, par la file d'envoi."""
         routage = regle(genre)
+        # Une notification par type et par heure : pas de rafale de SMS la nuit.
+        debut_heure = heure_de(timezone.localtime())
+        deja = Notification.objects.filter(
+            genre=genre,
+            cree_le__gte=debut_heure,
+        ).exists()
         nombre = self.notifier_profils(
             routage.profils,
             genre=genre,
@@ -87,7 +94,7 @@ class NotificateurDjango:
             lien=lien,
         )
         externes = [c for c in routage.canaux if c is not CanalNotification.APPLICATION]
-        if externes:
+        if externes and not deja:
             for utilisateur in (
                 get_user_model()
                 .objects.filter(is_active=True)
