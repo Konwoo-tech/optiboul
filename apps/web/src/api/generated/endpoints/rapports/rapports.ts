@@ -6,24 +6,31 @@
  * OpenAPI spec version: 1.0.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
+  Probleme,
   RapportsMoisRetrieveParams,
   RapportsSemaineRetrieveParams,
-  RapportsSessionRetrieveParams
+  RapportsSessionRetrieveParams,
+  Rapprochement,
+  RapprochementRequete
 } from '../../model';
 
 import { optiboulFetch } from '../../../http.ts';
@@ -166,7 +173,99 @@ export function useRapportsMoisRetrieve<TData = Awaited<ReturnType<typeof rappor
 
 
 
-export type rapportsSemaineRetrieveResponse200ApplicationPdf = {
+export type rapportsRapprochementCreateResponse200 = {
+  data: Rapprochement
+  status: 200
+}
+
+export type rapportsRapprochementCreateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
+export type rapportsRapprochementCreateResponseSuccess = (rapportsRapprochementCreateResponse200) & {
+  headers: Headers;
+};
+export type rapportsRapprochementCreateResponseError = (rapportsRapprochementCreateResponse400) & {
+  headers: Headers;
+};
+
+export type rapportsRapprochementCreateResponse = (rapportsRapprochementCreateResponseSuccess | rapportsRapprochementCreateResponseError)
+
+export const getRapportsRapprochementCreateUrl = () => {
+
+
+
+
+  return `/api/v1/rapports/rapprochement/`
+}
+
+/**
+ * Compare la semaine, session par session, aux totaux de l'Excel.
+ */
+export const rapportsRapprochementCreate = async (rapprochementRequete: RapprochementRequete, options?: Parameters<typeof optiboulFetch>[1]): Promise<rapportsRapprochementCreateResponse> => {
+    const formData = new FormData();
+formData.append(`semaine`, rapprochementRequete.semaine.toString())
+formData.append(`fichier`, rapprochementRequete.fichier);
+
+  return optiboulFetch<rapportsRapprochementCreateResponse>(getRapportsRapprochementCreateUrl(),
+  {
+    ...options,
+    method: 'POST'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getRapportsRapprochementCreateMutationKey = () => ['rapportsRapprochementCreate'] as const;
+
+export const getRapportsRapprochementCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rapportsRapprochementCreate>>, TError,RapportsRapprochementCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof rapportsRapprochementCreate>>, TError,RapportsRapprochementCreateMutationVariables, TContext> => {
+
+const mutationKey = getRapportsRapprochementCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rapportsRapprochementCreate>>, RapportsRapprochementCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  rapportsRapprochementCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RapportsRapprochementCreateMutationResult = NonNullable<Awaited<ReturnType<typeof rapportsRapprochementCreate>>>
+    export type RapportsRapprochementCreateMutationBody = RapprochementRequete
+    export type RapportsRapprochementCreateMutationError = Probleme
+    export type RapportsRapprochementCreateMutationVariables = {data: RapprochementRequete}
+
+    export const useRapportsRapprochementCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rapportsRapprochementCreate>>, TError,RapportsRapprochementCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof rapportsRapprochementCreate>>,
+        TError,
+        RapportsRapprochementCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getRapportsRapprochementCreateMutationOptions(options), queryClient);
+    }
+    export type rapportsSemaineRetrieveResponse200ApplicationPdf = {
   data: Blob
   status: 200
 }

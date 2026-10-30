@@ -4538,6 +4538,33 @@ paths:
                 type: string
                 format: binary
           description: ''
+  /api/v1/rapports/rapprochement/:
+    post:
+      operationId: rapports_rapprochement_create
+      description: Compare la semaine, session par session, aux totaux de l'Excel.
+      tags:
+      - rapports
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RapprochementRequete'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rapprochement'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/rapports/semaine/:
     get:
       operationId: rapports_semaine_retrieve
@@ -6734,6 +6761,26 @@ components:
       - clients
       - nombre
       - total
+    Ecart:
+      type: object
+      properties:
+        jour:
+          type: string
+        creneau:
+          type: string
+        application:
+          allOf:
+          - $ref: '#/components/schemas/TotauxRapprochement'
+          nullable: true
+        excel:
+          allOf:
+          - $ref: '#/components/schemas/TotauxRapprochement'
+          nullable: true
+      required:
+      - application
+      - creneau
+      - excel
+      - jour
     EcranEnum:
       enum:
       - administration
@@ -10259,6 +10306,30 @@ components:
       - simulation
       - soldes
       - tarifs
+    Rapprochement:
+      type: object
+      properties:
+        identique:
+          type: boolean
+        ecarts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ecart'
+      required:
+      - ecarts
+      - identique
+    RapprochementRequete:
+      type: object
+      properties:
+        semaine:
+          type: integer
+        fichier:
+          type: string
+          format: uri
+          description: Colonnes jour, creneau, ventes, recette, une ligne par session.
+      required:
+      - fichier
+      - semaine
     RattachementEnum:
       enum:
       - production
@@ -11068,6 +11139,16 @@ components:
       required:
       - caisse
       - ration
+    TotauxRapprochement:
+      type: object
+      properties:
+        ventes:
+          type: integer
+        recette:
+          type: integer
+      required:
+      - recette
+      - ventes
     TypeEnum:
       enum:
       - livreur
