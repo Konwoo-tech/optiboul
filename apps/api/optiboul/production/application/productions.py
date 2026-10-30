@@ -63,6 +63,7 @@ class DepotProductions(Protocol):
         code: str,
         pains: int,
         auteur: int,
+        le: datetime,
     ) -> None: ...
 
     def consommer(
@@ -144,13 +145,14 @@ def _en_cours(depots: Depots, production_id: int, auteur: Auteur) -> EtatProduct
     return production
 
 
-def saisir_fournee(
+def saisir_fournee(  # noqa: PLR0913
     depots: Depots,
     *,
     production_id: int,
     code: str,
     pains: int,
     auteur: Auteur,
+    maintenant: datetime,
 ) -> EtatProduction:
     """Le réalisé se saisit par fournée ; le reste à produire suit (CdC §5.5)."""
     production = _en_cours(depots, production_id, auteur)
@@ -166,6 +168,7 @@ def saisir_fournee(
         code=code,
         pains=pains,
         auteur=auteur.utilisateur_id,
+        le=maintenant,
     )
     depots.plans.journal.enregistrer(
         Evenement(

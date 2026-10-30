@@ -2361,6 +2361,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/productions/reste-a-produire/:
+    get:
+      operationId: productions_reste_a_produire_retrieve
+      description: Prévu, réalisé et reste par produit, à jour de la dernière fournée.
+      parameters:
+      - in: query
+        name: creneau
+        schema:
+          type: string
+          enum:
+          - jour
+          - nuit
+      - in: query
+        name: jour
+        schema:
+          type: string
+        description: AAAA-MM-JJ, avec le créneau
+      tags:
+      - productions
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResteAProduire'
+          description: ''
   /api/v1/productions/valider/:
     post:
       operationId: productions_valider_create
@@ -4395,6 +4423,20 @@ components:
       required:
       - pains
       - produit
+    FourneeSaisie:
+      type: object
+      properties:
+        produit:
+          type: string
+        pains:
+          type: integer
+        saisie_le:
+          type: string
+          format: date-time
+      required:
+      - pains
+      - produit
+      - saisie_le
     Groupe:
       type: object
       properties:
@@ -6213,6 +6255,44 @@ components:
       required:
       - commandes
       - reprises
+    ResteAProduire:
+      type: object
+      properties:
+        jour:
+          type: string
+          format: date
+        creneau:
+          type: string
+        statut:
+          type: string
+          nullable: true
+          description: Statut de la production ; vide tant qu'elle n'est pas ouverte.
+        produits:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProduitProduit'
+        reste:
+          type: integer
+        fournees:
+          type: array
+          items:
+            $ref: '#/components/schemas/FourneeSaisie'
+        mis_a_jour:
+          type: string
+          format: date-time
+          nullable: true
+        rafraichir_secondes:
+          type: integer
+          description: Les postes ouverts relisent au plus tard après ce délai (ADR-21).
+      required:
+      - creneau
+      - fournees
+      - jour
+      - mis_a_jour
+      - produits
+      - rafraichir_secondes
+      - reste
+      - statut
     ResultatConnexion:
       type: object
       properties:

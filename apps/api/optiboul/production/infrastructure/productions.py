@@ -92,12 +92,14 @@ class DepotProductionsDjango:
         code: str,
         pains: int,
         auteur: int,
+        le: datetime,
     ) -> None:
         Fournee.objects.create(
             production_id=production_id,
             produit=Produit.objects.get(code=code),
             pains=pains,
             auteur_id=auteur,
+            cree_le=le,
         )
 
     def consommer(

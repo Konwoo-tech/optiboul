@@ -62,24 +62,6 @@ def _url(action: str, production: dict) -> str:
     return reverse(f"api:production-{action}", kwargs={"pk": production["id"]})
 
 
-@pytest.fixture
-def plan_valide(client_de, responsable_production, gerant, commandes_du_soir, heure):
-    with heure(18, 40):
-        client_de(responsable_production).post(
-            reverse("api:production-proposer"),
-            {},
-            format="json",
-        )
-    with heure(18, 42):
-        client_de(gerant).post(reverse("api:production-valider"), {}, format="json")
-
-
-@pytest.fixture
-def production(client_de, responsable_production, plan_valide, heure) -> dict:
-    with heure(19):
-        return client_de(responsable_production).post(OUVRIR, {}, format="json").json()
-
-
 pytestmark = pytest.mark.django_db
 
 

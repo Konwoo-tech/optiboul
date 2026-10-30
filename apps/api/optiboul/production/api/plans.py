@@ -31,6 +31,7 @@ from optiboul.production.domain.plan import heure_validation_auto
 from optiboul.production.domain.plan import session_de_production
 from optiboul.production.domain.production import consommation_theorique
 from optiboul.production.domain.production import reste_a_produire
+from optiboul.production.infrastructure.models import Fournee
 from optiboul.production.infrastructure.models import PlanProduction
 from optiboul.production.infrastructure.plans import depots
 from optiboul.production.infrastructure.plans import nombre_de_sessions
@@ -214,6 +215,31 @@ class ProductionSerializer(serializers.Serializer):
     reste = serializers.IntegerField()
 
 
+class FourneeSaisieSerializer(serializers.Serializer):
+    produit = serializers.CharField()
+    pains = serializers.IntegerField()
+    saisie_le = serializers.DateTimeField()
+
+
+class ResteAProduireSerializer(serializers.Serializer):
+    jour = serializers.DateField()
+    creneau = serializers.CharField()
+    statut = serializers.CharField(
+        allow_null=True,
+        help_text="Statut de la production ; vide tant qu'elle n'est pas ouverte.",
+    )
+    produits = ProduitProduitSerializer(many=True)
+    reste = serializers.IntegerField()
+    fournees = FourneeSaisieSerializer(many=True)
+    mis_a_jour = serializers.DateTimeField(allow_null=True)
+    rafraichir_secondes = serializers.IntegerField(
+        help_text="Les postes ouverts relisent au plus tard après ce délai (ADR-21).",
+    )
+
+
+RAFRAICHISSEMENT = 15
+
+
 class FourneeSerializer(serializers.Serializer):
     produit = serializers.CharField(max_length=10)
     pains = serializers.IntegerField(min_value=1)
@@ -273,7 +299,7 @@ class ProductionsViewSet(ViewSet):
     def get_permissions(self):
         if self.action == "plan":
             return [ProfilParmi(*LISENT_LE_PLAN)()]
-        if self.action in {"en_cours", "retrieve"}:
+        if self.action in {"en_cours", "retrieve", "reste_a_produire"}:
             # Le reste à produire est visible aussi de la caisse (CdC §5.5).
             return [ProfilParmi("caissier", *LISENT_LE_PLAN)()]
         if self.action == "valider":
@@ -321,6 +347,73 @@ class ProductionsViewSet(ViewSet):
             return probleme(RefusMetier("production_inconnue", message))
         return Response(ProductionSerializer(projeter_production(production)).data)
 
+    @extend_schema(parameters=PARAMETRES_SESSION, responses=ResteAProduireSerializer)
+    @action(detail=False, url_path="reste-a-produire")
+    def reste_a_produire(self, request: Request) -> Response:
+        """Prévu, réalisé et reste par produit, à jour de la dernière fournée."""
+        parametres = SessionProductionSerializer(data=request.query_params)
+        parametres.is_valid(raise_exception=True)
+        session = parametres.session()
+        production = depots_production.productions.de_la_session(session)
+        if production is not None:
+            prevus, realise = production.prevus, production.realise
+            statut: str | None = production.statut
+        else:
+            plan = PlanProduction.objects.filter(
+                jour=session.jour,
+                creneau=session.creneau,
+            ).first()
+            prevus = (
+                {ligne.produit.code: ligne.pains_prevus for ligne in plan.lignes.all()}
+                if plan
+                else {}
+            )
+            realise, statut = {}, None
+        reste = reste_a_produire(prevus, realise)
+        fournees = (
+            Fournee.objects.filter(
+                production__plan__jour=session.jour,
+                production__plan__creneau=session.creneau,
+            )
+            .select_related("produit")
+            .order_by("-cree_le", "-id")
+        )
+        derniere = fournees.first()
+        reponse = Response(
+            ResteAProduireSerializer(
+                {
+                    "jour": session.jour,
+                    "creneau": session.creneau,
+                    "statut": statut,
+                    "produits": [
+                        {
+                            "code": code,
+                            "sacs": production.sacs.get(code, 0) if production else 0,
+                            "prevus": pains,
+                            "realise": realise.get(code, 0),
+                            "reste": reste[code],
+                        }
+                        for code, pains in prevus.items()
+                        if pains
+                    ],
+                    "reste": sum(reste.values()),
+                    "fournees": [
+                        {
+                            "produit": f.produit.code,
+                            "pains": f.pains,
+                            "saisie_le": f.cree_le,
+                        }
+                        for f in fournees[:20]
+                    ],
+                    "mis_a_jour": derniere.cree_le if derniere else None,
+                    "rafraichir_secondes": RAFRAICHISSEMENT,
+                },
+            ).data,
+        )
+        # Lu toutes les 15 s : jamais servi depuis un cache intermédiaire.
+        reponse["Cache-Control"] = "no-store"
+        return reponse
+
     @extend_schema(
         request=FourneeSerializer,
         parameters=[IDENTIFIANT],
@@ -338,6 +431,7 @@ class ProductionsViewSet(ViewSet):
                 code=corps.validated_data["produit"],
                 pains=corps.validated_data["pains"],
                 auteur=auteur_de(request),
+                maintenant=timezone.now(),
             ),
         )
 

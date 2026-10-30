@@ -4,6 +4,7 @@ from datetime import time
 from unittest import mock
 
 import pytest
+from django.urls import reverse
 
 from optiboul.clients.infrastructure.models import Client
 from optiboul.conftest import MARDI
@@ -77,3 +78,25 @@ def commandes_du_soir(s44, caissiere) -> None:
     """Ce soir : 700 baguettes et 50 kirikous commandés."""
     commander(s44, caissiere, "Rachel Boutique", {"BAG": 400, "KO": 50})
     commander(s44, caissiere, "Mama Rasta", {"BAG": 300})
+
+
+@pytest.fixture
+def plan_valide(client_de, responsable_production, gerant, commandes_du_soir, heure):
+    with heure(18, 40):
+        client_de(responsable_production).post(
+            reverse("api:production-proposer"),
+            {},
+            format="json",
+        )
+    with heure(18, 42):
+        client_de(gerant).post(reverse("api:production-valider"), {}, format="json")
+
+
+@pytest.fixture
+def production(client_de, responsable_production, plan_valide, heure) -> dict:
+    with heure(19):
+        return (
+            client_de(responsable_production)
+            .post(reverse("api:production-ouvrir"), {}, format="json")
+            .json()
+        )
