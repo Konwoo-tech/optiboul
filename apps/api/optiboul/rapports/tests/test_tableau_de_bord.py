@@ -76,6 +76,7 @@ def test_indicateurs_du_mois(client_de, proprietaire, octobre):
         "dettes_clients": 2_000,
         "dettes_fournisseurs": 0,
         "ecart_caisse_cumule": -500,
+        "marge_estimee": {"matieres": 0, "charges": 0, "marge": 8_000},
     }
     assert tableau["graphiques"]["recette_par_session"] == [
         {"jour": "2026-10-26", "creneau": "jour", "recette": 8_000},

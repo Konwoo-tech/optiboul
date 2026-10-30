@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from datetime import date
 from datetime import datetime
+from datetime import time
+from decimal import Decimal
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -24,14 +26,30 @@ from optiboul.clients.infrastructure.cloture import debiteurs
 from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.depenses.api.budgets import budget_du_mois
+from optiboul.depenses.infrastructure.models import Depense
 from optiboul.production.infrastructure.models import Fournee
 from optiboul.rapports.domain.indicateurs import bornes_du_mois
+from optiboul.rapports.domain.indicateurs import marge_estimee
 from optiboul.rapports.domain.indicateurs import taux_encaissement
+from optiboul.stocks.domain.etat import valeur_stock
+from optiboul.stocks.domain.stocks import GenreMouvementStock
+from optiboul.stocks.infrastructure.etat import prix_unitaires
+from optiboul.stocks.infrastructure.models import MouvementStock
 from optiboul.ventes.infrastructure.models import Encaissement
 from optiboul.ventes.infrastructure.models import Livraison
 
 if TYPE_CHECKING:
     from rest_framework.request import Request
+
+
+class MargeSerializer(serializers.Serializer):
+    matieres = serializers.IntegerField(
+        help_text="Sorties de production valorisées au dernier prix connu, en FCFA.",
+    )
+    charges = serializers.IntegerField(
+        help_text="Dépenses validées du mois, hors matières, en FCFA.",
+    )
+    marge = serializers.IntegerField(help_text="Recette moins matières et charges.")
 
 
 class IndicateursSerializer(serializers.Serializer):
@@ -41,6 +59,7 @@ class IndicateursSerializer(serializers.Serializer):
     dettes_clients = serializers.IntegerField()
     dettes_fournisseurs = serializers.IntegerField()
     ecart_caisse_cumule = serializers.IntegerField()
+    marge_estimee = MargeSerializer()
 
 
 class RecetteSessionSerializer(serializers.Serializer):
@@ -78,6 +97,46 @@ def _mois(request: Request) -> date:
         return datetime.strptime(texte, "%Y-%m").date()  # noqa: DTZ007
     except ValueError:
         raise ValidationError({"mois": "AAAA-MM attendu."}) from None
+
+
+def _debut_local(jour: date) -> datetime:
+    return timezone.make_aware(datetime.combine(jour, time.min))
+
+
+def _matieres_consommees(debut: date, fin: date) -> int:
+    """Coût matières : les sorties de production du mois, valorisées (US-134)."""
+    prix = prix_unitaires()
+    total = Decimal(0)
+    for code, quantite in (
+        MouvementStock.objects.filter(
+            genre=GenreMouvementStock.PRODUCTION,
+            cree_le__gte=_debut_local(debut),
+            cree_le__lt=_debut_local(fin),
+        )
+        .values_list("matiere__code")
+        .annotate(quantite=Sum("quantite"))
+    ):
+        total += quantite * prix.get(code, Decimal(0))
+    return valeur_stock(total, Decimal(1))
+
+
+def _marge(recette: int, debut: date, fin: date) -> dict[str, int]:
+    matieres = _matieres_consommees(debut, fin)
+    charges = (
+        Depense.objects.filter(
+            statut="validee",
+            cree_le__gte=_debut_local(debut),
+            cree_le__lt=_debut_local(fin),
+        )
+        .exclude(categorie="matieres")
+        .aggregate(total=Sum("montant"))["total"]
+        or 0
+    )
+    return {
+        "matieres": matieres,
+        "charges": charges,
+        "marge": marge_estimee(recette, matieres, charges),
+    }
 
 
 def _indicateurs(debut: date, fin: date) -> dict[str, Any]:
@@ -121,6 +180,7 @@ def _indicateurs(debut: date, fin: date) -> dict[str, Any]:
         "dettes_clients": -sum(solde for _, solde in debiteurs()),
         "dettes_fournisseurs": du_fournisseurs - paye_fournisseurs,
         "ecart_caisse_cumule": ecart,
+        "marge_estimee": _marge(recette, debut, fin),
     }
 
 

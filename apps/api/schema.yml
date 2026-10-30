@@ -7247,10 +7247,13 @@ components:
           type: integer
         ecart_caisse_cumule:
           type: integer
+        marge_estimee:
+          $ref: '#/components/schemas/Marge'
       required:
       - dettes_clients
       - dettes_fournisseurs
       - ecart_caisse_cumule
+      - marge_estimee
       - recette
       - taux_encaissement
       - ventes
@@ -7821,6 +7824,23 @@ components:
       - relances
       - replanifiee
       - statut
+    Marge:
+      type: object
+      properties:
+        matieres:
+          type: integer
+          description: Sorties de production valorisées au dernier prix connu, en
+            FCFA.
+        charges:
+          type: integer
+          description: Dépenses validées du mois, hors matières, en FCFA.
+        marge:
+          type: integer
+          description: Recette moins matières et charges.
+      required:
+      - charges
+      - marge
+      - matieres
     Marquage:
       type: object
       properties:

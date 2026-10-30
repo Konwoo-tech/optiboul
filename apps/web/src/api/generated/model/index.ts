@@ -150,6 +150,7 @@ export * from './livrerCommeCommande.ts';
 export * from './manquant.ts';
 export * from './manquantsListParams.ts';
 export * from './manquantsListStatut.ts';
+export * from './marge.ts';
 export * from './marquage.ts';
 export * from './marquerGroupeNotifications.ts';
 export * from './matiere.ts';

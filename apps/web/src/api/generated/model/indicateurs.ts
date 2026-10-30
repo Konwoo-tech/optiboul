@@ -5,6 +5,7 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
+import type { Marge } from './marge.ts';
 
 export interface Indicateurs {
   /** Encaissements du mois, en FCFA. */
@@ -16,4 +17,5 @@ export interface Indicateurs {
   dettes_clients: number;
   dettes_fournisseurs: number;
   ecart_caisse_cumule: number;
+  marge_estimee: Marge;
 }

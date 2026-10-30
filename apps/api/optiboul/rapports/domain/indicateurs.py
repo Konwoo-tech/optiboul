@@ -10,6 +10,11 @@ def taux_encaissement(recu: int, du: int) -> int | None:
     return round(recu * 100 / du) if du else None
 
 
+def marge_estimee(recette: int, matieres: int, charges: int) -> int:
+    """Recette moins matières consommées moins charges (US-134)."""
+    return recette - matieres - charges
+
+
 def bornes_du_mois(mois: date) -> tuple[date, date]:
     """Premier jour du mois et premier jour du mois suivant."""
     debut = mois.replace(day=1)
