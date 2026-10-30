@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
+from optiboul.caisse.infrastructure.models import Caisse
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.infrastructure.journal import journal
+from optiboul.core.infrastructure.models import CreneauPlanning
 from optiboul.core.infrastructure.parametres import parametre
 from optiboul.demandes.application import demandes as circuit
 from optiboul.demandes.application.demandes import ObjetLie
@@ -15,6 +18,7 @@ from optiboul.paie.application.paies import conclure
 from optiboul.paie.domain.paie import Calcul
 from optiboul.paie.domain.paie import GenreElement
 from optiboul.paie.domain.paie import StatutPaie
+from optiboul.paie.domain.paie import absences_proposees
 from optiboul.paie.domain.paie import echeance_validation
 from optiboul.paie.domain.paie import montant_absences
 
@@ -125,6 +129,27 @@ class DepotPaieDjango:
 
     def retirer_element(self, element_id: int) -> None:
         ElementPaie.objects.filter(pk=element_id).delete()
+
+
+def absences_du_mois(etat: EtatPaie, aujourdhui: date) -> dict[int, list[date]]:
+    """Pour chaque ligne d'un employé avec un compte, les jours à confirmer."""
+    fin = (etat.mois + timedelta(days=31)).replace(day=1)
+    proposees = {}
+    for ligne in etat.lignes.select_related("employe"):
+        compte = ligne.employe.utilisateur_id
+        if compte is None:
+            continue
+        periode = {"jour__gte": etat.mois, "jour__lt": fin, "caissiere_id": compte}
+        planifies = CreneauPlanning.objects.filter(**periode)
+        ouvertes = Caisse.objects.filter(**periode)
+        jours = absences_proposees(
+            set(planifies.values_list("jour", "creneau")),
+            set(ouvertes.values_list("jour", "creneau")),
+            aujourdhui,
+        )
+        if jours:
+            proposees[ligne.pk] = jours
+    return proposees
 
 
 def _preparer(etat_id: int, auteur: Auteur) -> ObjetLie:

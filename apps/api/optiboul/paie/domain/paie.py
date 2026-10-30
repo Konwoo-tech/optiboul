@@ -63,5 +63,16 @@ def echeance_validation(emise_le: datetime, jour_de_paie: int) -> datetime:
     return suivant - timedelta(days=DELAI_AVANT_PAIE)
 
 
+def absences_proposees(
+    planifies: set[tuple[date, str]],
+    ouverts: set[tuple[date, str]],
+    aujourdhui: date,
+) -> list[date]:
+    """O14 : jours où la personne prévue n'a pas ouvert sa caisse, avant ce jour."""
+    return sorted(
+        {jour for jour, creneau in planifies - ouverts if jour < aujourdhui},
+    )
+
+
 def mois_precedent(mois: date) -> date:
     return (mois.replace(day=1) - timedelta(days=1)).replace(day=1)

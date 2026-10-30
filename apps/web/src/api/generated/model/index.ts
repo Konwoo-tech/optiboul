@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './absencesProposees.ts';
 export * from './acces.ts';
 export * from './accord.ts';
 export * from './accueil.ts';
@@ -186,6 +187,7 @@ export * from './nouvelleLivraison.ts';
 export * from './nouvelleLivraisonLignes.ts';
 export * from './nullEnum.ts';
 export * from './ouverture.ts';
+export * from './paginatedAbsencesProposeesList.ts';
 export * from './paginatedCaisseList.ts';
 export * from './paginatedClientList.ts';
 export * from './paginatedCompteList.ts';
@@ -221,6 +223,7 @@ export * from './paginatedUserList.ts';
 export * from './paiement.ts';
 export * from './paiementFournisseur.ts';
 export * from './paiementFournisseurModeEnum.ts';
+export * from './paiesAbsencesProposeesListParams.ts';
 export * from './paiesListParams.ts';
 export * from './parametre.ts';
 export * from './patchedClient.ts';

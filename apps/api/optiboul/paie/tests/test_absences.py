@@ -42,8 +42,7 @@ def lignes(s44, caissiere, paie, mireille):
         jour=MARDI,
         creneau="jour",
         caissiere=caissiere,
-        fonds_ouverture=20_000,
-        ouverte_par=caissiere,
+        fonds=20_000,
     )
 
 
@@ -56,7 +55,14 @@ def test_proposees_depuis_le_planning(client_de, gerant, paie, lignes, horloge):
     assert corps[0]["saisies"] == "0.0"
 
 
-def test_a_confirmer_ou_corriger(client_de, gerant, paie, lignes, ligne_mireille, horloge):
+def test_a_confirmer_ou_corriger(
+    client_de,
+    gerant,
+    paie,
+    lignes,
+    ligne_mireille,
+    horloge,
+):
     client = client_de(gerant)
     url = reverse("api:paie-ligne", kwargs={"ligne": ligne_mireille.pk})
     client.put(url, {"absences": "1", "avances": 0}, format="json")

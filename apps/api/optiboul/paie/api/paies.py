@@ -28,6 +28,7 @@ from optiboul.paie.infrastructure.models import ElementPaie
 from optiboul.paie.infrastructure.models import Employe
 from optiboul.paie.infrastructure.models import EtatPaie
 from optiboul.paie.infrastructure.models import LignePaie
+from optiboul.paie.infrastructure.paies import absences_du_mois
 from optiboul.paie.infrastructure.paies import calcul_de
 from optiboul.paie.infrastructure.paies import depots
 
@@ -165,6 +166,17 @@ class EtatPaieSerializer(serializers.ModelSerializer[EtatPaie]):
         return sum(calcul_de(ligne).net for ligne in etat.lignes.all())
 
 
+class AbsencesProposeesSerializer(serializers.Serializer):
+    ligne = serializers.IntegerField()
+    employe = serializers.CharField()
+    jours = serializers.ListField(child=serializers.DateField())
+    saisies = serializers.DecimalField(
+        max_digits=4,
+        decimal_places=1,
+        help_text="Jours d'absence déjà portés sur la ligne.",
+    )
+
+
 class DemandeDePaieSerializer(serializers.Serializer):
     demande = serializers.CharField(help_text="DEM-xxx de la validation.")
 
@@ -213,6 +225,30 @@ class PaiesViewSet(
         return Response(
             EtatPaieSerializer(self.get_queryset().get(pk=etat)).data,
             status=status.HTTP_201_CREATED,
+        )
+
+    @extend_schema(responses=AbsencesProposeesSerializer(many=True))
+    @action(detail=True, url_path="absences-proposees")
+    def absences_proposees(self, request: Request, pk: str) -> Response:
+        """O14 : jours de caisse planifiés et non ouverts, à confirmer ou corriger
+        avec PUT /paies/lignes/{ligne}/."""
+        etat = self.get_object()
+        lignes = LignePaie.objects.select_related("employe").in_bulk(
+            list(proposees := absences_du_mois(etat, timezone.localdate())),
+        )
+        return Response(
+            AbsencesProposeesSerializer(
+                [
+                    {
+                        "ligne": pk_ligne,
+                        "employe": lignes[pk_ligne].employe.nom,
+                        "jours": jours,
+                        "saisies": lignes[pk_ligne].absences,
+                    }
+                    for pk_ligne, jours in proposees.items()
+                ],
+                many=True,
+            ).data,
         )
 
     @extend_schema(
