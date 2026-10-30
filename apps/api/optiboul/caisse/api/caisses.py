@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db import transaction
+from django.db.models import Count
+from django.db.models import Q
+from django.db.models import Sum
+from django.db.models.functions import Coalesce
 from django.utils import timezone
+from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework import status
@@ -33,6 +39,7 @@ from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.domain.sauvegardes import Declencheur
 from optiboul.core.infrastructure.parametres import parametre
 from optiboul.core.infrastructure.sauvegardes import demander_sauvegarde
+from optiboul.ventes.infrastructure.models import Encaissement
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -97,6 +104,26 @@ class EspecesSerializer(serializers.Serializer):
     )
 
 
+class RecapitulatifSerializer(serializers.Serializer):
+    caissiere = CaissiereSerializer()
+    ouvertures = serializers.IntegerField()
+    recette = serializers.IntegerField(
+        help_text="Encaissements de ses caisses, en FCFA.",
+    )
+    ecart_cumule = serializers.IntegerField(
+        help_text="Somme des écarts à la fermeture.",
+    )
+    manques = serializers.IntegerField(help_text="Caisses fermées avec un manque.")
+
+
+PARAMETRES_HISTORIQUE = [
+    OpenApiParameter("du", str, description="AAAA-MM-JJ"),
+    OpenApiParameter("au", str, description="AAAA-MM-JJ"),
+    OpenApiParameter("caissiere", int),
+    OpenApiParameter("statut", str),
+]
+
+
 class RemiseSerializer(serializers.Serializer):
     montant = serializers.IntegerField(min_value=1)
     receveur = serializers.IntegerField(
@@ -137,8 +164,67 @@ class CaissesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         caisses = super().get_queryset()
         if profil_de(self.request) == "caissier":
             # Une caissière ne voit que ses caisses (CdC §5.2).
-            return caisses.filter(caissiere_id=self.request.user.pk)
+            caisses = caisses.filter(caissiere_id=self.request.user.pk)
+        if self.action not in {"list", "recapitulatif"}:
+            return caisses
+        parametres = self.request.query_params
+        filtres = {
+            "du": "jour__gte",
+            "au": "jour__lte",
+            "caissiere": "caissiere_id",
+            "statut": "statut",
+        }
+        for nom, champ in filtres.items():
+            if valeur := parametres.get(nom):
+                caisses = caisses.filter(**{champ: valeur})
         return caisses
+
+    @extend_schema(parameters=PARAMETRES_HISTORIQUE)
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """Historique par jour et par caissière, la plus récente d'abord."""
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        parameters=PARAMETRES_HISTORIQUE,
+        responses=RecapitulatifSerializer(many=True),
+    )
+    @action(detail=False, pagination_class=None)
+    def recapitulatif(self, request: Request) -> Response:
+        """Par caissière : ouvertures, recette et écart cumulé (CdC §5.2)."""
+        caisses = self.get_queryset()
+        lignes = (
+            caisses.values("caissiere_id", "caissiere__name")
+            .annotate(
+                ouvertures=Count("pk"),
+                ecart_cumule=Coalesce(Sum("ecart"), 0),
+                manques=Count("pk", filter=Q(ecart__lt=0)),
+            )
+            .order_by("caissiere__name")
+        )
+        recettes = dict(
+            Encaissement.objects.filter(caisse__in=caisses)
+            .values("caisse__caissiere_id")
+            .annotate(total=Sum("montant"))
+            .values_list("caisse__caissiere_id", "total"),
+        )
+        return Response(
+            RecapitulatifSerializer(
+                [
+                    {
+                        "caissiere": {
+                            "id": ligne["caissiere_id"],
+                            "name": ligne["caissiere__name"],
+                        },
+                        "ouvertures": ligne["ouvertures"],
+                        "recette": recettes.get(ligne["caissiere_id"], 0),
+                        "ecart_cumule": ligne["ecart_cumule"],
+                        "manques": ligne["manques"],
+                    }
+                    for ligne in lignes
+                ],
+                many=True,
+            ).data,
+        )
 
     @extend_schema(responses=ProchaineSerializer)
     @action(detail=False)

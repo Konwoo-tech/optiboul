@@ -144,13 +144,32 @@ paths:
   /api/v1/caisses/:
     get:
       operationId: caisses_list
+      description: Historique par jour et par caissière, la plus récente d'abord.
       parameters:
+      - in: query
+        name: au
+        schema:
+          type: string
+        description: AAAA-MM-JJ
+      - in: query
+        name: caissiere
+        schema:
+          type: integer
+      - in: query
+        name: du
+        schema:
+          type: string
+        description: AAAA-MM-JJ
       - name: page
         required: false
         in: query
         description: Un numéro de page de l'ensemble des résultats.
         schema:
           type: integer
+      - in: query
+        name: statut
+        schema:
+          type: string
       tags:
       - caisses
       security:
@@ -381,6 +400,42 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Prochaine'
+          description: ''
+  /api/v1/caisses/recapitulatif/:
+    get:
+      operationId: caisses_recapitulatif_list
+      description: 'Par caissière : ouvertures, recette et écart cumulé (CdC §5.2).'
+      parameters:
+      - in: query
+        name: au
+        schema:
+          type: string
+        description: AAAA-MM-JJ
+      - in: query
+        name: caissiere
+        schema:
+          type: integer
+      - in: query
+        name: du
+        schema:
+          type: string
+        description: AAAA-MM-JJ
+      - in: query
+        name: statut
+        schema:
+          type: string
+      tags:
+      - caisses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recapitulatif'
           description: ''
   /api/v1/clients/:
     get:
@@ -7637,6 +7692,28 @@ components:
         * `production` - production
         * `semaine` - semaine
         * `stock` - stock
+    Recapitulatif:
+      type: object
+      properties:
+        caissiere:
+          $ref: '#/components/schemas/Caissiere'
+        ouvertures:
+          type: integer
+        recette:
+          type: integer
+          description: Encaissements de ses caisses, en FCFA.
+        ecart_cumule:
+          type: integer
+          description: Somme des écarts à la fermeture.
+        manques:
+          type: integer
+          description: Caisses fermées avec un manque.
+      required:
+      - caissiere
+      - ecart_cumule
+      - manques
+      - ouvertures
+      - recette
     ReceptionFaite:
       type: object
       properties:

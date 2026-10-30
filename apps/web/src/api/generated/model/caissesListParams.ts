@@ -8,7 +8,17 @@
 
 export type CaissesListParams = {
 /**
+ * AAAA-MM-JJ
+ */
+au?: string;
+caissiere?: number;
+/**
+ * AAAA-MM-JJ
+ */
+du?: string;
+/**
  * Un numéro de page de l'ensemble des résultats.
  */
 page?: number;
+statut?: string;
 };

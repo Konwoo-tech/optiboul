@@ -27,12 +27,14 @@ import type {
 import type {
   Caisse,
   CaissesListParams,
+  CaissesRecapitulatifListParams,
   Especes,
   Fermeture,
   Ouverture,
   PaginatedCaisseList,
   Probleme,
   Prochaine,
+  Recapitulatif,
   Remise,
   Reouverture,
   ResultatFermeture
@@ -87,6 +89,9 @@ export const getCaissesListUrl = (params?: CaissesListParams,) => {
   return stringifiedParams.length > 0 ? `/api/v1/caisses/?${stringifiedParams}` : `/api/v1/caisses/`
 }
 
+/**
+ * Historique par jour et par caissière, la plus récente d'abord.
+ */
 export const caissesList = async (params?: CaissesListParams, options?: Parameters<typeof optiboulFetch>[1]): Promise<caissesListResponse> => {
 
   return optiboulFetch<caissesListResponse>(getCaissesListUrl(params),
@@ -901,6 +906,122 @@ export function useCaissesProchaineRetrieve<TData = Awaited<ReturnType<typeof ca
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getCaissesProchaineRetrieveQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type caissesRecapitulatifListResponse200 = {
+  data: Recapitulatif[]
+  status: 200
+}
+
+export type caissesRecapitulatifListResponseSuccess = (caissesRecapitulatifListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type caissesRecapitulatifListResponse = (caissesRecapitulatifListResponseSuccess)
+
+export const getCaissesRecapitulatifListUrl = (params?: CaissesRecapitulatifListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/caisses/recapitulatif/?${stringifiedParams}` : `/api/v1/caisses/recapitulatif/`
+}
+
+/**
+ * Par caissière : ouvertures, recette et écart cumulé (CdC §5.2).
+ */
+export const caissesRecapitulatifList = async (params?: CaissesRecapitulatifListParams, options?: Parameters<typeof optiboulFetch>[1]): Promise<caissesRecapitulatifListResponse> => {
+
+  return optiboulFetch<caissesRecapitulatifListResponse>(getCaissesRecapitulatifListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCaissesRecapitulatifListQueryKey = (params?: CaissesRecapitulatifListParams,) => {
+    return [
+    `/api/v1/caisses/recapitulatif/`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCaissesRecapitulatifListQueryOptions = <TData = Awaited<ReturnType<typeof caissesRecapitulatifList>>, TError = unknown>(params?: CaissesRecapitulatifListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof caissesRecapitulatifList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCaissesRecapitulatifListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof caissesRecapitulatifList>>> = ({ signal }) => caissesRecapitulatifList(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof caissesRecapitulatifList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CaissesRecapitulatifListQueryResult = NonNullable<Awaited<ReturnType<typeof caissesRecapitulatifList>>>
+export type CaissesRecapitulatifListQueryError = unknown
+
+
+export function useCaissesRecapitulatifList<TData = Awaited<ReturnType<typeof caissesRecapitulatifList>>, TError = unknown>(
+ params: undefined |  CaissesRecapitulatifListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof caissesRecapitulatifList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof caissesRecapitulatifList>>,
+          TError,
+          Awaited<ReturnType<typeof caissesRecapitulatifList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCaissesRecapitulatifList<TData = Awaited<ReturnType<typeof caissesRecapitulatifList>>, TError = unknown>(
+ params?: CaissesRecapitulatifListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof caissesRecapitulatifList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof caissesRecapitulatifList>>,
+          TError,
+          Awaited<ReturnType<typeof caissesRecapitulatifList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCaissesRecapitulatifList<TData = Awaited<ReturnType<typeof caissesRecapitulatifList>>, TError = unknown>(
+ params?: CaissesRecapitulatifListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof caissesRecapitulatifList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useCaissesRecapitulatifList<TData = Awaited<ReturnType<typeof caissesRecapitulatifList>>, TError = unknown>(
+ params?: CaissesRecapitulatifListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof caissesRecapitulatifList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCaissesRecapitulatifListQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
