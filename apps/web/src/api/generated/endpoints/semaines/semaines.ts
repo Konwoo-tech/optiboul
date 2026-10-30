@@ -26,6 +26,7 @@ import type {
 
 import type {
   Affectations,
+  ClotureForcee,
   PaginatedControleList,
   PaginatedSemaineList,
   Placement,
@@ -570,6 +571,110 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getSemainesCloturerCreateMutationOptions(options), queryClient);
+    }
+    export type semainesCloturerForceeCreateResponse200 = {
+  data: Semaine
+  status: 200
+}
+
+export type semainesCloturerForceeCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type semainesCloturerForceeCreateResponseSuccess = (semainesCloturerForceeCreateResponse200) & {
+  headers: Headers;
+};
+export type semainesCloturerForceeCreateResponseError = (semainesCloturerForceeCreateResponse409) & {
+  headers: Headers;
+};
+
+export type semainesCloturerForceeCreateResponse = (semainesCloturerForceeCreateResponseSuccess | semainesCloturerForceeCreateResponseError)
+
+export const getSemainesCloturerForceeCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/semaines/${id}/cloturer-forcee/`
+}
+
+/**
+ * Le propriétaire force la clôture avec un motif (US-035, O8).
+ */
+export const semainesCloturerForceeCreate = async (id: number,
+    clotureForcee: ClotureForcee, options?: Parameters<typeof optiboulFetch>[1]): Promise<semainesCloturerForceeCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<semainesCloturerForceeCreateResponse>(getSemainesCloturerForceeCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(clotureForcee)
+  }
+);}
+
+
+
+
+
+export const getSemainesCloturerForceeCreateMutationKey = () => ['semainesCloturerForceeCreate'] as const;
+
+export const getSemainesCloturerForceeCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof semainesCloturerForceeCreate>>, TError,SemainesCloturerForceeCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof semainesCloturerForceeCreate>>, TError,SemainesCloturerForceeCreateMutationVariables, TContext> => {
+
+const mutationKey = getSemainesCloturerForceeCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof semainesCloturerForceeCreate>>, SemainesCloturerForceeCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  semainesCloturerForceeCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SemainesCloturerForceeCreateMutationResult = NonNullable<Awaited<ReturnType<typeof semainesCloturerForceeCreate>>>
+    export type SemainesCloturerForceeCreateMutationBody = ClotureForcee
+    export type SemainesCloturerForceeCreateMutationError = Probleme
+    export type SemainesCloturerForceeCreateMutationVariables = {id: number;data: ClotureForcee}
+
+    export const useSemainesCloturerForceeCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof semainesCloturerForceeCreate>>, TError,SemainesCloturerForceeCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof semainesCloturerForceeCreate>>,
+        TError,
+        SemainesCloturerForceeCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSemainesCloturerForceeCreateMutationOptions(options), queryClient);
     }
     export type semainesControlesClotureListResponse200 = {
   data: PaginatedControleList

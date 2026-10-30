@@ -33,6 +33,7 @@ export * from './clientsDettesRetrieveStatut.ts';
 export * from './clientsListParams.ts';
 export * from './clientsRelancesListParams.ts';
 export * from './clientTarifs.ts';
+export * from './clotureForcee.ts';
 export * from './code.ts';
 export * from './codeEnvoye.ts';
 export * from './codeGerant.ts';

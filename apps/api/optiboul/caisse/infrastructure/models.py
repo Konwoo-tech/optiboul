@@ -36,7 +36,7 @@ class Caisse(models.Model):
     attendu = models.BigIntegerField(_("attendu (FCFA)"), null=True, blank=True)
     compte = models.PositiveBigIntegerField(_("compté (FCFA)"), null=True, blank=True)
     ecart = models.BigIntegerField(_("écart (FCFA)"), null=True, blank=True)
-    statut = models.CharField(_("statut"), max_length=10, default="ouverte")
+    statut = models.CharField(_("statut"), max_length=14, default="ouverte")
     # Vrai tant que la caisse reçoit des saisies : une seule à la fois.
     en_cours = models.BooleanField(_("en cours"), default=True)
     ouverte_le = models.DateTimeField(_("ouverte le"), default=timezone.now)

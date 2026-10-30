@@ -92,6 +92,9 @@ class DepotSemainesDjango:
             cloturee_par_id=par,
         )
 
+    def marquer_forcee(self, semaine_id: int, motif: str) -> None:
+        Semaine.objects.filter(pk=semaine_id).update(cloture_forcee_motif=motif)
+
     def ouvrir(self, semaine_id: int, par: int | None, le: datetime) -> None:
         Semaine.objects.filter(pk=semaine_id).update(
             statut=Statut.OUVERTE,

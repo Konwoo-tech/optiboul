@@ -15,6 +15,7 @@ class StatutCaisse(StrEnum):
     OUVERTE = "ouverte"
     FERMEE = "fermee"
     ROUVERTE = "rouverte"
+    NON_CLOTUREE = "non_cloturee"  # archivée par une clôture forcée de semaine
 
 
 EN_COURS = frozenset({StatutCaisse.OUVERTE, StatutCaisse.ROUVERTE})

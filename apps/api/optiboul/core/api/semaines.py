@@ -37,6 +37,7 @@ from optiboul.core.infrastructure.models import Semaine
 from optiboul.core.infrastructure.sauvegardes import demander_sauvegarde
 from optiboul.core.infrastructure.semaines import depot_planning
 from optiboul.core.infrastructure.semaines import depot_semaines
+from optiboul.notifications.infrastructure.envois import notificateur
 
 from .contexte import auteur_de
 from .erreurs import ProblemeSerializer
@@ -195,6 +196,10 @@ class ControleSerializer(serializers.Serializer):
     cle = serializers.CharField()
     niveau = serializers.ChoiceField(choices=["ok", "surveiller", "bloquant"])
     detail = serializers.CharField(allow_blank=True)
+
+
+class ClotureForceeSerializer(serializers.Serializer):
+    motif = serializers.CharField(max_length=500)
 
 
 class RotationSerializer(serializers.Serializer):
@@ -360,6 +365,33 @@ class SemainesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
                 )
                 demander_sauvegarde(Declencheur.CLOTURE_SEMAINE)
                 # Le rapport de passation part au gérant suivant (US-034).
+                transaction.on_commit(lambda: taches.passation.delay(semaine_id))
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(SemaineSerializer(self.get_queryset().get(pk=semaine_id)).data)
+
+    @extend_schema(
+        request=ClotureForceeSerializer,
+        responses={200: SemaineSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"], url_path="cloturer-forcee")
+    def cloturer_forcee(self, request: Request, pk: str) -> Response:
+        """Le propriétaire force la clôture avec un motif (US-035, O8)."""
+        corps = ClotureForceeSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        semaine_id = self.get_object().pk
+        try:
+            with transaction.atomic():
+                cas_cloture.cloturer_forcee(
+                    depot_semaines,
+                    journal,
+                    notificateur,
+                    semaine_id=semaine_id,
+                    motif=corps.validated_data["motif"],
+                    auteur=auteur_de(request),
+                    maintenant=timezone.now(),
+                )
+                demander_sauvegarde(Declencheur.CLOTURE_SEMAINE)
                 transaction.on_commit(lambda: taches.passation.delay(semaine_id))
         except RefusMetier as refus:
             return probleme(refus)

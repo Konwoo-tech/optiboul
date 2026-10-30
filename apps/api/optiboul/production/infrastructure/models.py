@@ -219,7 +219,7 @@ class Production(models.Model):
         related_name="productions",
         verbose_name=_("semaine"),
     )
-    statut = models.CharField(_("statut"), max_length=10, default="en_cours")
+    statut = models.CharField(_("statut"), max_length=14, default="en_cours")
     ouverte_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,

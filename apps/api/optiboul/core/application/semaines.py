@@ -71,6 +71,8 @@ class DepotSemaines(Protocol):
 
     def cloturer(self, semaine_id: int, par: int | None, le: datetime) -> None: ...
 
+    def marquer_forcee(self, semaine_id: int, motif: str) -> None: ...
+
 
 def _verifier_profil(
     depot: DepotSemaines,
