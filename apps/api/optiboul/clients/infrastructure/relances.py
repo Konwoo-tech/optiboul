@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from django.utils import timezone
+
 from optiboul.clients.domain.clients import texte_relance
 from optiboul.core.infrastructure.journal import journaliser
 from optiboul.core.infrastructure.parametres import parametre
@@ -61,6 +63,7 @@ def relancer_dettes(
                 montant=dette,
                 automatique=automatique,
                 auteur_id=auteur.utilisateur_id,
+                cree_le=timezone.now(),
             ),
         )
     if relances:

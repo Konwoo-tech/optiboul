@@ -442,6 +442,10 @@ CELERY_BEAT_SCHEDULE = {
     },
     "escalader-demandes": {"task": "demandes.escalader", "schedule": 60.0},
     "rappel-habituels": {"task": "ventes.rappel_habituels", "schedule": 60.0},
+    "relances-automatiques": {
+        "task": "clients.relances_automatiques",
+        "schedule": 60.0,
+    },
     "valider-plan-auto": {"task": "production.valider_plan_auto", "schedule": 60.0},
     "archiver-productions": {"task": "production.archiver", "schedule": 300.0},
 }

@@ -4,10 +4,15 @@ from __future__ import annotations
 
 from enum import IntEnum
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from optiboul.core.domain.erreurs import RefusMetier
+from optiboul.core.domain.parametres import JOURS
 from optiboul.users.domain.comptes import CompteInvalide
 from optiboul.users.domain.comptes import normaliser_telephone
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class TypeClient(StrEnum):
@@ -68,6 +73,13 @@ def jauge(solde: int, plafond: int) -> int:
     if plafond <= 0:
         return 100 if dette else 0
     return round(dette * 100 / plafond)
+
+
+def relance_due(maintenant: datetime, jours: list[str], heure: str) -> bool:
+    """O11 : le bon jour, à partir de l'heure : un retard de tâche ne perd rien."""
+    return (
+        JOURS[maintenant.weekday()] in jours and maintenant.strftime("%H:%M") >= heure
+    )
 
 
 def texte_relance(nom: str, echeance: str, montant: str) -> str:
