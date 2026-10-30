@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from decimal import ROUND_HALF_UP
+from decimal import Decimal
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
@@ -9,7 +11,6 @@ from optiboul.core.domain.erreurs import RefusMetier
 
 if TYPE_CHECKING:
     from datetime import date
-    from decimal import Decimal
 
 
 class StatutReception(StrEnum):
@@ -36,3 +37,22 @@ def verifier_planification(
     if prevue_le < aujourd_hui:
         message = "La date prévue est passée."
         raise RefusMetier("date_passee", message)
+
+
+POIDS_SAC_FARINE_KG = 50
+
+
+def montant_farine(kilos: Decimal, prix_du_sac: int) -> int:
+    """La farine se facture au sac de 50 kg (paramètre prix_sac_farine), en FCFA."""
+    return int(
+        (kilos * prix_du_sac / POIDS_SAC_FARINE_KG).quantize(Decimal(1), ROUND_HALF_UP),
+    )
+
+
+def montant(quantite: Decimal, prix_unitaire: int) -> int:
+    return int((quantite * prix_unitaire).quantize(Decimal(1), ROUND_HALF_UP))
+
+
+def ecart(prevue: Decimal, recue: Decimal) -> Decimal:
+    """Reçu moins prévu : négatif, un manquant reste à livrer (R11)."""
+    return recue - prevue

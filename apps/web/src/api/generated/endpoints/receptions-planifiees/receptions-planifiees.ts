@@ -27,7 +27,9 @@ import type {
 import type {
   PaginatedReceptionPlanifieeList,
   Probleme,
+  ReceptionFaite,
   ReceptionPlanifiee,
+  Receptionner,
   ReceptionsPlanifieesListParams
 } from '../../model';
 
@@ -480,4 +482,108 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getReceptionsPlanifieesAnnulerCreateMutationOptions(options), queryClient);
+    }
+    export type receptionsPlanifieesReceptionnerCreateResponse201 = {
+  data: ReceptionFaite
+  status: 201
+}
+
+export type receptionsPlanifieesReceptionnerCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type receptionsPlanifieesReceptionnerCreateResponseSuccess = (receptionsPlanifieesReceptionnerCreateResponse201) & {
+  headers: Headers;
+};
+export type receptionsPlanifieesReceptionnerCreateResponseError = (receptionsPlanifieesReceptionnerCreateResponse409) & {
+  headers: Headers;
+};
+
+export type receptionsPlanifieesReceptionnerCreateResponse = (receptionsPlanifieesReceptionnerCreateResponseSuccess | receptionsPlanifieesReceptionnerCreateResponseError)
+
+export const getReceptionsPlanifieesReceptionnerCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/receptions-planifiees/${id}/receptionner/`
+}
+
+/**
+ * En un clic (O12) : la quantité prévue est proposée, on saisit le compté.
+ */
+export const receptionsPlanifieesReceptionnerCreate = async (id: number,
+    receptionner: Receptionner, options?: Parameters<typeof optiboulFetch>[1]): Promise<receptionsPlanifieesReceptionnerCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<receptionsPlanifieesReceptionnerCreateResponse>(getReceptionsPlanifieesReceptionnerCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(receptionner)
+  }
+);}
+
+
+
+
+
+export const getReceptionsPlanifieesReceptionnerCreateMutationKey = () => ['receptionsPlanifieesReceptionnerCreate'] as const;
+
+export const getReceptionsPlanifieesReceptionnerCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receptionsPlanifieesReceptionnerCreate>>, TError,ReceptionsPlanifieesReceptionnerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof receptionsPlanifieesReceptionnerCreate>>, TError,ReceptionsPlanifieesReceptionnerCreateMutationVariables, TContext> => {
+
+const mutationKey = getReceptionsPlanifieesReceptionnerCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof receptionsPlanifieesReceptionnerCreate>>, ReceptionsPlanifieesReceptionnerCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  receptionsPlanifieesReceptionnerCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReceptionsPlanifieesReceptionnerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof receptionsPlanifieesReceptionnerCreate>>>
+    export type ReceptionsPlanifieesReceptionnerCreateMutationBody = Receptionner
+    export type ReceptionsPlanifieesReceptionnerCreateMutationError = Probleme
+    export type ReceptionsPlanifieesReceptionnerCreateMutationVariables = {id: number;data: Receptionner}
+
+    export const useReceptionsPlanifieesReceptionnerCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof receptionsPlanifieesReceptionnerCreate>>, TError,ReceptionsPlanifieesReceptionnerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof receptionsPlanifieesReceptionnerCreate>>,
+        TError,
+        ReceptionsPlanifieesReceptionnerCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReceptionsPlanifieesReceptionnerCreateMutationOptions(options), queryClient);
     }

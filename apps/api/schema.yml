@@ -1361,6 +1361,50 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/factures/:
+    get:
+      operationId: factures_list
+      description: 'Factures fournisseurs : à payer, en retard, payées (CdC §5.7).'
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - factures
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFactureList'
+          description: ''
+  /api/v1/factures/{id}/:
+    get:
+      operationId: factures_retrieve
+      description: 'Factures fournisseurs : à payer, en retard, payées (CdC §5.7).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) facture fournisseur.
+        required: true
+      tags:
+      - factures
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Facture'
+          description: ''
   /api/v1/fournisseurs/:
     get:
       operationId: fournisseurs_list
@@ -2967,6 +3011,48 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReceptionPlanifiee'
+          description: ''
+  /api/v1/receptions-planifiees/{id}/receptionner/:
+    post:
+      operationId: receptions_planifiees_receptionner_create
+      description: 'En un clic (O12) : la quantité prévue est proposée, on saisit
+        le compté.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) réception
+          planifiée.
+        required: true
+      tags:
+      - receptions-planifiees
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Receptionner'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Receptionner'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Receptionner'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceptionFaite'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
           description: ''
   /api/v1/regles-notification/:
     get:
@@ -4683,6 +4769,55 @@ components:
       - derniere_cloud
       - derniere_locale
       - seuil_alerte_heures
+    Facture:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        numero:
+          type: integer
+          readOnly: true
+          title: Numéro
+        fournisseur:
+          type: integer
+          readOnly: true
+        fournisseur_nom:
+          type: string
+        semaine:
+          type: integer
+          readOnly: true
+        farine:
+          type: boolean
+          readOnly: true
+          default: false
+          title: Facture de farine de la semaine
+        montant:
+          type: integer
+          readOnly: true
+          title: Montant (FCFA)
+        echeance:
+          type: string
+          format: date
+          readOnly: true
+          title: Échéance
+        statut:
+          type: string
+          readOnly: true
+        en_retard:
+          type: boolean
+          readOnly: true
+      required:
+      - echeance
+      - en_retard
+      - farine
+      - fournisseur
+      - fournisseur_nom
+      - id
+      - montant
+      - numero
+      - semaine
+      - statut
     Fermeture:
       type: object
       properties:
@@ -5633,6 +5768,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Encaissement'
+    PaginatedFactureList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Facture'
     PaginatedFicheList:
       type: object
       required:
@@ -6644,6 +6802,25 @@ components:
       - automatique
       - cree_le
       - statut
+    ReceptionFaite:
+      type: object
+      properties:
+        id:
+          type: integer
+        montant:
+          type: integer
+        ecart:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          description: 'Reçu moins prévu : négatif, un manquant reste à livrer.'
+        facture:
+          $ref: '#/components/schemas/Facture'
+      required:
+      - ecart
+      - facture
+      - id
+      - montant
     ReceptionPlanifiee:
       type: object
       properties:
@@ -6687,6 +6864,22 @@ components:
       - prevue_le
       - quantite
       - statut
+    Receptionner:
+      type: object
+      properties:
+        quantite:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+        observation:
+          type: string
+          default: ''
+        prix_unitaire:
+          type: integer
+          minimum: 1
+          description: FCFA par unité de la matière ; la farine suit le prix du sac.
+      required:
+      - quantite
     Refus:
       type: object
       properties:

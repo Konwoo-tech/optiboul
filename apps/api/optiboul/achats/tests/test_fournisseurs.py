@@ -6,7 +6,6 @@ import pytest
 from django.urls import reverse
 
 from optiboul.achats.domain.receptions import verifier_planification
-from optiboul.achats.infrastructure.models import Fournisseur
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.infrastructure.models import LigneJournal
 
@@ -40,16 +39,6 @@ def test_planification_verifiee():
         with pytest.raises(RefusMetier) as refus:
             verifier_planification(**valeurs)
         assert refus.value.code == code
-
-
-@pytest.fixture
-def minoterie(db) -> Fournisseur:
-    fournisseur = Fournisseur.objects.create(
-        nom="Minoterie du Centre",
-        conditions="Lundi",
-    )
-    fournisseur.matieres.set(fournisseur.matieres.model.objects.filter(code="farine"))
-    return fournisseur
 
 
 pytestmark = pytest.mark.django_db

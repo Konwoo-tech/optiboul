@@ -36,6 +36,7 @@ STATUTS = {
     "supplement_vide": status.HTTP_400_BAD_REQUEST,
     "matiere_hors_fournisseur": status.HTTP_400_BAD_REQUEST,
     "date_passee": status.HTTP_400_BAD_REQUEST,
+    "prix_obligatoire": status.HTTP_400_BAD_REQUEST,
     "motif_obligatoire": status.HTTP_400_BAD_REQUEST,
     "cle_idempotence_reutilisee": status.HTTP_422_UNPROCESSABLE_ENTITY,
 }

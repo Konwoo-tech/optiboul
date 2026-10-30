@@ -5,6 +5,7 @@ export * from './commandes/commandes.ts';
 export * from './connexion/connexion.ts';
 export * from './demandes/demandes.ts';
 export * from './encaissements/encaissements.ts';
+export * from './factures/factures.ts';
 export * from './fournisseurs/fournisseurs.ts';
 export * from './groupes/groupes.ts';
 export * from './journal/journal.ts';
