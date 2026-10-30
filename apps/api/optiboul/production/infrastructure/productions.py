@@ -57,6 +57,11 @@ def etat(production: Production) -> EtatProduction:
         },
         recettes=recettes,
         matieres=matieres,
+        justifications={
+            c.matiere.code: c.justification
+            for c in production.consommations.select_related("matiere")
+            if c.justification
+        },
     )
 
 
@@ -108,6 +113,7 @@ class DepotProductionsDjango:
         production_id: int,
         quantites: dict[str, Decimal],
         *,
+        justifications: dict[str, str],
         auteur: int,
         le: datetime,
     ) -> None:
@@ -118,6 +124,7 @@ class DepotProductionsDjango:
                 matiere_id=matieres[code],
                 defaults={
                     "quantite": quantite,
+                    "justification": justifications.get(code, ""),
                     "saisie_par_id": auteur,
                     "modifiee_le": le,
                 },
@@ -132,6 +139,9 @@ class DepotProductionsDjango:
 
     def matieres_connues(self) -> set[str]:
         return set(Matiere.objects.values_list("code", flat=True))
+
+    def unites(self) -> dict[str, str]:
+        return dict(Matiere.objects.values_list("code", "unite"))
 
 
 depot_productions = DepotProductionsDjango()

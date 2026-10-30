@@ -22,6 +22,7 @@ from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.domain.sauvegardes import Declencheur
+from optiboul.core.infrastructure.parametres import parametre
 from optiboul.core.infrastructure.sauvegardes import demander_sauvegarde
 from optiboul.production.application import plans as cas
 from optiboul.production.application import productions as cas_production
@@ -211,6 +212,7 @@ class MatiereConsommeeSerializer(serializers.Serializer):
     matiere = serializers.CharField()
     theorique = serializers.DecimalField(max_digits=12, decimal_places=3)
     reelle = serializers.DecimalField(max_digits=12, decimal_places=3, allow_null=True)
+    justification = serializers.CharField(allow_blank=True)
 
 
 class ProductionSerializer(serializers.Serializer):
@@ -275,6 +277,12 @@ class ConsommationSerializer(serializers.Serializer):
         child=serializers.DecimalField(max_digits=12, decimal_places=3, min_value=0),
         help_text="Code de la matière → quantité réelle, dans l'unité de la matière.",
     )
+    justifications = serializers.DictField(
+        child=serializers.CharField(max_length=255, allow_blank=True),
+        required=False,
+        default=dict,
+        help_text="Code de la matière → justification de l'écart (R10).",
+    )
 
 
 def projeter_production(production: cas_production.EtatProduction) -> dict[str, Any]:
@@ -301,6 +309,7 @@ def projeter_production(production: cas_production.EtatProduction) -> dict[str, 
                 "matiere": matiere,
                 "theorique": theorique.get(matiere, Decimal(0)),
                 "reelle": production.consommation.get(matiere),
+                "justification": production.justifications.get(matiere, ""),
             }
             for matiere in matieres
         ],
@@ -500,6 +509,11 @@ class ProductionsViewSet(ViewSet):
                 depots_production,
                 production_id=int(pk),
                 quantites=dict(corps.validated_data["quantites"]),
+                justifications=dict(corps.validated_data["justifications"]),
+                tolerance=cas_production.ToleranceMatiere(
+                    kg_par_sac=parametre("ecart_matiere_kg_par_sac"),
+                    pourcent=parametre("ecart_matiere_grammes"),
+                ),
                 auteur=auteur_de(request),
                 maintenant=timezone.now(),
             ),

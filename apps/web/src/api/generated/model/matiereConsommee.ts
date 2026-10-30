@@ -15,4 +15,5 @@ export interface MatiereConsommee {
      * @pattern ^-?\d{0,9}(?:\.\d{0,3})?$
      */
   reelle: string | null;
+  justification: string;
 }

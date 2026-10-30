@@ -168,6 +168,7 @@ def test_consommation_avec_valeur_theorique(
         "matiere": "farine",
         "theorique": "200.000",
         "reelle": "205.000",
+        "justification": "",
     }
     assert par_matiere["levure"]["reelle"] is None
     assert par_matiere["levure"]["theorique"] == "1800.000"

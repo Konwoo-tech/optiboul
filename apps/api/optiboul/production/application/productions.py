@@ -11,6 +11,8 @@ from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.production.domain.plan import VALIDES
 from optiboul.production.domain.production import RAISONS_CLOTURE
 from optiboul.production.domain.production import StatutProduction
+from optiboul.production.domain.production import consommation_theorique
+from optiboul.production.domain.production import ecarts_a_justifier
 from optiboul.production.domain.production import raisons_de_ne_pas_cloturer
 from optiboul.stocks.domain.stocks import GenreMouvementStock
 from optiboul.stocks.domain.stocks import Sens
@@ -44,6 +46,7 @@ class EtatProduction:
         dict[str, Decimal],
     ]  # produit → recette d'un sac (version du plan)
     matieres: set[str]  # matières suivies en stock de ces recettes
+    justifications: dict[str, str]  # écarts au-delà de la tolérance (R10)
 
 
 class DepotProductions(Protocol):
@@ -75,6 +78,7 @@ class DepotProductions(Protocol):
         production_id: int,
         quantites: dict[str, Decimal],
         *,
+        justifications: dict[str, str],
         auteur: int,
         le: datetime,
     ) -> None: ...
@@ -82,6 +86,8 @@ class DepotProductions(Protocol):
     def cloturer(self, production_id: int, *, auteur: int, le: datetime) -> None: ...
 
     def matieres_connues(self) -> set[str]: ...
+
+    def unites(self) -> dict[str, str]: ...
 
 
 @dataclass(frozen=True)
@@ -189,15 +195,26 @@ def saisir_fournee(  # noqa: PLR0913
     return apres
 
 
-def saisir_consommation(
+@dataclass(frozen=True)
+class ToleranceMatiere:
+    kg_par_sac: int
+    pourcent: int
+
+
+def saisir_consommation(  # noqa: PLR0913
     depots: Depots,
     *,
     production_id: int,
     quantites: dict[str, Decimal],
+    justifications: dict[str, str],
+    tolerance: ToleranceMatiere,
     auteur: Auteur,
     maintenant: datetime,
 ) -> EtatProduction:
-    """Consommation réelle par matière ; une nouvelle saisie remplace la précédente."""
+    """Consommation réelle par matière ; une nouvelle saisie remplace la précédente.
+
+    R10 : un écart au-delà de la tolérance est justifié, et le gérant en est informé.
+    """
     production = _en_cours(depots, production_id, auteur)
     if inconnues := sorted(set(quantites) - depots.productions.matieres_connues()):
         message = f"Matières inconnues : {', '.join(inconnues)}."
@@ -205,13 +222,34 @@ def saisir_consommation(
     if any(quantite < 0 for quantite in quantites.values()):
         message = "Une consommation n'est pas négative."
         raise RefusMetier("quantite_invalide", message)
+    en_ecart = ecarts_a_justifier(
+        theorique=consommation_theorique(production.sacs, production.recettes),
+        reelle=quantites,
+        unites=depots.productions.unites(),
+        sacs=sum(production.sacs.values()),
+        kg_par_sac=tolerance.kg_par_sac,
+        pourcent=tolerance.pourcent,
+    )
+    motifs = {m: justifications.get(m, "").strip() for m in en_ecart}
+    if sans_motif := [m for m, motif in motifs.items() if not motif]:
+        message = f"Justifiez l'écart : {', '.join(sans_motif)} (R10)."
+        raise RefusMetier("justification_obligatoire", message, matieres=sans_motif)
     assert auteur.utilisateur_id is not None
     depots.productions.consommer(
         production_id,
         quantites,
+        justifications=motifs,
         auteur=auteur.utilisateur_id,
         le=maintenant,
     )
+    if motifs:
+        session = production.session
+        depots.plans.notificateur.notifier_type(
+            "production.ecart_matiere",
+            titre=f"Écart matière : {session.creneau} du {session.jour:%d/%m}",
+            message="; ".join(f"{m} : {motif}" for m, motif in motifs.items()),
+            lien="/atelier/production",
+        )
     depots.plans.journal.enregistrer(
         Evenement(
             action="production.consommation",
@@ -219,7 +257,10 @@ def saisir_consommation(
             objet_type="production",
             objet_id=str(production_id),
             avant={m: str(q) for m, q in production.consommation.items()} or None,
-            apres={m: str(q) for m, q in quantites.items()},
+            apres={
+                "quantites": {m: str(q) for m, q in quantites.items()},
+                "justifications": motifs,
+            },
         ),
     )
     apres = depots.productions.verrouiller(production_id)

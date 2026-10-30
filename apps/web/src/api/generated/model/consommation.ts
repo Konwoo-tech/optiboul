@@ -5,9 +5,12 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
+import type { ConsommationJustifications } from './consommationJustifications.ts';
 import type { ConsommationQuantites } from './consommationQuantites.ts';
 
 export interface Consommation {
   /** Code de la matière → quantité réelle, dans l'unité de la matière. */
   quantites: ConsommationQuantites;
+  /** Code de la matière → justification de l'écart (R10). */
+  justifications?: ConsommationJustifications;
 }

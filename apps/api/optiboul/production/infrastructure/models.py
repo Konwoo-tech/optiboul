@@ -303,6 +303,7 @@ class Consommation(models.Model):
         verbose_name=_("matière"),
     )
     quantite = models.DecimalField(_("quantité"), max_digits=12, decimal_places=3)
+    justification = models.CharField(_("justification"), max_length=255, blank=True)
     saisie_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,

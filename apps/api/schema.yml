@@ -5349,6 +5349,12 @@ components:
             format: decimal
             pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
           description: Code de la matière → quantité réelle, dans l'unité de la matière.
+        justifications:
+          type: object
+          additionalProperties:
+            type: string
+            maxLength: 255
+          description: Code de la matière → justification de l'écart (R10).
       required:
       - quantites
     Controle:
@@ -6801,7 +6807,10 @@ components:
           format: decimal
           pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
           nullable: true
+        justification:
+          type: string
       required:
+      - justification
       - matiere
       - reelle
       - theorique

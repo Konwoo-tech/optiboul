@@ -45,6 +45,31 @@ def reste_a_produire(prevus: dict[str, int], realise: dict[str, int]) -> dict[st
     }
 
 
+def ecarts_a_justifier(  # noqa: PLR0913
+    *,
+    theorique: dict[str, Decimal],
+    reelle: dict[str, Decimal],
+    unites: dict[str, str],
+    sacs: int,
+    kg_par_sac: int,
+    pourcent: int,
+) -> list[str]:
+    """R10 : au-delà de 2 kg par sac, ou de 4 % pour les intrants en grammes."""
+    depasses = []
+    for matiere, attendue in theorique.items():
+        if matiere not in reelle:
+            continue
+        ecart = abs(reelle[matiere] - attendue)
+        tolere = (
+            Decimal(kg_par_sac * sacs)
+            if unites.get(matiere) == "kg"
+            else attendue * pourcent / 100
+        )
+        if ecart > tolere:
+            depasses.append(matiere)
+    return sorted(depasses)
+
+
 def consommation_theorique(
     sacs: dict[str, int],
     recettes: dict[str, dict[str, Decimal]],
