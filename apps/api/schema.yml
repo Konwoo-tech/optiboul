@@ -1383,6 +1383,105 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/controles-stock/:
+    get:
+      operationId: controles_stock_list
+      description: 'Contrôles de la semaine : prévu, à faire aujourd''hui, fait ou
+        manqué.'
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - controles-stock
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedControleStockList'
+          description: ''
+  /api/v1/controles-stock/{id}/commencer/:
+    post:
+      operationId: controles_stock_commencer_create
+      description: La liste pré-remplie, sans le stock théorique (O13).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) contrôle
+          de stock.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - controles-stock
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMatiereACompterList'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/controles-stock/{id}/valider/:
+    post:
+      operationId: controles_stock_valider_create
+      description: Écart ≤ tolérance ajusté, au-delà soumis au propriétaire (R9).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) contrôle
+          de stock.
+        required: true
+      tags:
+      - controles-stock
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Comptes'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Comptes'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Comptes'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultatControle'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/demandes/:
     get:
       operationId: demandes_list
@@ -5119,6 +5218,18 @@ components:
       - is_active
       - name
       - profil
+    Comptes:
+      type: object
+      properties:
+        comptes:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+            pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          description: Code de la matière → quantité comptée.
+      required:
+      - comptes
     Compteur:
       type: object
       properties:
@@ -5214,6 +5325,44 @@ components:
         * `ok` - ok
         * `surveiller` - surveiller
         * `bloquant` - bloquant
+    ControleStock:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        semaine:
+          type: integer
+          readOnly: true
+        jour:
+          type: string
+          format: date
+          readOnly: true
+        portee:
+          type: string
+          readOnly: true
+          title: Portée
+        statut:
+          type: string
+          readOnly: true
+        fait_le:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        lignes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LigneControle'
+          readOnly: true
+      required:
+      - fait_le
+      - id
+      - jour
+      - lignes
+      - portee
+      - semaine
+      - statut
     Creneau:
       type: object
       properties:
@@ -6148,6 +6297,31 @@ components:
         * `ok` - ok
         * `surveiller` - surveiller
         * `depasse` - depasse
+    LigneControle:
+      type: object
+      properties:
+        matiere:
+          type: string
+        theorique:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          readOnly: true
+          title: Théorique
+        compte:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          readOnly: true
+          title: Compté
+        statut:
+          type: string
+          readOnly: true
+      required:
+      - compte
+      - matiere
+      - statut
+      - theorique
     LigneJournal:
       type: object
       properties:
@@ -6442,6 +6616,25 @@ components:
       - code
       - nom
       - stockee
+      - unite
+    MatiereACompter:
+      type: object
+      properties:
+        code:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        nom:
+          type: string
+          readOnly: true
+        unite:
+          allOf:
+          - $ref: '#/components/schemas/UniteEnum'
+          readOnly: true
+          title: Unité
+      required:
+      - code
+      - nom
       - unite
     MatiereConsommee:
       type: object
@@ -7006,6 +7199,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Controle'
+    PaginatedControleStockList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ControleStock'
     PaginatedDemandeList:
       type: object
       required:
@@ -7209,6 +7425,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Livraison'
+    PaginatedMatiereACompterList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MatiereACompter'
     PaginatedMessageList:
       type: object
       required:
@@ -8578,6 +8817,15 @@ components:
           type: boolean
       required:
       - deuxFacteurs
+    ResultatControle:
+      type: object
+      properties:
+        demande:
+          type: string
+          nullable: true
+          description: DEM-xxx quand un écart dépasse la tolérance (R9).
+      required:
+      - demande
     ResultatEnum:
       enum:
       - JUSTE

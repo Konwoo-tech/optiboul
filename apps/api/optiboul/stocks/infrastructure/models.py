@@ -32,6 +32,92 @@ class Matiere(models.Model):
         return self.nom
 
 
+class ControleStock(models.Model):
+    """Contrôle physique du mercredi ou du dimanche (R16, O13)."""
+
+    semaine = models.ForeignKey(
+        "core.Semaine",
+        on_delete=models.PROTECT,
+        related_name="controles_stock",
+        verbose_name=_("semaine"),
+    )
+    jour = models.DateField(_("jour"))
+    portee = models.CharField(_("portée"), max_length=6)
+    statut = models.CharField(_("statut"), max_length=8, default="prevu")
+    gerant = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        null=True,
+        verbose_name=_("gérant"),
+    )
+    responsable_production = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        null=True,
+        verbose_name=_("responsable de production"),
+    )
+    fait_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        null=True,
+        verbose_name=_("fait par"),
+    )
+    fait_le = models.DateTimeField(_("fait le"), null=True)
+
+    class Meta:
+        db_table = "controle_stock"
+        ordering = ["jour", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["semaine", "jour"],
+                name="un_controle_par_jour_de_semaine",
+            ),
+        ]
+        verbose_name = _("contrôle de stock")
+        verbose_name_plural = _("contrôles de stock")
+
+    def __str__(self) -> str:
+        return f"Contrôle du {self.jour}"
+
+
+class LigneControle(models.Model):
+    """Ce qui a été compté, et le stock théorique figé à cet instant."""
+
+    controle = models.ForeignKey(
+        ControleStock,
+        on_delete=models.PROTECT,
+        related_name="lignes",
+        verbose_name=_("contrôle"),
+    )
+    matiere = models.ForeignKey(
+        Matiere,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("matière"),
+    )
+    theorique = models.DecimalField(_("théorique"), max_digits=12, decimal_places=3)
+    compte = models.DecimalField(_("compté"), max_digits=12, decimal_places=3)
+    statut = models.CharField(_("statut"), max_length=8)
+
+    class Meta:
+        db_table = "ligne_controle"
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["controle", "matiere"],
+                name="une_ligne_par_matiere_de_controle",
+            ),
+        ]
+        verbose_name = _("ligne de contrôle")
+        verbose_name_plural = _("lignes de contrôle")
+
+    def __str__(self) -> str:
+        return f"{self.matiere} : {self.compte}"
+
+
 class MouvementStock(models.Model):
     """Registre du stock, en ajout seul : une erreur se corrige par un mouvement."""
 

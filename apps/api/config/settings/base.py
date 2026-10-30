@@ -424,6 +424,22 @@ CELERY_BEAT_SCHEDULE = {
         "task": "core.verifier_copie_cloud",
         "schedule": crontab(minute=35),
     },
+    "planifier-controles-stock": {
+        "task": "stocks.planifier_controles",
+        "schedule": crontab(minute=5, hour=6, day_of_week="mon"),
+    },
+    "rappel-controle-stock": {
+        "task": "stocks.rappel_controle",
+        "schedule": crontab(minute=30, hour=13),
+    },
+    "rappel-controle-stock-dimanche": {
+        "task": "stocks.rappel_controle",
+        "schedule": crontab(minute=0, hour=6, day_of_week="sun"),
+    },
+    "marquer-controles-manques": {
+        "task": "stocks.marquer_controles_manques",
+        "schedule": crontab(minute=30, hour=0),
+    },
     "escalader-demandes": {"task": "demandes.escalader", "schedule": 60.0},
     "rappel-habituels": {"task": "ventes.rappel_habituels", "schedule": 60.0},
     "valider-plan-auto": {"task": "production.valider_plan_auto", "schedule": 60.0},

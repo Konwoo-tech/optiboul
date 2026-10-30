@@ -6,6 +6,7 @@ export * from './caisses/caisses.ts';
 export * from './clients/clients.ts';
 export * from './commandes/commandes.ts';
 export * from './connexion/connexion.ts';
+export * from './controles-stock/controles-stock.ts';
 export * from './demandes/demandes.ts';
 export * from './depenses/depenses.ts';
 export * from './encaissements/encaissements.ts';

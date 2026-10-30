@@ -37,6 +37,7 @@ from optiboul.production.infrastructure.models import Production
 from optiboul.production.infrastructure.plans import depots as depots_plans
 from optiboul.production.infrastructure.plans import nombre_de_sessions
 from optiboul.production.infrastructure.productions import etat as etat_production
+from optiboul.stocks.infrastructure.models import ControleStock
 from optiboul.stocks.infrastructure.stocks import stock
 from optiboul.ventes.infrastructure.commandes import limites
 
@@ -262,6 +263,26 @@ def _ecarts_matiere() -> list[dict[str, Any]]:
     ]
 
 
+def _controles_manques() -> list[dict[str, Any]]:
+    """R16 : un contrôle de stock manqué remonte en alerte."""
+    semaine = depot_semaines.ouverte()
+    if semaine is None:
+        return []
+    manques = list(ControleStock.objects.filter(semaine_id=semaine.id, statut="manque"))
+    if not manques:
+        return []
+    return [
+        _alerte(
+            "controle_stock_manque",
+            "bloquant",
+            "Contrôle de stock manqué",
+            ", ".join(f"{controle.jour:%d/%m}" for controle in manques),
+            len(manques),
+            "/atelier/stocks/controles",
+        ),
+    ]
+
+
 def _demande_estimee() -> list[dict[str, Any]]:
     session = session_de_production(timezone.now(), limites())
     plan = cas_plans.calculer(
@@ -315,6 +336,7 @@ SOURCES = (
     _manques_de_caisse,
     _demandes,
     _ecarts_matiere,
+    _controles_manques,
     _demande_estimee,
     _sauvegarde_cloud,
 )
