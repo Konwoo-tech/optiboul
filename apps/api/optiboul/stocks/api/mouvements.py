@@ -26,6 +26,7 @@ from optiboul.stocks.application import saisies as cas
 from optiboul.stocks.domain.etat import StatutStock
 from optiboul.stocks.domain.stocks import GenreMouvementStock
 from optiboul.stocks.domain.stocks import Sens
+from optiboul.stocks.infrastructure.a_date import stock_du_soir
 from optiboul.stocks.infrastructure.etat import etat_du_stock
 from optiboul.stocks.infrastructure.models import MouvementStock
 from optiboul.stocks.infrastructure.saisies import depots
@@ -79,6 +80,26 @@ class LigneEtatSerializer(serializers.Serializer):
     prochaine_reception = serializers.DateField(allow_null=True)
     valeur = serializers.IntegerField(help_text="En FCFA.")
     statut = serializers.ChoiceField(choices=[s.value for s in StatutStock])
+
+
+class DernierComptageSerializer(serializers.Serializer):
+    jour = serializers.DateField()
+    quantite = serializers.DecimalField(max_digits=14, decimal_places=3)
+
+
+class LigneADateSerializer(serializers.Serializer):
+    matiere = serializers.CharField()
+    nom = serializers.CharField()
+    unite = serializers.CharField()
+    stock = serializers.DecimalField(max_digits=14, decimal_places=3)
+    entrees = serializers.DecimalField(max_digits=14, decimal_places=3)
+    sorties = serializers.DecimalField(max_digits=14, decimal_places=3)
+    ajustements = serializers.DecimalField(max_digits=14, decimal_places=3)
+    dernier_comptage = DernierComptageSerializer(allow_null=True)
+
+
+class StockADateRequeteSerializer(serializers.Serializer):
+    date = serializers.DateField()
 
 
 class SaisieStockSerializer(serializers.Serializer):
@@ -139,6 +160,18 @@ class MouvementsStockViewSet(ListModelMixin, GenericViewSet):
     def etat(self, request: Request) -> Response:
         """Par matière : besoin, sessions restantes, valeur et statut (US-090)."""
         return Response(LigneEtatSerializer(etat_du_stock(), many=True).data)
+
+    @extend_schema(
+        parameters=[OpenApiParameter("date", str, required=True)],
+        responses=LigneADateSerializer(many=True),
+    )
+    @action(detail=False, url_path="stock-a-date", url_name="stock-a-date")
+    def stock_a_date(self, request: Request) -> Response:
+        """Stock au soir du jour demandé, avec le détail du jour (US-094)."""
+        requete = StockADateRequeteSerializer(data=request.query_params)
+        requete.is_valid(raise_exception=True)
+        lignes = stock_du_soir(requete.validated_data["date"])
+        return Response(LigneADateSerializer(lignes, many=True).data)
 
     @extend_schema(
         request=SaisieStockSerializer,

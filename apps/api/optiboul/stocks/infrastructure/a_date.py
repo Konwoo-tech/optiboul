@@ -6,12 +6,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from datetime import time
 from datetime import timedelta
-from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from django.utils import timezone
 
-from optiboul.stocks.domain.stocks import stock_a_date
+from optiboul.stocks.domain.stocks import stock
 from optiboul.stocks.domain.stocks import ventiler
 
 from .models import LigneControle
@@ -20,6 +19,7 @@ from .models import MouvementStock
 
 if TYPE_CHECKING:
     from datetime import date
+    from decimal import Decimal
 
 
 @dataclass(frozen=True)
@@ -68,18 +68,14 @@ def stock_du_soir(jour: date) -> list[LigneADate]:
     for matiere in Matiere.objects.filter(stockee=True):
         mouvements = par_matiere.get(matiere.pk, [])
         du_jour = ventiler(
-            [
-                (m.genre, m.sens, m.quantite)
-                for m in mouvements
-                if m.cree_le >= debut
-            ],
+            [(m.genre, m.sens, m.quantite) for m in mouvements if m.cree_le >= debut],
         )
         lignes.append(
             LigneADate(
                 matiere=matiere.code,
                 nom=matiere.nom,
                 unite=matiere.unite,
-                stock=stock_a_date([(m.sens, m.quantite) for m in mouvements]),
+                stock=stock([(m.sens, m.quantite) for m in mouvements]),
                 entrees=du_jour.entrees,
                 sorties=du_jour.sorties,
                 ajustements=du_jour.ajustements,
