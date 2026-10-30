@@ -27,6 +27,7 @@ from optiboul.core.infrastructure.parametres import parametre
 from optiboul.users import comptes
 from optiboul.users import connexion
 from optiboul.users import double_auth
+from optiboul.users import mot_de_passe
 from optiboul.users.models import Profil
 from optiboul.users.verrouillage import LimiteParCompte
 from optiboul.users.verrouillage import LimiteParPoste
@@ -278,6 +279,61 @@ def changer_utilisateur(request: Request) -> Response:
     )
     logout(request._request)  # noqa: SLF001
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MotDePasseOublieSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class NouveauMotDePasseSerializer(serializers.Serializer):
+    jeton = serializers.CharField()
+    motDePasse = serializers.CharField(trim_whitespace=False)  # noqa: N815
+
+
+@extend_schema(request=MotDePasseOublieSerializer, responses={204: None})
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([LimiteParPoste])
+def mot_de_passe_oublie(request: Request) -> Response:
+    """Un lien valable une heure part par e-mail ; même réponse si l'adresse est
+    inconnue."""
+    exiger_csrf(request)
+    corps = MotDePasseOublieSerializer(data=request.data)
+    corps.is_valid(raise_exception=True)
+    mot_de_passe.demander(corps.validated_data["email"], auteur_de(request))
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(
+    request=NouveauMotDePasseSerializer,
+    responses={204: None, 400: ProblemeSerializer},
+)
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([LimiteParPoste])
+def nouveau_mot_de_passe(request: Request) -> Response:
+    """Le lien reçu : la personne choisit un nouveau mot de passe."""
+    exiger_csrf(request)
+    corps = NouveauMotDePasseSerializer(data=request.data)
+    corps.is_valid(raise_exception=True)
+    donnees = corps.validated_data
+    try:
+        validate_password(donnees["motDePasse"])
+    except DjangoValidationError as erreur:
+        return Response(
+            {"detail": " ".join(erreur.messages), "code": "mot_de_passe_faible"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if mot_de_passe.reinitialiser(
+        donnees["jeton"],
+        donnees["motDePasse"],
+        auteur_de(request),
+    ):
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(
+        {"detail": "Lien invalide, expiré ou déjà utilisé.", "code": "lien_invalide"},
+        status=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 class InvitationSerializer(serializers.Serializer):

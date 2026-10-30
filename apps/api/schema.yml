@@ -1156,6 +1156,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/connexion/mot-de-passe-oublie/:
+    post:
+      operationId: connexion_mot_de_passe_oublie_create
+      description: |-
+        Un lien valable une heure part par e-mail ; même réponse si l'adresse est
+        inconnue.
+      tags:
+      - connexion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MotDePasseOublie'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MotDePasseOublie'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MotDePasseOublie'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/connexion/nouveau-mot-de-passe/:
+    post:
+      operationId: connexion_nouveau_mot_de_passe_create
+      description: 'Le lien reçu : la personne choisit un nouveau mot de passe.'
+      tags:
+      - connexion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NouveauMotDePasse'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NouveauMotDePasse'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NouveauMotDePasse'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/connexion/otp/envoyer/:
     post:
       operationId: connexion_otp_envoyer_create
@@ -6410,6 +6466,14 @@ components:
         valeur: {}
       required:
       - valeur
+    MotDePasseOublie:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
     MouvementInterne:
       type: object
       properties:
@@ -6585,6 +6649,16 @@ components:
       - groupe
       - nom
       - telephone
+    NouveauMotDePasse:
+      type: object
+      properties:
+        jeton:
+          type: string
+        motDePasse:
+          type: string
+      required:
+      - jeton
+      - motDePasse
     NouveauMouvement:
       type: object
       properties:

@@ -9,6 +9,8 @@ from .connexion import connexion_par_code
 from .connexion import connexion_par_email
 from .connexion import deconnexion
 from .connexion import envoyer_code
+from .connexion import mot_de_passe_oublie
+from .connexion import nouveau_mot_de_passe
 from .connexion import session_en_cours
 from .connexion import utilisateurs_du_poste
 from .connexion import verifier_application
@@ -45,5 +47,15 @@ urlpatterns = [
     ),
     path("connexion/session/", session_en_cours, name="connexion-session"),
     path("connexion/invitation/", accepter_invitation, name="connexion-invitation"),
+    path(
+        "connexion/mot-de-passe-oublie/",
+        mot_de_passe_oublie,
+        name="connexion-mot-de-passe-oublie",
+    ),
+    path(
+        "connexion/nouveau-mot-de-passe/",
+        nouveau_mot_de_passe,
+        name="connexion-nouveau-mot-de-passe",
+    ),
     *router.urls,
 ]

@@ -30,6 +30,8 @@ import type {
   ConnexionEmail,
   EnvoiCode,
   Invitation,
+  MotDePasseOublie,
+  NouveauMotDePasse,
   PersonneDuPoste,
   Probleme,
   ResultatConnexion,
@@ -607,6 +609,206 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getConnexionInvitationCreateMutationOptions(options), queryClient);
+    }
+    export type connexionMotDePasseOublieCreateResponse204 = {
+  data: void
+  status: 204
+}
+
+export type connexionMotDePasseOublieCreateResponseSuccess = (connexionMotDePasseOublieCreateResponse204) & {
+  headers: Headers;
+};
+;
+
+export type connexionMotDePasseOublieCreateResponse = (connexionMotDePasseOublieCreateResponseSuccess)
+
+export const getConnexionMotDePasseOublieCreateUrl = () => {
+
+
+
+
+  return `/api/v1/connexion/mot-de-passe-oublie/`
+}
+
+/**
+ * Un lien valable une heure part par e-mail ; même réponse si l'adresse est
+ * inconnue.
+ */
+export const connexionMotDePasseOublieCreate = async (motDePasseOublie: MotDePasseOublie, options?: Parameters<typeof optiboulFetch>[1]): Promise<connexionMotDePasseOublieCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<connexionMotDePasseOublieCreateResponse>(getConnexionMotDePasseOublieCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(motDePasseOublie)
+  }
+);}
+
+
+
+
+
+export const getConnexionMotDePasseOublieCreateMutationKey = () => ['connexionMotDePasseOublieCreate'] as const;
+
+export const getConnexionMotDePasseOublieCreateMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionMotDePasseOublieCreate>>, TError,ConnexionMotDePasseOublieCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof connexionMotDePasseOublieCreate>>, TError,ConnexionMotDePasseOublieCreateMutationVariables, TContext> => {
+
+const mutationKey = getConnexionMotDePasseOublieCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof connexionMotDePasseOublieCreate>>, ConnexionMotDePasseOublieCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  connexionMotDePasseOublieCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConnexionMotDePasseOublieCreateMutationResult = NonNullable<Awaited<ReturnType<typeof connexionMotDePasseOublieCreate>>>
+    export type ConnexionMotDePasseOublieCreateMutationBody = MotDePasseOublie
+    export type ConnexionMotDePasseOublieCreateMutationError = unknown
+    export type ConnexionMotDePasseOublieCreateMutationVariables = {data: MotDePasseOublie}
+
+    export const useConnexionMotDePasseOublieCreate = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionMotDePasseOublieCreate>>, TError,ConnexionMotDePasseOublieCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof connexionMotDePasseOublieCreate>>,
+        TError,
+        ConnexionMotDePasseOublieCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getConnexionMotDePasseOublieCreateMutationOptions(options), queryClient);
+    }
+    export type connexionNouveauMotDePasseCreateResponse204 = {
+  data: void
+  status: 204
+}
+
+export type connexionNouveauMotDePasseCreateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
+export type connexionNouveauMotDePasseCreateResponseSuccess = (connexionNouveauMotDePasseCreateResponse204) & {
+  headers: Headers;
+};
+export type connexionNouveauMotDePasseCreateResponseError = (connexionNouveauMotDePasseCreateResponse400) & {
+  headers: Headers;
+};
+
+export type connexionNouveauMotDePasseCreateResponse = (connexionNouveauMotDePasseCreateResponseSuccess | connexionNouveauMotDePasseCreateResponseError)
+
+export const getConnexionNouveauMotDePasseCreateUrl = () => {
+
+
+
+
+  return `/api/v1/connexion/nouveau-mot-de-passe/`
+}
+
+/**
+ * Le lien reçu : la personne choisit un nouveau mot de passe.
+ */
+export const connexionNouveauMotDePasseCreate = async (nouveauMotDePasse: NouveauMotDePasse, options?: Parameters<typeof optiboulFetch>[1]): Promise<connexionNouveauMotDePasseCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<connexionNouveauMotDePasseCreateResponse>(getConnexionNouveauMotDePasseCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(nouveauMotDePasse)
+  }
+);}
+
+
+
+
+
+export const getConnexionNouveauMotDePasseCreateMutationKey = () => ['connexionNouveauMotDePasseCreate'] as const;
+
+export const getConnexionNouveauMotDePasseCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionNouveauMotDePasseCreate>>, TError,ConnexionNouveauMotDePasseCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof connexionNouveauMotDePasseCreate>>, TError,ConnexionNouveauMotDePasseCreateMutationVariables, TContext> => {
+
+const mutationKey = getConnexionNouveauMotDePasseCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof connexionNouveauMotDePasseCreate>>, ConnexionNouveauMotDePasseCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  connexionNouveauMotDePasseCreate(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConnexionNouveauMotDePasseCreateMutationResult = NonNullable<Awaited<ReturnType<typeof connexionNouveauMotDePasseCreate>>>
+    export type ConnexionNouveauMotDePasseCreateMutationBody = NouveauMotDePasse
+    export type ConnexionNouveauMotDePasseCreateMutationError = Probleme
+    export type ConnexionNouveauMotDePasseCreateMutationVariables = {data: NouveauMotDePasse}
+
+    export const useConnexionNouveauMotDePasseCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionNouveauMotDePasseCreate>>, TError,ConnexionNouveauMotDePasseCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof connexionNouveauMotDePasseCreate>>,
+        TError,
+        ConnexionNouveauMotDePasseCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getConnexionNouveauMotDePasseCreateMutationOptions(options), queryClient);
     }
     export type connexionOtpEnvoyerCreateResponse200 = {
   data: CodeEnvoye
