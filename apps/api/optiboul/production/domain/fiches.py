@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import ROUND_HALF_UP
 from decimal import Decimal
 from math import ceil
 
@@ -30,6 +31,36 @@ class Fiche:
             and self.procede.strip() == autre.procede.strip()
             and _sans_zero(self.recette) == _sans_zero(autre.recette)
         )
+
+
+@dataclass(frozen=True)
+class CoutDeRevient:
+    """En entiers FCFA, depuis les prix des matières (US-089)."""
+
+    par_sac: int
+    par_pain: int
+    marge_par_pain: int | None  # sans prix de vente, pas de marge
+    sans_prix: list[str]  # matières de la recette sans prix connu : coût minoré
+
+
+def cout_de_revient(
+    recette: dict[str, Decimal],
+    prix: dict[str, Decimal],
+    *,
+    pains_par_sac: int,
+    prix_de_vente: int | None,
+) -> CoutDeRevient:
+    total = sum(
+        (quantite * prix[code] for code, quantite in recette.items() if code in prix),
+        Decimal(0),
+    )
+    par_pain = int((total / pains_par_sac).quantize(Decimal(1), ROUND_HALF_UP))
+    return CoutDeRevient(
+        par_sac=int(total.quantize(Decimal(1), ROUND_HALF_UP)),
+        par_pain=par_pain,
+        marge_par_pain=None if prix_de_vente is None else prix_de_vente - par_pain,
+        sans_prix=sorted(code for code in recette if code not in prix),
+    )
 
 
 def _sans_zero(recette: dict[str, Decimal]) -> dict[str, Decimal]:

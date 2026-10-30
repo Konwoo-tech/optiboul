@@ -70,6 +70,7 @@ export * from './controleNiveauEnum.ts';
 export * from './controlesStockCommencerCreateParams.ts';
 export * from './controlesStockListParams.ts';
 export * from './controleStock.ts';
+export * from './coutDeRevient.ts';
 export * from './creneau.ts';
 export * from './creneauEnum.ts';
 export * from './demande.ts';

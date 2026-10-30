@@ -7,6 +7,7 @@ from typing import Any
 
 from django.db import transaction
 from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import mixins
 from rest_framework import serializers
 from rest_framework import status
@@ -17,8 +18,10 @@ from rest_framework.viewsets import GenericViewSet
 from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.erreurs import ProblemeSerializer
 from optiboul.core.api.erreurs import probleme
+from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import TOUS_LES_PROFILS
 from optiboul.core.api.permissions import ProfilParmi
+from optiboul.core.api.permissions import profil_de
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.infrastructure.journal import journal
 from optiboul.core.infrastructure.journal import journaliser
@@ -26,11 +29,13 @@ from optiboul.production.application import produits as cas
 from optiboul.production.application.produits import MODIFIENT_LES_FICHES
 from optiboul.production.domain.fiches import Fiche
 from optiboul.production.domain.fiches import boules_par_sac
+from optiboul.production.domain.fiches import cout_de_revient
 from optiboul.production.infrastructure.models import FicheTechnique
 from optiboul.production.infrastructure.models import Produit
 from optiboul.production.infrastructure.produits import depot_fiches
 from optiboul.production.infrastructure.produits import fiche_de
 from optiboul.production.infrastructure.produits import fiche_en_cours
+from optiboul.stocks.infrastructure.etat import prix_unitaires
 
 if TYPE_CHECKING:
     from rest_framework.request import Request
@@ -41,9 +46,23 @@ Recette = serializers.DictField(
 )
 
 
+VOIENT_LES_COUTS = ("production", "administrateur", *DIRECTION)
+
+
+class CoutDeRevientSerializer(serializers.Serializer):
+    par_sac = serializers.IntegerField(help_text="En FCFA.")
+    par_pain = serializers.IntegerField(help_text="En FCFA.")
+    marge_par_pain = serializers.IntegerField(allow_null=True, help_text="En FCFA.")
+    sans_prix = serializers.ListField(
+        child=serializers.CharField(),
+        help_text="Matières sans prix connu : le coût est minoré.",
+    )
+
+
 class FicheSerializer(serializers.ModelSerializer[FicheTechnique]):
     boules_par_sac = serializers.SerializerMethodField()
     recette = serializers.SerializerMethodField()
+    cout = serializers.SerializerMethodField()
 
     class Meta:
         model = FicheTechnique
@@ -55,6 +74,7 @@ class FicheSerializer(serializers.ModelSerializer[FicheTechnique]):
             "boules_par_sac",
             "procede",
             "recette",
+            "cout",
             "cree_par_nom",
             "cree_le",
         ]
@@ -69,6 +89,21 @@ class FicheSerializer(serializers.ModelSerializer[FicheTechnique]):
     @extend_schema(responses=Recette)
     def get_recette(self, fiche: FicheTechnique) -> dict[str, str]:
         return {r.matiere.code: str(r.quantite) for r in fiche.recette.all()}
+
+    @extend_schema_field(CoutDeRevientSerializer(allow_null=True))
+    def get_cout(self, fiche: FicheTechnique) -> dict[str, Any] | None:
+        """Recalculé aux prix du jour ; réservé à la production et à la direction."""
+        requete = self.context.get("request")
+        if requete is None or profil_de(requete) not in VOIENT_LES_COUTS:
+            return None
+        return CoutDeRevientSerializer(
+            cout_de_revient(
+                {r.matiere.code: r.quantite for r in fiche.recette.all()},
+                prix_unitaires(),
+                pains_par_sac=fiche.pains_par_sac,
+                prix_de_vente=fiche.produit.prix,
+            ),
+        ).data
 
 
 class NouvelleFicheSerializer(serializers.Serializer):
@@ -93,7 +128,7 @@ class ProduitSerializer(serializers.ModelSerializer[Produit]):
     def get_fiche(self, produit: Produit) -> dict[str, Any] | None:
         """Version en cours de la fiche technique."""
         fiche = fiche_en_cours(produit.pk)
-        return FicheSerializer(fiche).data if fiche else None
+        return FicheSerializer(fiche, context=self.context).data if fiche else None
 
 
 def _valeurs(produit: Produit) -> dict[str, Any]:
@@ -156,7 +191,8 @@ class ProduitsViewSet(
             .prefetch_related("recette__matiere")
             .order_by("-version")
         )
-        return Response(FicheSerializer(versions, many=True).data)
+        contexte = self.get_serializer_context()
+        return Response(FicheSerializer(versions, many=True, context=contexte).data)
 
     @extend_schema(
         request=NouvelleFicheSerializer,

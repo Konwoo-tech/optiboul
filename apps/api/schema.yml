@@ -5418,6 +5418,29 @@ components:
       - portee
       - semaine
       - statut
+    CoutDeRevient:
+      type: object
+      properties:
+        par_sac:
+          type: integer
+          description: En FCFA.
+        par_pain:
+          type: integer
+          description: En FCFA.
+        marge_par_pain:
+          type: integer
+          nullable: true
+          description: En FCFA.
+        sans_prix:
+          type: array
+          items:
+            type: string
+          description: 'Matières sans prix connu : le coût est minoré.'
+      required:
+      - marge_par_pain
+      - par_pain
+      - par_sac
+      - sans_prix
     Creneau:
       type: object
       properties:
@@ -6108,6 +6131,11 @@ components:
           additionalProperties:
             type: string
           readOnly: true
+        cout:
+          allOf:
+          - $ref: '#/components/schemas/CoutDeRevient'
+          nullable: true
+          readOnly: true
         cree_par_nom:
           type: string
           readOnly: true
@@ -6119,6 +6147,7 @@ components:
           title: Créée le
       required:
       - boules_par_sac
+      - cout
       - cree_le
       - cree_par_nom
       - pains_par_boule

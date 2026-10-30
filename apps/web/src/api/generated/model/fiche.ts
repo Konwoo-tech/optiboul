@@ -5,6 +5,7 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
+import type { CoutDeRevient } from './coutDeRevient.ts';
 import type { FicheRecette } from './ficheRecette.ts';
 
 export interface Fiche {
@@ -15,6 +16,7 @@ export interface Fiche {
   readonly boules_par_sac: string;
   readonly procede: string;
   readonly recette: FicheRecette;
+  readonly cout: CoutDeRevient | null;
   readonly cree_par_nom: string;
   readonly cree_le: string;
 }
