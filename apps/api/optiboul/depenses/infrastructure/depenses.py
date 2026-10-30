@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from typing import Any
 
+from django.db.models import Sum
+
 from optiboul.caisse.infrastructure.caisses import depot_caisses
 from optiboul.core.infrastructure.journal import journal
 from optiboul.core.infrastructure.numeros import numeros
@@ -14,6 +16,7 @@ from optiboul.stocks.infrastructure.models import Matiere
 from optiboul.stocks.infrastructure.stocks import stock
 
 from .models import Depense
+from .models import PreAutorisation
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -34,6 +37,7 @@ class DepotDepensesDjango:
         caisse: int | None,
         session: Session | None,
         statut: StatutDepense,
+        pre_autorisation: int | None,
         justificatif: Any,
         auteur: Auteur,
         le: datetime,
@@ -57,10 +61,62 @@ class DepotDepensesDjango:
             fournisseur=depense.fournisseur.strip(),
             justificatif=justificatif or "",
             statut=statut,
+            achat_courant=depense.achat_courant,
+            pre_autorisation_id=pre_autorisation,
             auteur_id=auteur.utilisateur_id,
             auteur_profil=auteur.profil,
             cree_le=le,
         ).pk
+
+    def pre_autorisation(
+        self,
+        semaine: int,
+        achat_courant: str,
+    ) -> tuple[int, int, int] | None:
+        pre = (
+            PreAutorisation.objects.select_for_update()
+            .filter(semaine_id=semaine, achat_courant=achat_courant)
+            .first()
+        )
+        if pre is None:
+            return None
+        return pre.pk, pre.plafond, engage(pre)
+
+    def fixer_plafonds(
+        self,
+        semaine: int,
+        plafonds: dict[str, int],
+        auteur: int,
+    ) -> None:
+        for achat, plafond in plafonds.items():
+            if plafond:
+                PreAutorisation.objects.update_or_create(
+                    semaine_id=semaine,
+                    achat_courant=achat,
+                    defaults={"plafond": plafond, "fixe_par_id": auteur},
+                )
+            else:
+                PreAutorisation.objects.filter(
+                    semaine_id=semaine,
+                    achat_courant=achat,
+                    depenses=None,
+                ).delete()
+
+    def plafonds(self, semaine: int) -> dict[str, int]:
+        return dict(
+            PreAutorisation.objects.filter(semaine_id=semaine).values_list(
+                "achat_courant",
+                "plafond",
+            ),
+        )
+
+
+def engage(pre: PreAutorisation) -> int:
+    """Dépenses non refusées rattachées à la pré-autorisation, en FCFA."""
+    return (
+        pre.depenses.exclude(statut="refusee").aggregate(total=Sum("montant"))["total"]
+        or 0
+    )
 
 
 depot_depenses = DepotDepensesDjango()

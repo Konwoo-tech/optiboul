@@ -219,6 +219,9 @@ if(nouvelleDepense.fournisseur !== undefined) {
 if(nouvelleDepense.justificatif !== undefined && nouvelleDepense.justificatif !== null) {
  formData.append(`justificatif`, nouvelleDepense.justificatif);
  }
+if(nouvelleDepense.achat_courant !== undefined) {
+ formData.append(`achat_courant`, nouvelleDepense.achat_courant);
+ }
 
   return optiboulFetch<depensesCreateResponse>(getDepensesCreateUrl(),
   {

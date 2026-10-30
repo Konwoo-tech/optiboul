@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { CategorieEnum } from './categorieEnum.ts';
+import type { NouvelleDepenseAchatCourant } from './nouvelleDepenseAchatCourant.ts';
 import type { NouvelleDepensePayeParEnum } from './nouvelleDepensePayeParEnum.ts';
 import type { RattachementEnum } from './rattachementEnum.ts';
 
@@ -31,4 +32,14 @@ export interface NouvelleDepense {
   fournisseur?: string;
   /** @nullable */
   justificatif?: string | null;
+  /**
+     * Bois, levure… : entre dans la pré-autorisation de la semaine (O7).
+     *
+     * * `bois` - bois
+     * * `levure` - levure
+     * * `glace` - glace
+     * * `sel` - sel
+     * * `huile` - huile
+     */
+  achat_courant?: typeof NouvelleDepenseAchatCourant[keyof typeof NouvelleDepenseAchatCourant];
 }

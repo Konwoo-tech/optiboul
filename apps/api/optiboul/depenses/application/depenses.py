@@ -11,9 +11,11 @@ from optiboul.caisse.domain.caisses import GenreMouvement
 from optiboul.caisse.domain.caisses import peut_saisir
 from optiboul.core.application.journal import Evenement
 from optiboul.core.domain.erreurs import RefusMetier
+from optiboul.depenses.domain.depenses import AchatCourant
 from optiboul.depenses.domain.depenses import PayePar
 from optiboul.depenses.domain.depenses import Rattachement
 from optiboul.depenses.domain.depenses import StatutDepense
+from optiboul.depenses.domain.depenses import dans_la_pre_autorisation
 from optiboul.depenses.domain.depenses import numero_affiche
 from optiboul.depenses.domain.depenses import verifier_depense
 from optiboul.stocks.domain.stocks import GenreMouvementStock
@@ -41,6 +43,7 @@ class EtatDepense:
     id: int
     numero: int
     statut: StatutDepense
+    pre_autorisee: bool = False
 
     @property
     def code(self) -> str:
@@ -57,10 +60,30 @@ class DepotDepenses(Protocol):
         caisse: int | None,
         session: Session | None,
         statut: StatutDepense,
+        pre_autorisation: int | None,
         justificatif: Any,
         auteur: Auteur,
         le: datetime,
     ) -> int: ...
+
+    def pre_autorisation(
+        self,
+        semaine: int,
+        achat_courant: str,
+    ) -> tuple[int, int, int] | None:
+        """Identifiant, plafond et montant déjà engagé, verrouillés."""
+        ...
+
+    def fixer_plafonds(
+        self,
+        semaine: int,
+        plafonds: dict[str, int],
+        auteur: int,
+    ) -> None:
+        """Un plafond par achat courant ; zéro retire la pré-autorisation."""
+        ...
+
+    def plafonds(self, semaine: int) -> dict[str, int]: ...
 
 
 class Numeros(Protocol):
@@ -117,6 +140,15 @@ def saisir(  # noqa: PLR0913
     caisse = (
         _caisse_qui_paie(depots, auteur) if depense.paye_par is PayePar.CAISSE else None
     )
+    pre_autorisation = None
+    if depense.achat_courant:
+        trouvee = depots.depenses.pre_autorisation(semaine.id, depense.achat_courant)
+        if trouvee and dans_la_pre_autorisation(
+            trouvee[1],
+            trouvee[2],
+            depense.montant,
+        ):
+            pre_autorisation = trouvee[0]
     numero = depots.numeros.prochain(SEQUENCE_DEPENSES)
     depense_id = depots.depenses.creer(
         numero=numero,
@@ -127,6 +159,7 @@ def saisir(  # noqa: PLR0913
         if depense.rattachement is not Rattachement.SEMAINE
         else None,
         statut=statut,
+        pre_autorisation=pre_autorisation,
         justificatif=justificatif,
         auteur=auteur,
         le=maintenant,
@@ -156,7 +189,7 @@ def saisir(  # noqa: PLR0913
             auteur=auteur.utilisateur_id,
             motif=depense.fournisseur.strip(),
         )
-    etat = EtatDepense(depense_id, numero, statut)
+    etat = EtatDepense(depense_id, numero, statut, pre_autorisation is not None)
     depots.journal.enregistrer(
         Evenement(
             action="depense.saisie",
@@ -170,7 +203,51 @@ def saisir(  # noqa: PLR0913
                 "paye_par": depense.paye_par,
                 "rattachement": depense.rattachement,
                 "statut": statut,
+                "pre_autorisee": etat.pre_autorisee,
             },
         ),
     )
     return etat
+
+
+FIXENT_LES_PRE_AUTORISATIONS = frozenset({"gerant", "proprietaire"})
+
+
+def fixer_pre_autorisations(
+    depots: Depots,
+    *,
+    plafonds: dict[str, int],
+    auteur: Auteur,
+) -> dict[str, int]:
+    """En début de semaine, un plafond par achat courant (O7) ; dans ce cadre, une
+    dépense ne crée pas de demande."""
+    if (
+        auteur.profil not in FIXENT_LES_PRE_AUTORISATIONS
+        or auteur.utilisateur_id is None
+    ):
+        message = "Seuls le gérant et le propriétaire pré-autorisent les achats."
+        raise RefusMetier("droit_insuffisant", message)
+    semaine = depots.semaines.ouverte()
+    if semaine is None:
+        message = "Aucune semaine n'est ouverte (R1)."
+        raise RefusMetier("semaine_non_ouverte", message)
+    if inconnus := sorted(set(plafonds) - {a.value for a in AchatCourant}):
+        message = f"Achats courants inconnus : {', '.join(inconnus)}."
+        raise RefusMetier("achat_courant_inconnu", message, achats=inconnus)
+    if any(plafond < 0 for plafond in plafonds.values()):
+        message = "Un plafond n'est pas négatif."
+        raise RefusMetier("montant_invalide", message)
+    avant = depots.depenses.plafonds(semaine.id)
+    depots.depenses.fixer_plafonds(semaine.id, plafonds, auteur.utilisateur_id)
+    apres = depots.depenses.plafonds(semaine.id)
+    depots.journal.enregistrer(
+        Evenement(
+            action="pre_autorisations.fixees",
+            auteur=auteur,
+            objet_type="semaine",
+            objet_id=str(semaine.id),
+            avant=avant,
+            apres=apres,
+        ),
+    )
+    return apres

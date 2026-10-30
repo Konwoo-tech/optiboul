@@ -88,6 +88,15 @@ class Depense(models.Model):
         upload_to="justificatifs/%Y/%m/",
         blank=True,
     )
+    achat_courant = models.CharField(_("achat courant"), max_length=10, blank=True)
+    pre_autorisation = models.ForeignKey(
+        "PreAutorisation",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="depenses",
+        verbose_name=_("pré-autorisation"),
+    )
     statut = models.CharField(_("statut"), max_length=12, default="validee")
     auteur = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -112,3 +121,38 @@ class Depense(models.Model):
 
     def __str__(self) -> str:
         return f"DEP-{self.numero:04d} · {self.libelle}"
+
+
+class PreAutorisation(models.Model):
+    """Plafond d'un achat courant pour la semaine, fixé par le gérant (O7)."""
+
+    semaine = models.ForeignKey(
+        "core.Semaine",
+        on_delete=models.PROTECT,
+        related_name="pre_autorisations",
+        verbose_name=_("semaine"),
+    )
+    achat_courant = models.CharField(_("achat courant"), max_length=10)
+    plafond = models.PositiveBigIntegerField(_("plafond (FCFA)"))
+    fixe_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("fixé par"),
+    )
+    modifie_le = models.DateTimeField(_("modifié le"), default=timezone.now)
+
+    class Meta:
+        db_table = "pre_autorisation"
+        ordering = ["achat_courant"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["semaine", "achat_courant"],
+                name="une_pre_autorisation_par_achat",
+            ),
+        ]
+        verbose_name = _("pré-autorisation")
+        verbose_name_plural = _("pré-autorisations")
+
+    def __str__(self) -> str:
+        return f"{self.achat_courant} : {self.plafond} FCFA"

@@ -11,6 +11,7 @@ from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin
 from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.parsers import FormParser
@@ -18,6 +19,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import ViewSet
 
 from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.erreurs import ProblemeSerializer
@@ -30,14 +32,17 @@ from optiboul.core.api.permissions import profil_de
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.depenses.application import depenses as cas
 from optiboul.depenses.application.depenses import SAISISSENT
+from optiboul.depenses.domain.depenses import AchatCourant
 from optiboul.depenses.domain.depenses import Categorie
 from optiboul.depenses.domain.depenses import NouvelleDepense
 from optiboul.depenses.domain.depenses import PayePar
 from optiboul.depenses.domain.depenses import Rattachement
 from optiboul.depenses.domain.depenses import numero_affiche
 from optiboul.depenses.infrastructure.depenses import depots
+from optiboul.depenses.infrastructure.depenses import engage
 from optiboul.depenses.infrastructure.models import CATEGORIES
 from optiboul.depenses.infrastructure.models import Depense
+from optiboul.depenses.infrastructure.models import PreAutorisation
 from optiboul.production.domain.plan import session_de_production
 from optiboul.ventes.infrastructure.commandes import limites
 
@@ -77,6 +82,8 @@ class DepenseSerializer(serializers.ModelSerializer[Depense]):
             "quantite",
             "fournisseur",
             "justificatif",
+            "achat_courant",
+            "pre_autorisation",
             "statut",
             "auteur",
             "auteur_profil",
@@ -109,6 +116,13 @@ class NouvelleDepenseSerializer(serializers.Serializer):
         help_text="Fournisseur ou marché, pour un achat qui entre en stock.",
     )
     justificatif = serializers.FileField(required=False, allow_null=True)
+    achat_courant = serializers.ChoiceField(
+        choices=[a.value for a in AchatCourant],
+        required=False,
+        default="",
+        allow_blank=True,
+        help_text="Bois, levure… : entre dans la pré-autorisation de la semaine (O7).",
+    )
 
     def validate_justificatif(self, fichier: Any) -> Any:
         if fichier is None:
@@ -133,7 +147,73 @@ class NouvelleDepenseSerializer(serializers.Serializer):
             matiere=donnees["matiere"],
             quantite=donnees.get("quantite"),
             fournisseur=donnees["fournisseur"],
+            achat_courant=donnees["achat_courant"],
         )
+
+
+class PreAutorisationSerializer(serializers.Serializer):
+    achat_courant = serializers.CharField()
+    plafond = serializers.IntegerField()
+    engage = serializers.IntegerField(help_text="Dépenses déjà rattachées, en FCFA.")
+    reste = serializers.IntegerField()
+
+
+class PlafondsSerializer(serializers.Serializer):
+    plafonds = serializers.DictField(
+        child=serializers.IntegerField(min_value=0),
+        help_text="Achat courant → plafond de la semaine en FCFA ; 0 le retire.",
+    )
+
+
+def _pre_autorisations() -> list[dict[str, Any]]:
+    semaine = depots.semaines.ouverte()
+    if semaine is None:
+        return []
+    lignes = []
+    for pre in PreAutorisation.objects.filter(semaine_id=semaine.id):
+        deja = engage(pre)
+        lignes.append(
+            {
+                "achat_courant": pre.achat_courant,
+                "plafond": pre.plafond,
+                "engage": deja,
+                "reste": pre.plafond - deja,
+            },
+        )
+    return lignes
+
+
+class PreAutorisationsViewSet(ViewSet):
+    """Achats courants pré-autorisés de la semaine ouverte (O7)."""
+
+    def get_permissions(self):
+        if self.action == "list":
+            return [ProfilParmi("caissier", "production", *DIRECTION)()]
+        return [ProfilParmi(*DIRECTION)()]
+
+    @extend_schema(responses=PreAutorisationSerializer(many=True))
+    def list(self, request: Request) -> Response:
+        return Response(PreAutorisationSerializer(_pre_autorisations(), many=True).data)
+
+    @extend_schema(
+        request=PlafondsSerializer,
+        responses={200: PreAutorisationSerializer(many=True), 409: ProblemeSerializer},
+    )
+    @action(detail=False, methods=["put"])
+    def fixer(self, request: Request) -> Response:
+        """Le gérant fixe en début de semaine un plafond par achat courant."""
+        corps = PlafondsSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        try:
+            with transaction.atomic():
+                cas.fixer_pre_autorisations(
+                    depots,
+                    plafonds=corps.validated_data["plafonds"],
+                    auteur=auteur_de(request),
+                )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(PreAutorisationSerializer(_pre_autorisations(), many=True).data)
 
 
 class DepensesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):

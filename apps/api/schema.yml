@@ -2571,6 +2571,58 @@ paths:
               schema:
                 $ref: '#/components/schemas/PosteActuel'
           description: ''
+  /api/v1/pre-autorisations/:
+    get:
+      operationId: pre_autorisations_list
+      description: Achats courants pré-autorisés de la semaine ouverte (O7).
+      tags:
+      - pre-autorisations
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PreAutorisation'
+          description: ''
+  /api/v1/pre-autorisations/fixer/:
+    put:
+      operationId: pre_autorisations_fixer_update
+      description: Le gérant fixe en début de semaine un plafond par achat courant.
+      tags:
+      - pre-autorisations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Plafonds'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Plafonds'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Plafonds'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PreAutorisation'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/productions/{id}/cloturer/:
     post:
       operationId: productions_cloturer_create
@@ -4045,6 +4097,20 @@ components:
       properties:
         code_gerant:
           $ref: '#/components/schemas/CodeGerant'
+    AchatCourantEnum:
+      enum:
+      - bois
+      - levure
+      - glace
+      - sel
+      - huile
+      type: string
+      description: |-
+        * `bois` - bois
+        * `levure` - levure
+        * `glace` - glace
+        * `sel` - sel
+        * `huile` - huile
     Affectations:
       type: object
       properties:
@@ -4064,6 +4130,9 @@ components:
           type: integer
       required:
       - groupe
+    BlankEnum:
+      enum:
+      - ''
     Brouillon:
       type: object
       properties:
@@ -4796,6 +4865,14 @@ components:
           format: uri
           nullable: true
           readOnly: true
+        achat_courant:
+          type: string
+          readOnly: true
+        pre_autorisation:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Pré-autorisation
         statut:
           type: string
           readOnly: true
@@ -4811,6 +4888,7 @@ components:
           readOnly: true
           title: Saisie le
       required:
+      - achat_courant
       - auteur
       - auteur_profil
       - caisse
@@ -4824,6 +4902,7 @@ components:
       - montant
       - numero
       - paye_par
+      - pre_autorisation
       - production_creneau
       - production_jour
       - quantite
@@ -5957,6 +6036,19 @@ components:
           type: string
           format: uri
           nullable: true
+        achat_courant:
+          default: ''
+          description: |-
+            Bois, levure… : entre dans la pré-autorisation de la semaine (O7).
+
+            * `bois` - bois
+            * `levure` - levure
+            * `glace` - glace
+            * `sel` - sel
+            * `huile` - huile
+          oneOf:
+          - $ref: '#/components/schemas/AchatCourantEnum'
+          - $ref: '#/components/schemas/BlankEnum'
       required:
       - categorie
       - libelle
@@ -6906,6 +6998,17 @@ components:
       - caissiere
       - creneau
       - jour
+    Plafonds:
+      type: object
+      properties:
+        plafonds:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+          description: Achat courant → plafond de la semaine en FCFA ; 0 le retire.
+      required:
+      - plafonds
     Plan:
       type: object
       properties:
@@ -7078,6 +7181,23 @@ components:
           nullable: true
       required:
       - poste
+    PreAutorisation:
+      type: object
+      properties:
+        achat_courant:
+          type: string
+        plafond:
+          type: integer
+        engage:
+          type: integer
+          description: Dépenses déjà rattachées, en FCFA.
+        reste:
+          type: integer
+      required:
+      - achat_courant
+      - engage
+      - plafond
+      - reste
     Probleme:
       type: object
       properties:

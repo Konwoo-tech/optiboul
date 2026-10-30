@@ -52,6 +52,7 @@ class NouvelleDepense:
     matiere: str = ""
     quantite: Decimal | None = None
     fournisseur: str = ""  # fournisseur ou marché, pour un achat en stock
+    achat_courant: str = ""  # bois, levure… : la pré-autorisation de la semaine (O7)
 
 
 def verifier_depense(depense: NouvelleDepense, matieres_suivies: set[str]) -> None:
@@ -77,3 +78,18 @@ def verifier_depense(depense: NouvelleDepense, matieres_suivies: set[str]) -> No
 def numero_affiche(numero: int) -> str:
     """« DEP-0042 »."""
     return f"DEP-{numero:04d}"
+
+
+class AchatCourant(StrEnum):
+    """Catégories des achats courants pré-autorisables (O7)."""
+
+    BOIS = "bois"
+    LEVURE = "levure"
+    GLACE = "glace"
+    SEL = "sel"
+    HUILE = "huile"
+
+
+def dans_la_pre_autorisation(plafond: int, deja_engage: int, montant: int) -> bool:
+    """La dépense tient dans ce qui reste du plafond de la semaine (O7)."""
+    return montant <= plafond - deja_engage

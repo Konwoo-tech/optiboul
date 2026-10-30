@@ -35,6 +35,9 @@ export interface Depense {
   readonly fournisseur: string;
   /** @nullable */
   readonly justificatif: string | null;
+  readonly achat_courant: string;
+  /** @nullable */
+  readonly pre_autorisation: number | null;
   readonly statut: string;
   auteur: string;
   readonly auteur_profil: string;

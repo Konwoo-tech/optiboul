@@ -19,6 +19,7 @@ export * from './notifications/notifications.ts';
 export * from './paiements-fournisseurs/paiements-fournisseurs.ts';
 export * from './parametres/parametres.ts';
 export * from './postes/postes.ts';
+export * from './pre-autorisations/pre-autorisations.ts';
 export * from './productions/productions.ts';
 export * from './produits/produits.ts';
 export * from './receptions-planifiees/receptions-planifiees.ts';
