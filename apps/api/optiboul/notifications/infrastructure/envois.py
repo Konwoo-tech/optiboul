@@ -197,6 +197,7 @@ def envoyer_en_attente(limite: int = 100) -> int:
             .order_by("prochain_essai", "id")[:limite],
         )
         for message in dus:
+            message.derniere_tentative = maintenant
             try:
                 passerelle(message.canal).envoyer(message)
             except Exception as erreur:  # noqa: BLE001 : toute erreur réseau est rejouée

@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from datetime import timedelta
 from enum import StrEnum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class Canal(StrEnum):
@@ -41,3 +45,21 @@ def masquer_telephone(telephone: str) -> str:
         return "•• •• ••"
     fin = chiffres[-4:]
     return f"+237 {chiffres[0]} •• •• {fin[:2]} {fin[2:]}"
+
+
+class EtatInternet(StrEnum):
+    EN_LIGNE = "en_ligne"
+    HORS_LIGNE = "hors_ligne"
+    INCONNU = "inconnu"  # aucune tentative d'envoi récente
+
+
+def etat_internet(
+    dernier_succes: datetime | None,
+    dernier_echec: datetime | None,
+) -> EtatInternet:
+    """D'après la dernière tentative de la file : réussie, en ligne ; échouée, non."""
+    if dernier_succes is None and dernier_echec is None:
+        return EtatInternet.INCONNU
+    if dernier_echec is None or (dernier_succes and dernier_succes >= dernier_echec):
+        return EtatInternet.EN_LIGNE
+    return EtatInternet.HORS_LIGNE

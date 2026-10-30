@@ -9,6 +9,7 @@ export * from './connexion/connexion.ts';
 export * from './demandes/demandes.ts';
 export * from './depenses/depenses.ts';
 export * from './encaissements/encaissements.ts';
+export * from './envois/envois.ts';
 export * from './factures/factures.ts';
 export * from './fournisseurs/fournisseurs.ts';
 export * from './groupes/groupes.ts';

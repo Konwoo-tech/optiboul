@@ -1,5 +1,7 @@
+from django.urls import path
 from rest_framework.routers import SimpleRouter
 
+from .envois import etat_des_envois
 from .notifications import NotificationsViewSet
 from .notifications import ReglesNotificationViewSet
 
@@ -11,4 +13,7 @@ router.register(
     basename="regle-notification",
 )
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("envois/etat/", etat_des_envois, name="envois-etat"),
+    *router.urls,
+]

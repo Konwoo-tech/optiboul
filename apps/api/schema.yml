@@ -1636,6 +1636,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/envois/etat/:
+    get:
+      operationId: envois_etat_retrieve
+      description: 'Pour le bandeau : internet, et ce qui attend dans la file d''envoi
+        (O15).'
+      tags:
+      - envois
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EtatEnvois'
+          description: ''
   /api/v1/factures/:
     get:
       operationId: factures_list
@@ -5542,6 +5558,37 @@ components:
       - plafond
       - remise_proposee
       - remises
+    EtatEnvois:
+      type: object
+      properties:
+        internet:
+          allOf:
+          - $ref: '#/components/schemas/InternetEnum'
+          description: |-
+            D'après la dernière tentative de la file d'envoi.
+
+            * `en_ligne` - en_ligne
+            * `hors_ligne` - hors_ligne
+            * `inconnu` - inconnu
+        en_attente:
+          type: integer
+          description: Messages qui partiront au retour.
+        en_echec:
+          type: integer
+        plus_ancien_en_attente:
+          type: string
+          format: date-time
+          nullable: true
+        derniere_tentative:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - derniere_tentative
+      - en_attente
+      - en_echec
+      - internet
+      - plus_ancien_en_attente
     EtatMfa:
       type: object
       properties:
@@ -5856,6 +5903,16 @@ components:
       - recette
       - taux_encaissement
       - ventes
+    InternetEnum:
+      enum:
+      - en_ligne
+      - hors_ligne
+      - inconnu
+      type: string
+      description: |-
+        * `en_ligne` - en_ligne
+        * `hors_ligne` - hors_ligne
+        * `inconnu` - inconnu
     Invitation:
       type: object
       properties:

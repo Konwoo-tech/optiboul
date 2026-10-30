@@ -60,6 +60,11 @@ class MessageSortant(models.Model):
     derniere_erreur = models.TextField(_("dernière erreur"), blank=True)
     cree_le = models.DateTimeField(_("créé le"), default=timezone.now)
     envoye_le = models.DateTimeField(_("envoyé le"), null=True, blank=True)
+    derniere_tentative = models.DateTimeField(
+        _("dernière tentative"),
+        null=True,
+        blank=True,
+    )
     # Ce que le message accompagne (bon, relance…) : son état s'affiche avec l'objet.
     objet_type = models.CharField(_("type de l'objet"), max_length=30, blank=True)
     objet_id = models.PositiveBigIntegerField(_("objet"), null=True, blank=True)
