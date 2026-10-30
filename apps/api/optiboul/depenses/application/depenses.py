@@ -99,6 +99,7 @@ def saisir(  # noqa: PLR0913
     auteur: Auteur,
     maintenant: datetime,
     statut: StatutDepense = StatutDepense.VALIDEE,
+    entree_en_stock: bool = True,
 ) -> EtatDepense:
     """DEP-xxxx rattachée à la semaine ouverte (R1) et à la production, à la semaine
     ou au stock ; un achat en stock crée l'entrée, la caisse paie si choisie."""
@@ -139,7 +140,12 @@ def saisir(  # noqa: PLR0913
             libelle=numero_affiche(numero),
             receveur=None,
         )
-    if depense.rattachement is Rattachement.STOCK and depense.quantite:
+    # Le paiement d'une facture : la matière est déjà entrée à la réception.
+    if (
+        entree_en_stock
+        and depense.rattachement is Rattachement.STOCK
+        and depense.quantite
+    ):
         depots.stock.mouvementer(
             {depense.matiere: depense.quantite},
             sens=Sens.ENTREE,

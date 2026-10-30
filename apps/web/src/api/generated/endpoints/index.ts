@@ -16,6 +16,7 @@ export * from './mfa/mfa.ts';
 export * from './mouvements-internes/mouvements-internes.ts';
 export * from './mouvements-stock/mouvements-stock.ts';
 export * from './notifications/notifications.ts';
+export * from './paiements-fournisseurs/paiements-fournisseurs.ts';
 export * from './parametres/parametres.ts';
 export * from './postes/postes.ts';
 export * from './productions/productions.ts';

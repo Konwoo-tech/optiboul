@@ -39,6 +39,9 @@ STATUTS = {
     "prix_obligatoire": status.HTTP_400_BAD_REQUEST,
     "libelle_obligatoire": status.HTTP_400_BAD_REQUEST,
     "fournisseur_obligatoire": status.HTTP_400_BAD_REQUEST,
+    "paiement_invalide": status.HTTP_400_BAD_REQUEST,
+    "mode_inconnu": status.HTTP_400_BAD_REQUEST,
+    "facture_inconnue": status.HTTP_404_NOT_FOUND,
     "motif_obligatoire": status.HTTP_400_BAD_REQUEST,
     "cle_idempotence_reutilisee": status.HTTP_422_UNPROCESSABLE_ENTITY,
 }

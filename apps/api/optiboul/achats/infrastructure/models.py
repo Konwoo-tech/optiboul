@@ -164,3 +164,53 @@ class Reception(models.Model):
 
     def __str__(self) -> str:
         return f"Réception {self.planifiee}"
+
+
+class PaiementFournisseur(models.Model):
+    """Paiement d'une facture : il crée une dépense rattachée au stock (CdC §5.7)."""
+
+    facture = models.ForeignKey(
+        FactureFournisseur,
+        on_delete=models.PROTECT,
+        related_name="paiements",
+        verbose_name=_("facture"),
+    )
+    montant = models.PositiveBigIntegerField(_("montant (FCFA)"))
+    mode = models.CharField(
+        _("mode"),
+        max_length=10,
+        choices=[
+            ("especes", "espèces"),
+            ("banque", "banque"),
+            ("mobile", "mobile money"),
+        ],
+    )
+    reference = models.CharField(_("référence"), max_length=60, blank=True)
+    depense = models.OneToOneField(
+        "depenses.Depense",
+        on_delete=models.PROTECT,
+        related_name="paiement_fournisseur",
+        verbose_name=_("dépense"),
+    )
+    paye_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("payé par"),
+    )
+    paye_le = models.DateTimeField(_("payé le"), default=timezone.now)
+
+    class Meta:
+        db_table = "paiement_fournisseur"
+        ordering = ["-paye_le", "-id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(montant__gt=0),
+                name="paiement_fournisseur_positif",
+            ),
+        ]
+        verbose_name = _("paiement fournisseur")
+        verbose_name_plural = _("paiements fournisseurs")
+
+    def __str__(self) -> str:
+        return f"{self.facture} : {self.montant} FCFA"

@@ -1455,7 +1455,8 @@ paths:
   /api/v1/factures/:
     get:
       operationId: factures_list
-      description: 'Factures fournisseurs : à payer, en retard, payées (CdC §5.7).'
+      description: 'Factures fournisseurs : à payer, en cours, en retard, payées (CdC
+        §5.7).'
       parameters:
       - name: page
         required: false
@@ -1477,7 +1478,8 @@ paths:
   /api/v1/factures/{id}/:
     get:
       operationId: factures_retrieve
-      description: 'Factures fournisseurs : à payer, en retard, payées (CdC §5.7).'
+      description: 'Factures fournisseurs : à payer, en cours, en retard, payées (CdC
+        §5.7).'
       parameters:
       - in: path
         name: id
@@ -1495,6 +1497,83 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Facture'
+          description: ''
+  /api/v1/factures/{id}/paiements/:
+    get:
+      operationId: factures_paiements_list
+      description: 'Factures fournisseurs : à payer, en cours, en retard, payées (CdC
+        §5.7).'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) facture fournisseur.
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      tags:
+      - factures
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPaiementFournisseurList'
+          description: ''
+  /api/v1/factures/{id}/payer/:
+    post:
+      operationId: factures_payer_create
+      description: |-
+        Espèces (caisse), banque ou mobile money ; partiel possible ; une dépense
+        rattachée au stock et un reçu PDF.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Clé unique de l'opération, générée par l'application web.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) facture fournisseur.
+        required: true
+      tags:
+      - factures
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Payer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Payer'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaiementFournisseur'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
           description: ''
   /api/v1/fournisseurs/:
     get:
@@ -2287,6 +2366,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Marquage'
+          description: ''
+  /api/v1/paiements-fournisseurs/{id}/:
+    get:
+      operationId: paiements_fournisseurs_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) paiement
+          fournisseur.
+        required: true
+      tags:
+      - paiements-fournisseurs
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaiementFournisseur'
+          description: ''
+  /api/v1/paiements-fournisseurs/{id}/recu/:
+    get:
+      operationId: paiements_fournisseurs_recu_retrieve
+      description: Le reçu du paiement en PDF.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) paiement
+          fournisseur.
+        required: true
+      tags:
+      - paiements-fournisseurs
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
           description: ''
   /api/v1/parametres/:
     get:
@@ -6272,6 +6397,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Notification'
+    PaginatedPaiementFournisseurList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaiementFournisseur'
     PaginatedPosteList:
       type: object
       required:
@@ -6449,6 +6597,57 @@ components:
       required:
       - mode
       - montant
+    PaiementFournisseur:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        facture:
+          type: integer
+          readOnly: true
+        montant:
+          type: integer
+          readOnly: true
+          title: Montant (FCFA)
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/PaiementFournisseurModeEnum'
+          readOnly: true
+        reference:
+          type: string
+          readOnly: true
+          title: Référence
+        depense:
+          type: integer
+          readOnly: true
+          title: Dépense
+        paye_par:
+          type: string
+        paye_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Payé le
+      required:
+      - depense
+      - facture
+      - id
+      - mode
+      - montant
+      - paye_le
+      - paye_par
+      - reference
+    PaiementFournisseurModeEnum:
+      enum:
+      - especes
+      - banque
+      - mobile
+      type: string
+      description: |-
+        * `especes` - espèces
+        * `banque` - banque
+        * `mobile` - mobile money
     Parametre:
       type: object
       properties:
@@ -6637,6 +6836,31 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ProfilEnum'
           - $ref: '#/components/schemas/NullEnum'
+    Payer:
+      type: object
+      properties:
+        montant:
+          type: integer
+          minimum: 1
+        mode:
+          $ref: '#/components/schemas/PayerModeEnum'
+        reference:
+          type: string
+          default: ''
+          maxLength: 60
+      required:
+      - mode
+      - montant
+    PayerModeEnum:
+      enum:
+      - especes
+      - banque
+      - mobile
+      type: string
+      description: |-
+        * `especes` - especes
+        * `banque` - banque
+        * `mobile` - mobile
     Personne:
       type: object
       properties:

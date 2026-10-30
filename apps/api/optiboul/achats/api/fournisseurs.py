@@ -6,7 +6,9 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from django.db import transaction
+from django.http import HttpResponse
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins
@@ -16,17 +18,23 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from optiboul.achats.application import paiements as cas_paiements
 from optiboul.achats.application import receptions as cas
 from optiboul.achats.application.receptions import RECEPTIONNENT
 from optiboul.achats.domain.receptions import StatutReception
 from optiboul.achats.domain.receptions import verifier_planification
 from optiboul.achats.infrastructure.models import FactureFournisseur
 from optiboul.achats.infrastructure.models import Fournisseur
+from optiboul.achats.infrastructure.models import PaiementFournisseur
 from optiboul.achats.infrastructure.models import ReceptionPlanifiee
+from optiboul.achats.infrastructure.paiements import depots as depots_paiements
+from optiboul.achats.infrastructure.paiements import pdf_recu
 from optiboul.achats.infrastructure.receptions import depots
 from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.erreurs import ProblemeSerializer
 from optiboul.core.api.erreurs import probleme
+from optiboul.core.api.idempotence import PARAMETRE as IDEMPOTENCE
+from optiboul.core.api.idempotence import idempotent
 from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.domain.erreurs import RefusMetier
@@ -213,12 +221,108 @@ class ReceptionFaiteSerializer(serializers.Serializer):
     facture = FactureSerializer()
 
 
+class PaiementFournisseurSerializer(serializers.ModelSerializer[PaiementFournisseur]):
+    paye_par = serializers.CharField(source="paye_par.name")
+
+    class Meta:
+        model = PaiementFournisseur
+        fields = [
+            "id",
+            "facture",
+            "montant",
+            "mode",
+            "reference",
+            "depense",
+            "paye_par",
+            "paye_le",
+        ]
+        read_only_fields = fields
+
+
+class PayerSerializer(serializers.Serializer):
+    montant = serializers.IntegerField(min_value=1)
+    mode = serializers.ChoiceField(choices=list(cas_paiements.MODES))
+    reference = serializers.CharField(
+        max_length=60,
+        required=False,
+        default="",
+        allow_blank=True,
+    )
+
+
 class FacturesViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericViewSet):
-    """Factures fournisseurs : à payer, en retard, payées (CdC §5.7)."""
+    """Factures fournisseurs : à payer, en cours, en retard, payées (CdC §5.7)."""
 
     serializer_class = FactureSerializer
-    permission_classes = [ProfilParmi(*DIRECTION)]
     queryset = FactureFournisseur.objects.select_related("fournisseur")
+
+    def get_permissions(self):
+        if self.action == "payer":
+            return [ProfilParmi(*cas_paiements.PAIENT)()]
+        return [ProfilParmi(*DIRECTION)()]
+
+    @extend_schema(
+        request=PayerSerializer,
+        parameters=[IDEMPOTENCE],
+        responses={201: PaiementFournisseurSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"])
+    @idempotent
+    def payer(self, request: Request, pk: str) -> Response:
+        """Espèces (caisse), banque ou mobile money ; partiel possible ; une dépense
+        rattachée au stock et un reçu PDF."""
+        corps = PayerSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        facture = self.get_object()
+        try:
+            with transaction.atomic():
+                paiement_id = cas_paiements.payer(
+                    depots_paiements,
+                    facture_id=facture.pk,
+                    montant=corps.validated_data["montant"],
+                    mode=corps.validated_data["mode"],
+                    reference=corps.validated_data["reference"],
+                    auteur=auteur_de(request),
+                    maintenant=timezone.now(),
+                )
+        except RefusMetier as refus:
+            return probleme(refus)
+        paiement = PaiementFournisseur.objects.select_related("paye_par").get(
+            pk=paiement_id,
+        )
+        return Response(
+            PaiementFournisseurSerializer(paiement).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @extend_schema(responses=PaiementFournisseurSerializer(many=True))
+    @action(detail=True)
+    def paiements(self, request: Request, pk: str) -> Response:
+        paiements = PaiementFournisseur.objects.filter(
+            facture=self.get_object(),
+        ).select_related(
+            "paye_par",
+        )
+        return Response(PaiementFournisseurSerializer(paiements, many=True).data)
+
+
+class PaiementsFournisseursViewSet(mixins.RetrieveModelMixin, GenericViewSet):
+    serializer_class = PaiementFournisseurSerializer
+    permission_classes = [ProfilParmi(*DIRECTION)]
+    queryset = PaiementFournisseur.objects.select_related(
+        "paye_par",
+        "facture__fournisseur",
+        "depense",
+    )
+
+    @extend_schema(responses={(200, "application/pdf"): OpenApiTypes.BINARY})
+    @action(detail=True)
+    def recu(self, request: Request, pk: str) -> HttpResponse:
+        """Le reçu du paiement en PDF."""
+        paiement = self.get_object()
+        reponse = HttpResponse(pdf_recu(paiement), content_type="application/pdf")
+        reponse["Content-Disposition"] = f'inline; filename="recu-{paiement.pk}.pdf"'
+        return reponse
 
 
 class ReceptionsPlanifieesViewSet(

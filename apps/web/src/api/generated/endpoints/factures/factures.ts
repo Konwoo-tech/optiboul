@@ -6,16 +6,20 @@
  * OpenAPI spec version: 1.0.0
  */
 import {
+  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
@@ -23,7 +27,12 @@ import type {
 import type {
   Facture,
   FacturesListParams,
-  PaginatedFactureList
+  FacturesPaiementsListParams,
+  PaginatedFactureList,
+  PaginatedPaiementFournisseurList,
+  PaiementFournisseur,
+  Payer,
+  Probleme
 } from '../../model';
 
 import { optiboulFetch } from '../../../http.ts';
@@ -76,7 +85,7 @@ export const getFacturesListUrl = (params?: FacturesListParams,) => {
 }
 
 /**
- * Factures fournisseurs : à payer, en retard, payées (CdC §5.7).
+ * Factures fournisseurs : à payer, en cours, en retard, payées (CdC §5.7).
  */
 export const facturesList = async (params?: FacturesListParams, options?: Parameters<typeof optiboulFetch>[1]): Promise<facturesListResponse> => {
 
@@ -185,7 +194,7 @@ export const getFacturesRetrieveUrl = (id: number,) => {
 }
 
 /**
- * Factures fournisseurs : à payer, en retard, payées (CdC §5.7).
+ * Factures fournisseurs : à payer, en cours, en retard, payées (CdC §5.7).
  */
 export const facturesRetrieve = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<facturesRetrieveResponse> => {
 
@@ -273,3 +282,232 @@ export function useFacturesRetrieve<TData = Awaited<ReturnType<typeof facturesRe
 
 
 
+export type facturesPaiementsListResponse200 = {
+  data: PaginatedPaiementFournisseurList
+  status: 200
+}
+
+export type facturesPaiementsListResponseSuccess = (facturesPaiementsListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type facturesPaiementsListResponse = (facturesPaiementsListResponseSuccess)
+
+export const getFacturesPaiementsListUrl = (id: number,
+    params?: FacturesPaiementsListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/factures/${id}/paiements/?${stringifiedParams}` : `/api/v1/factures/${id}/paiements/`
+}
+
+/**
+ * Factures fournisseurs : à payer, en cours, en retard, payées (CdC §5.7).
+ */
+export const facturesPaiementsList = async (id: number,
+    params?: FacturesPaiementsListParams, options?: Parameters<typeof optiboulFetch>[1]): Promise<facturesPaiementsListResponse> => {
+
+  return optiboulFetch<facturesPaiementsListResponse>(getFacturesPaiementsListUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getFacturesPaiementsListQueryKey = (id: number,
+    params?: FacturesPaiementsListParams,) => {
+    return [
+    `/api/v1/factures/${id}/paiements/`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getFacturesPaiementsListQueryOptions = <TData = Awaited<ReturnType<typeof facturesPaiementsList>>, TError = unknown>(id: number,
+    params?: FacturesPaiementsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof facturesPaiementsList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getFacturesPaiementsListQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof facturesPaiementsList>>> = ({ signal }) => facturesPaiementsList(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof facturesPaiementsList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type FacturesPaiementsListQueryResult = NonNullable<Awaited<ReturnType<typeof facturesPaiementsList>>>
+export type FacturesPaiementsListQueryError = unknown
+
+
+export function useFacturesPaiementsList<TData = Awaited<ReturnType<typeof facturesPaiementsList>>, TError = unknown>(
+ id: number,
+    params: undefined |  FacturesPaiementsListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof facturesPaiementsList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof facturesPaiementsList>>,
+          TError,
+          Awaited<ReturnType<typeof facturesPaiementsList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useFacturesPaiementsList<TData = Awaited<ReturnType<typeof facturesPaiementsList>>, TError = unknown>(
+ id: number,
+    params?: FacturesPaiementsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof facturesPaiementsList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof facturesPaiementsList>>,
+          TError,
+          Awaited<ReturnType<typeof facturesPaiementsList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useFacturesPaiementsList<TData = Awaited<ReturnType<typeof facturesPaiementsList>>, TError = unknown>(
+ id: number,
+    params?: FacturesPaiementsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof facturesPaiementsList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useFacturesPaiementsList<TData = Awaited<ReturnType<typeof facturesPaiementsList>>, TError = unknown>(
+ id: number,
+    params?: FacturesPaiementsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof facturesPaiementsList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getFacturesPaiementsListQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type facturesPayerCreateResponse201 = {
+  data: PaiementFournisseur
+  status: 201
+}
+
+export type facturesPayerCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type facturesPayerCreateResponseSuccess = (facturesPayerCreateResponse201) & {
+  headers: Headers;
+};
+export type facturesPayerCreateResponseError = (facturesPayerCreateResponse409) & {
+  headers: Headers;
+};
+
+export type facturesPayerCreateResponse = (facturesPayerCreateResponseSuccess | facturesPayerCreateResponseError)
+
+export const getFacturesPayerCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/factures/${id}/payer/`
+}
+
+/**
+ * Espèces (caisse), banque ou mobile money ; partiel possible ; une dépense
+ * rattachée au stock et un reçu PDF.
+ */
+export const facturesPayerCreate = async (id: number,
+    payer: Payer, options?: Parameters<typeof optiboulFetch>[1]): Promise<facturesPayerCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<facturesPayerCreateResponse>(getFacturesPayerCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(payer)
+  }
+);}
+
+
+
+
+
+export const getFacturesPayerCreateMutationKey = () => ['facturesPayerCreate'] as const;
+
+export const getFacturesPayerCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof facturesPayerCreate>>, TError,FacturesPayerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof facturesPayerCreate>>, TError,FacturesPayerCreateMutationVariables, TContext> => {
+
+const mutationKey = getFacturesPayerCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof facturesPayerCreate>>, FacturesPayerCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  facturesPayerCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FacturesPayerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof facturesPayerCreate>>>
+    export type FacturesPayerCreateMutationBody = Payer
+    export type FacturesPayerCreateMutationError = Probleme
+    export type FacturesPayerCreateMutationVariables = {id: number;data: Payer}
+
+    export const useFacturesPayerCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof facturesPayerCreate>>, TError,FacturesPayerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof facturesPayerCreate>>,
+        TError,
+        FacturesPayerCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getFacturesPayerCreateMutationOptions(options), queryClient);
+    }
