@@ -37,8 +37,8 @@ from optiboul.production.infrastructure.models import Production
 from optiboul.production.infrastructure.plans import depots as depots_plans
 from optiboul.production.infrastructure.plans import nombre_de_sessions
 from optiboul.production.infrastructure.productions import etat as etat_production
+from optiboul.stocks.infrastructure.etat import etat_du_stock
 from optiboul.stocks.infrastructure.models import ControleStock
-from optiboul.stocks.infrastructure.stocks import stock
 from optiboul.ventes.infrastructure.commandes import limites
 
 if TYPE_CHECKING:
@@ -101,7 +101,7 @@ def _factures_en_retard() -> list[dict[str, Any]]:
 
 
 def _stock_bas() -> list[dict[str, Any]]:
-    bas = sorted(code for code, quantite in stock.quantites().items() if quantite <= 0)
+    bas = [ligne.nom for ligne in etat_du_stock() if ligne.statut == "stock_bas"]
     if not bas:
         return []
     return [

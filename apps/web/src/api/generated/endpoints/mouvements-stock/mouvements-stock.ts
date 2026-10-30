@@ -25,7 +25,9 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  MouvementsStockEtatListParams,
   MouvementsStockListParams,
+  PaginatedLigneEtatList,
   PaginatedMouvementStockList,
   Probleme,
   SaisieEnregistree,
@@ -160,6 +162,122 @@ export function useMouvementsStockList<TData = Awaited<ReturnType<typeof mouveme
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getMouvementsStockListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type mouvementsStockEtatListResponse200 = {
+  data: PaginatedLigneEtatList
+  status: 200
+}
+
+export type mouvementsStockEtatListResponseSuccess = (mouvementsStockEtatListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type mouvementsStockEtatListResponse = (mouvementsStockEtatListResponseSuccess)
+
+export const getMouvementsStockEtatListUrl = (params?: MouvementsStockEtatListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/mouvements-stock/etat/?${stringifiedParams}` : `/api/v1/mouvements-stock/etat/`
+}
+
+/**
+ * Par matière : besoin, sessions restantes, valeur et statut (US-090).
+ */
+export const mouvementsStockEtatList = async (params?: MouvementsStockEtatListParams, options?: Parameters<typeof optiboulFetch>[1]): Promise<mouvementsStockEtatListResponse> => {
+
+  return optiboulFetch<mouvementsStockEtatListResponse>(getMouvementsStockEtatListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getMouvementsStockEtatListQueryKey = (params?: MouvementsStockEtatListParams,) => {
+    return [
+    `/api/v1/mouvements-stock/etat/`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getMouvementsStockEtatListQueryOptions = <TData = Awaited<ReturnType<typeof mouvementsStockEtatList>>, TError = unknown>(params?: MouvementsStockEtatListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof mouvementsStockEtatList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getMouvementsStockEtatListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof mouvementsStockEtatList>>> = ({ signal }) => mouvementsStockEtatList(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof mouvementsStockEtatList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type MouvementsStockEtatListQueryResult = NonNullable<Awaited<ReturnType<typeof mouvementsStockEtatList>>>
+export type MouvementsStockEtatListQueryError = unknown
+
+
+export function useMouvementsStockEtatList<TData = Awaited<ReturnType<typeof mouvementsStockEtatList>>, TError = unknown>(
+ params: undefined |  MouvementsStockEtatListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof mouvementsStockEtatList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof mouvementsStockEtatList>>,
+          TError,
+          Awaited<ReturnType<typeof mouvementsStockEtatList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useMouvementsStockEtatList<TData = Awaited<ReturnType<typeof mouvementsStockEtatList>>, TError = unknown>(
+ params?: MouvementsStockEtatListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof mouvementsStockEtatList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof mouvementsStockEtatList>>,
+          TError,
+          Awaited<ReturnType<typeof mouvementsStockEtatList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useMouvementsStockEtatList<TData = Awaited<ReturnType<typeof mouvementsStockEtatList>>, TError = unknown>(
+ params?: MouvementsStockEtatListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof mouvementsStockEtatList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useMouvementsStockEtatList<TData = Awaited<ReturnType<typeof mouvementsStockEtatList>>, TError = unknown>(
+ params?: MouvementsStockEtatListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof mouvementsStockEtatList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getMouvementsStockEtatListQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

@@ -281,6 +281,22 @@ CATALOGUE: tuple[Definition, ...] = (
         "O18",
     ),
     Definition(
+        "stock_sessions_bas",
+        "Stock bas : sessions restantes",
+        Genre.ENTIER,
+        2,
+        "sessions",
+        "État du stock",
+    ),
+    Definition(
+        "stock_sessions_commande",
+        "À commander : sessions restantes",
+        Genre.ENTIER,
+        6,
+        "sessions",
+        "État du stock",
+    ),
+    Definition(
         "controles_stock_jours",
         "Jours des contrôles de stock",
         Genre.JOURS,

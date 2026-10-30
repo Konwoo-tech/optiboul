@@ -33,6 +33,8 @@ def test_le_catalogue_reprend_les_valeurs_par_defaut_du_cahier_des_charges():
         "supplement_auto_sacs": 1,
         "supplement_auto_pourcentage": 10,
         "rappel_clients_habituels": 30,
+        "stock_sessions_bas": 2,
+        "stock_sessions_commande": 6,
         "controles_stock_jours": ["mercredi", "dimanche"],
     }
     assert {d.cle: d.defaut for d in CATALOGUE} == attendus

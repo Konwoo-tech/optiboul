@@ -23,8 +23,10 @@ from optiboul.core.api.permissions import DIRECTION
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.stocks.application import saisies as cas
+from optiboul.stocks.domain.etat import StatutStock
 from optiboul.stocks.domain.stocks import GenreMouvementStock
 from optiboul.stocks.domain.stocks import Sens
+from optiboul.stocks.infrastructure.etat import etat_du_stock
 from optiboul.stocks.infrastructure.models import MouvementStock
 from optiboul.stocks.infrastructure.saisies import depots
 from optiboul.stocks.infrastructure.stocks import stock
@@ -61,6 +63,22 @@ class StockSerializer(serializers.Serializer):
         child=serializers.DecimalField(max_digits=14, decimal_places=3),
         help_text="Code de la matière → stock, dans l'unité de la matière.",
     )
+
+
+class LigneEtatSerializer(serializers.Serializer):
+    matiere = serializers.CharField()
+    nom = serializers.CharField()
+    unite = serializers.CharField()
+    quantite = serializers.DecimalField(max_digits=14, decimal_places=3)
+    besoin_par_session = serializers.DecimalField(max_digits=14, decimal_places=3)
+    sessions_restantes = serializers.DecimalField(
+        max_digits=8,
+        decimal_places=1,
+        allow_null=True,
+    )
+    prochaine_reception = serializers.DateField(allow_null=True)
+    valeur = serializers.IntegerField(help_text="En FCFA.")
+    statut = serializers.ChoiceField(choices=[s.value for s in StatutStock])
 
 
 class SaisieStockSerializer(serializers.Serializer):
@@ -115,6 +133,12 @@ class MouvementsStockViewSet(ListModelMixin, GenericViewSet):
     def stock(self, request: Request) -> Response:
         """Stock actuel de chaque matière suivie : somme de ses mouvements."""
         return Response(StockSerializer({"quantites": stock.quantites()}).data)
+
+    @extend_schema(responses=LigneEtatSerializer(many=True))
+    @action(detail=False)
+    def etat(self, request: Request) -> Response:
+        """Par matière : besoin, sessions restantes, valeur et statut (US-090)."""
+        return Response(LigneEtatSerializer(etat_du_stock(), many=True).data)
 
     @extend_schema(
         request=SaisieStockSerializer,
