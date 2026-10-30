@@ -156,3 +156,33 @@ class PreAutorisation(models.Model):
 
     def __str__(self) -> str:
         return f"{self.achat_courant} : {self.plafond} FCFA"
+
+
+class BudgetMensuel(models.Model):
+    """Budget d'une catégorie pour un mois (CdC §5.8)."""
+
+    mois = models.DateField(_("mois (1er jour)"))
+    categorie = models.CharField(_("catégorie"), max_length=20, choices=CATEGORIES)
+    montant = models.PositiveBigIntegerField(_("budget (FCFA)"))
+    fixe_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("fixé par"),
+    )
+    modifie_le = models.DateTimeField(_("modifié le"), default=timezone.now)
+
+    class Meta:
+        db_table = "budget_mensuel"
+        ordering = ["mois", "categorie"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["mois", "categorie"],
+                name="un_budget_par_categorie_et_mois",
+            ),
+        ]
+        verbose_name = _("budget mensuel")
+        verbose_name_plural = _("budgets mensuels")
+
+    def __str__(self) -> str:
+        return f"{self.mois:%m/%Y} · {self.categorie} : {self.montant} FCFA"

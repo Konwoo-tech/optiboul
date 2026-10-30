@@ -1,4 +1,5 @@
 export * from './brouillons/brouillons.ts';
+export * from './budgets/budgets.ts';
 export * from './caisses/caisses.ts';
 export * from './clients/clients.ts';
 export * from './commandes/commandes.ts';

@@ -93,3 +93,23 @@ class AchatCourant(StrEnum):
 def dans_la_pre_autorisation(plafond: int, deja_engage: int, montant: int) -> bool:
     """La dépense tient dans ce qui reste du plafond de la semaine (O7)."""
     return montant <= plafond - deja_engage
+
+
+class StatutBudget(StrEnum):
+    OK = "ok"
+    SURVEILLER = "surveiller"  # à partir de 80 % (paramètre)
+    DEPASSE = "depasse"
+
+
+def statut_budget(depense: int, budget: int, seuil_surveiller: int) -> StatutBudget:
+    """OK, à surveiller dès le seuil (80 %), dépassé au-delà du budget (CdC §5.8)."""
+    if depense > budget:
+        return StatutBudget.DEPASSE
+    if budget and depense * 100 >= budget * seuil_surveiller:
+        return StatutBudget.SURVEILLER
+    return StatutBudget.OK
+
+
+def part_du_budget(depense: int, budget: int) -> int | None:
+    """Pourcentage entier consommé ; None sans budget."""
+    return round(depense * 100 / budget) if budget else None

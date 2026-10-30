@@ -91,6 +91,56 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/budgets/:
+    get:
+      operationId: budgets_list
+      description: La direction suit le budget ; le propriétaire le fixe.
+      parameters:
+      - in: query
+        name: mois
+        schema:
+          type: string
+        description: AAAA-MM ; ce mois-ci
+      tags:
+      - budgets
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Budget'
+          description: ''
+  /api/v1/budgets/fixer/:
+    put:
+      operationId: budgets_fixer_update
+      description: La direction suit le budget ; le propriétaire le fixe.
+      tags:
+      - budgets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FixerBudget'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FixerBudget'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FixerBudget'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+          description: ''
   /api/v1/caisses/:
     get:
       operationId: caisses_list
@@ -4150,6 +4200,25 @@ components:
       - cle
       - contenu
       - mis_a_jour
+    Budget:
+      type: object
+      properties:
+        mois:
+          type: string
+          description: AAAA-MM
+        lignes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LigneBudget'
+        budget:
+          type: integer
+        depense:
+          type: integer
+      required:
+      - budget
+      - depense
+      - lignes
+      - mois
     Caisse:
       type: object
       properties:
@@ -5312,6 +5381,22 @@ components:
       - procede
       - recette
       - version
+    FixerBudget:
+      type: object
+      properties:
+        mois:
+          type: string
+          description: AAAA-MM
+          pattern: ^\d{4}-(0[1-9]|1[0-2])$
+        montants:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+          description: Catégorie → budget du mois en FCFA.
+      required:
+      - mois
+      - montants
     Fournee:
       type: object
       properties:
@@ -5445,6 +5530,41 @@ components:
       - jeton
       - motDePasse
       - uid
+    LigneBudget:
+      type: object
+      properties:
+        categorie:
+          type: string
+        libelle:
+          type: string
+        budget:
+          type: integer
+        depense:
+          type: integer
+          description: Dépenses validées du mois, en FCFA.
+        part:
+          type: integer
+          nullable: true
+          description: Part consommée, en %.
+        statut:
+          $ref: '#/components/schemas/LigneBudgetStatutEnum'
+      required:
+      - budget
+      - categorie
+      - depense
+      - libelle
+      - part
+      - statut
+    LigneBudgetStatutEnum:
+      enum:
+      - ok
+      - surveiller
+      - depasse
+      type: string
+      description: |-
+        * `ok` - ok
+        * `surveiller` - surveiller
+        * `depasse` - depasse
     LigneJournal:
       type: object
       properties:
