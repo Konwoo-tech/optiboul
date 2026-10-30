@@ -4479,6 +4479,110 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/rapports/mois/:
+    get:
+      operationId: rapports_mois_retrieve
+      parameters:
+      - in: query
+        name: format_fichier
+        schema:
+          type: string
+          enum:
+          - excel
+          - pdf
+      - in: query
+        name: mois
+        schema:
+          type: string
+        required: true
+      tags:
+      - rapports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/rapports/semaine/:
+    get:
+      operationId: rapports_semaine_retrieve
+      parameters:
+      - in: query
+        name: format_fichier
+        schema:
+          type: string
+          enum:
+          - excel
+          - pdf
+      - in: query
+        name: semaine
+        schema:
+          type: integer
+        required: true
+      tags:
+      - rapports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/rapports/session/:
+    get:
+      operationId: rapports_session_retrieve
+      parameters:
+      - in: query
+        name: creneau
+        schema:
+          type: string
+          enum:
+          - jour
+          - nuit
+        required: true
+      - in: query
+        name: format_fichier
+        schema:
+          type: string
+          enum:
+          - excel
+          - pdf
+      - in: query
+        name: jour
+        schema:
+          type: string
+        required: true
+      tags:
+      - rapports
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+          description: ''
   /api/v1/receptions-planifiees/:
     get:
       operationId: receptions_planifiees_list
