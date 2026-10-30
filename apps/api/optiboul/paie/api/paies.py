@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 from django.db import transaction
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins
 from rest_framework import serializers
@@ -22,6 +23,8 @@ from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.infrastructure.journal import journaliser
 from optiboul.paie.application import paies as cas
+from optiboul.paie.domain.paie import GenreElement
+from optiboul.paie.infrastructure.models import ElementPaie
 from optiboul.paie.infrastructure.models import Employe
 from optiboul.paie.infrastructure.models import EtatPaie
 from optiboul.paie.infrastructure.models import LignePaie
@@ -90,8 +93,29 @@ class EmployesViewSet(
         )
 
 
+class ElementPaieSerializer(serializers.ModelSerializer[ElementPaie]):
+    auteur = serializers.CharField(source="auteur.name")
+
+    class Meta:
+        model = ElementPaie
+        fields = ["id", "genre", "description", "montant", "jour", "auteur"]
+        read_only_fields = fields
+
+
+class NouvelElementSerializer(serializers.Serializer):
+    genre = serializers.ChoiceField(choices=[g.value for g in GenreElement])
+    description = serializers.CharField(max_length=255, allow_blank=True)
+    montant = serializers.IntegerField()
+
+
+class ModifierElementSerializer(serializers.Serializer):
+    description = serializers.CharField(max_length=255, allow_blank=True)
+    montant = serializers.IntegerField()
+
+
 class LignePaieSerializer(serializers.ModelSerializer[LignePaie]):
     employe = serializers.CharField(source="employe.nom")
+    elements = ElementPaieSerializer(many=True, read_only=True)
     montant_absences = serializers.SerializerMethodField()
     penalites = serializers.SerializerMethodField()
     gains = serializers.SerializerMethodField()
@@ -108,6 +132,7 @@ class LignePaieSerializer(serializers.ModelSerializer[LignePaie]):
             "avances",
             "penalites",
             "gains",
+            "elements",
             "impaye",
             "net",
         ]
@@ -157,7 +182,10 @@ class PaiesViewSet(
     """États de paie du plus récent au plus ancien."""
 
     serializer_class = EtatPaieSerializer
-    queryset = EtatPaie.objects.prefetch_related("lignes__employe")
+    queryset = EtatPaie.objects.prefetch_related(
+        "lignes__employe",
+        "lignes__elements__auteur",
+    )
     permission_classes = [ProfilParmi(*DIRECTION)]
 
     @extend_schema(
@@ -210,3 +238,77 @@ class PaiesViewSet(
         except RefusMetier as refus:
             return probleme(refus)
         return Response(LignePaieSerializer(LignePaie.objects.get(pk=ligne)).data)
+
+    @extend_schema(
+        request=NouvelElementSerializer,
+        responses={201: ElementPaieSerializer, 409: ProblemeSerializer},
+    )
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path=r"lignes/(?P<ligne>\d+)/elements",
+        url_name="ligne-elements",
+    )
+    def ajouter_element(self, request: Request, ligne: str) -> Response:
+        """Gain ou pénalité motivé : description, montant, date et auteur."""
+        corps = NouvelElementSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        donnees: dict[str, Any] = corps.validated_data
+        try:
+            with transaction.atomic():
+                element = cas.ajouter_element(
+                    depots,
+                    ligne_id=int(ligne),
+                    genre=GenreElement(donnees["genre"]),
+                    description=donnees["description"],
+                    montant=donnees["montant"],
+                    auteur=auteur_de(request),
+                    maintenant=timezone.localtime(),
+                )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(
+            ElementPaieSerializer(ElementPaie.objects.get(pk=element)).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @extend_schema(
+        methods=["put"],
+        request=ModifierElementSerializer,
+        responses={200: ElementPaieSerializer, 409: ProblemeSerializer},
+    )
+    @extend_schema(
+        methods=["delete"],
+        request=None,
+        responses={204: None, 409: ProblemeSerializer},
+    )
+    @action(
+        detail=False,
+        methods=["put", "delete"],
+        url_path=r"elements/(?P<element>\d+)",
+        url_name="element",
+    )
+    def element(self, request: Request, element: str) -> Response:
+        """Modifier ou retirer un élément, tant que l'état est en brouillon."""
+        try:
+            if request.method == "DELETE":
+                with transaction.atomic():
+                    cas.retirer_element(
+                        depots,
+                        element_id=int(element),
+                        auteur=auteur_de(request),
+                    )
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            corps = ModifierElementSerializer(data=request.data)
+            corps.is_valid(raise_exception=True)
+            with transaction.atomic():
+                cas.modifier_element(
+                    depots,
+                    element_id=int(element),
+                    description=corps.validated_data["description"],
+                    montant=corps.validated_data["montant"],
+                    auteur=auteur_de(request),
+                )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(ElementPaieSerializer(ElementPaie.objects.get(pk=element)).data)

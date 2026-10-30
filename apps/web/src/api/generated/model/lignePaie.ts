@@ -5,6 +5,7 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
+import type { ElementPaie } from './elementPaie.ts';
 
 export interface LignePaie {
   readonly id: number;
@@ -16,6 +17,7 @@ export interface LignePaie {
   readonly avances: number;
   readonly penalites: number;
   readonly gains: number;
+  readonly elements: readonly ElementPaie[];
   readonly impaye: number;
   /** Base, moins absences, avances et pénalités, plus gains et impayé. */
   readonly net: number;

@@ -3370,6 +3370,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/EtatPaie'
           description: ''
+  /api/v1/paies/elements/{element}/:
+    put:
+      operationId: paies_elements_update
+      description: Modifier ou retirer un élément, tant que l'état est en brouillon.
+      parameters:
+      - in: path
+        name: element
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - paies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifierElement'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ModifierElement'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ModifierElement'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ElementPaie'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+    delete:
+      operationId: paies_elements_destroy
+      description: Modifier ou retirer un élément, tant que l'état est en brouillon.
+      parameters:
+      - in: path
+        name: element
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - paies
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/paies/lignes/{ligne}/:
     put:
       operationId: paies_lignes_update
@@ -3403,6 +3466,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LignePaie'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/paies/lignes/{ligne}/elements/:
+    post:
+      operationId: paies_lignes_elements_create
+      description: 'Gain ou pénalité motivé : description, montant, date et auteur.'
+      parameters:
+      - in: path
+        name: ligne
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - paies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NouvelElement'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NouvelElement'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NouvelElement'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ElementPaie'
           description: ''
         '409':
           content:
@@ -6296,6 +6399,36 @@ components:
         * `ma_semaine` - ma_semaine
         * `plan_du_jour` - plan_du_jour
         * `tableau_de_bord` - tableau_de_bord
+    ElementPaie:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        genre:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        montant:
+          type: integer
+          readOnly: true
+          title: Montant (FCFA)
+        jour:
+          type: string
+          format: date
+          readOnly: true
+          title: Date
+        auteur:
+          type: string
+      required:
+      - auteur
+      - description
+      - genre
+      - id
+      - jour
+      - montant
     Emission:
       type: object
       properties:
@@ -7202,6 +7335,11 @@ components:
         gains:
           type: integer
           readOnly: true
+        elements:
+          type: array
+          items:
+            $ref: '#/components/schemas/ElementPaie'
+          readOnly: true
         impaye:
           type: integer
           readOnly: true
@@ -7214,6 +7352,7 @@ components:
       - absences
       - avances
       - base
+      - elements
       - employe
       - gains
       - id
@@ -7638,6 +7777,17 @@ components:
         valeur: {}
       required:
       - valeur
+    ModifierElement:
+      type: object
+      properties:
+        description:
+          type: string
+          maxLength: 255
+        montant:
+          type: integer
+      required:
+      - description
+      - montant
     ModifierLigne:
       type: object
       properties:
@@ -7874,6 +8024,28 @@ components:
         * `retours` - retours
         * `reste_en_salle` - reste_en_salle
         * `ration` - ration
+    NouvelElement:
+      type: object
+      properties:
+        genre:
+          $ref: '#/components/schemas/NouvelElementGenreEnum'
+        description:
+          type: string
+          maxLength: 255
+        montant:
+          type: integer
+      required:
+      - description
+      - genre
+      - montant
+    NouvelElementGenreEnum:
+      enum:
+      - gain
+      - penalite
+      type: string
+      description: |-
+        * `gain` - gain
+        * `penalite` - penalite
     NouvelEncaissement:
       type: object
       properties:

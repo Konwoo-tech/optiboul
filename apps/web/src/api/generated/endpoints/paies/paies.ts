@@ -25,9 +25,12 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  ElementPaie,
   EtatPaie,
   LignePaie,
+  ModifierElement,
   ModifierLigne,
+  NouvelElement,
   PaginatedEtatPaieList,
   PaiesListParams,
   Preparer,
@@ -281,7 +284,200 @@ export function usePaiesRetrieve<TData = Awaited<ReturnType<typeof paiesRetrieve
 
 
 
-export type paiesLignesUpdateResponse200 = {
+export type paiesElementsUpdateResponse200 = {
+  data: ElementPaie
+  status: 200
+}
+
+export type paiesElementsUpdateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type paiesElementsUpdateResponseSuccess = (paiesElementsUpdateResponse200) & {
+  headers: Headers;
+};
+export type paiesElementsUpdateResponseError = (paiesElementsUpdateResponse409) & {
+  headers: Headers;
+};
+
+export type paiesElementsUpdateResponse = (paiesElementsUpdateResponseSuccess | paiesElementsUpdateResponseError)
+
+export const getPaiesElementsUpdateUrl = (element: string,) => {
+
+
+
+
+  return `/api/v1/paies/elements/${element}/`
+}
+
+/**
+ * Modifier ou retirer un élément, tant que l'état est en brouillon.
+ */
+export const paiesElementsUpdate = async (element: string,
+    modifierElement: ModifierElement, options?: Parameters<typeof optiboulFetch>[1]): Promise<paiesElementsUpdateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<paiesElementsUpdateResponse>(getPaiesElementsUpdateUrl(element),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modifierElement)
+  }
+);}
+
+
+
+
+
+export const getPaiesElementsUpdateMutationKey = () => ['paiesElementsUpdate'] as const;
+
+export const getPaiesElementsUpdateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesElementsUpdate>>, TError,PaiesElementsUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof paiesElementsUpdate>>, TError,PaiesElementsUpdateMutationVariables, TContext> => {
+
+const mutationKey = getPaiesElementsUpdateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof paiesElementsUpdate>>, PaiesElementsUpdateMutationVariables> = (props) => {
+          const {element,data} = props ?? {};
+
+          return  paiesElementsUpdate(element,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PaiesElementsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof paiesElementsUpdate>>>
+    export type PaiesElementsUpdateMutationBody = ModifierElement
+    export type PaiesElementsUpdateMutationError = Probleme
+    export type PaiesElementsUpdateMutationVariables = {element: string;data: ModifierElement}
+
+    export const usePaiesElementsUpdate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesElementsUpdate>>, TError,PaiesElementsUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof paiesElementsUpdate>>,
+        TError,
+        PaiesElementsUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPaiesElementsUpdateMutationOptions(options), queryClient);
+    }
+    export type paiesElementsDestroyResponse204 = {
+  data: void
+  status: 204
+}
+
+export type paiesElementsDestroyResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type paiesElementsDestroyResponseSuccess = (paiesElementsDestroyResponse204) & {
+  headers: Headers;
+};
+export type paiesElementsDestroyResponseError = (paiesElementsDestroyResponse409) & {
+  headers: Headers;
+};
+
+export type paiesElementsDestroyResponse = (paiesElementsDestroyResponseSuccess | paiesElementsDestroyResponseError)
+
+export const getPaiesElementsDestroyUrl = (element: string,) => {
+
+
+
+
+  return `/api/v1/paies/elements/${element}/`
+}
+
+/**
+ * Modifier ou retirer un élément, tant que l'état est en brouillon.
+ */
+export const paiesElementsDestroy = async (element: string, options?: Parameters<typeof optiboulFetch>[1]): Promise<paiesElementsDestroyResponse> => {
+
+  return optiboulFetch<paiesElementsDestroyResponse>(getPaiesElementsDestroyUrl(element),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getPaiesElementsDestroyMutationKey = () => ['paiesElementsDestroy'] as const;
+
+export const getPaiesElementsDestroyMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesElementsDestroy>>, TError,PaiesElementsDestroyMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof paiesElementsDestroy>>, TError,PaiesElementsDestroyMutationVariables, TContext> => {
+
+const mutationKey = getPaiesElementsDestroyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof paiesElementsDestroy>>, PaiesElementsDestroyMutationVariables> = (props) => {
+          const {element} = props ?? {};
+
+          return  paiesElementsDestroy(element,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PaiesElementsDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof paiesElementsDestroy>>>
+
+    export type PaiesElementsDestroyMutationError = Probleme
+    export type PaiesElementsDestroyMutationVariables = {element: string}
+
+    export const usePaiesElementsDestroy = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesElementsDestroy>>, TError,PaiesElementsDestroyMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof paiesElementsDestroy>>,
+        TError,
+        PaiesElementsDestroyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPaiesElementsDestroyMutationOptions(options), queryClient);
+    }
+    export type paiesLignesUpdateResponse200 = {
   data: LignePaie
   status: 200
 }
@@ -384,6 +580,110 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getPaiesLignesUpdateMutationOptions(options), queryClient);
+    }
+    export type paiesLignesElementsCreateResponse201 = {
+  data: ElementPaie
+  status: 201
+}
+
+export type paiesLignesElementsCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type paiesLignesElementsCreateResponseSuccess = (paiesLignesElementsCreateResponse201) & {
+  headers: Headers;
+};
+export type paiesLignesElementsCreateResponseError = (paiesLignesElementsCreateResponse409) & {
+  headers: Headers;
+};
+
+export type paiesLignesElementsCreateResponse = (paiesLignesElementsCreateResponseSuccess | paiesLignesElementsCreateResponseError)
+
+export const getPaiesLignesElementsCreateUrl = (ligne: string,) => {
+
+
+
+
+  return `/api/v1/paies/lignes/${ligne}/elements/`
+}
+
+/**
+ * Gain ou pénalité motivé : description, montant, date et auteur.
+ */
+export const paiesLignesElementsCreate = async (ligne: string,
+    nouvelElement: NouvelElement, options?: Parameters<typeof optiboulFetch>[1]): Promise<paiesLignesElementsCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<paiesLignesElementsCreateResponse>(getPaiesLignesElementsCreateUrl(ligne),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(nouvelElement)
+  }
+);}
+
+
+
+
+
+export const getPaiesLignesElementsCreateMutationKey = () => ['paiesLignesElementsCreate'] as const;
+
+export const getPaiesLignesElementsCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesLignesElementsCreate>>, TError,PaiesLignesElementsCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof paiesLignesElementsCreate>>, TError,PaiesLignesElementsCreateMutationVariables, TContext> => {
+
+const mutationKey = getPaiesLignesElementsCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof paiesLignesElementsCreate>>, PaiesLignesElementsCreateMutationVariables> = (props) => {
+          const {ligne,data} = props ?? {};
+
+          return  paiesLignesElementsCreate(ligne,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PaiesLignesElementsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof paiesLignesElementsCreate>>>
+    export type PaiesLignesElementsCreateMutationBody = NouvelElement
+    export type PaiesLignesElementsCreateMutationError = Probleme
+    export type PaiesLignesElementsCreateMutationVariables = {ligne: string;data: NouvelElement}
+
+    export const usePaiesLignesElementsCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesLignesElementsCreate>>, TError,PaiesLignesElementsCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof paiesLignesElementsCreate>>,
+        TError,
+        PaiesLignesElementsCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPaiesLignesElementsCreateMutationOptions(options), queryClient);
     }
     export type paiesPreparerCreateResponse201 = {
   data: EtatPaie

@@ -12,6 +12,11 @@ from enum import StrEnum
 JOURS_DU_MOIS = 26
 
 
+class GenreElement(StrEnum):
+    GAIN = "gain"
+    PENALITE = "penalite"
+
+
 class StatutPaie(StrEnum):
     BROUILLON = "brouillon"
     SOUMIS = "soumis"

@@ -96,3 +96,33 @@ class LignePaie(models.Model):
 
     def __str__(self) -> str:
         return f"{self.employe} · {self.etat}"
+
+
+class ElementPaie(models.Model):
+    """Gain ou pénalité motivé (CdC §5.10), modifiable en brouillon seulement."""
+
+    ligne = models.ForeignKey(
+        LignePaie,
+        on_delete=models.CASCADE,
+        related_name="elements",
+        verbose_name=_("ligne de paie"),
+    )
+    genre = models.CharField(_("genre"), max_length=10)
+    description = models.CharField(_("description"), max_length=255)
+    montant = models.PositiveIntegerField(_("montant (FCFA)"))
+    jour = models.DateField(_("date"))
+    auteur = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("auteur"),
+    )
+
+    class Meta:
+        db_table = "element_paie"
+        ordering = ["jour", "id"]
+        verbose_name = _("élément de paie")
+        verbose_name_plural = _("éléments de paie")
+
+    def __str__(self) -> str:
+        return f"{self.description} : {self.montant}"
