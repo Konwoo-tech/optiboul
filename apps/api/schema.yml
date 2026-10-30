@@ -1888,6 +1888,55 @@ paths:
               schema:
                 $ref: '#/components/schemas/Totaux'
           description: ''
+  /api/v1/mouvements-stock/:
+    get:
+      operationId: mouvements_stock_list
+      description: Entrées et sorties, liées à leur origine (production, réception…).
+      parameters:
+      - in: query
+        name: matiere
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - in: query
+        name: source_id
+        schema:
+          type: integer
+      - in: query
+        name: source_type
+        schema:
+          type: string
+      tags:
+      - mouvements-stock
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMouvementStockList'
+          description: ''
+  /api/v1/mouvements-stock/stock/:
+    get:
+      operationId: mouvements_stock_stock_retrieve
+      description: 'Stock actuel de chaque matière suivie : somme de ses mouvements.'
+      tags:
+      - mouvements-stock
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock'
+          description: ''
   /api/v1/notifications/:
     get:
       operationId: notifications_list
@@ -4890,6 +4939,60 @@ components:
         * `retours` - retours
         * `reste_en_salle` - reste en salle
         * `ration` - ration
+    MouvementStock:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        matiere:
+          type: string
+        sens:
+          allOf:
+          - $ref: '#/components/schemas/SensEnum'
+          readOnly: true
+        quantite:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          readOnly: true
+          title: Quantité
+        genre:
+          type: string
+          readOnly: true
+        source_type:
+          type: string
+          readOnly: true
+          title: Origine
+        source_id:
+          type: integer
+          readOnly: true
+          title: Identifiant de l'origine
+        motif:
+          type: string
+          readOnly: true
+        semaine:
+          type: integer
+          readOnly: true
+        auteur:
+          type: string
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Enregistré le
+      required:
+      - auteur
+      - cree_le
+      - genre
+      - id
+      - matiere
+      - motif
+      - quantite
+      - semaine
+      - sens
+      - source_id
+      - source_type
     NiveauEnum:
       enum:
       - ok
@@ -5330,6 +5433,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MouvementInterne'
+    PaginatedMouvementStockList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MouvementStock'
     PaginatedNotificationList:
       type: object
       required:
@@ -6578,6 +6704,14 @@ components:
       required:
       - conflits
       - semaine
+    SensEnum:
+      enum:
+      - -1
+      - 1
+      type: integer
+      description: |-
+        * `-1` - sortie
+        * `1` - entrée
     Session:
       type: object
       properties:
@@ -6608,6 +6742,18 @@ components:
           format: date
         creneau:
           $ref: '#/components/schemas/CreneauEnum'
+    Stock:
+      type: object
+      properties:
+        quantites:
+          type: object
+          additionalProperties:
+            type: string
+            format: decimal
+            pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          description: Code de la matière → stock, dans l'unité de la matière.
+      required:
+      - quantites
     Tarifs:
       type: object
       properties:

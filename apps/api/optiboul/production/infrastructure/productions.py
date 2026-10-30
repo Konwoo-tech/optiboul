@@ -10,6 +10,7 @@ from optiboul.production.application.productions import Depots
 from optiboul.production.application.productions import EtatProduction
 from optiboul.production.domain.production import StatutProduction
 from optiboul.stocks.infrastructure.models import Matiere
+from optiboul.stocks.infrastructure.stocks import stock
 from optiboul.ventes.domain.commandes import Session
 
 from . import plans
@@ -135,4 +136,4 @@ class DepotProductionsDjango:
 
 depot_productions = DepotProductionsDjango()
 
-depots = Depots(productions=depot_productions, plans=plans.depots)
+depots = Depots(productions=depot_productions, plans=plans.depots, stock=stock)

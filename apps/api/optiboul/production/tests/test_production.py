@@ -214,6 +214,13 @@ def test_cloture(
         "statut": "cloturee",
         "prevus": 1_371,
         "realise": 1_380,
+        "sorties": {
+            "farine": "205.000",
+            "sel": "2400.000",
+            "levure": "1800.000",
+            "ameliorant": "1200.000",
+            "glace": "20.000",
+        },
     }
     assert Notification.objects.filter(genre="production.cloturee").count() == 2
     assert production_en_cours(semaine).niveau is Niveau.OK

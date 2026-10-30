@@ -12,6 +12,9 @@ from optiboul.production.domain.plan import VALIDES
 from optiboul.production.domain.production import RAISONS_CLOTURE
 from optiboul.production.domain.production import StatutProduction
 from optiboul.production.domain.production import raisons_de_ne_pas_cloturer
+from optiboul.stocks.domain.stocks import GenreMouvementStock
+from optiboul.stocks.domain.stocks import Sens
+from optiboul.stocks.domain.stocks import sorties_de_production
 
 from .plans import responsable_de
 
@@ -20,6 +23,7 @@ if TYPE_CHECKING:
     from decimal import Decimal
 
     from optiboul.core.application.journal import Auteur
+    from optiboul.stocks.application.stocks import Stock
     from optiboul.ventes.domain.commandes import Session
 
     from .plans import Depots as DepotsPlans
@@ -84,6 +88,7 @@ class DepotProductions(Protocol):
 class Depots:
     productions: DepotProductions
     plans: DepotsPlans
+    stock: Stock
 
 
 def ouvrir(
@@ -246,6 +251,17 @@ def cloturer(
         auteur=auteur.utilisateur_id,
         le=maintenant,
     )
+    # R5 : la clôture crée les sorties de stock de la consommation réelle (US-091).
+    sorties = sorties_de_production(production.consommation, depots.stock.suivies())
+    depots.stock.mouvementer(
+        sorties,
+        sens=Sens.SORTIE,
+        genre=GenreMouvementStock.PRODUCTION,
+        source_type="production",
+        source_id=production_id,
+        semaine=production.semaine,
+        auteur=auteur.utilisateur_id,
+    )
     realise = sum(production.realise.values())
     prevus = sum(production.prevus.values())
     depots.plans.journal.enregistrer(
@@ -259,6 +275,7 @@ def cloturer(
                 "statut": StatutProduction.CLOTUREE,
                 "prevus": prevus,
                 "realise": realise,
+                "sorties": {m: str(q) for m, q in sorties.items()},
             },
         ),
     )
