@@ -16,6 +16,7 @@ export * from './fournisseurs/fournisseurs.ts';
 export * from './groupes/groupes.ts';
 export * from './journal/journal.ts';
 export * from './livraisons/livraisons.ts';
+export * from './manquants/manquants.ts';
 export * from './matieres/matieres.ts';
 export * from './mfa/mfa.ts';
 export * from './mouvements-internes/mouvements-internes.ts';

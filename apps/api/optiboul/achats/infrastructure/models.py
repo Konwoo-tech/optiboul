@@ -80,6 +80,38 @@ class ReceptionPlanifiee(models.Model):
         return f"{self.fournisseur} · {self.matiere} le {self.prevue_le:%d/%m}"
 
 
+class Manquant(models.Model):
+    """Ce qu'il reste à livrer après une réception incomplète (R11, O12)."""
+
+    reception = models.OneToOneField(
+        "achats.Reception",
+        on_delete=models.PROTECT,
+        related_name="manquant",
+        verbose_name=_("réception"),
+    )
+    quantite = models.DecimalField(_("quantité"), max_digits=12, decimal_places=3)
+    statut = models.CharField(_("statut"), max_length=10, default="a_livrer")
+    relances = models.PositiveSmallIntegerField(_("relances"), default=0)
+    replanifiee = models.OneToOneField(
+        ReceptionPlanifiee,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="manquant_repris",
+        verbose_name=_("nouvelle réception planifiée"),
+    )
+    cree_le = models.DateTimeField(_("créé le"), default=timezone.now)
+
+    class Meta:
+        db_table = "manquant_fournisseur"
+        ordering = ["-cree_le", "-id"]
+        verbose_name = _("manquant")
+        verbose_name_plural = _("manquants")
+
+    def __str__(self) -> str:
+        return f"Manquant {self.quantite} ({self.statut})"
+
+
 class FactureFournisseur(models.Model):
     """Facture d'un fournisseur ; la farine de la semaine s'y cumule (CdC §5.7)."""
 

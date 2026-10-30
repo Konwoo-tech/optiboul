@@ -19,4 +19,6 @@ export interface Fournisseur {
   actif?: boolean;
   /** @nullable */
   readonly prochaine_reception: FournisseurProchaineReception;
+  /** Manquants encore à livrer ou à recevoir de ce fournisseur. */
+  readonly manquants: number;
 }

@@ -69,6 +69,18 @@ class DepotAchats(Protocol):
 
     def ajouter_a_facture(self, facture_id: int, montant: int) -> None: ...
 
+    def noter_manquant(
+        self,
+        reception_id: int,
+        quantite: Decimal,
+        *,
+        le: datetime,
+    ) -> None: ...
+
+    def solder_manquant_repris(self, planifiee_id: int) -> None:
+        """La réception replanifiée est arrivée : le manquant d'origine est livré."""
+        ...
+
     def enregistrer(  # noqa: PLR0913
         self,
         planifiee: Planifiee,
@@ -166,6 +178,9 @@ def receptionner(  # noqa: PLR0913
         auteur=auteur.utilisateur_id,
     )
     difference = ecart(planifiee.quantite, quantite)
+    depots.achats.solder_manquant_repris(planifiee.id)
+    if difference < 0:
+        depots.achats.noter_manquant(reception_id, -difference, le=maintenant)
     depots.journal.enregistrer(
         Evenement(
             action="reception.recue",

@@ -7,7 +7,6 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from typing import Any
 
-from django.db.models import F
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
@@ -16,7 +15,7 @@ from rest_framework.decorators import permission_classes
 from rest_framework.response import Response
 
 from optiboul.achats.infrastructure.models import FactureFournisseur
-from optiboul.achats.infrastructure.models import Reception
+from optiboul.achats.infrastructure.models import Manquant
 from optiboul.caisse.infrastructure.models import Caisse
 from optiboul.clients.domain.clients import StatutDette
 from optiboul.clients.domain.clients import plafond_du_client
@@ -180,7 +179,7 @@ def _productions() -> list[dict[str, Any]]:
 
 
 def _manquants() -> list[dict[str, Any]]:
-    manquants = Reception.objects.filter(quantite__lt=F("planifiee__quantite")).count()
+    manquants = Manquant.objects.exclude(statut="livre").count()
     if not manquants:
         return []
     return [

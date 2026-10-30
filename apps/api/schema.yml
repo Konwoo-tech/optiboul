@@ -2503,6 +2503,100 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/manquants/:
+    get:
+      operationId: manquants_list
+      description: Ce qu'un fournisseur doit encore livrer ; relancer ou replanifier.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un numéro de page de l'ensemble des résultats.
+        schema:
+          type: integer
+      - in: query
+        name: statut
+        schema:
+          type: string
+          enum:
+          - a_livrer
+          - livre
+          - replanifie
+      tags:
+      - manquants
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedManquantList'
+          description: ''
+  /api/v1/manquants/{id}/relancer/:
+    post:
+      operationId: manquants_relancer_create
+      description: Ce qu'un fournisseur doit encore livrer ; relancer ou replanifier.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) manquant.
+        required: true
+      tags:
+      - manquants
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/manquants/{id}/replanifier/:
+    post:
+      operationId: manquants_replanifier_create
+      description: Ce qu'un fournisseur doit encore livrer ; relancer ou replanifier.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) manquant.
+        required: true
+      tags:
+      - manquants
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Replanifier'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Replanifier'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Replanifier'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Manquant'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/matieres/:
     get:
       operationId: matieres_list
@@ -6226,8 +6320,13 @@ components:
           additionalProperties: {}
           nullable: true
           readOnly: true
+        manquants:
+          type: integer
+          description: Manquants encore à livrer ou à recevoir de ce fournisseur.
+          readOnly: true
       required:
       - id
+      - manquants
       - matieres
       - nom
       - prochaine_reception
@@ -6767,6 +6866,52 @@ components:
           maxLength: 500
       required:
       - client
+    Manquant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        reception:
+          type: integer
+          readOnly: true
+          title: Réception
+        fournisseur:
+          type: string
+        matiere:
+          type: string
+        quantite:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          readOnly: true
+          title: Quantité
+        statut:
+          type: string
+          readOnly: true
+        relances:
+          type: integer
+          readOnly: true
+        replanifiee:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Nouvelle réception planifiée
+        cree_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+      required:
+      - cree_le
+      - fournisseur
+      - id
+      - matiere
+      - quantite
+      - reception
+      - relances
+      - replanifiee
+      - statut
     Marquage:
       type: object
       properties:
@@ -7660,6 +7805,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Livraison'
+    PaginatedManquantList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Manquant'
     PaginatedMatiereACompterList:
       type: object
       required:
@@ -8145,6 +8313,10 @@ components:
           type: object
           additionalProperties: {}
           nullable: true
+          readOnly: true
+        manquants:
+          type: integer
+          description: Manquants encore à livrer ou à recevoir de ce fournisseur.
           readOnly: true
     PatchedGroupe:
       type: object
@@ -8995,6 +9167,14 @@ components:
           maxLength: 500
       required:
       - motif
+    Replanifier:
+      type: object
+      properties:
+        prevue_le:
+          type: string
+          format: date
+      required:
+      - prevue_le
     Reprise:
       type: object
       properties:

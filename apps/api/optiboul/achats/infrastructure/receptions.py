@@ -15,6 +15,7 @@ from optiboul.core.infrastructure.semaines import depot_semaines
 from optiboul.stocks.infrastructure.stocks import stock
 
 from .models import FactureFournisseur
+from .models import Manquant
 from .models import Reception
 from .models import ReceptionPlanifiee
 
@@ -99,6 +100,22 @@ class DepotAchatsDjango:
             recue_par_id=auteur,
             recue_le=le,
         ).pk
+
+    def noter_manquant(
+        self,
+        reception_id: int,
+        quantite: Decimal,
+        *,
+        le: datetime,
+    ) -> None:
+        Manquant.objects.create(
+            reception_id=reception_id,
+            quantite=quantite,
+            cree_le=le,
+        )
+
+    def solder_manquant_repris(self, planifiee_id: int) -> None:
+        Manquant.objects.filter(replanifiee_id=planifiee_id).update(statut="livre")
 
 
 depot_achats = DepotAchatsDjango()

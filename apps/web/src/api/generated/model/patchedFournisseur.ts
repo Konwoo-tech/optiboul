@@ -19,4 +19,6 @@ export interface PatchedFournisseur {
   actif?: boolean;
   /** @nullable */
   readonly prochaine_reception?: PatchedFournisseurProchaineReception;
+  /** Manquants encore à livrer ou à recevoir de ce fournisseur. */
+  readonly manquants?: number;
 }

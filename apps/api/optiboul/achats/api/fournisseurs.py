@@ -25,6 +25,7 @@ from optiboul.achats.domain.receptions import StatutReception
 from optiboul.achats.domain.receptions import verifier_planification
 from optiboul.achats.infrastructure.models import FactureFournisseur
 from optiboul.achats.infrastructure.models import Fournisseur
+from optiboul.achats.infrastructure.models import Manquant
 from optiboul.achats.infrastructure.models import PaiementFournisseur
 from optiboul.achats.infrastructure.models import ReceptionPlanifiee
 from optiboul.achats.infrastructure.paiements import depots as depots_paiements
@@ -65,6 +66,7 @@ class FournisseurSerializer(serializers.ModelSerializer[Fournisseur]):
         queryset=Matiere.objects.all(),
     )
     prochaine_reception = serializers.SerializerMethodField()
+    manquants = serializers.SerializerMethodField()
 
     class Meta:
         model = Fournisseur
@@ -76,8 +78,17 @@ class FournisseurSerializer(serializers.ModelSerializer[Fournisseur]):
             "matieres",
             "actif",
             "prochaine_reception",
+            "manquants",
         ]
-        read_only_fields = ["id", "prochaine_reception"]
+        read_only_fields = ["id", "prochaine_reception", "manquants"]
+
+    def get_manquants(self, fournisseur: Fournisseur) -> int:
+        """Manquants encore à livrer ou à recevoir de ce fournisseur."""
+        return (
+            Manquant.objects.filter(reception__planifiee__fournisseur=fournisseur)
+            .exclude(statut="livre")
+            .count()
+        )
 
     @extend_schema(responses=ProchaineReceptionSerializer(allow_null=True))
     def get_prochaine_reception(
