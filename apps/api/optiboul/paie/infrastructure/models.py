@@ -5,6 +5,12 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+MODES_REGLEMENT = [
+    ("especes", "espèces"),
+    ("banque", "banque"),
+    ("mobile", "mobile money"),
+]
+
 
 class Employe(models.Model):
     """Fiche employé (CdC §5.10) ; un compte n'est pas obligatoire."""
@@ -96,6 +102,46 @@ class LignePaie(models.Model):
 
     def __str__(self) -> str:
         return f"{self.employe} · {self.etat}"
+
+
+class PaiementSalaire(models.Model):
+    """Un versement, partiel ou non ; le reste devient un impayé (R12)."""
+
+    ligne = models.ForeignKey(
+        LignePaie,
+        on_delete=models.PROTECT,
+        related_name="paiements",
+        verbose_name=_("ligne de paie"),
+    )
+    montant = models.PositiveBigIntegerField(_("montant (FCFA)"))
+    mode = models.CharField(
+        _("mode"),
+        max_length=10,
+        choices=MODES_REGLEMENT,
+    )
+    reference = models.CharField(_("référence"), max_length=60, blank=True)
+    depense = models.OneToOneField(
+        "depenses.Depense",
+        on_delete=models.PROTECT,
+        related_name="paiement_salaire",
+        verbose_name=_("dépense"),
+    )
+    paye_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="+",
+        verbose_name=_("payé par"),
+    )
+    paye_le = models.DateTimeField(_("payé le"), default=timezone.now)
+
+    class Meta:
+        db_table = "paiement_salaire"
+        ordering = ["paye_le", "id"]
+        verbose_name = _("paiement de salaire")
+        verbose_name_plural = _("paiements de salaires")
+
+    def __str__(self) -> str:
+        return f"{self.montant} FCFA · {self.ligne}"
 
 
 class ElementPaie(models.Model):

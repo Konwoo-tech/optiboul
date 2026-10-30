@@ -27,6 +27,9 @@ class StatutPaie(StrEnum):
     PAYEE = "payee"
 
 
+PAYABLES = frozenset({StatutPaie.VALIDE, StatutPaie.EN_PAIEMENT})
+
+
 def montant_absences(base: int, jours: Decimal) -> int:
     """Une absence vaut base ÷ 26, arrondi au franc."""
     montant = base * jours / JOURS_DU_MOIS

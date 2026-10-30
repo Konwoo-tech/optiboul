@@ -5,13 +5,13 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
-import type { PaiementFournisseurModeEnum } from './paiementFournisseurModeEnum.ts';
+import type { ModeReglementLibelleEnum } from './modeReglementLibelleEnum.ts';
 
 export interface PaiementFournisseur {
   readonly id: number;
   readonly facture: number;
   readonly montant: number;
-  readonly mode: PaiementFournisseurModeEnum;
+  readonly mode: ModeReglementLibelleEnum;
   readonly reference: string;
   readonly depense: number;
   paye_par: string;

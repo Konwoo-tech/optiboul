@@ -3400,6 +3400,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAbsencesProposeesList'
           description: ''
+  /api/v1/paies/{id}/payer-tout/:
+    post:
+      operationId: paies_payer_tout_create
+      description: Tous les restes de l'état, d'un seul geste.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Clé unique de l'opération, générée par l'application web.
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) état de paie.
+        required: true
+      tags:
+      - paies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayerTout'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayerTout'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayerTout'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalairesPayes'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/paies/{id}/soumettre/:
     post:
       operationId: paies_soumettre_create
@@ -3532,6 +3578,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/paies/lignes/{ligne}/bulletin/:
+    get:
+      operationId: paies_lignes_bulletin_retrieve
+      description: Le bulletin de paie en PDF.
+      parameters:
+      - in: path
+        name: ligne
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - paies
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          description: ''
   /api/v1/paies/lignes/{ligne}/elements/:
     post:
       operationId: paies_lignes_elements_create
@@ -3565,6 +3634,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ElementPaie'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/paies/lignes/{ligne}/payer/:
+    post:
+      operationId: paies_lignes_payer_create
+      description: Un salaire, en partiel si besoin ; une dépense « Salaires » est
+        créée.
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Clé unique de l'opération, générée par l'application web.
+        required: true
+      - in: path
+        name: ligne
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - paies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayerLigne'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PayerLigne'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PayerLigne'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaiementSalaire'
           description: ''
         '409':
           content:
@@ -7437,6 +7553,17 @@ components:
           type: integer
           description: Base, moins absences, avances et pénalités, plus gains et impayé.
           readOnly: true
+        paye:
+          type: integer
+          readOnly: true
+        reste:
+          type: integer
+          readOnly: true
+        paiements:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaiementSalaire'
+          readOnly: true
       required:
       - absences
       - avances
@@ -7448,7 +7575,10 @@ components:
       - impaye
       - montant_absences
       - net
+      - paiements
+      - paye
       - penalites
+      - reste
     LignePlan:
       type: object
       properties:
@@ -7860,6 +7990,26 @@ components:
         * `especes` - espèces
         * `mtn` - MTN MoMo
         * `orange` - Orange Money
+    ModeReglementEnum:
+      enum:
+      - especes
+      - banque
+      - mobile
+      type: string
+      description: |-
+        * `especes` - especes
+        * `banque` - banque
+        * `mobile` - mobile
+    ModeReglementLibelleEnum:
+      enum:
+      - especes
+      - banque
+      - mobile
+      type: string
+      description: |-
+        * `especes` - espèces
+        * `banque` - banque
+        * `mobile` - mobile money
     Modification:
       type: object
       properties:
@@ -9062,7 +9212,7 @@ components:
           title: Montant (FCFA)
         mode:
           allOf:
-          - $ref: '#/components/schemas/PaiementFournisseurModeEnum'
+          - $ref: '#/components/schemas/ModeReglementLibelleEnum'
           readOnly: true
         reference:
           type: string
@@ -9088,16 +9238,43 @@ components:
       - paye_le
       - paye_par
       - reference
-    PaiementFournisseurModeEnum:
-      enum:
-      - especes
-      - banque
-      - mobile
-      type: string
-      description: |-
-        * `especes` - espèces
-        * `banque` - banque
-        * `mobile` - mobile money
+    PaiementSalaire:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        montant:
+          type: integer
+          readOnly: true
+          title: Montant (FCFA)
+        mode:
+          allOf:
+          - $ref: '#/components/schemas/ModeReglementLibelleEnum'
+          readOnly: true
+        reference:
+          type: string
+          readOnly: true
+          title: Référence
+        depense:
+          type: integer
+          readOnly: true
+          title: Dépense
+        paye_par:
+          type: string
+        paye_le:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Payé le
+      required:
+      - depense
+      - id
+      - mode
+      - montant
+      - paye_le
+      - paye_par
+      - reference
     Parametre:
       type: object
       properties:
@@ -9324,7 +9501,7 @@ components:
           type: integer
           minimum: 1
         mode:
-          $ref: '#/components/schemas/PayerModeEnum'
+          $ref: '#/components/schemas/ModeReglementEnum'
         reference:
           type: string
           default: ''
@@ -9332,16 +9509,31 @@ components:
       required:
       - mode
       - montant
-    PayerModeEnum:
-      enum:
-      - especes
-      - banque
-      - mobile
-      type: string
-      description: |-
-        * `especes` - especes
-        * `banque` - banque
-        * `mobile` - mobile
+    PayerLigne:
+      type: object
+      properties:
+        montant:
+          type: integer
+        mode:
+          $ref: '#/components/schemas/ModeReglementEnum'
+        reference:
+          type: string
+          default: ''
+          maxLength: 60
+      required:
+      - mode
+      - montant
+    PayerTout:
+      type: object
+      properties:
+        mode:
+          $ref: '#/components/schemas/ModeReglementEnum'
+        reference:
+          type: string
+          default: ''
+          maxLength: 60
+      required:
+      - mode
     Periode:
       type: object
       properties:
@@ -10356,6 +10548,13 @@ components:
       description: |-
         * `perte` - perte
         * `correction` - correction
+    SalairesPayes:
+      type: object
+      properties:
+        payes:
+          type: integer
+      required:
+      - payes
     Sante:
       type: object
       properties:

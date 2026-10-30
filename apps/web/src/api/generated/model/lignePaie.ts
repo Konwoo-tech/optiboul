@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { ElementPaie } from './elementPaie.ts';
+import type { PaiementSalaire } from './paiementSalaire.ts';
 
 export interface LignePaie {
   readonly id: number;
@@ -21,4 +22,7 @@ export interface LignePaie {
   readonly impaye: number;
   /** Base, moins absences, avances et pénalités, plus gains et impayé. */
   readonly net: number;
+  readonly paye: number;
+  readonly reste: number;
+  readonly paiements: readonly PaiementSalaire[];
 }

@@ -398,6 +398,8 @@ SPECTACULAR_SETTINGS: dict[str, Any] = {
     "SCHEMA_PATH_PREFIX": "/api/v1/",
     "ENUM_NAME_OVERRIDES": {
         "ModePaiementEnum": "optiboul.ventes.infrastructure.models.MODES_PAIEMENT",
+        "ModeReglementEnum": "optiboul.paie.application.paiements.MODES",
+        "ModeReglementLibelleEnum": "optiboul.paie.infrastructure.models.MODES_REGLEMENT",
         "CanalEnvoiEnum": "optiboul.notifications.infrastructure.models.CANAUX",
         "StatutEnvoiEnum": "optiboul.notifications.infrastructure.models.STATUTS_ENVOI",
         "CanalEnum": ["sms", "whatsapp"],  # canal de vérification des comptes

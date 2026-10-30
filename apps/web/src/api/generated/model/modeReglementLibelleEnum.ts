@@ -11,10 +11,10 @@
  * * `banque` - banque
  * * `mobile` - mobile money
  */
-export type PaiementFournisseurModeEnum = typeof PaiementFournisseurModeEnum[keyof typeof PaiementFournisseurModeEnum];
+export type ModeReglementLibelleEnum = typeof ModeReglementLibelleEnum[keyof typeof ModeReglementLibelleEnum];
 
 
-export const PaiementFournisseurModeEnum = {
+export const ModeReglementLibelleEnum = {
   especes: 'especes',
   banque: 'banque',
   mobile: 'mobile',

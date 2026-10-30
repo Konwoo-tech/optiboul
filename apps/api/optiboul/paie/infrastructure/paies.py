@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
+from django.db.models import Sum
+
 from optiboul.caisse.infrastructure.models import Caisse
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.infrastructure.journal import journal
@@ -15,11 +17,13 @@ from optiboul.demandes.application.demandes import ObjetLie
 from optiboul.demandes.application.demandes import TypeDemande
 from optiboul.paie.application.paies import Depots
 from optiboul.paie.application.paies import conclure
+from optiboul.paie.domain.paie import PAYABLES
 from optiboul.paie.domain.paie import Calcul
 from optiboul.paie.domain.paie import GenreElement
 from optiboul.paie.domain.paie import StatutPaie
 from optiboul.paie.domain.paie import absences_proposees
 from optiboul.paie.domain.paie import echeance_validation
+from optiboul.paie.domain.paie import mois_precedent
 from optiboul.paie.domain.paie import montant_absences
 
 from .models import ElementPaie
@@ -55,9 +59,25 @@ class DepotPaieDjango:
         return EtatPaie.objects.filter(mois=mois).exists()
 
     def creer(self, mois: date, *, auteur: int) -> int:
+        """R12 : le reste du mois précédent devient l'impayé repris, et cet état
+        se ferme pour ne pas payer deux fois la même somme."""
+        impayes = {}
+        precedent = EtatPaie.objects.filter(mois=mois_precedent(mois)).first()
+        if precedent is not None and precedent.statut in PAYABLES:
+            for ligne in precedent.lignes.all():
+                total = calcul_de(ligne).net
+                paye = ligne.paiements.aggregate(total=Sum("montant"))["total"] or 0
+                if total > paye:
+                    impayes[ligne.employe_id] = total - paye
+            EtatPaie.objects.filter(pk=precedent.pk).update(statut=StatutPaie.PAYEE)
         etat = EtatPaie.objects.create(mois=mois, prepare_par_id=auteur)
         LignePaie.objects.bulk_create(
-            LignePaie(etat=etat, employe=employe, base=employe.salaire_base)
+            LignePaie(
+                etat=etat,
+                employe=employe,
+                base=employe.salaire_base,
+                impaye=impayes.get(employe.pk, 0),
+            )
             for employe in Employe.objects.filter(actif=True)
         )
         return etat.pk

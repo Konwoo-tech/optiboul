@@ -5,12 +5,12 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
-import type { PayerModeEnum } from './payerModeEnum.ts';
+import type { ModeReglementEnum } from './modeReglementEnum.ts';
 
 export interface Payer {
   /** @minimum 1 */
   montant: number;
-  mode: PayerModeEnum;
+  mode: ModeReglementEnum;
   /** @maxLength 60 */
   reference?: string;
 }

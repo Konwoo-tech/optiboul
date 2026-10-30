@@ -34,10 +34,14 @@ import type {
   NouvelElement,
   PaginatedAbsencesProposeesList,
   PaginatedEtatPaieList,
+  PaiementSalaire,
   PaiesAbsencesProposeesListParams,
   PaiesListParams,
+  PayerLigne,
+  PayerTout,
   Preparer,
-  Probleme
+  Probleme,
+  SalairesPayes
 } from '../../model';
 
 import { optiboulFetch } from '../../../http.ts';
@@ -412,7 +416,111 @@ export function usePaiesAbsencesProposeesList<TData = Awaited<ReturnType<typeof 
 
 
 
-export type paiesSoumettreCreateResponse200 = {
+export type paiesPayerToutCreateResponse200 = {
+  data: SalairesPayes
+  status: 200
+}
+
+export type paiesPayerToutCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type paiesPayerToutCreateResponseSuccess = (paiesPayerToutCreateResponse200) & {
+  headers: Headers;
+};
+export type paiesPayerToutCreateResponseError = (paiesPayerToutCreateResponse409) & {
+  headers: Headers;
+};
+
+export type paiesPayerToutCreateResponse = (paiesPayerToutCreateResponseSuccess | paiesPayerToutCreateResponseError)
+
+export const getPaiesPayerToutCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/paies/${id}/payer-tout/`
+}
+
+/**
+ * Tous les restes de l'état, d'un seul geste.
+ */
+export const paiesPayerToutCreate = async (id: number,
+    payerTout: PayerTout, options?: Parameters<typeof optiboulFetch>[1]): Promise<paiesPayerToutCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<paiesPayerToutCreateResponse>(getPaiesPayerToutCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(payerTout)
+  }
+);}
+
+
+
+
+
+export const getPaiesPayerToutCreateMutationKey = () => ['paiesPayerToutCreate'] as const;
+
+export const getPaiesPayerToutCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesPayerToutCreate>>, TError,PaiesPayerToutCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof paiesPayerToutCreate>>, TError,PaiesPayerToutCreateMutationVariables, TContext> => {
+
+const mutationKey = getPaiesPayerToutCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof paiesPayerToutCreate>>, PaiesPayerToutCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  paiesPayerToutCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PaiesPayerToutCreateMutationResult = NonNullable<Awaited<ReturnType<typeof paiesPayerToutCreate>>>
+    export type PaiesPayerToutCreateMutationBody = PayerTout
+    export type PaiesPayerToutCreateMutationError = Probleme
+    export type PaiesPayerToutCreateMutationVariables = {id: number;data: PayerTout}
+
+    export const usePaiesPayerToutCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesPayerToutCreate>>, TError,PaiesPayerToutCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof paiesPayerToutCreate>>,
+        TError,
+        PaiesPayerToutCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPaiesPayerToutCreateMutationOptions(options), queryClient);
+    }
+    export type paiesSoumettreCreateResponse200 = {
   data: DemandeDePaie
   status: 200
 }
@@ -798,7 +906,116 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getPaiesLignesUpdateMutationOptions(options), queryClient);
     }
-    export type paiesLignesElementsCreateResponse201 = {
+    export type paiesLignesBulletinRetrieveResponse200 = {
+  data: Blob
+  status: 200
+}
+
+export type paiesLignesBulletinRetrieveResponseSuccess = (paiesLignesBulletinRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type paiesLignesBulletinRetrieveResponse = (paiesLignesBulletinRetrieveResponseSuccess)
+
+export const getPaiesLignesBulletinRetrieveUrl = (ligne: string,) => {
+
+
+
+
+  return `/api/v1/paies/lignes/${ligne}/bulletin/`
+}
+
+/**
+ * Le bulletin de paie en PDF.
+ */
+export const paiesLignesBulletinRetrieve = async (ligne: string, options?: Parameters<typeof optiboulFetch>[1]): Promise<paiesLignesBulletinRetrieveResponse> => {
+
+  return optiboulFetch<paiesLignesBulletinRetrieveResponse>(getPaiesLignesBulletinRetrieveUrl(ligne),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getPaiesLignesBulletinRetrieveQueryKey = (ligne: string,) => {
+    return [
+    `/api/v1/paies/lignes/${ligne}/bulletin/`
+    ] as const;
+    }
+
+
+export const getPaiesLignesBulletinRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>, TError = unknown>(ligne: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPaiesLignesBulletinRetrieveQueryKey(ligne);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>> = ({ signal }) => paiesLignesBulletinRetrieve(ligne, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: ligne !== null && ligne !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type PaiesLignesBulletinRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>>
+export type PaiesLignesBulletinRetrieveQueryError = unknown
+
+
+export function usePaiesLignesBulletinRetrieve<TData = Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>, TError = unknown>(
+ ligne: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePaiesLignesBulletinRetrieve<TData = Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>, TError = unknown>(
+ ligne: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePaiesLignesBulletinRetrieve<TData = Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>, TError = unknown>(
+ ligne: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function usePaiesLignesBulletinRetrieve<TData = Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>, TError = unknown>(
+ ligne: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof paiesLignesBulletinRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getPaiesLignesBulletinRetrieveQueryOptions(ligne,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type paiesLignesElementsCreateResponse201 = {
   data: ElementPaie
   status: 201
 }
@@ -901,6 +1118,110 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getPaiesLignesElementsCreateMutationOptions(options), queryClient);
+    }
+    export type paiesLignesPayerCreateResponse201 = {
+  data: PaiementSalaire
+  status: 201
+}
+
+export type paiesLignesPayerCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type paiesLignesPayerCreateResponseSuccess = (paiesLignesPayerCreateResponse201) & {
+  headers: Headers;
+};
+export type paiesLignesPayerCreateResponseError = (paiesLignesPayerCreateResponse409) & {
+  headers: Headers;
+};
+
+export type paiesLignesPayerCreateResponse = (paiesLignesPayerCreateResponseSuccess | paiesLignesPayerCreateResponseError)
+
+export const getPaiesLignesPayerCreateUrl = (ligne: string,) => {
+
+
+
+
+  return `/api/v1/paies/lignes/${ligne}/payer/`
+}
+
+/**
+ * Un salaire, en partiel si besoin ; une dépense « Salaires » est créée.
+ */
+export const paiesLignesPayerCreate = async (ligne: string,
+    payerLigne: PayerLigne, options?: Parameters<typeof optiboulFetch>[1]): Promise<paiesLignesPayerCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<paiesLignesPayerCreateResponse>(getPaiesLignesPayerCreateUrl(ligne),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(payerLigne)
+  }
+);}
+
+
+
+
+
+export const getPaiesLignesPayerCreateMutationKey = () => ['paiesLignesPayerCreate'] as const;
+
+export const getPaiesLignesPayerCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesLignesPayerCreate>>, TError,PaiesLignesPayerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof paiesLignesPayerCreate>>, TError,PaiesLignesPayerCreateMutationVariables, TContext> => {
+
+const mutationKey = getPaiesLignesPayerCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof paiesLignesPayerCreate>>, PaiesLignesPayerCreateMutationVariables> = (props) => {
+          const {ligne,data} = props ?? {};
+
+          return  paiesLignesPayerCreate(ligne,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PaiesLignesPayerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof paiesLignesPayerCreate>>>
+    export type PaiesLignesPayerCreateMutationBody = PayerLigne
+    export type PaiesLignesPayerCreateMutationError = Probleme
+    export type PaiesLignesPayerCreateMutationVariables = {ligne: string;data: PayerLigne}
+
+    export const usePaiesLignesPayerCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesLignesPayerCreate>>, TError,PaiesLignesPayerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof paiesLignesPayerCreate>>,
+        TError,
+        PaiesLignesPayerCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPaiesLignesPayerCreateMutationOptions(options), queryClient);
     }
     export type paiesPreparerCreateResponse201 = {
   data: EtatPaie
