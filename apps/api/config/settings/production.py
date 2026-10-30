@@ -46,10 +46,15 @@ SESSION_COOKIE_NAME = "__Secure-sessionid"
 CSRF_COOKIE_SECURE = True
 # https://docs.djangoproject.com/en/dev/ref/settings/#csrf-cookie-name
 CSRF_COOKIE_NAME = "__Secure-csrftoken"
+# Nom public du tunnel (ADR-19), ex. https://optiboul.exemple.cm.
+CSRF_TRUSTED_ORIGINS = env.list("DJANGO_CSRF_TRUSTED_ORIGINS", default=[])
 # https://docs.djangoproject.com/en/dev/topics/security/#ssl-https
 # https://docs.djangoproject.com/en/dev/ref/settings/#secure-hsts-seconds
-# TODO: set this to 60 seconds first and then to 518400 once you prove the former works
-SECURE_HSTS_SECONDS = 60
+# Comme Traefik (`stsSeconds`) : un an.
+SECURE_HSTS_SECONDS = env.int(
+    "DJANGO_SECURE_HSTS_SECONDS",
+    default=31_536_000,
+)
 # https://docs.djangoproject.com/en/dev/ref/settings/#secure-hsts-include-subdomains
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
     "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS",

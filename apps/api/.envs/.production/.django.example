@@ -5,6 +5,10 @@ DJANGO_SETTINGS_MODULE=config.settings.production
 DJANGO_SECRET_KEY=a-generer
 DJANGO_ADMIN_URL=django-admin-a-generer/
 DJANGO_ALLOWED_HOSTS=optiboul.local,.optiboul.cm
+# Nom public du tunnel, avec https:// (ADR-19). Vide sans accès distant.
+DJANGO_CSRF_TRUSTED_ORIGINS=
+# Nom public du tunnel, avec https:// (ADR-19). Vide sans accès distant.
+DJANGO_CSRF_TRUSTED_ORIGINS=
 
 # Security
 # ------------------------------------------------------------------------------

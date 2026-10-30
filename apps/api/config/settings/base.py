@@ -242,6 +242,8 @@ FIXTURE_DIRS = (str(APPS_DIR / "fixtures"),)
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#session-cookie-httponly
 SESSION_COOKIE_HTTPONLY = True
+# Poste partagé : une journée de travail au plus (US-156).
+SESSION_COOKIE_AGE = 12 * 3600
 # https://docs.djangoproject.com/en/dev/ref/settings/#csrf-cookie-httponly
 # Les applications React lisent le cookie pour renvoyer l'en-tête X-CSRFToken (ADR-06).
 CSRF_COOKIE_HTTPONLY = False

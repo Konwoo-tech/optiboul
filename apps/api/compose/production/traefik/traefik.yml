@@ -19,6 +19,10 @@ entryPoints:
   # Jamais publiée sur l'hôte : le service tunnel s'y connecte sur le réseau Docker.
   remote:
     address: ':8443'
+    # Seul le service tunnel, sur le réseau Docker, peut annoncer l'adresse d'origine.
+    forwardedHeaders:
+      trustedIPs:
+        - '172.16.0.0/12'
 
   flower:
     address: ':5555'
