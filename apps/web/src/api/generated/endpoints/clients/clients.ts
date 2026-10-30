@@ -29,12 +29,16 @@ import type {
   ClientsDettesRetrieveParams,
   ClientsListParams,
   ClientsRelancesListParams,
+  ClientsRelevePdfRetrieveParams,
+  ClientsReleveRetrieveParams,
   Dettes,
   PaginatedClientList,
   PaginatedRelanceList,
   PatchedClient,
+  Periode,
   Probleme,
   RelanceGroupee,
+  Releve,
   ResultatRelance,
   Tarifs
 } from '../../model';
@@ -603,6 +607,110 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getClientsPartialUpdateMutationOptions(options), queryClient);
     }
+    export type clientsEnvoyerReleveCreateResponse204 = {
+  data: void
+  status: 204
+}
+
+export type clientsEnvoyerReleveCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type clientsEnvoyerReleveCreateResponseSuccess = (clientsEnvoyerReleveCreateResponse204) & {
+  headers: Headers;
+};
+export type clientsEnvoyerReleveCreateResponseError = (clientsEnvoyerReleveCreateResponse409) & {
+  headers: Headers;
+};
+
+export type clientsEnvoyerReleveCreateResponse = (clientsEnvoyerReleveCreateResponseSuccess | clientsEnvoyerReleveCreateResponseError)
+
+export const getClientsEnvoyerReleveCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/clients/${id}/envoyer-releve/`
+}
+
+/**
+ * Le relevé part par WhatsApp, par la file d'envoi (O15).
+ */
+export const clientsEnvoyerReleveCreate = async (id: number,
+    periode?: Periode, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsEnvoyerReleveCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<clientsEnvoyerReleveCreateResponse>(getClientsEnvoyerReleveCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(periode)
+  }
+);}
+
+
+
+
+
+export const getClientsEnvoyerReleveCreateMutationKey = () => ['clientsEnvoyerReleveCreate'] as const;
+
+export const getClientsEnvoyerReleveCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsEnvoyerReleveCreate>>, TError,ClientsEnvoyerReleveCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof clientsEnvoyerReleveCreate>>, TError,ClientsEnvoyerReleveCreateMutationVariables, TContext> => {
+
+const mutationKey = getClientsEnvoyerReleveCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clientsEnvoyerReleveCreate>>, ClientsEnvoyerReleveCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  clientsEnvoyerReleveCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClientsEnvoyerReleveCreateMutationResult = NonNullable<Awaited<ReturnType<typeof clientsEnvoyerReleveCreate>>>
+    export type ClientsEnvoyerReleveCreateMutationBody = Periode | undefined
+    export type ClientsEnvoyerReleveCreateMutationError = Probleme
+    export type ClientsEnvoyerReleveCreateMutationVariables = {id: number;data?: Periode}
+
+    export const useClientsEnvoyerReleveCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsEnvoyerReleveCreate>>, TError,ClientsEnvoyerReleveCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof clientsEnvoyerReleveCreate>>,
+        TError,
+        ClientsEnvoyerReleveCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getClientsEnvoyerReleveCreateMutationOptions(options), queryClient);
+    }
     export type clientsRelancerCreateResponse200 = {
   data: ResultatRelance
   status: 200
@@ -798,6 +906,254 @@ export function useClientsRelancesList<TData = Awaited<ReturnType<typeof clients
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getClientsRelancesListQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type clientsReleveRetrieveResponse200 = {
+  data: Releve
+  status: 200
+}
+
+export type clientsReleveRetrieveResponseSuccess = (clientsReleveRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type clientsReleveRetrieveResponse = (clientsReleveRetrieveResponseSuccess)
+
+export const getClientsReleveRetrieveUrl = (id: number,
+    params?: ClientsReleveRetrieveParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/clients/${id}/releve/?${stringifiedParams}` : `/api/v1/clients/${id}/releve/`
+}
+
+/**
+ * Historique du compte avec le solde courant ; 30 jours par défaut (US-064).
+ */
+export const clientsReleveRetrieve = async (id: number,
+    params?: ClientsReleveRetrieveParams, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsReleveRetrieveResponse> => {
+
+  return optiboulFetch<clientsReleveRetrieveResponse>(getClientsReleveRetrieveUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getClientsReleveRetrieveQueryKey = (id: number,
+    params?: ClientsReleveRetrieveParams,) => {
+    return [
+    `/api/v1/clients/${id}/releve/`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getClientsReleveRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof clientsReleveRetrieve>>, TError = unknown>(id: number,
+    params?: ClientsReleveRetrieveParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsReleveRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getClientsReleveRetrieveQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof clientsReleveRetrieve>>> = ({ signal }) => clientsReleveRetrieve(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof clientsReleveRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ClientsReleveRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof clientsReleveRetrieve>>>
+export type ClientsReleveRetrieveQueryError = unknown
+
+
+export function useClientsReleveRetrieve<TData = Awaited<ReturnType<typeof clientsReleveRetrieve>>, TError = unknown>(
+ id: number,
+    params: undefined |  ClientsReleveRetrieveParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsReleveRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof clientsReleveRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof clientsReleveRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useClientsReleveRetrieve<TData = Awaited<ReturnType<typeof clientsReleveRetrieve>>, TError = unknown>(
+ id: number,
+    params?: ClientsReleveRetrieveParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsReleveRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof clientsReleveRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof clientsReleveRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useClientsReleveRetrieve<TData = Awaited<ReturnType<typeof clientsReleveRetrieve>>, TError = unknown>(
+ id: number,
+    params?: ClientsReleveRetrieveParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsReleveRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useClientsReleveRetrieve<TData = Awaited<ReturnType<typeof clientsReleveRetrieve>>, TError = unknown>(
+ id: number,
+    params?: ClientsReleveRetrieveParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsReleveRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getClientsReleveRetrieveQueryOptions(id,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type clientsRelevePdfRetrieveResponse200 = {
+  data: Blob
+  status: 200
+}
+
+export type clientsRelevePdfRetrieveResponseSuccess = (clientsRelevePdfRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type clientsRelevePdfRetrieveResponse = (clientsRelevePdfRetrieveResponseSuccess)
+
+export const getClientsRelevePdfRetrieveUrl = (id: number,
+    params?: ClientsRelevePdfRetrieveParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/clients/${id}/releve-pdf/?${stringifiedParams}` : `/api/v1/clients/${id}/releve-pdf/`
+}
+
+/**
+ * La caisse lit les clients ; le gérant et le propriétaire les gèrent.
+ */
+export const clientsRelevePdfRetrieve = async (id: number,
+    params?: ClientsRelevePdfRetrieveParams, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsRelevePdfRetrieveResponse> => {
+
+  return optiboulFetch<clientsRelevePdfRetrieveResponse>(getClientsRelevePdfRetrieveUrl(id,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getClientsRelevePdfRetrieveQueryKey = (id: number,
+    params?: ClientsRelevePdfRetrieveParams,) => {
+    return [
+    `/api/v1/clients/${id}/releve-pdf/`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getClientsRelevePdfRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>, TError = unknown>(id: number,
+    params?: ClientsRelevePdfRetrieveParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getClientsRelevePdfRetrieveQueryKey(id,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>> = ({ signal }) => clientsRelevePdfRetrieve(id,params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ClientsRelevePdfRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>>
+export type ClientsRelevePdfRetrieveQueryError = unknown
+
+
+export function useClientsRelevePdfRetrieve<TData = Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>, TError = unknown>(
+ id: number,
+    params: undefined |  ClientsRelevePdfRetrieveParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useClientsRelevePdfRetrieve<TData = Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>, TError = unknown>(
+ id: number,
+    params?: ClientsRelevePdfRetrieveParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useClientsRelevePdfRetrieve<TData = Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>, TError = unknown>(
+ id: number,
+    params?: ClientsRelevePdfRetrieveParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useClientsRelevePdfRetrieve<TData = Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>, TError = unknown>(
+ id: number,
+    params?: ClientsRelevePdfRetrieveParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof clientsRelevePdfRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getClientsRelevePdfRetrieveQueryOptions(id,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from datetime import timedelta
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -15,10 +16,14 @@ from django.db.models import OuterRef
 from django.db.models import Q
 from django.db.models import Value
 from django.db.models import When
+from django.http import HttpResponse
+from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins
 from rest_framework import serializers
+from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
@@ -36,6 +41,9 @@ from optiboul.clients.infrastructure.models import Relance
 from optiboul.clients.infrastructure.models import ReportDette
 from optiboul.clients.infrastructure.models import TarifClient
 from optiboul.clients.infrastructure.relances import relancer_dettes
+from optiboul.clients.infrastructure.releves import envoyer as envoyer_le_releve
+from optiboul.clients.infrastructure.releves import pdf as pdf_releve
+from optiboul.clients.infrastructure.releves import releve_de
 from optiboul.core.api.contexte import auteur_de
 from optiboul.core.api.erreurs import ProblemeSerializer
 from optiboul.core.api.erreurs import probleme
@@ -50,6 +58,7 @@ from optiboul.production.infrastructure.models import Produit
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from datetime import date
 
     from django.db.models import QuerySet
     from rest_framework.request import Request
@@ -206,6 +215,37 @@ class DettesSerializer(serializers.Serializer):
     clients = DetteSerializer(many=True)
 
 
+DUREE_RELEVE_JOURS = 30
+
+
+class PeriodeSerializer(serializers.Serializer):
+    du = serializers.DateField(required=False)
+    au = serializers.DateField(required=False)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        """Par défaut, les 30 derniers jours."""
+        au = attrs.get("au") or timezone.localdate()
+        du = attrs.get("du") or au - timedelta(days=DUREE_RELEVE_JOURS)
+        if du > au:
+            message = "La date de début suit la date de fin."
+            raise serializers.ValidationError(message)
+        return {"du": du, "au": au}
+
+
+class LigneReleveSerializer(serializers.Serializer):
+    jour = serializers.DateField()
+    libelle = serializers.CharField()
+    debit = serializers.IntegerField()
+    credit = serializers.IntegerField()
+    solde = serializers.IntegerField()
+
+
+class ReleveSerializer(serializers.Serializer):
+    solde_initial = serializers.IntegerField()
+    lignes = LigneReleveSerializer(many=True)
+    solde_final = serializers.IntegerField()
+
+
 class TarifsSerializer(serializers.Serializer):
     tarifs = serializers.DictField(
         child=serializers.IntegerField(min_value=0, allow_null=True),
@@ -253,7 +293,14 @@ class ClientsViewSet(
     http_method_names = ["get", "post", "put", "patch"]
 
     def get_permissions(self):
-        if self.action in {"list", "retrieve", "dettes"}:
+        if self.action in {
+            "list",
+            "retrieve",
+            "dettes",
+            "releve",
+            "releve_pdf",
+            "envoyer_releve",
+        }:
             return [ProfilParmi("caissier", *DIRECTION)()]
         return [ProfilParmi(*DIRECTION)()]
 
@@ -402,6 +449,65 @@ class ClientsViewSet(
         corps.is_valid(raise_exception=True)
         clients = list(Client.objects.filter(pk__in=corps.validated_data["clients"]))
         return self._relancer(request, clients)
+
+    def _periode(self, donnees: Any) -> tuple[date, date]:
+        periode = PeriodeSerializer(data=donnees)
+        periode.is_valid(raise_exception=True)
+        return periode.validated_data["du"], periode.validated_data["au"]
+
+    @extend_schema(
+        parameters=[OpenApiParameter("du", str), OpenApiParameter("au", str)],
+        responses=ReleveSerializer,
+    )
+    @action(detail=True)
+    def releve(self, request: Request, pk: str) -> Response:
+        """Historique du compte avec le solde courant ; 30 jours par défaut (US-064)."""
+        du, au = self._periode(request.query_params)
+        return Response(
+            ReleveSerializer(releve_de(self.get_object(), du, au)).data,
+        )
+
+    @extend_schema(
+        parameters=[OpenApiParameter("du", str), OpenApiParameter("au", str)],
+        responses={(200, "application/pdf"): OpenApiTypes.BINARY},
+    )
+    @action(detail=True, url_path="releve-pdf", url_name="releve-pdf")
+    def releve_pdf(self, request: Request, pk: str) -> HttpResponse:
+        du, au = self._periode(request.query_params)
+        client = self.get_object()
+        reponse = HttpResponse(
+            pdf_releve(client, releve_de(client, du, au), du, au),
+            content_type="application/pdf",
+        )
+        reponse["Content-Disposition"] = f'inline; filename="releve-{client.pk}.pdf"'
+        return reponse
+
+    @extend_schema(
+        request=PeriodeSerializer,
+        responses={204: None, 409: ProblemeSerializer},
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="envoyer-releve",
+        url_name="envoyer-releve",
+    )
+    def envoyer_releve(self, request: Request, pk: str) -> Response:
+        """Le relevé part par WhatsApp, par la file d'envoi (O15)."""
+        du, au = self._periode(request.data)
+        client = self.get_object()
+        if not client.telephone:
+            message = "Ce client n'a pas de numéro de téléphone."
+            return probleme(RefusMetier("telephone_absent", message))
+        with transaction.atomic():
+            envoyer_le_releve(
+                client,
+                releve_de(client, du, au),
+                du,
+                au,
+                auteur_de(request),
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(responses=RelanceSerializer(many=True))
     @action(detail=True)

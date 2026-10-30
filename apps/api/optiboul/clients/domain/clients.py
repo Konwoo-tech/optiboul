@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import IntEnum
 from enum import StrEnum
 from typing import TYPE_CHECKING
@@ -12,6 +13,8 @@ from optiboul.users.domain.comptes import CompteInvalide
 from optiboul.users.domain.comptes import normaliser_telephone
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from datetime import date
     from datetime import datetime
 
 
@@ -73,6 +76,74 @@ def jauge(solde: int, plafond: int) -> int:
     if plafond <= 0:
         return 100 if dette else 0
     return round(dette * 100 / plafond)
+
+
+LIBELLES_RELEVE = {
+    "livraison": "Livraison",
+    "encaissement": "Encaissement",
+    "reprise": "Reprise de solde",
+}
+
+
+@dataclass(frozen=True)
+class LigneReleve:
+    jour: date
+    libelle: str
+    debit: int
+    credit: int
+    solde: int
+
+
+@dataclass(frozen=True)
+class Releve:
+    solde_initial: int
+    lignes: list[LigneReleve]
+    solde_final: int
+
+
+def construire_releve(
+    solde_initial: int,
+    mouvements: list[tuple[date, str, int, int]],
+) -> Releve:
+    """Historique de la période, avec le solde après chaque opération (R21)."""
+    solde = solde_initial
+    lignes = []
+    for jour, origine, sens, montant in mouvements:
+        solde += sens * montant
+        lignes.append(
+            LigneReleve(
+                jour=jour,
+                libelle=LIBELLES_RELEVE.get(origine, origine.capitalize()),
+                debit=montant if sens < 0 else 0,
+                credit=montant if sens > 0 else 0,
+                solde=solde,
+            ),
+        )
+    return Releve(solde_initial, lignes, solde)
+
+
+def texte_releve(
+    nom: str,
+    du: date,
+    au: date,
+    releve: Releve,
+    fcfa: Callable[[int], str],
+) -> str:
+    lignes = [
+        f"{ligne.jour:%d/%m} {ligne.libelle} : {fcfa(ligne.credit or -ligne.debit)}"
+        for ligne in releve.lignes
+    ]
+    entete = (
+        f"Bonjour {nom}, votre relevé de la Boulangerie du Faubourg "
+        f"du {du:%d/%m} au {au:%d/%m} :"
+    )
+    return "\n".join(
+        [
+            entete,
+            *lignes,
+            f"Solde : {fcfa(releve.solde_final)}",
+        ],
+    )
 
 
 def relance_due(maintenant: datetime, jours: list[str], heure: str) -> bool:

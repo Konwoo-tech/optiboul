@@ -614,6 +614,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/Client'
           description: ''
+  /api/v1/clients/{id}/envoyer-releve/:
+    post:
+      operationId: clients_envoyer_releve_create
+      description: Le relevé part par WhatsApp, par la file d'envoi (O15).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) client.
+        required: true
+      tags:
+      - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Periode'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Periode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Periode'
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/clients/{id}/relancer/:
     post:
       operationId: clients_relancer_create
@@ -663,6 +698,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedRelanceList'
+          description: ''
+  /api/v1/clients/{id}/releve/:
+    get:
+      operationId: clients_releve_retrieve
+      description: Historique du compte avec le solde courant ; 30 jours par défaut
+        (US-064).
+      parameters:
+      - in: query
+        name: au
+        schema:
+          type: string
+      - in: query
+        name: du
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) client.
+        required: true
+      tags:
+      - clients
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Releve'
+          description: ''
+  /api/v1/clients/{id}/releve-pdf/:
+    get:
+      operationId: clients_releve_pdf_retrieve
+      description: La caisse lit les clients ; le gérant et le propriétaire les gèrent.
+      parameters:
+      - in: query
+        name: au
+        schema:
+          type: string
+      - in: query
+        name: du
+        schema:
+          type: string
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) client.
+        required: true
+      tags:
+      - clients
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
           description: ''
   /api/v1/clients/{id}/tarifs/:
     put:
@@ -6751,6 +6848,26 @@ components:
       - sacs
       - supplement
       - version_fiche
+    LigneReleve:
+      type: object
+      properties:
+        jour:
+          type: string
+          format: date
+        libelle:
+          type: string
+        debit:
+          type: integer
+        credit:
+          type: integer
+        solde:
+          type: integer
+      required:
+      - credit
+      - debit
+      - jour
+      - libelle
+      - solde
     Livraison:
       type: object
       properties:
@@ -8411,6 +8528,15 @@ components:
         * `especes` - especes
         * `banque` - banque
         * `mobile` - mobile
+    Periode:
+      type: object
+      properties:
+        du:
+          type: string
+          format: date
+        au:
+          type: string
+          format: date
     Personne:
       type: object
       properties:
@@ -9147,6 +9273,21 @@ components:
       description: |-
         * `dette` - dette
         * `commande` - commande habituelle
+    Releve:
+      type: object
+      properties:
+        solde_initial:
+          type: integer
+        lignes:
+          type: array
+          items:
+            $ref: '#/components/schemas/LigneReleve'
+        solde_final:
+          type: integer
+      required:
+      - lignes
+      - solde_final
+      - solde_initial
     Remise:
       type: object
       properties:
