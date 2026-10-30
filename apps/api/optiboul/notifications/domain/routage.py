@@ -70,6 +70,11 @@ REGLES_DE_DEPART: tuple[Regle, ...] = (
     ),
     Regle("commande.tardive", "Commande tardive", ("production", "gerant")),
     Regle("production.ecart_matiere", "Écart matière justifié", ("gerant",)),
+    Regle(
+        "production.non_cloturee",
+        "Production non clôturée",
+        ("gerant", "production", "proprietaire"),
+    ),
 )
 
 PAR_GENRE = {regle.genre: regle for regle in REGLES_DE_DEPART}

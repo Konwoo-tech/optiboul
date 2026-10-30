@@ -49,6 +49,11 @@ def session_de_production(maintenant: datetime, limites: Limites) -> Session:
     return Session(local.date() - timedelta(days=1), NUIT)
 
 
+def est_avant(session: Session, autre: Session) -> bool:
+    """Le jour passe avant la nuit d'une même date."""
+    return (session.jour, session.creneau != JOUR) < (autre.jour, autre.creneau != JOUR)
+
+
 @dataclass(frozen=True)
 class Rendement:
     """Ce que le plan retient de la fiche technique en cours (CdC §5.5)."""

@@ -12,7 +12,7 @@ from enum import StrEnum
 class StatutProduction(StrEnum):
     EN_COURS = "en_cours"
     CLOTUREE = "cloturee"
-    NON_CLOTUREE = "non_cloturee"  # archivée par une clôture forcée de semaine
+    NON_CLOTUREE = "non_cloturee"  # archivée : session dépassée ou clôture forcée
 
 
 RAISONS_CLOTURE = {

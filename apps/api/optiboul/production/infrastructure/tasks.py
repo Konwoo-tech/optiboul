@@ -10,9 +10,19 @@ from optiboul.production.application.plans import valider_automatiquement
 from optiboul.production.domain.plan import session_de_production
 from optiboul.ventes.infrastructure.commandes import limites
 
+from .cloture import archiver_depassees
 from .plans import depots
 from .plans import nombre_de_sessions
 from .plans import petrissage
+
+
+@shared_task(name="production.archiver")
+def archiver() -> int:
+    """À l'ouverture de chaque session (spécification §8) : les productions restées
+    en cours sont archivées et signalées."""
+    session = session_de_production(timezone.now(), limites())
+    with transaction.atomic():
+        return len(archiver_depassees(session, SYSTEME))
 
 
 @shared_task(name="production.valider_plan_auto")
