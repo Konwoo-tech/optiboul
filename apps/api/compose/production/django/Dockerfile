@@ -39,6 +39,14 @@ RUN addgroup --system django \
   && adduser --system --ingroup django --home /home/django django
 
 
+# Client PostgreSQL de la version du serveur : pg_dump refuse un serveur plus récent.
+RUN apt-get update && apt-get install --no-install-recommends -y ca-certificates curl \
+  && install -d /usr/share/postgresql-common/pgdg \
+  && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+    https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+  && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+    > /etc/apt/sources.list.d/pgdg.list
+
 # Install required system dependencies
 RUN apt-get update && apt-get install --no-install-recommends -y \
   # psycopg dependencies
@@ -47,6 +55,13 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   gettext \
   # entrypoint
   wait-for-it \
+  # sauvegardes de la base (pg_dump, US-142)
+  postgresql-client-16 \
+  # PDF (WeasyPrint, spécification §4.1)
+  libpango-1.0-0 \
+  libpangoft2-1.0-0 \
+  libharfbuzz-subset0 \
+  fonts-dejavu-core \
   # cleaning up unused files
   && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
   && rm -rf /var/lib/apt/lists/*
@@ -79,6 +94,9 @@ COPY --from=python-build-stage --chown=django:django ${APP_HOME} ${APP_HOME}
 
 # make django owner of the WORKDIR directory as well.
 RUN chown django:django ${APP_HOME}
+
+# Dossier des sauvegardes locales (volume monté sur le worker Celery, US-142).
+RUN mkdir -p /sauvegardes && chown django:django /sauvegardes
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"

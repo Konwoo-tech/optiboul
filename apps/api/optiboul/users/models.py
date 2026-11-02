@@ -3,12 +3,21 @@ from typing import ClassVar
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import Group
 from django.db.models import CASCADE
+from django.db.models import PROTECT
+from django.db.models import BooleanField
 from django.db.models import CharField
+from django.db.models import DateTimeField
 from django.db.models import EmailField
+from django.db.models import ForeignKey
+from django.db.models import JSONField
 from django.db.models import Model
 from django.db.models import OneToOneField
+from django.db.models import PositiveSmallIntegerField
 from django.db.models import TextChoices
+from django.db.models import TextField
+from django.db.models import UniqueConstraint
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from .managers import UserManager
@@ -35,6 +44,7 @@ class ProfilGroupe(Model):
         verbose_name=_("groupe"),
     )
     profil = CharField(_("profil"), max_length=20, choices=Profil)
+    description = TextField(_("description"), blank=True, default="")
 
     class Meta:
         verbose_name = _("profil du groupe")
@@ -57,6 +67,24 @@ class User(AbstractUser):
     last_name = None  # type: ignore[assignment]
     email = EmailField(_("email address"), unique=True)
     username = None  # type: ignore[assignment]
+    # Code à 4 chiffres faux à la suite ; 5 bloquent le compte 15 min (CdC §4.2).
+    echecs_connexion = PositiveSmallIntegerField(_("échecs de connexion"), default=0)
+    bloque_jusqua = DateTimeField(_("bloqué jusqu'à"), null=True, blank=True)
+    # Code à 4 chiffres du comptoir, haché en Argon2 (O1) ; vide : pas de code.
+    code_pin = CharField(_("code à 4 chiffres"), max_length=128, blank=True, default="")
+    # Double authentification (CdC §4.1) : numéro +237, canal préféré, dernier passage.
+    telephone = CharField(_("téléphone"), max_length=20, blank=True, default="")
+    canal_verification = CharField(
+        _("canal de vérification"),
+        max_length=10,
+        choices=[("sms", "SMS"), ("whatsapp", "WhatsApp")],
+        default="sms",
+    )
+    derniere_double_auth = DateTimeField(
+        _("dernière double authentification"),
+        null=True,
+        blank=True,
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -83,3 +111,89 @@ class User(AbstractUser):
 
         """
         return reverse("users:detail", kwargs={"pk": self.id})
+
+
+class PosteConfiance(Model):
+    """Poste du comptoir enregistré (O1, US-022) : seule l'empreinte du jeton reste."""
+
+    nom = CharField(_("nom"), max_length=100)
+    empreinte = CharField(_("empreinte du jeton"), max_length=64, unique=True)
+    actif = BooleanField(_("actif"), default=True)
+    cree_le = DateTimeField(_("enregistré le"), default=timezone.now)
+    cree_par = ForeignKey(
+        "users.User",
+        on_delete=PROTECT,
+        related_name="+",
+        verbose_name=_("enregistré par"),
+    )
+    revoque_le = DateTimeField(_("révoqué le"), null=True, blank=True)
+    revoque_par = ForeignKey(
+        "users.User",
+        on_delete=PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("révoqué par"),
+    )
+    dernier_usage = DateTimeField(_("dernier usage"), null=True, blank=True)
+
+    class Meta:
+        db_table = "poste_confiance"
+        ordering = ["nom"]
+        verbose_name = _("poste de confiance")
+        verbose_name_plural = _("postes de confiance")
+
+    def __str__(self) -> str:
+        return self.nom
+
+
+class CodeVerification(Model):
+    """Code à 6 chiffres envoyé par SMS ou WhatsApp (CdC §4.1), haché, 5 minutes."""
+
+    utilisateur = ForeignKey(
+        "users.User",
+        on_delete=CASCADE,
+        related_name="codes_verification",
+        verbose_name=_("utilisateur"),
+    )
+    code = CharField(_("code haché"), max_length=128)
+    canal = CharField(_("canal"), max_length=10)
+    cree_le = DateTimeField(_("envoyé le"), default=timezone.now)
+    expire_le = DateTimeField(_("expire le"))
+    essais = PositiveSmallIntegerField(_("essais"), default=0)
+    utilise = BooleanField(_("utilisé"), default=False)
+
+    class Meta:
+        db_table = "code_verification"
+        ordering = ["-cree_le", "-id"]
+        verbose_name = _("code de vérification")
+        verbose_name_plural = _("codes de vérification")
+
+    def __str__(self) -> str:
+        return f"{self.utilisateur} · {self.canal} · {self.cree_le:%d/%m %H:%M}"
+
+
+class Brouillon(Model):
+    """Saisie en cours, gardée pour la personne qui l'a commencée (US-014)."""
+
+    auteur = ForeignKey(
+        "users.User",
+        on_delete=CASCADE,
+        related_name="brouillons",
+        verbose_name=_("auteur"),
+    )
+    cle = CharField(_("écran"), max_length=100)
+    contenu = JSONField(_("contenu"))
+    mis_a_jour = DateTimeField(_("mis à jour le"), auto_now=True)
+
+    class Meta:
+        db_table = "brouillon"
+        ordering = ["-mis_a_jour"]
+        constraints = [
+            UniqueConstraint(fields=["auteur", "cle"], name="un_brouillon_par_ecran"),
+        ]
+        verbose_name = _("brouillon")
+        verbose_name_plural = _("brouillons")
+
+    def __str__(self) -> str:
+        return f"{self.auteur} · {self.cle}"

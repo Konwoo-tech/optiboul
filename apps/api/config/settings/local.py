@@ -73,3 +73,9 @@ INSTALLED_APPS += ["django_extensions"]
 CELERY_TASK_EAGER_PROPAGATES = True
 # Your stuff...
 # ------------------------------------------------------------------------------
+# SMS et WhatsApp écrits dans les journaux du conteneur (pas de fournisseur en local).
+OPTIBOUL_PASSERELLES = {
+    "email": "optiboul.notifications.infrastructure.envois.PasserelleEmail",
+    "sms": "optiboul.notifications.infrastructure.envois.PasserelleJournalisation",
+    "whatsapp": "optiboul.notifications.infrastructure.envois.PasserelleJournalisation",
+}

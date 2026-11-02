@@ -1,0 +1,88 @@
+{% load optiboul %}
+
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ rapport.titre }}</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+
+      body {
+        font-family: "DejaVu Sans", sans-serif;
+        font-size: 10pt;
+        color: #2b1a10;
+      }
+
+      h1 {
+        color: #5A3220;
+        font-size: 15pt;
+        margin: 0 0 1mm;
+      }
+
+      .entete {
+        border-bottom: 2px solid #F2B705;
+        padding-bottom: 2mm;
+        margin-bottom: 4mm;
+      }
+
+      .discret {
+        color: #6b5446;
+        font-size: 9pt;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th {
+        text-align: left;
+        border-bottom: 1px solid #5A3220;
+        padding: 1.5mm 1mm;
+      }
+
+      td {
+        padding: 1.5mm 1mm;
+        border-bottom: 1px solid #eadfc8;
+      }
+
+      .montant {
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .fort {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="entete">
+      <h1>{{ rapport.titre }}</h1>
+      <div class="discret">Boulangerie du Faubourg · Etoudi, Yaoundé</div>
+    </div>
+    <table>
+      <tr>
+        {% for entete in entetes %}<th>{{ entete }}</th>{% endfor %}
+      </tr>
+      {% for jour, creneau, ventes, recette, pains, ecart in rapport.lignes %}
+        <tr>
+          <td>{{ jour }}</td>
+          <td>{{ creneau }}</td>
+          <td class="montant">{{ ventes|fcfa }}</td>
+          <td class="montant">{{ recette|fcfa }}</td>
+          <td class="montant">{{ pains }}</td>
+          <td class="montant">{{ ecart|fcfa }}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" class="discret">Aucune session sur cette période.</td>
+        </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>

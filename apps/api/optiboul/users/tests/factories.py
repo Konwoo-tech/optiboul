@@ -33,3 +33,24 @@ class UserFactory(DjangoModelFactory[User]):
         model = User
         django_get_or_create = ["email"]
         skip_postgeneration_save = True
+
+
+def utilisateur_avec_profil(profil: str, **champs) -> User:
+    """Un utilisateur dans le groupe de départ qui porte ce profil (CdC §3.2)."""
+    from django.contrib.auth.models import Group  # noqa: PLC0415
+
+    utilisateur = UserFactory.create(**champs)
+    groupe = Group.objects.filter(profil_droits__profil=profil).order_by("pk").first()
+    assert groupe is not None, profil
+    utilisateur.groups.add(groupe)
+    return utilisateur
+
+
+def poste_de_confiance(nom: str = "Comptoir") -> str:
+    """Enregistre un poste et renvoie la valeur de son cookie."""
+    from optiboul.core.application.journal import SYSTEME  # noqa: PLC0415
+    from optiboul.users import postes  # noqa: PLC0415
+
+    admin = UserFactory.create(is_superuser=True)
+    _, cookie = postes.enregistrer(nom, admin, SYSTEME)
+    return cookie

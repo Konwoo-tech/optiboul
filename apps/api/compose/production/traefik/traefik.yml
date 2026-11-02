@@ -19,6 +19,10 @@ entryPoints:
   # Jamais publiée sur l'hôte : le service tunnel s'y connecte sur le réseau Docker.
   remote:
     address: ':8443'
+    # Seul le service tunnel, sur le réseau Docker, peut annoncer l'adresse d'origine.
+    forwardedHeaders:
+      trustedIPs:
+        - '172.16.0.0/12'
 
   flower:
     address: ':5555'
@@ -38,6 +42,7 @@ http:
       entryPoints:
         - web-secure
       middlewares:
+        - limitation
         - csrf
         - securite
         - entree-locale
@@ -59,6 +64,7 @@ http:
       entryPoints:
         - remote
       middlewares:
+        - limitation
         - csrf
         - securite
         - entree-distante
@@ -81,6 +87,14 @@ http:
       tls: {}
 
   middlewares:
+    # Limitation par adresse (US-155) devant /api, /accounts et l'admin : contre les
+    # rafales et le déni de service. Les essais de code sont aussi limités par l'API.
+    limitation:
+      rateLimit:
+        average: 20
+        period: 1s
+        burst: 50
+
     csrf:
       # https://docs.djangoproject.com/en/dev/ref/csrf/#ajax
       headers:

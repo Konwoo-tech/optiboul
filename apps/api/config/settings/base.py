@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import environ
+from celery.schedules import crontab
 from django.utils.translation import gettext_lazy as _
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
@@ -83,6 +84,7 @@ DJANGO_APPS = [
     "django.contrib.staticfiles",
     # "django.contrib.humanize", # Handy template tags
     "django.contrib.admin",
+    "django.contrib.postgres",  # index trigramme de la recherche client
     "django.forms",
 ]
 THIRD_PARTY_APPS = [
@@ -168,6 +170,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "optiboul.users.postes.PosteConfianceMiddleware",
+    "optiboul.users.inactivite.InactiviteMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
@@ -238,6 +242,8 @@ FIXTURE_DIRS = (str(APPS_DIR / "fixtures"),)
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#session-cookie-httponly
 SESSION_COOKIE_HTTPONLY = True
+# Poste partagé : une journée de travail au plus (US-156).
+SESSION_COOKIE_AGE = 12 * 3600
 # https://docs.djangoproject.com/en/dev/ref/settings/#csrf-cookie-httponly
 # Les applications React lisent le cookie pour renvoyer l'en-tête X-CSRFToken (ADR-06).
 CSRF_COOKIE_HTTPONLY = False
@@ -337,6 +343,13 @@ CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_LOGIN_METHODS = {"email"}
+# https://docs.allauth.org/en/latest/account/rate_limits.html (US-155) : 5 mots de passe
+# faux par compte en 15 minutes, 10 par minute et par adresse.
+ACCOUNT_RATE_LIMITS = {
+    "login": "30/m/ip",
+    "login_failed": "10/m/ip,5/15m/key",
+    "reset_password": "5/m/ip,3/15m/key",
+}
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 # https://docs.allauth.org/en/latest/account/configuration.html
@@ -352,6 +365,10 @@ SOCIALACCOUNT_ADAPTER = "optiboul.users.adapters.SocialAccountAdapter"
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
 SOCIALACCOUNT_FORMS = {"signup": "optiboul.users.forms.UserSocialSignupForm"}
 
+# https://docs.allauth.org/en/latest/mfa/configuration.html (US-012)
+MFA_TOTP_ISSUER = "OptiBoul"
+MFA_RECOVERY_CODE_COUNT = 10
+
 # django-rest-framework
 # -------------------------------------------------------------------------------
 # django-rest-framework - https://www.django-rest-framework.org/api-guide/settings/
@@ -363,6 +380,11 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 50,
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Connexion (US-155) : au plus 10 tentatives par minute sur un compte, 30 par poste.
+    "DEFAULT_THROTTLE_RATES": {
+        "connexion_compte": "10/min",
+        "connexion_poste": "30/min",
+    },
 }
 
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
@@ -376,6 +398,88 @@ SPECTACULAR_SETTINGS: dict[str, Any] = {
     "VERSION": "1.0.0",
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "SCHEMA_PATH_PREFIX": "/api/v1/",
+    "ENUM_NAME_OVERRIDES": {
+        "ModePaiementEnum": "optiboul.ventes.infrastructure.models.MODES_PAIEMENT",
+        "ModeReglementEnum": "optiboul.paie.application.paiements.MODES",
+        "ModeReglementLibelleEnum": "optiboul.paie.infrastructure.models.MODES_REGLEMENT",
+        "CanalEnvoiEnum": "optiboul.notifications.infrastructure.models.CANAUX",
+        "StatutEnvoiEnum": "optiboul.notifications.infrastructure.models.STATUTS_ENVOI",
+        "CanalEnum": ["sms", "whatsapp"],  # canal de vérification des comptes
+    },
 }
-# Your stuff...
+# OptiBoul
 # ------------------------------------------------------------------------------
+# Tâches planifiées (spécification §8), synchronisées dans django-celery-beat.
+CELERY_BEAT_SCHEDULE = {
+    "envoyer-file": {"task": "notifications.envoyer_file", "schedule": 30.0},
+    "sauvegarde-planifiee": {
+        "task": "core.sauvegarde_planifiee",
+        "schedule": crontab(minute=5),
+    },
+    "ouvrir-semaine": {
+        "task": "core.ouvrir_semaine",
+        "schedule": crontab(minute=0, hour=6, day_of_week="mon"),
+    },
+    "rappel-cloture-semaine": {
+        "task": "core.rappel_cloture_semaine",
+        "schedule": crontab(minute=0, hour=18, day_of_week="sun"),
+    },
+    "verifier-copie-cloud": {
+        "task": "core.verifier_copie_cloud",
+        "schedule": crontab(minute=35),
+    },
+    "planifier-controles-stock": {
+        "task": "stocks.planifier_controles",
+        "schedule": crontab(minute=5, hour=6, day_of_week="mon"),
+    },
+    "rappel-controle-stock": {
+        "task": "stocks.rappel_controle",
+        "schedule": crontab(minute=30, hour=13),
+    },
+    "rappel-controle-stock-dimanche": {
+        "task": "stocks.rappel_controle",
+        "schedule": crontab(minute=0, hour=6, day_of_week="sun"),
+    },
+    "marquer-controles-manques": {
+        "task": "stocks.marquer_controles_manques",
+        "schedule": crontab(minute=30, hour=0),
+    },
+    "escalader-demandes": {"task": "demandes.escalader", "schedule": 60.0},
+    "rappel-habituels": {"task": "ventes.rappel_habituels", "schedule": 60.0},
+    "relances-automatiques": {
+        "task": "clients.relances_automatiques",
+        "schedule": 60.0,
+    },
+    "valider-plan-auto": {"task": "production.valider_plan_auto", "schedule": 60.0},
+    "archiver-productions": {"task": "production.archiver", "schedule": 300.0},
+}
+
+# Passerelle de chaque canal de la file d'envoi (O15). SMS et WhatsApp : fournisseur à
+# choisir (CdC §11.6) ; sans passerelle, les messages attendent dans la file.
+OPTIBOUL_PASSERELLES: dict[str, str | None] = {
+    "email": "optiboul.notifications.infrastructure.envois.PasserelleEmail",
+    "sms": env("OPTIBOUL_PASSERELLE_SMS", default=None),
+    "whatsapp": env("OPTIBOUL_PASSERELLE_WHATSAPP", default=None),
+}
+
+# Connexion avec Google (US-013) : identifiant OAuth du client web ; vide, désactivée.
+OPTIBOUL_GOOGLE_CLIENT_ID = env("OPTIBOUL_GOOGLE_CLIENT_ID", default="")
+
+# Adresse de l'application web, pour les liens envoyés (invitation, US-020).
+OPTIBOUL_URL_APPLICATION = env(
+    "OPTIBOUL_URL_APPLICATION",
+    default="https://optiboul.local",
+)
+
+# Sauvegardes (US-142) : copies locales, puis copie chiffrée sur S3 (ADR-14).
+OPTIBOUL_DOSSIER_SAUVEGARDES = env(
+    "OPTIBOUL_DOSSIER_SAUVEGARDES",
+    default=str(BASE_DIR / "sauvegardes"),
+)
+OPTIBOUL_SAUVEGARDES_CONSERVATION_JOURS = env.int(
+    "OPTIBOUL_SAUVEGARDES_CONSERVATION_JOURS",
+    default=14,
+)
+OPTIBOUL_SAUVEGARDES_PREFIXE_S3 = "sauvegardes/"
+# Clé AES-256 en base64 ; à conserver aussi hors du serveur pour pouvoir restaurer.
+OPTIBOUL_CLE_SAUVEGARDE = env("OPTIBOUL_CLE_SAUVEGARDE", default="")

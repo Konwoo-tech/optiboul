@@ -6,10 +6,10 @@ Installation et exploitation sur le serveur local de la boulangerie (spécificat
 | ------------------------------------------------------------------ | ------------------------ | ------------------------------------------------------------------------------------------------ |
 | Certificat HTTPS local                                             | Prêt                     | `make certs` (mkcert) → `apps/api/compose/production/traefik/certs/`                             |
 | Routage par préfixe, entrée distante                               | Prêt                     | `apps/api/compose/production/traefik/traefik.yml`                                                |
-| Accès distant (Cloudflare Tunnel)                                  | Prêt (profil `distant`)  | `docker-compose.production.yml`, variable `CLOUDFLARE_TUNNEL_TOKEN`, cible `http://traefik:8443` |
+| Accès distant (Cloudflare Tunnel)                                  | Prêt (profil `distant`)  | `docker-compose.production.yml`, variable `CLOUDFLARE_TUNNEL_TOKEN`, cible `http://traefik:8443` ; [mise en service](../docs/acces-distant.md) |
 | Sauvegarde PostgreSQL vers S3                                      | Fournie par Cookiecutter | service `awscli`, commandes `backup` / `upload` (voir `apps/api/docs`)                           |
 | Script d'installation `infra/install`                              | À faire                  | US-001, US-142                                                                                   |
-| Sauvegarde toutes les 4 h et à chaque clôture, restauration guidée | À faire                  | US-142, US-143                                                                                   |
+| Sauvegarde toutes les 4 h et à chaque clôture, restauration guidée | Prêt                     | [docs/restauration.md](../docs/restauration.md) |
 
 ## Démarrage en production
 

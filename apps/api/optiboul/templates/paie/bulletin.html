@@ -1,0 +1,106 @@
+{% load optiboul %}
+
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Bulletin {{ ligne.employe.nom }}</title>
+    <style>
+      @page {
+        size: A5;
+        margin: 12mm;
+      }
+
+      body {
+        font-family: "DejaVu Sans", sans-serif;
+        font-size: 10pt;
+        color: #2b1a10;
+      }
+
+      h1 {
+        color: #5A3220;
+        font-size: 15pt;
+        margin: 0 0 1mm;
+      }
+
+      .entete {
+        border-bottom: 2px solid #F2B705;
+        padding-bottom: 2mm;
+        margin-bottom: 4mm;
+      }
+
+      .discret {
+        color: #6b5446;
+        font-size: 9pt;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      td {
+        padding: 1.5mm 1mm;
+        border-bottom: 1px solid #eadfc8;
+      }
+
+      .montant {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .fort {
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="entete">
+      <h1>Bulletin de paie · {{ ligne.etat.mois|date:"m/Y" }}</h1>
+      <div class="discret">Boulangerie du Faubourg · Etoudi, Yaoundé</div>
+      <div class="discret">{{ ligne.employe.nom }}{% if ligne.employe.poste %} · {{ ligne.employe.poste }}{% endif %}</div>
+    </div>
+    <table>
+      <tr>
+        <td>Salaire de base</td>
+        <td class="montant">{{ calcul.base|fcfa }}</td>
+      </tr>
+      <tr>
+        <td>Absences ({{ ligne.absences }} j)</td>
+        <td class="montant">-{{ calcul.absences|fcfa }}</td>
+      </tr>
+      <tr>
+        <td>Avances</td>
+        <td class="montant">-{{ calcul.avances|fcfa }}</td>
+      </tr>
+      {% for element in ligne.elements.all %}
+        <tr>
+          <td>{{ element.description }}</td>
+          <td class="montant">
+            {% if element.genre == "penalite" %}-{% endif %}{{ element.montant|fcfa }}
+          </td>
+        </tr>
+      {% endfor %}
+      <tr>
+        <td>Impayé antérieur</td>
+        <td class="montant">{{ calcul.impaye|fcfa }}</td>
+      </tr>
+      <tr>
+        <td class="fort">Net à payer</td>
+        <td class="montant fort">{{ calcul.net|fcfa }}</td>
+      </tr>
+      {% for paiement in paiements %}
+        <tr>
+          <td>Payé le {{ paiement.paye_le|date:"d/m/Y" }} · {{ paiement.get_mode_display }}</td>
+          <td class="montant">{{ paiement.montant|fcfa }}</td>
+        </tr>
+      {% endfor %}
+      <tr>
+        <td class="fort">Reste à payer</td>
+        <td class="montant fort">{{ reste|fcfa }}</td>
+      </tr>
+    </table>
+    <p class="discret">Édité le {{ edite_le|date:"d/m/Y" }}</p>
+  </body>
+</html>

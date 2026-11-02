@@ -5,6 +5,10 @@ DJANGO_SETTINGS_MODULE=config.settings.production
 DJANGO_SECRET_KEY=a-generer
 DJANGO_ADMIN_URL=django-admin-a-generer/
 DJANGO_ALLOWED_HOSTS=optiboul.local,.optiboul.cm
+# Nom public du tunnel, avec https:// (ADR-19). Vide sans accès distant.
+DJANGO_CSRF_TRUSTED_ORIGINS=
+# Nom public du tunnel, avec https:// (ADR-19). Vide sans accès distant.
+DJANGO_CSRF_TRUSTED_ORIGINS=
 
 # Security
 # ------------------------------------------------------------------------------
@@ -24,6 +28,18 @@ MAILGUN_DOMAIN=
 DJANGO_AWS_ACCESS_KEY_ID=
 DJANGO_AWS_SECRET_ACCESS_KEY=
 DJANGO_AWS_STORAGE_BUCKET_NAME=
+
+# OptiBoul
+# ------------------------------------------------------------------------------
+# Clé AES-256 des copies cloud (32 octets en base64), à garder aussi hors du serveur :
+# python -c "import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
+OPTIBOUL_CLE_SAUVEGARDE=
+# Passerelles SMS / WhatsApp (chemin Python d'une classe), fournisseur à choisir.
+OPTIBOUL_PASSERELLE_SMS=
+OPTIBOUL_PASSERELLE_WHATSAPP=
+# Connexion avec Google (US-013) : identifiant OAuth du client web (console Google
+# Cloud). Vide : la connexion avec Google est désactivée.
+OPTIBOUL_GOOGLE_CLIENT_ID=
 
 # django-allauth
 # ------------------------------------------------------------------------------
