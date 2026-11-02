@@ -5,7 +5,7 @@ ERP de la Boulangerie du Faubourg (Etoudi, Yaoundé). Deux applications autonome
 ## Conventions
 
 - **Langue** : code, commentaires, documentation et interface en français ; textes de l'interface traduits FR / EN (`apps/web/src/i18n`).
-- **Architecture** : les [ADR](docs/adr/README.md) font foi. En particulier ADR-17 à ADR-20 : `apps/api` + une seule application web `apps/web` à espaces selon le profil, pas d'application mobile. La spécification technique v3 décrit encore l'ancienne découpe.
+- **Architecture** : les [ADR](docs/adr/README.md) font foi. En particulier ADR-17 à ADR-20 : `apps/api` + une seule application web `apps/web` à espaces selon le profil, pas d'application mobile. La [spécification technique v4](docs/specifications/OptiBoul_ERP_Specification_technique_Architecture_v4.md) les intègre ; en cas d'écart, l'ADR l'emporte.
 - **Clean Architecture (API)** : `domain` (Python pur, sans Django) ← `application` ← `infrastructure` / `api`. Contrôlé par import-linter.
 - **Contrat API** : `apps/api/schema.yml` et `apps/web/src/api/generated/` sont versionnés. Après tout changement d'API : `make api-client`.
 - **Montants** en entiers FCFA, jamais en flottants. Les registres de mouvements sont en ajout seul.
