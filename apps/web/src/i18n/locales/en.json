@@ -905,7 +905,8 @@
         "erreurs": {
           "quantite": "Enter a quantity.",
           "quantite_obligatoire": "Enter a quantity.",
-          "defaut": "The delivery could not be scheduled. Please try again."
+          "defaut": "The delivery could not be scheduled. Please try again.",
+          "quantite_trop_grande": "Quantity too high (maximum {{max}})."
         }
       },
       "fiches": {
@@ -941,7 +942,8 @@
           "receptionPartielle": "{{commande}} · {{matiere}}, {{quantite}} {{unite}} received of {{commandee}}",
           "livraison": "{{matiere}} · {{quantite}} {{unite}} ({{commande}})"
         },
-        "vide": "No invoices."
+        "vide": "No invoices.",
+        "reference": " · ref. {{reference}}"
       },
       "modes": {
         "especes": "Cash",
@@ -955,14 +957,23 @@
         "observation": "Note (optional)",
         "aide": "If the quantity is below the order, the shortfall stays to be delivered and appears in the tracking.",
         "annuler": "Cancel",
-        "valider": "Confirm delivery"
+        "valider": "Confirm delivery",
+        "erreurs": {
+          "quantite_trop_grande": "Quantity too high (maximum {{max}}).",
+          "defaut": "The delivery could not be recorded. Please try again."
+        }
       },
       "paiement": {
         "titre": "Supplier payment",
         "info": "{{numero}} · {{fournisseur}} · {{objet}} · {{montant}} FCFA",
         "mode": "Payment method",
         "annuler": "Cancel",
-        "valider": "Record payment"
+        "valider": "Record payment",
+        "reference": "Transaction reference",
+        "referenceObligatoire": "Enter the mobile money transaction reference.",
+        "erreurs": {
+          "defaut": "The payment could not be recorded. Please try again."
+        }
       },
       "toasts": {
         "planifiee": "Delivery scheduled · {{numero}}",

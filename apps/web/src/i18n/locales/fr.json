@@ -905,7 +905,8 @@
         "erreurs": {
           "quantite": "Indiquez une quantité.",
           "quantite_obligatoire": "Indiquez une quantité.",
-          "defaut": "La réception n’a pas pu être planifiée. Réessayez."
+          "defaut": "La réception n’a pas pu être planifiée. Réessayez.",
+          "quantite_trop_grande": "Quantité trop élevée (maximum {{max}})."
         }
       },
       "fiches": {
@@ -941,7 +942,8 @@
           "receptionPartielle": "{{commande}} · {{matiere}}, {{quantite}} {{unite}} reçus sur {{commandee}}",
           "livraison": "{{matiere}} · {{quantite}} {{unite}} ({{commande}})"
         },
-        "vide": "Aucune facture."
+        "vide": "Aucune facture.",
+        "reference": " · réf. {{reference}}"
       },
       "modes": {
         "especes": "Espèces",
@@ -955,14 +957,23 @@
         "observation": "Observation (facultatif)",
         "aide": "Si la quantité est inférieure à la commande, le manquant reste à livrer et apparaît dans le suivi.",
         "annuler": "Annuler",
-        "valider": "Valider la réception"
+        "valider": "Valider la réception",
+        "erreurs": {
+          "quantite_trop_grande": "Quantité trop élevée (maximum {{max}}).",
+          "defaut": "La réception n’a pas pu être enregistrée. Réessayez."
+        }
       },
       "paiement": {
         "titre": "Paiement fournisseur",
         "info": "{{numero}} · {{fournisseur}} · {{objet}} · {{montant}} FCFA",
         "mode": "Mode de paiement",
         "annuler": "Annuler",
-        "valider": "Enregistrer le paiement"
+        "valider": "Enregistrer le paiement",
+        "reference": "Référence de la transaction",
+        "referenceObligatoire": "Indiquez la référence de la transaction mobile money.",
+        "erreurs": {
+          "defaut": "Le paiement n’a pas pu être enregistré. Réessayez."
+        }
       },
       "toasts": {
         "planifiee": "Réception planifiée · {{numero}}",

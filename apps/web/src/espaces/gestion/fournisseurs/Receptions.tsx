@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n';
+import { formaterNombre } from '@/utils';
 import { useId, useRef, useState } from 'react';
 
 import {
@@ -17,6 +18,8 @@ import {
   matieresDe,
   NIVEAU_COMMANDE,
   quantiteSaisie,
+  QUANTITE_MAX,
+  quantiteTropGrande,
   trierCommandes,
 } from './regles.ts';
 import type { Commande, InstantaneFournisseurs, Matiere, NouvelleCommande } from './types.ts';
@@ -61,14 +64,22 @@ export function Receptions({
   const message = erreur
     ? t(
         `gestion.fournisseurs.planifier.erreurs.${
-          ['quantite', 'quantite_obligatoire'].includes(erreur) ? erreur : 'defaut'
+          ['quantite', 'quantite_obligatoire', 'quantite_trop_grande'].includes(erreur)
+            ? erreur
+            : 'defaut'
         }`,
+        { max: formaterNombre(QUANTITE_MAX) },
       )
     : '';
 
   const valider = async () => {
     if (!quantiteSaisie(quantiteTexte)) {
       setErreur('quantite');
+      champQuantite.current?.focus();
+      return;
+    }
+    if (quantiteTropGrande(quantiteSaisie(quantiteTexte))) {
+      setErreur('quantite_trop_grande');
       champQuantite.current?.focus();
       return;
     }
@@ -128,9 +139,9 @@ export function Receptions({
           <button
             type="button"
             className={styles.principal}
-            disabled={enCours}
+            aria-disabled={enCours}
             aria-label={`${t('gestion.fournisseurs.receptions.receptionner')} ${c.numero}`}
-            onClick={() => onReceptionner(c)}
+            onClick={() => !enCours && onReceptionner(c)}
           >
             {t('gestion.fournisseurs.receptions.receptionner')}
           </button>
@@ -140,18 +151,18 @@ export function Receptions({
             <button
               type="button"
               className={styles.secondaire}
-              disabled={enCours}
+              aria-disabled={enCours}
               aria-label={`${t('gestion.fournisseurs.receptions.relancer')} ${c.numero}`}
-              onClick={() => onRelancer(c)}
+              onClick={() => !enCours && onRelancer(c)}
             >
               {t('gestion.fournisseurs.receptions.relancer')}
             </button>
             <button
               type="button"
               className={styles.secondaire}
-              disabled={enCours}
+              aria-disabled={enCours}
               aria-label={`${t('gestion.fournisseurs.receptions.replanifier')} ${c.numero}`}
-              onClick={() => onReplanifier(c)}
+              onClick={() => !enCours && onReplanifier(c)}
             >
               {t('gestion.fournisseurs.receptions.replanifier')}
             </button>
@@ -190,7 +201,6 @@ export function Receptions({
             <select
               className={styles.champ}
               value={fournisseur}
-              disabled={enCours}
               onChange={(e) => {
                 setFournisseur(e.target.value);
                 setMatiere(matieresDe(instantane.fournisseurs, e.target.value)[0] ?? 'farine');
@@ -209,7 +219,6 @@ export function Receptions({
             <select
               className={styles.champ}
               value={matiere}
-              disabled={enCours}
               onChange={(e) => {
                 setMatiere(e.target.value as Matiere);
                 setErreur(null);
@@ -229,7 +238,7 @@ export function Receptions({
               ref={champQuantite}
               value={quantiteTexte}
               inputMode="decimal"
-              disabled={enCours}
+              readOnly={enCours}
               onChange={(e) => {
                 setQuantiteTexte(filtrerQuantite(e.target.value));
                 setErreur(null);
@@ -240,12 +249,7 @@ export function Receptions({
           </label>
           <label className={styles.etiquette}>
             {t('gestion.fournisseurs.planifier.date')}
-            <select
-              className={styles.champ}
-              value={jour}
-              disabled={enCours}
-              onChange={(e) => setJour(e.target.value)}
-            >
+            <select className={styles.champ} value={jour} onChange={(e) => setJour(e.target.value)}>
               {instantane.jours.map((iso) => (
                 <option key={iso} value={iso}>
                   {jourCourt(iso, langue)}
@@ -259,7 +263,7 @@ export function Receptions({
           <button
             type="submit"
             className={`${styles.principal} ${styles.validerFormulaire}`}
-            disabled={enCours}
+            aria-disabled={enCours}
           >
             {t('gestion.fournisseurs.planifier.enregistrer')}
           </button>

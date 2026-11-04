@@ -36,6 +36,15 @@ const ONGLETS = ['receptions', 'fournisseurs', 'dettes'] as const;
 type Onglet = (typeof ONGLETS)[number];
 const ONGLET_PAR_DEFAUT: Onglet = 'receptions';
 
+/** Codes d'erreur de saisie du serveur : la fenêtre reste ouverte. */
+const ERREURS_DE_SAISIE = [
+  'quantite_obligatoire',
+  'quantite_trop_grande',
+  'reference_obligatoire',
+  'reference_invalide',
+  'mode_inconnu',
+];
+
 /** Fenêtre ouverte : la réception d'un bon ou le paiement d'une facture (une seule à la fois). */
 type Fenetre = { genre: 'reception'; numero: string } | { genre: 'paiement'; numero: string };
 
@@ -172,7 +181,17 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
     }
   };
 
-  const confirmerReception = async (numero: string, quantite: number, observation: string) => {
+  /** Erreurs de saisie : la fenêtre reste ouverte, la saisie est gardée, l'erreur est sur le champ. */
+  const erreurDeSaisie = (erreur: unknown): string | null => {
+    const code = codeErreur(erreur);
+    return code && ERREURS_DE_SAISIE.includes(code) ? code : null;
+  };
+
+  const confirmerReception = async (
+    numero: string,
+    quantite: number,
+    observation: string,
+  ): Promise<string | null> => {
     try {
       const reponse = await receptionner.mutateAsync({
         commande: numero,
@@ -187,20 +206,36 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
             : 'gestion.fournisseurs.toasts.recue',
         ),
       );
+      return null;
     } catch (erreur) {
+      const saisie = erreurDeSaisie(erreur);
+      if (saisie) return saisie;
       ouvrir(null);
       echec(erreur);
+      return null;
     }
   };
 
-  const confirmerPaiement = async (numero: string, mode: ModePaiement) => {
+  const confirmerPaiement = async (
+    numero: string,
+    mode: ModePaiement,
+    reference: string,
+  ): Promise<string | null> => {
     try {
-      const reponse = await payer.mutateAsync({ facture: numero, mode });
+      const reponse = await payer.mutateAsync({
+        facture: numero,
+        mode,
+        ...(mode === 'mobile' ? { reference } : {}),
+      });
       ouvrir(null);
       afficher(t('gestion.fournisseurs.toasts.paye', { numero: reponse.depense ?? '' }));
+      return null;
     } catch (erreur) {
+      const saisie = erreurDeSaisie(erreur);
+      if (saisie) return saisie;
       ouvrir(null);
       echec(erreur);
+      return null;
     }
   };
 
@@ -280,6 +315,7 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
           className={styles.panneau}
           id="panneau-fournisseurs"
           role="tabpanel"
+          tabIndex={0}
           aria-labelledby={`onglet-fournisseurs-${onglet}`}
         >
           {onglet === 'receptions' && (
@@ -314,7 +350,7 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
           onFermer={() => ouvrir(null)}
           onIncomplet={() => afficher(t('gestion.fournisseurs.toasts.quantiteRecue'))}
           onConfirmer={(quantite, observation) =>
-            void confirmerReception(commandeOuverte.numero, quantite, observation)
+            confirmerReception(commandeOuverte.numero, quantite, observation)
           }
         />
       )}
@@ -324,7 +360,9 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
           fournisseur={instantane.fournisseurs.find((f) => f.id === factureOuverte.fournisseur)}
           enCours={enCours}
           onFermer={() => ouvrir(null)}
-          onConfirmer={(mode) => void confirmerPaiement(factureOuverte.numero, mode)}
+          onConfirmer={(mode, reference) =>
+            confirmerPaiement(factureOuverte.numero, mode, reference)
+          }
         />
       )}
     </>

@@ -420,6 +420,7 @@ export type ResultatPaiement = 'ok' | 'inconnue' | 'non-payable';
 export function payerFacture(
   numero: string,
   mode: ModePaiement,
+  reference = '',
 ): { resultat: ResultatPaiement; facture?: Facture } {
   const etat = lireEtat();
   const stockee = etat.factures.find((f) => f.numero === numero);
@@ -428,6 +429,7 @@ export function payerFacture(
   stockee.statut = 'payee';
   stockee.payeeLe = etat.aujourdhui;
   stockee.mode = mode;
+  if (reference) stockee.reference = reference;
   return { resultat: 'ok', facture: facturesSimulees().find((f) => f.numero === numero) };
 }
 

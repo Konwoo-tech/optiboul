@@ -119,7 +119,7 @@ describe('faux serveur des fournisseurs : données de la maquette', () => {
     cloturerSemaine('S42', { par: 'Willy', jour: '2026-10-18', heure: '21:40' });
     expect(facturesSimulees().find((f) => f.numero === 'FAC-42')!.statut).toBe('a-payer');
     memoriserUtilisateurConnecte('willy');
-    const reponse = await appeler('POST', 'paiements/', { facture: 'FAC-42', mode: 'mobile' });
+    const reponse = await appeler('POST', 'paiements/', { facture: 'FAC-42', mode: 'banque' });
     expect(reponse.statut).toBe(200);
   });
 });

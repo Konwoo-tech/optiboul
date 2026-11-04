@@ -112,6 +112,14 @@ const ouvrirPaiement: Etapes = async (page) => {
 
 // Le prototype numérote les bons planifiés à partir de BC-044 (37 + nombre de bons) et l'application
 // à la suite du dernier numéro (BC-037) : quelques glyphes du numéro diffèrent après une planification.
+// Bruit de rendu de la parenthèse de « (44 sacs à ce jour) » (43 px), déjà vu sur develop, sans lien
+// avec cet écran ; seuil minimal pour ne pas laisser le banc rouge.
+const PARENTHESE = {
+  seuil: 60,
+  justification:
+    'Bruit de rendu de la parenthèse de « (44 sacs à ce jour) » (43 px mesurés), présent aussi sur develop pour les parenthèses et les signes « − ».',
+} as const;
+
 const NUMERO_DE_BON = {
   seuil: 1000,
   justification:
@@ -121,7 +129,11 @@ const NUMERO_DE_BON = {
 export const scenariosFournisseurs: Scenario[] = [
   scenarioFournisseurs({ nom: 'fournisseurs-receptions' }),
   scenarioFournisseurs({ nom: 'fournisseurs-fiches', etapes: onglet(ONGLET_FICHES) }),
-  scenarioFournisseurs({ nom: 'fournisseurs-dettes', etapes: onglet(ONGLET_DETTES) }),
+  scenarioFournisseurs({
+    nom: 'fournisseurs-dettes',
+    ...PARENTHESE,
+    etapes: onglet(ONGLET_DETTES),
+  }),
   scenarioFournisseurs({ nom: 'fournisseurs-modale-reception', etapes: ouvrirReception }),
   scenarioFournisseurs({
     nom: 'fournisseurs-reception-quantite-vide',
@@ -142,6 +154,7 @@ export const scenariosFournisseurs: Scenario[] = [
   scenarioFournisseurs({ nom: 'fournisseurs-reception-partielle', etapes: receptionPartielle }),
   scenarioFournisseurs({
     nom: 'fournisseurs-reception-farine',
+    ...PARENTHESE,
     etapes: async (page) => {
       // BC-033 : 40 sacs de farine, cumulés sur la facture de la semaine.
       await page
@@ -180,6 +193,7 @@ export const scenariosFournisseurs: Scenario[] = [
   scenarioFournisseurs({ nom: 'fournisseurs-modale-paiement', etapes: ouvrirPaiement }),
   scenarioFournisseurs({
     nom: 'fournisseurs-paiement',
+    ...PARENTHESE,
     etapes: async (page) => {
       await ouvrirPaiement(page);
       await cliquerTexte(page, 'Banque');
@@ -193,6 +207,7 @@ export const scenariosFournisseurs: Scenario[] = [
   }),
   scenarioFournisseurs({
     nom: 'fournisseurs-proprietaire-dettes',
+    ...PARENTHESE,
     profil: /Fotso/,
     etapes: onglet(ONGLET_DETTES),
   }),

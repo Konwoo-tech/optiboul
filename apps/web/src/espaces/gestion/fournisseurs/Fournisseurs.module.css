@@ -177,8 +177,8 @@
   cursor: pointer;
 }
 
-.principal:disabled,
-.secondaire:disabled {
+.principal[aria-disabled='true'],
+.secondaire[aria-disabled='true'] {
   opacity: 0.6;
   cursor: default;
 }
@@ -431,9 +431,21 @@
   cursor: pointer;
 }
 
-.confirmer:disabled {
+.confirmer[aria-disabled='true'] {
   opacity: 0.6;
   cursor: default;
+}
+
+/* Le panneau d'un onglet se joint au clavier (défilement). */
+.panneau:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.erreurModale {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c2453a;
 }
 
 /* La liste de définitions reste invisible pour la mise en page : les lignes sont des enfants de la carte. */

@@ -80,6 +80,11 @@ export const NIVEAU_FACTURE: Record<EtatFacture, NiveauMot> = {
 /** Une facture se paie tant qu'elle est « à payer » (en retard comprise). */
 export const sePaie = (facture: Pick<Facture, 'statut'>): boolean => facture.statut === 'a-payer';
 
+/** Borne haute d'une quantité saisie (dans l'unité de la matière) : au-delà, c'est une faute de frappe. */
+export const QUANTITE_MAX = 10_000;
+
+export const quantiteTropGrande = (valeur: number): boolean => valeur > QUANTITE_MAX;
+
 /** Une quantité à planifier ou à recevoir doit être un nombre strictement positif. */
 export const quantiteValide = (valeur: number): boolean => Number.isFinite(valeur) && valeur > 0;
 

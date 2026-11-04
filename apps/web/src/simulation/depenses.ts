@@ -560,7 +560,7 @@ export function enregistrerPaiementFournisseur(paiement: {
     par: paiement.par,
     parProfil: paiement.parProfil,
     statut: 'validee',
-    photo: true,
+    photo: false,
     rattachement: { type: 'stock', facture: paiement.facture },
   };
   etat.depenses = [creee, ...etat.depenses];

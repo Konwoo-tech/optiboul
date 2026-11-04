@@ -51,6 +51,9 @@ export function Factures({ instantane, peutModifier, enCours, onPayer, onRecu }:
                     : t('gestion.fournisseurs.factures.echeance', {
                         date: jourCourt(f.echeance, langue),
                       })}
+                  {f.statut === 'payee' && f.reference
+                    ? t('gestion.fournisseurs.factures.reference', { reference: f.reference })
+                    : null}
                 </div>
               </div>
               <span className={styles.montant}>
@@ -61,9 +64,9 @@ export function Factures({ instantane, peutModifier, enCours, onPayer, onRecu }:
                 <button
                   type="button"
                   className={styles.principal}
-                  disabled={enCours}
+                  aria-disabled={enCours}
                   aria-label={`${t('gestion.fournisseurs.factures.payer')} ${f.numero}`}
-                  onClick={() => onPayer(f)}
+                  onClick={() => !enCours && onPayer(f)}
                 >
                   {t('gestion.fournisseurs.factures.payer')}
                 </button>

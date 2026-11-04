@@ -73,6 +73,8 @@ export type Facture = {
   /** Paiement : jour « AAAA-MM-JJ », mode et numéro de la dépense créée. */
   payeeLe?: string;
   mode?: ModePaiement;
+  /** Référence de la transaction (mobile money, R7). */
+  reference?: string;
   depense?: string;
 };
 
@@ -99,4 +101,4 @@ export type NouvelleReception = {
   observation?: string;
 };
 
-export type NouveauPaiement = { facture: string; mode: ModePaiement };
+export type NouveauPaiement = { facture: string; mode: ModePaiement; reference?: string };

@@ -1,10 +1,11 @@
 import { useTranslation } from '@/i18n';
 import { FenetreModale } from '@/ui';
-import { useRef, useState } from 'react';
+import { formaterNombre } from '@/utils';
+import { useId, useRef, useState } from 'react';
 
 import { jourCourt, nomMatiere, quantite, uniteMatiere } from './affichage.ts';
 import styles from './Fournisseurs.module.css';
-import { filtrerQuantite, quantiteSaisie } from './regles.ts';
+import { filtrerQuantite, QUANTITE_MAX, quantiteSaisie, quantiteTropGrande } from './regles.ts';
 import type { Commande, Fournisseur } from './types.ts';
 
 type Props = {
@@ -13,7 +14,7 @@ type Props = {
   enCours: boolean;
   onFermer: () => void;
   /** Quantité réellement livrée (déjà lue, strictement positive) et observation. */
-  onConfirmer: (quantite: number, observation: string) => void;
+  onConfirmer: (quantite: number, observation: string) => Promise<string | null>;
   /** La quantité saisie est illisible : l'écran l'annonce. */
   onIncomplet: () => void;
 };
@@ -32,9 +33,12 @@ export function ModaleReception({
   const [quantiteTexte, setQuantiteTexte] = useState(String(commande.commandee));
   const [observation, setObservation] = useState('');
   const [invalide, setInvalide] = useState(false);
+  const [tropGrande, setTropGrande] = useState(false);
+  const idErreur = useId();
   const champ = useRef<HTMLInputElement>(null);
 
-  const valider = () => {
+  const valider = async () => {
+    if (enCours) return;
     const valeur = quantiteSaisie(quantiteTexte);
     if (!valeur) {
       setInvalide(true);
@@ -42,7 +46,15 @@ export function ModaleReception({
       champ.current?.focus();
       return;
     }
-    onConfirmer(valeur, observation.trim());
+    const refus = quantiteTropGrande(valeur)
+      ? 'quantite_trop_grande'
+      : await onConfirmer(valeur, observation.trim());
+    if (refus) {
+      // La saisie est gardée : l'erreur est sur le champ.
+      setInvalide(true);
+      setTropGrande(true);
+      champ.current?.focus();
+    }
   };
 
   return (
@@ -67,12 +79,21 @@ export function ModaleReception({
           value={quantiteTexte}
           inputMode="decimal"
           aria-invalid={invalide}
+          aria-describedby={tropGrande ? idErreur : undefined}
           onChange={(e) => {
             setQuantiteTexte(filtrerQuantite(e.target.value));
             setInvalide(false);
+            setTropGrande(false);
           }}
         />
       </label>
+      {tropGrande && (
+        <span className={styles.erreurModale} id={idErreur} role="alert">
+          {t('gestion.fournisseurs.reception.erreurs.quantite_trop_grande', {
+            max: formaterNombre(QUANTITE_MAX),
+          })}
+        </span>
+      )}
       <label className={styles.etiquette}>
         {t('gestion.fournisseurs.reception.observation')}
         <input
@@ -86,7 +107,12 @@ export function ModaleReception({
         <button type="button" className={styles.annuler} onClick={onFermer}>
           {t('gestion.fournisseurs.reception.annuler')}
         </button>
-        <button type="button" className={styles.confirmer} disabled={enCours} onClick={valider}>
+        <button
+          type="button"
+          className={styles.confirmer}
+          aria-disabled={enCours}
+          onClick={() => void valider()}
+        >
           {t('gestion.fournisseurs.reception.valider')}
         </button>
       </div>

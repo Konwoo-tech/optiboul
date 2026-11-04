@@ -3,6 +3,7 @@ import {
   droitsFournisseurs,
   joursPlanifiables,
   manque,
+  quantiteTropGrande,
   quantiteValide,
 } from '@/espaces/gestion/fournisseurs/regles.ts';
 import {
@@ -43,6 +44,7 @@ const RACINE = '/api/v1/simulation/gestion/fournisseurs/';
 
 const probleme = (status: number, code: string, detail: string) =>
   Response.json({ detail, code }, { status });
+const LONGUEUR_REFERENCE = 60;
 const refus = () => probleme(403, 'droit_insuffisant', 'Votre profil ne permet pas cette action.');
 
 const MODE_DEPENSE: Record<ModePaiement, ModeDepense> = {
@@ -82,6 +84,9 @@ function planifier(a: Acteur, corps: Corps): Response {
   if (typeof corps.quantite !== 'number' || !quantiteValide(corps.quantite)) {
     return probleme(400, 'quantite_obligatoire', 'Indiquez une quantité.');
   }
+  if (quantiteTropGrande(corps.quantite)) {
+    return probleme(400, 'quantite_trop_grande', 'Quantité trop élevée.');
+  }
   const jour = texte(corps.jour);
   if (!joursPlanifiables(aujourdhuiFournisseurs()).includes(jour)) {
     return probleme(400, 'jour_invalide', 'Choisissez un jour dans les huit prochains jours.');
@@ -109,6 +114,9 @@ function receptionner(a: Acteur, corps: Corps): Response {
   }
   if (typeof corps.quantite !== 'number' || !quantiteValide(corps.quantite)) {
     return probleme(400, 'quantite_obligatoire', 'Indiquez la quantité reçue.');
+  }
+  if (quantiteTropGrande(corps.quantite)) {
+    return probleme(400, 'quantite_trop_grande', 'Quantité trop élevée.');
   }
   const observation = texte(corps.observation).trim();
   const resultat = receptionnerBon(numero, corps.quantite, prixDesMatieres()[bon.matiere], a.nom)!;
@@ -175,7 +183,15 @@ function payer(a: Acteur, corps: Corps): Response {
   if (!facture) return probleme(404, 'facture_inconnue', 'Facture inconnue.');
   const mode = MODES_PAIEMENT.find((m) => m === corps.mode);
   if (!mode) return probleme(400, 'mode_inconnu', 'Mode de paiement inconnu.');
-  const paiement = payerFacture(numero, mode);
+  const reference = texte(corps.reference).trim();
+  // R7 : un paiement par mobile money porte la référence de la transaction.
+  if (mode === 'mobile' && !reference) {
+    return probleme(400, 'reference_obligatoire', 'Référence obligatoire pour le mobile money.');
+  }
+  if (reference.length > LONGUEUR_REFERENCE) {
+    return probleme(400, 'reference_invalide', 'Référence trop longue.');
+  }
+  const paiement = payerFacture(numero, mode, mode === 'mobile' ? reference : '');
   if (paiement.resultat !== 'ok') {
     return probleme(409, 'facture_non_payable', 'Cette facture ne peut pas être payée.');
   }

@@ -191,11 +191,17 @@ describe('Gestion › Fournisseurs : planifier', () => {
     await ouvrir('willy', 'fr', '', 40);
     saisir(screen.getByLabelText('Quantité commandée'), '12');
     fireEvent.click(bouton('Planifier'));
-    await waitFor(() => expect((bouton('Planifier') as HTMLButtonElement).disabled).toBe(true));
-    expect((screen.getByLabelText('Quantité commandée') as HTMLInputElement).disabled).toBe(true);
-    expect((screen.getByLabelText('Fournisseur') as HTMLSelectElement).disabled).toBe(true);
+    await waitFor(() => expect(bouton('Planifier').getAttribute('aria-disabled')).toBe('true'));
+    // Lecture seule et non désactivé : le focus reste dans le formulaire pendant l'envoi.
+    expect((screen.getByLabelText('Quantité commandée') as HTMLInputElement).readOnly).toBe(true);
+    expect(
+      screen.getByRole('button', { name: 'Planifier' }).closest('form')!.getAttribute('aria-busy'),
+    ).toBe('true');
+    // Un second clic pendant l'envoi ne crée pas un second bon.
+    fireEvent.click(bouton('Planifier'));
     await screen.findByText('Réception planifiée · BC-037');
-    expect((bouton('Planifier') as HTMLButtonElement).disabled).toBe(false);
+    expect(bouton('Planifier').getAttribute('aria-disabled')).toBe('false');
+    expect(screen.queryByText(/BC-038/)).toBeNull();
   });
 });
 
@@ -270,10 +276,10 @@ describe('Gestion › Fournisseurs : réceptionner', () => {
     fireEvent.click(bouton('Réceptionner BC-034'));
     fireEvent.click(await screen.findByRole('button', { name: 'Valider la réception' }));
     await waitFor(() =>
-      expect((bouton('Réceptionner BC-033') as HTMLButtonElement).disabled).toBe(true),
+      expect(bouton('Réceptionner BC-033').getAttribute('aria-disabled')).toBe('true'),
     );
     await screen.findByText('Réception enregistrée · stock mis à jour');
-    expect((bouton('Réceptionner BC-033') as HTMLButtonElement).disabled).toBe(false);
+    expect(bouton('Réceptionner BC-033').getAttribute('aria-disabled')).toBe('false');
   });
 
   it('si le bon a été reçu entre-temps, la liste est relue et l’erreur annoncée', async () => {
@@ -373,12 +379,23 @@ describe('Gestion › Fournisseurs : factures et dettes', () => {
     expect(especes.getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(within(fenetre).getByRole('button', { name: 'Mobile money' }));
     expect(especes.getAttribute('aria-pressed')).toBe('false');
+    // R7 : le mobile money exige la référence ; l'erreur est sur le champ et s'efface à la saisie.
+    fireEvent.click(within(fenetre).getByRole('button', { name: 'Enregistrer le paiement' }));
+    const champ = within(fenetre).getByLabelText(/Référence de la transaction/);
+    const alerte = within(fenetre).getByRole('alert');
+    expect(alerte.textContent).toBe('Indiquez la référence de la transaction mobile money.');
+    expect(champ.getAttribute('aria-invalid')).toBe('true');
+    expect(champ.getAttribute('aria-describedby')).toBe(alerte.id);
+    expect(document.activeElement).toBe(champ);
+    saisir(champ, 'MP241014.K3');
+    expect(within(fenetre).queryByRole('alert')).toBeNull();
     fireEvent.click(within(fenetre).getByRole('button', { name: 'Enregistrer le paiement' }));
     expect(await screen.findByText('Paiement enregistré · DEP-0017')).toBeTruthy();
     expect(screen.queryByRole('dialog')).toBeNull();
     const ligne = ligneDe('FAC-41');
     expect(within(ligne).getByText('Payée')).toBeTruthy();
     expect(within(ligne).getByText(/Payée le mer\. 14 oct\. · Mobile money/)).toBeTruthy();
+    expect(within(ligne).getByText(/réf\. MP241014\.K3/)).toBeTruthy();
     expect(within(ligne).getByRole('button', { name: 'Reçu PDF FAC-41' })).toBeTruthy();
     expect(carte('Dette fournisseurs')).toContain('929 100 FCFA');
     expect(carte('Factures en retard')).toContain('1');
@@ -390,7 +407,7 @@ describe('Gestion › Fournisseurs : factures et dettes', () => {
     fireEvent.click(bouton('Payer FAC-41'));
     fireEvent.click(await screen.findByRole('button', { name: 'Enregistrer le paiement' }));
     await waitFor(() =>
-      expect((bouton('Payer FAC-0213') as HTMLButtonElement).disabled).toBe(true),
+      expect(bouton('Payer FAC-0213').getAttribute('aria-disabled')).toBe('true'),
     );
     await screen.findByText('Paiement enregistré · DEP-0017');
   });
