@@ -107,23 +107,51 @@ describe('comptes : effets sur le reste de la simulation', () => {
     expect(lireUtilisateurConnecte()?.nom).toBe('Ada');
   });
 
-  it('les affectations de semaine et de planning ne proposent que des comptes actifs', async () => {
+  it('les candidats de semaine et de caisse écartent les comptes désactivés', async () => {
     memoriserUtilisateurConnecte('fotso');
-    const lire = async () =>
+    const semaines = async () =>
       (await repondre(
         new URL('http://x/api/v1/simulation/gestion/semaines/'),
         'GET',
         {},
-      ).json()) as { candidats?: unknown };
-    // La réponse doit rester lisible quand un gérant est désactivé.
+      ).json()) as {
+        gerants: { id: string }[];
+      };
+    expect((await semaines()).gerants.map((g) => g.id)).toEqual(['willy', 'patrick', 'christelle']);
     definirActivation('patrick', false);
-    await expect(lire()).resolves.toBeDefined();
-    expect(
-      comptesActifs()
-        .filter((c) => c.profil === 'gerant')
-        .map((c) => c.id),
-    ).toEqual(['willy', 'christelle']);
+    expect((await semaines()).gerants.map((g) => g.id)).toEqual(['willy', 'christelle']);
+
+    const caisses = async () =>
+      (await repondre(new URL('http://x/api/v1/simulation/caisses/'), 'GET', {}).json()) as {
+        caissieres: { id: string }[];
+      };
+    expect((await caisses()).caissieres.map((c) => c.id)).toEqual(['davy', 'rachel']);
+    definirActivation('davy', false);
+    expect((await caisses()).caissieres.map((c) => c.id)).toEqual(['rachel']);
     // Le planning garde le nom d'un compte désactivé (historique).
     expect(personne('patrick')?.nom).toBe('Patrick');
+  });
+
+  it('la liste de connexion ne porte aucun champ sensible et ignore les comptes désactivés', async () => {
+    definirActivation('rachel', false);
+    const liste = (await repondre(
+      new URL('http://x/api/v1/simulation/utilisateurs/'),
+      'GET',
+      {},
+    ).json()) as Record<string, unknown>[];
+    expect(liste).toHaveLength(8);
+    for (const u of liste) expect(Object.keys(u).sort()).toEqual(['email', 'id', 'nom', 'profil']);
+    expect(JSON.stringify(liste)).not.toMatch(/telephone|6 77|dernierAcces|groupe/);
+  });
+
+  it('la connexion Google refuse un compte désactivé', () => {
+    expect(identifier({ methode: 'google', email: 'davy.boulfaubourg@gmail.com' }).status).toBe(
+      200,
+    );
+    memoriserUtilisateurConnecte(null);
+    definirActivation('davy', false);
+    const reponse = identifier({ methode: 'google', email: 'davy.boulfaubourg@gmail.com' });
+    expect(reponse.status).toBe(400);
+    expect(lireUtilisateurConnecte()).toBeUndefined();
   });
 });

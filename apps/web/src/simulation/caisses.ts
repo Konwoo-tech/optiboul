@@ -48,7 +48,8 @@ const personne = (id: string): Personne => {
 
 // Calculés à l'appel, pas au chargement : aucun appel au niveau du module, pour que le paquet de
 // production n'embarque aucune donnée de simulation.
-const caissieres = (): Personne[] => [personne('davy'), personne('rachel')];
+const caissieres = (): Personne[] =>
+  [personne('davy'), personne('rachel')].filter((c) => compteParId(c.id)?.actif);
 const receveurs = (): Personne[] =>
   comptesActifs()
     .filter((c) => c.profil === 'gerant')

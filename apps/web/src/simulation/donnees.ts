@@ -174,9 +174,6 @@ export const GROUPES_SIMULES: readonly GroupeSimule[] = [
   },
 ];
 
-export const UTILISATEURS_SIMULES: readonly UtilisateurSimule[] =
-  /* @__PURE__ */ COMPTES_SIMULES.map(({ id, nom, profil, email }) => ({ id, nom, profil, email }));
-
 /** Ce que l'écran de connexion sait de l'établissement, avant qu'on soit connecté. */
 export type ContexteSimule = {
   poste: string;

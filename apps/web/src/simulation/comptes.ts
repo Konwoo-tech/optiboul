@@ -46,11 +46,6 @@ const etatInitial = (): Etat => ({
 
 const lireEtat = (): Etat => (courant ??= etatInitial());
 
-/** Remet les comptes et les groupes à leur état de départ (tests). */
-export function reinitialiserComptes(): void {
-  courant = undefined;
-}
-
 /** Tous les comptes, désactivés compris, dans l'ordre de création. */
 export const tousLesComptes = (): readonly CompteVivant[] => lireEtat().comptes;
 
