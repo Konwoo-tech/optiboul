@@ -807,7 +807,8 @@
         "net": "Net à payer",
         "paye": "Payé",
         "reste": "Reste",
-        "paiement": "{{date}} · {{montant}} FCFA · {{mode}} · par {{nom}}"
+        "paiement": "{{date}} · {{montant}} FCFA · {{mode}} · par {{nom}}",
+        "paiementReference": "{{date}} · {{montant}} FCFA · {{mode}} (réf. {{reference}}) · par {{nom}}"
       },
       "saisie": {
         "types": {
@@ -834,6 +835,8 @@
         },
         "payer": "Payer {{nom}}",
         "note": "Un paiement partiel laisse un impayé reporté sur la paie suivante. Chaque paiement crée une dépense « Salaires » rattachée à la semaine.",
+        "reference": "Référence de la transaction",
+        "referenceObligatoire": "La référence de la transaction est obligatoire en mobile money.",
         "attente": "Le paiement s’ouvre après validation par le propriétaire.",
         "attenteProprietaire": "Le gérant effectue les paiements une fois l’état validé."
       },
@@ -855,6 +858,7 @@
         "droit": "Votre profil ne permet pas cette action.",
         "verrouille": "Les lignes sont verrouillées : l’état de paie a été soumis.",
         "paiementFerme": "Le paiement n’est pas encore ouvert.",
+        "reference": "Indiquez la référence de la transaction mobile money dans la fiche.",
         "impossible": "Action impossible dans l’état actuel de la paie.",
         "erreur": "L’action n’a pas pu être enregistrée : réessayez."
       }

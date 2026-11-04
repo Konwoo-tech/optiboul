@@ -23,6 +23,11 @@ import {
  * s'ouvre après validation » (faux pour lui) : pas de scénario sur cet état, la phrase est testée
  * par Vitest.
  *
+ * Montants, signes et règles de calcul sont garantis par Vitest (`regles.test.ts`,
+ * `simulation/personnel.test.ts`) : le banc ne sert qu'à la mise en page. Les seuils (600 px, au plus
+ * 800 px) ne couvrent que le bruit des glyphes « − » et des parenthèses : ne pas les relever, un
+ * écart de plus est un défaut de l'écran.
+ *
  * Les deux côtés jouent les mêmes gestes, écrits une seule fois (`etapes`) ; seuls la connexion,
  * l'arrivée sur l'écran et le changement de personne diffèrent.
  */

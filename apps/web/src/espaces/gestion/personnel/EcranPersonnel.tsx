@@ -53,6 +53,8 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
   const [parametres, setParametres] = useSearchParams();
   const [mode, setMode] = useState<ModePaiement>('especes');
   const [montantPaye, setMontantPaye] = useState('');
+  const [reference, setReference] = useState('');
+  const [referenceManquante, setReferenceManquante] = useState(false);
   const [erreurServeur, setErreurServeur] = useState<string | null>(null);
 
   const instantane = requete.data;
@@ -135,15 +137,30 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
       ),
     );
 
+  /** R7 : le mobile money exige la référence de la transaction ; sinon on la demande dans la fiche. */
+  const referenceRefusee = () => {
+    if (mode !== 'mobile' || reference.trim()) return false;
+    setReferenceManquante(true);
+    afficher(t('gestion.personnel.toasts.reference'));
+    return true;
+  };
+
   const surPayer = () => {
+    if (referenceRefusee()) return;
     const { reste } = calculerPaie(choisi);
     const montant = montantAPayer(montantPaye, reste);
     if (montant <= 0) return;
     payer.mutate(
-      { employe: choisi.id, mode, montant },
+      {
+        employe: choisi.id,
+        mode,
+        montant,
+        ...(mode === 'mobile' ? { reference: reference.trim() } : {}),
+      },
       {
         onSuccess: (reponse) => {
           setMontantPaye('');
+          setReference('');
           afficher(t('gestion.personnel.toasts.paiement', { code: reponse.depenses[0] }));
         },
         onError: signaler,
@@ -151,15 +168,19 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
     );
   };
 
-  const surPayerLesRestes = () =>
+  const surPayerLesRestes = () => {
+    if (referenceRefusee()) return;
     payerRestes.mutate(
-      { mode },
+      { mode, ...(mode === 'mobile' ? { reference: reference.trim() } : {}) },
       {
-        onSuccess: (reponse) =>
-          afficher(t('gestion.personnel.toasts.payes', { count: reponse.depenses.length })),
+        onSuccess: (reponse) => {
+          setReference('');
+          afficher(t('gestion.personnel.toasts.payes', { count: reponse.depenses.length }));
+        },
         onError: signaler,
       },
     );
+  };
 
   const surValider = (accord: boolean) => {
     if (!instantane.demande) return;
@@ -212,7 +233,16 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
             erreurServeur={erreurServeur}
             mode={mode}
             montantPaye={montantPaye}
-            onMode={setMode}
+            onMode={(m) => {
+              setMode(m);
+              setReferenceManquante(false);
+            }}
+            reference={reference}
+            referenceManquante={referenceManquante}
+            onReference={(r) => {
+              setReference(r);
+              setReferenceManquante(false);
+            }}
             onMontantPaye={setMontantPaye}
             onAjouter={surAjouter}
             onRetirer={(id) => retirer.mutate(id, { onError: signaler })}

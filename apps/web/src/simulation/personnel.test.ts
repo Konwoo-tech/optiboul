@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { InstantanePaie } from '@/espaces/gestion/personnel/types.ts';
 
+import { PREMIER_NUMERO_DEMANDE } from './numerosDemandes.ts';
 import { journalPersonnel } from './personnel.ts';
 import { repondre, reinitialiserSimulation } from './routeur.ts';
 import { memoriserUtilisateurConnecte } from './session.ts';
@@ -164,18 +165,18 @@ describe('faux serveur Personnel : brouillon (US-122)', () => {
 });
 
 describe('faux serveur Personnel : soumission et validation (US-123)', () => {
-  it('seul le gérant soumet ; l’état soumis crée la demande DEM-022 liée à la paie', async () => {
+  it('seul le gérant soumet ; l’état soumis crée la demande suivante liée à la paie', async () => {
     memoriserUtilisateurConnecte('fotso');
     expect((await appeler('POST', 'soumettre/')).statut).toBe(403);
     memoriserUtilisateurConnecte('willy');
     const r = await appeler('POST', 'soumettre/');
     expect(r.statut).toBe(200);
     expect(r.json).toMatchObject({ statut: 'soumis', soumisPar: 'Willy' });
-    expect(r.json.demande.numero).toBe(22);
+    expect(r.json.demande.numero).toBe(PREMIER_NUMERO_DEMANDE + 1);
     expect((await appeler('POST', 'soumettre/')).json.code).toBe('deja_soumis');
     const demande = (await toutes()).find((d) => d.type === 'paie')!;
     expect(demande).toMatchObject({
-      numero: 22,
+      numero: PREMIER_NUMERO_DEMANDE + 1,
       statut: 'en-attente',
       titre: 'État de paie · Octobre 2026',
       titreEn: 'Payroll · October 2026',
@@ -200,7 +201,7 @@ describe('faux serveur Personnel : soumission et validation (US-123)', () => {
     expect((await decider(false)).statut).toBe(409);
   });
 
-  it('un refus remet l’état en brouillon, modifiable puis re-soumis (DEM-023)', async () => {
+  it('un refus remet l’état en brouillon, modifiable puis re-soumis (nouvelle demande)', async () => {
     await appeler('POST', 'soumettre/');
     const demande = (await toutes()).find((d) => d.type === 'paie')!;
     memoriserUtilisateurConnecte('fotso');
@@ -222,7 +223,9 @@ describe('faux serveur Personnel : soumission et validation (US-123)', () => {
         })
       ).statut,
     ).toBe(200);
-    expect((await appeler('POST', 'soumettre/')).json.demande.numero).toBe(23);
+    expect((await appeler('POST', 'soumettre/')).json.demande.numero).toBe(
+      PREMIER_NUMERO_DEMANDE + 2,
+    );
   });
 });
 
@@ -249,12 +252,19 @@ describe('faux serveur Personnel : paiement (US-124, R12)', () => {
       employe: 'davy',
       mode: 'mobile',
       montant: 30_000,
+      reference: ' MP240114 ',
     });
     expect(r.statut).toBe(200);
     expect(r.json.depenses).toEqual(['DEP-0017']);
     expect(r.json.instantane.statut).toBe('en-paiement');
     expect((await employe('davy')).paiements).toEqual([
-      { montant: 30_000, mode: 'mobile', date: '2026-10-14', par: 'Willy' },
+      {
+        montant: 30_000,
+        mode: 'mobile',
+        date: '2026-10-14',
+        par: 'Willy',
+        reference: 'MP240114',
+      },
     ]);
     const depenses = (await appeler('GET', '', {}, '/api/v1/simulation/comptoir/depenses/')).json;
     expect(depenses.depenses[0]).toMatchObject({
@@ -301,5 +311,81 @@ describe('faux serveur Personnel : paiement (US-124, R12)', () => {
     expect(davy.paiements.map((p: any) => p.montant)).toEqual([2_000, 50_192]);
     expect((await appeler('POST', 'paiements/restes/', { mode: 'banque' })).statut).toBe(409);
     expect(journalPersonnel()[0]!.quoi).toContain('8 salaires payés');
+  });
+});
+
+describe('faux serveur Personnel : compléments', () => {
+  it('R7 : le mobile money exige la référence de la transaction (400), seul ou pour tous les restes', async () => {
+    await validee();
+    for (const reference of [undefined, '', '   ']) {
+      const corps = {
+        employe: 'davy',
+        mode: 'mobile',
+        ...(reference === undefined ? {} : { reference }),
+      };
+      expect((await appeler('POST', 'paiements/', corps)).json.code).toBe('reference_obligatoire');
+    }
+    expect((await appeler('POST', 'paiements/restes/', { mode: 'mobile' })).json.code).toBe(
+      'reference_obligatoire',
+    );
+    expect((await employe('davy')).paiements).toEqual([]);
+    const ok = await appeler('POST', 'paiements/restes/', { mode: 'mobile', reference: 'MP1' });
+    expect(ok.statut).toBe(200);
+    expect(ok.json.instantane.employes.every((e: any) => e.paiements[0].reference === 'MP1')).toBe(
+      true,
+    );
+  });
+
+  it('le calendrier est réservé à la direction (403) ; mois inconnu ou passé 404, jour hors liste 400', async () => {
+    memoriserUtilisateurConnecte('davy');
+    const mois = { mois: '2026-11', jour: '2026-11-27' };
+    expect((await appeler('PUT', 'calendrier/', mois)).statut).toBe(403);
+    memoriserUtilisateurConnecte('willy');
+    expect(
+      (await appeler('PUT', 'calendrier/', { mois: '2027-01', jour: '2027-01-29' })).statut,
+    ).toBe(404);
+    expect(
+      (await appeler('PUT', 'calendrier/', { mois: '2026-08', jour: '2026-08-31' })).statut,
+    ).toBe(404);
+    expect(
+      (await appeler('PUT', 'calendrier/', { mois: '2026-12', jour: '2026-12-25' })).statut,
+    ).toBe(400);
+    expect((await lire()).calendrier.find((m) => m.mois === '2026-12')!.jour).toBe('2026-12-31');
+  });
+
+  it('plusieurs paiements partiels : en paiement tant qu’un reste existe, payée quand tout est soldé', async () => {
+    await validee();
+    await appeler('POST', 'paiements/', { employe: 'davy', mode: 'especes', montant: 30_000 });
+    expect((await lire()).statut).toBe('en-paiement');
+    await appeler('POST', 'paiements/', { employe: 'davy', mode: 'especes', montant: 22_192 });
+    expect((await employe('davy')).paiements.map((p) => p.montant)).toEqual([30_000, 22_192]);
+    expect((await lire()).statut).toBe('en-paiement');
+    const encore = await appeler('POST', 'paiements/', { employe: 'davy', mode: 'especes' });
+    expect(encore.json.code).toBe('deja_paye');
+    const restes = await appeler('POST', 'paiements/restes/', { mode: 'especes' });
+    expect(restes.json.instantane.statut).toBe('payee');
+    expect((await appeler('POST', 'paiements/restes/', { mode: 'especes' })).json.code).toBe(
+      'paiement_ferme',
+    );
+  });
+
+  it('chacun soldé un par un : l’état est payée et plus aucun paiement n’est possible (409)', async () => {
+    await validee();
+    // Chacun est soldé un par un : le dernier paiement ferme l'état, il n'y a plus rien à payer.
+    for (const e of (await lire()).employes) {
+      await appeler('POST', 'paiements/', { employe: e.id, mode: 'especes' });
+    }
+    expect((await lire()).statut).toBe('payee');
+    const apres = await appeler('POST', 'paiements/restes/', { mode: 'especes' });
+    expect(apres.statut).toBe(409);
+    expect(apres.json.code).toBe('paiement_ferme');
+  });
+
+  it('le paiement est fermé tant que l’état n’est pas validé, même soumis (409)', async () => {
+    await appeler('POST', 'soumettre/');
+    const un = await appeler('POST', 'paiements/', { employe: 'davy', mode: 'especes' });
+    expect(un.json.code).toBe('paiement_ferme');
+    const tous = await appeler('POST', 'paiements/restes/', { mode: 'especes' });
+    expect(tous.json.code).toBe('paiement_ferme');
   });
 });

@@ -5,12 +5,19 @@ import { reinitialiserSimulation } from '@/simulation/routeur.ts';
 import { memoriserUtilisateurConnecte } from '@/simulation/session.ts';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ECRANS } from '../../../navigation.ts';
+import EcranDemandes from '../../comptoir/demandes/Ecran.tsx';
 import EcranPersonnel from './EcranPersonnel.tsx';
+
+// L'écran Demandes ne lit qu'en simulation ; la simulation fait aussi office de serveur ici.
+vi.mock('@/simulation', async (original) => ({
+  ...(await original<typeof import('@/simulation')>()),
+  SIMULATION: true,
+}));
 
 let retablir: () => void;
 
@@ -198,11 +205,16 @@ describe('Gestion › Personnel : paiement', () => {
     expect((montant as HTMLInputElement).placeholder).toBe('52192');
     fireEvent.change(montant, { target: { value: '30000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Mobile money' }));
+    fireEvent.change(screen.getByLabelText(/Référence de la transaction/), {
+      target: { value: 'MP240114' },
+    });
     fireEvent.click(bouton);
     expect(
       (await screen.findAllByText('30 000 FCFA', { selector: 'span' })).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText('14 oct. · 30 000 FCFA · Mobile money · par Willy')).toBeTruthy();
+    expect(
+      screen.getByText('14 oct. · 30 000 FCFA · Mobile money (réf. MP240114) · par Willy'),
+    ).toBeTruthy();
     expect(screen.getByText('22 192 FCFA')).toBeTruthy();
     expect(screen.getAllByText('Paiement en cours', { selector: 'span' }).length).toBeGreaterThan(
       0,
@@ -264,5 +276,111 @@ describe('Gestion › Personnel : anglais et erreurs', () => {
     );
     expect(await screen.findByRole('button', { name: /Réessayer/ })).toBeTruthy();
     expect(screen.queryByText('470 885 FCFA')).toBeNull();
+  });
+});
+
+describe('Gestion › Personnel : mobile money, R7', () => {
+  it('exige la référence : erreur liée au champ, effacée à la saisie, rien n’est payé', async () => {
+    await ouvrir('willy', 'fr', validerLaPaie);
+    fireEvent.click(ligne('Davy'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Mobile money' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Payer Davy' }));
+    const alerte = await screen.findByRole('alert');
+    expect(alerte.textContent).toBe(
+      'La référence de la transaction est obligatoire en mobile money.',
+    );
+    const champ = screen.getByLabelText(/Référence de la transaction/);
+    expect(champ.getAttribute('aria-invalid')).toBe('true');
+    expect(champ.getAttribute('aria-describedby')).toBe(alerte.id);
+    fireEvent.change(champ, { target: { value: 'MP240114' } });
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Payer Davy' }));
+    expect(
+      await screen.findByText('14 oct. · 52 192 FCFA · Mobile money (réf. MP240114) · par Willy'),
+    ).toBeTruthy();
+  });
+
+  it('payer tous les restes en mobile money sans référence ne paie personne', async () => {
+    await ouvrir('willy', 'fr', validerLaPaie);
+    fireEvent.click(screen.getByRole('button', { name: 'Mobile money' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Payer tous les restes/ }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    const { employes } = await (await appel('gestion/personnel/', 'GET')).json();
+    expect(employes.every((e: { paiements: unknown[] }) => e.paiements.length === 0)).toBe(true);
+  });
+});
+
+describe('Gestion › Personnel : décision depuis Demandes', () => {
+  async function ouvrirDemandes(utilisateur: string) {
+    memoriserUtilisateurConnecte(utilisateur);
+    const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'demandes')!;
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(
+      <OptiboulProvider>
+        <QueryClientProvider client={client}>
+          <MemoryRouter initialEntries={['/gestion/demandes']}>
+            <EcranDemandes ecran={ecran} />
+          </MemoryRouter>
+        </QueryClientProvider>
+      </OptiboulProvider>,
+    );
+  }
+
+  it('le gérant ne peut pas trancher la demande de paie ; le propriétaire valide, Personnel affiche « Validé »', async () => {
+    await ouvrir('willy');
+    fireEvent.click(screen.getByRole('button', { name: 'Soumettre au propriétaire' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Soumettre au propriétaire' })).toBeNull(),
+    );
+    cleanup();
+
+    const gerant = await ouvrirDemandes('willy');
+    expect(await screen.findByText('État de paie · Octobre 2026')).toBeTruthy();
+    const ligneDePaie = screen.getByText('État de paie · Octobre 2026').closest('li')!;
+    expect(within(ligneDePaie).getByText(/À valider par : Propriétaire/)).toBeTruthy();
+    expect(within(ligneDePaie).getByText('En attente')).toBeTruthy();
+    expect(within(ligneDePaie).queryByRole('button', { name: /^Valider DEM-/ })).toBeNull();
+    expect(within(ligneDePaie).queryByRole('button', { name: /^Refuser DEM-/ })).toBeNull();
+    gerant.unmount();
+
+    await ouvrirDemandes('fotso');
+    const titre = await screen.findByText('État de paie · Octobre 2026');
+    const demande = titre.closest('li')!;
+    fireEvent.click(within(demande).getByRole('button', { name: /^Valider DEM-/ }));
+    expect(await screen.findByText(/Accordée par M\. Fotso/)).toBeTruthy();
+    cleanup();
+
+    memoriserUtilisateurConnecte('willy');
+    const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'personnel')!;
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <OptiboulProvider>
+        <QueryClientProvider client={client}>
+          <MemoryRouter initialEntries={['/gestion/personnel']}>
+            <EcranPersonnel ecran={ecran} />
+          </MemoryRouter>
+        </QueryClientProvider>
+      </OptiboulProvider>,
+    );
+    expect(
+      (await screen.findAllByText('Validé par M. Fotso · à payer', { selector: 'span' })).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: /^Payer tous les restes/ })).toBeTruthy();
+  });
+
+  it('une décision refusée par le serveur (déjà tranchée) relit l’état', async () => {
+    await ouvrir('fotso', 'fr', () =>
+      appel('gestion/personnel/soumettre/', 'POST').then(() => undefined),
+    );
+    // Le propriétaire a décidé ailleurs entre-temps : la même demande n'est plus en attente.
+    const { demandes } = await (await appel('demandes/', 'GET')).json();
+    const demande = demandes.find((d: { type: string }) => d.type === 'paie');
+    await appel(`demandes/${demande.id}/decider/`, 'POST', { accord: false });
+    fireEvent.click(screen.getByRole('button', { name: 'Valider l’état de paie' }));
+    expect(
+      (await screen.findAllByText('Brouillon · préparé par le gérant', { selector: 'span' }))
+        .length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'Valider l’état de paie' })).toBeNull();
   });
 });

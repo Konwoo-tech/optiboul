@@ -1,7 +1,13 @@
 import { ErreurApi, optiboulFetch } from '@/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { InstantanePaie, ModePaiement, NouvelAjustement, ReponsePaiement } from './types.ts';
+import type {
+  InstantanePaie,
+  NouveauPaiement,
+  NouvelAjustement,
+  PaiementDesRestes,
+  ReponsePaiement,
+} from './types.ts';
 
 // Le backend n'a pas encore ces routes : l'écran lit le faux serveur (`simulation/personnel.ts`).
 const RACINE = '/api/v1/simulation/gestion/personnel/';
@@ -71,12 +77,11 @@ export const usePlanifierLeMois = (utilisateur: string | undefined) =>
 export const useSoumettre = (utilisateur: string | undefined) =>
   useActionPaie<void>(utilisateur, () => envoyer<InstantanePaie>('soumettre/', 'POST'));
 export const usePayer = (utilisateur: string | undefined) =>
-  useActionPaie<{ employe: string; mode: ModePaiement; montant?: number }, ReponsePaiement>(
-    utilisateur,
-    (demande) => envoyer<ReponsePaiement>('paiements/', 'POST', demande),
+  useActionPaie<NouveauPaiement, ReponsePaiement>(utilisateur, (demande) =>
+    envoyer<ReponsePaiement>('paiements/', 'POST', demande),
   );
 export const usePayerLesRestes = (utilisateur: string | undefined) =>
-  useActionPaie<{ mode: ModePaiement }, ReponsePaiement>(utilisateur, (demande) =>
+  useActionPaie<PaiementDesRestes, ReponsePaiement>(utilisateur, (demande) =>
     envoyer<ReponsePaiement>('paiements/restes/', 'POST', demande),
   );
 
@@ -92,6 +97,12 @@ export function useDeciderLaPaie(utilisateur: string | undefined) {
           body: JSON.stringify({ accord }),
         })
       ).data,
+    // Un refus du serveur (déjà décidée, droit) : on relit l'état et les demandes.
+    onError: () =>
+      Promise.all([
+        client.invalidateQueries({ queryKey: clePersonnel(utilisateur) }),
+        client.invalidateQueries({ queryKey: ['simulation', 'demandes'] }),
+      ]),
     onSuccess: () =>
       Promise.all([
         client.invalidateQueries({ queryKey: clePersonnel(utilisateur) }),

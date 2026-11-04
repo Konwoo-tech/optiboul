@@ -294,6 +294,15 @@ const MODE_DE_DEPENSE: Record<ModePaiement, ModeDepense> = {
 const modeSaisi = (valeur: unknown): ModePaiement | undefined =>
   MODES_PAIEMENT.find((m) => m === valeur);
 
+/** R7 : la référence de la transaction est obligatoire pour tout paiement par mobile money. */
+function referenceDe(mode: ModePaiement, corps: Corps): string | null {
+  const reference = typeof corps.reference === 'string' ? corps.reference.trim().slice(0, 60) : '';
+  return mode === 'mobile' && !reference ? null : reference;
+}
+
+const referenceManquante = () =>
+  probleme(400, 'reference_obligatoire', 'Indiquez la référence de la transaction mobile money.');
+
 const verrouille = () =>
   probleme(409, 'etat_verrouille', 'Les lignes sont verrouillées une fois l’état de paie soumis.');
 const fermee = () =>
@@ -407,9 +416,21 @@ function soumettre(a: Acteur): Response {
 }
 
 /** Paiement d'un salaire : l'enregistre sur l'employé et crée la dépense « Salaires » (R12). */
-function payer(a: Acteur, employe: Employe, montant: number, mode: ModePaiement): string {
+function payer(
+  a: Acteur,
+  employe: Employe,
+  montant: number,
+  mode: ModePaiement,
+  reference: string,
+): string {
   const etat = lireEtat();
-  employe.paiements.push({ montant, mode, date: dateDuJour(), par: a.nom });
+  employe.paiements.push({
+    montant,
+    mode,
+    date: dateDuJour(),
+    par: a.nom,
+    ...(reference ? { reference } : {}),
+  });
   const depense = enregistrerSalaire(a, {
     libelle: `Salaire ${moisEnToutesLettres(MOIS_DE_LA_PAIE)} · ${employe.nom}`,
     montant,
@@ -427,6 +448,8 @@ function payerUnSalaire(a: Acteur, corps: Corps): Response {
   if (!paiementOuvert(etat.statut)) return fermee();
   const mode = modeSaisi(corps.mode);
   if (!mode) return probleme(400, 'mode_inconnu', 'Mode de paiement inconnu.');
+  const reference = referenceDe(mode, corps);
+  if (reference === null) return referenceManquante();
   const { reste } = calculerPaie(employe);
   if (reste <= 0) return probleme(409, 'deja_paye', 'Ce salaire est déjà soldé.');
   const demande = corps.montant;
@@ -441,7 +464,7 @@ function payerUnSalaire(a: Acteur, corps: Corps): Response {
     );
   }
   const montant = montantAPayer(String(demande ?? ''), reste);
-  const code = payer(a, employe, montant, mode);
+  const code = payer(a, employe, montant, mode, reference);
   tracer(
     a.nom,
     `Paiement salaire ${employe.nom} : ${montant} FCFA (${mode})${
@@ -457,9 +480,11 @@ function payerLesRestes(a: Acteur, corps: Corps): Response {
   if (!paiementOuvert(etat.statut)) return fermee();
   const mode = modeSaisi(corps.mode);
   if (!mode) return probleme(400, 'mode_inconnu', 'Mode de paiement inconnu.');
+  const reference = referenceDe(mode, corps);
+  if (reference === null) return referenceManquante();
   const codes = etat.employes.flatMap((employe) => {
     const { reste } = calculerPaie(employe);
-    return reste > 0 ? [payer(a, employe, reste, mode)] : [];
+    return reste > 0 ? [payer(a, employe, reste, mode, reference)] : [];
   });
   if (codes.length === 0) return probleme(409, 'rien_a_payer', 'Tous les salaires sont soldés.');
   tracer(

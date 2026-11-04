@@ -35,6 +35,10 @@ type Props = {
   mode: ModePaiement;
   montantPaye: string;
   onMode: (mode: ModePaiement) => void;
+  reference: string;
+  /** Le mobile money a été demandé sans référence : on le dit sous le champ. */
+  referenceManquante: boolean;
+  onReference: (reference: string) => void;
   onMontantPaye: (montant: string) => void;
   onAjouter: (ligne: Omit<NouvelAjustement, 'employe'>) => Promise<boolean>;
   onRetirer: (id: string) => void;
@@ -52,6 +56,9 @@ export function FicheEmploye({
   mode,
   montantPaye,
   onMode,
+  reference,
+  referenceManquante,
+  onReference,
   onMontantPaye,
   onAjouter,
   onRetirer,
@@ -62,6 +69,7 @@ export function FicheEmploye({
   const langue = i18n.language;
   const idErreur = useId();
   const idNote = useId();
+  const idReference = useId();
   const [type, setType] = useState<TypeAjustement>('gain');
   const [libelle, setLibelle] = useState('');
   const [montant, setMontant] = useState('');
@@ -294,12 +302,18 @@ export function FicheEmploye({
       <ul className={styles.paiements}>
         {employe.paiements.map((p, rang) => (
           <li key={rang} className={styles.paiement}>
-            {t('gestion.personnel.fiche.paiement', {
-              date: jourMois(p.date, langue),
-              montant: fmt(p.montant),
-              mode: t(`gestion.personnel.paiement.modes.${p.mode}`),
-              nom: p.par,
-            })}
+            {t(
+              p.reference
+                ? 'gestion.personnel.fiche.paiementReference'
+                : 'gestion.personnel.fiche.paiement',
+              {
+                date: jourMois(p.date, langue),
+                montant: fmt(p.montant),
+                mode: t(`gestion.personnel.paiement.modes.${p.mode}`),
+                nom: p.par,
+                reference: p.reference,
+              },
+            )}
           </li>
         ))}
       </ul>
@@ -329,6 +343,26 @@ export function FicheEmploye({
               </button>
             ))}
           </fieldset>
+          {mode === 'mobile' && (
+            <label className={styles.etiquette}>
+              {t('gestion.personnel.paiement.reference')}
+              <input
+                className={styles.champ}
+                value={reference}
+                maxLength={60}
+                aria-invalid={referenceManquante}
+                aria-describedby={idReference}
+                onChange={(e) => onReference(e.target.value)}
+              />
+              <span
+                className={styles.erreur}
+                id={idReference}
+                role={referenceManquante ? 'alert' : undefined}
+              >
+                {referenceManquante ? t('gestion.personnel.paiement.referenceObligatoire') : ''}
+              </span>
+            </label>
+          )}
           <button
             type="button"
             className={styles.principal}

@@ -807,7 +807,8 @@
         "net": "Net pay",
         "paye": "Paid",
         "reste": "Left",
-        "paiement": "{{date}} · {{montant}} FCFA · {{mode}} · by {{nom}}"
+        "paiement": "{{date}} · {{montant}} FCFA · {{mode}} · by {{nom}}",
+        "paiementReference": "{{date}} · {{montant}} FCFA · {{mode}} (ref. {{reference}}) · by {{nom}}"
       },
       "saisie": {
         "types": {
@@ -834,6 +835,8 @@
         },
         "payer": "Pay {{nom}}",
         "note": "A partial payment leaves arrears carried to the next payroll. Each payment creates a \"Salaries\" expense linked to the week.",
+        "reference": "Transaction reference",
+        "referenceObligatoire": "The transaction reference is required for mobile money.",
         "attente": "Payment opens after approval by the owner.",
         "attenteProprietaire": "The manager makes the payments once the payroll is approved."
       },
@@ -855,6 +858,7 @@
         "droit": "Your profile cannot do this.",
         "verrouille": "Lines are locked: the payroll has been submitted.",
         "paiementFerme": "Payment is not open yet.",
+        "reference": "Enter the mobile money transaction reference in the sheet.",
         "impossible": "Not possible in the current state of the payroll.",
         "erreur": "The action could not be saved: try again."
       }

@@ -23,6 +23,8 @@ export type Ajustement = {
 export type Paiement = {
   montant: number;
   mode: ModePaiement;
+  /** Référence de la transaction, obligatoire en mobile money (R7). */
+  reference?: string;
   /** « AAAA-MM-JJ ». */
   date: string;
   par: string;
@@ -84,6 +86,11 @@ export type NouvelAjustement = {
   libelle: string;
   montant: number;
 };
-export type NouveauPaiement = { employe: string; mode: ModePaiement; montant?: number };
-export type PaiementDesRestes = { mode: ModePaiement };
+export type NouveauPaiement = {
+  employe: string;
+  mode: ModePaiement;
+  montant?: number;
+  reference?: string;
+};
+export type PaiementDesRestes = { mode: ModePaiement; reference?: string };
 export type ReponsePaiement = { instantane: InstantanePaie; depenses: string[] };
