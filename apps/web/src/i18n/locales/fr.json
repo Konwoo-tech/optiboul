@@ -444,6 +444,7 @@
       "rattache": {
         "production": "Production · {{session}}",
         "stock": "Stock · {{matiere}} +{{quantite}} {{unite}}",
+        "facture": "Stock · {{numero}}",
         "semaine": "Semaine {{numero}}"
       },
       "ligne": {
@@ -861,6 +862,118 @@
         "reference": "Indiquez la référence de la transaction mobile money dans la fiche.",
         "impossible": "Action impossible dans l’état actuel de la paie.",
         "erreur": "L’action n’a pas pu être enregistrée : réessayez."
+      }
+    },
+    "fournisseurs": {
+      "sections": "Fournisseurs",
+      "erreurChargement": "Les fournisseurs n’ont pas pu être chargés. Réessayez dans un instant.",
+      "kpis": {
+        "dette": "Dette fournisseurs",
+        "retard": "Factures en retard",
+        "manquants": "Manquants à livrer",
+        "planifiees": "Réceptions planifiées"
+      },
+      "onglets": {
+        "receptions": "Réceptions",
+        "fournisseurs": "Fournisseurs",
+        "dettes": "Factures et dettes"
+      },
+      "receptions": {
+        "liste": "Bons de commande",
+        "regle": "Le gérant planifie les réceptions, puis les réceptionne à l’arrivée en comptant la quantité livrée. Chaque réception crée une entrée de stock ; un manque reste suivi jusqu’à livraison du reliquat.",
+        "statuts": {
+          "planifiee": "Planifiée",
+          "recue": "Reçue",
+          "partielle": "Manquant"
+        },
+        "planifieePar": "Planifiée par {{nom}}",
+        "recuePar": "Réceptionnée par {{nom}} · {{date}}",
+        "manque": "Manque {{quantite}} {{unite}}",
+        "receptionner": "Réceptionner",
+        "relancer": "Relancer",
+        "replanifier": "Replanifier le reliquat",
+        "vide": "Aucun bon de commande."
+      },
+      "planifier": {
+        "titre": "Planifier une réception",
+        "fournisseur": "Fournisseur",
+        "matiere": "Matière",
+        "quantite": "Quantité commandée",
+        "date": "Date de réception prévue",
+        "enregistrer": "Planifier",
+        "erreurs": {
+          "quantite": "Indiquez une quantité.",
+          "quantite_obligatoire": "Indiquez une quantité.",
+          "defaut": "La réception n’a pas pu être planifiée. Réessayez."
+        }
+      },
+      "fiches": {
+        "liste": "Fiches fournisseurs",
+        "conditions": "Conditions",
+        "dette": "Dette",
+        "prochaine": "Prochaine réception",
+        "manquant": "Manquant",
+        "telephone": "+237 {{numero}}",
+        "conditionsValeurs": {
+          "credit-lundi-mardi": "Livraison à crédit · paiement le lundi ou mardi suivant",
+          "sept-jours": "Paiement à 7 jours",
+          "a-la-livraison": "Paiement à la livraison"
+        }
+      },
+      "factures": {
+        "liste": "Factures",
+        "regle": "Les factures naissent des réceptions. La farine est cumulée par semaine et payée le lundi ou mardi suivant. Chaque paiement crée une dépense rattachée au stock.",
+        "statuts": {
+          "en-retard": "En retard",
+          "a-payer": "À payer",
+          "en-cours": "En cours",
+          "payee": "Payée"
+        },
+        "echeance": "Échéance : {{date}}",
+        "payeeLe": "Payée le {{date}} · {{mode}}",
+        "payer": "Payer",
+        "recu": "Reçu PDF",
+        "objets": {
+          "farine": "Farine · semaine {{semaine}} ({{sacs}} sacs)",
+          "farineEnCours": "Farine · semaine {{semaine}} ({{sacs}} sacs à ce jour)",
+          "reception": "{{commande}} · {{matiere}}, {{quantite}} {{unite}}",
+          "receptionPartielle": "{{commande}} · {{matiere}}, {{quantite}} {{unite}} reçus sur {{commandee}}",
+          "livraison": "{{matiere}} · {{quantite}} {{unite}} ({{commande}})"
+        },
+        "vide": "Aucune facture."
+      },
+      "modes": {
+        "especes": "Espèces",
+        "banque": "Banque",
+        "mobile": "Mobile money"
+      },
+      "reception": {
+        "titre": "Réception {{numero}}",
+        "ligne": "{{fournisseur}} · {{matiere}} · commandé : {{quantite}} {{unite}} · prévu le {{date}}",
+        "quantite": "Quantité réellement livrée",
+        "observation": "Observation (facultatif)",
+        "aide": "Si la quantité est inférieure à la commande, le manquant reste à livrer et apparaît dans le suivi.",
+        "annuler": "Annuler",
+        "valider": "Valider la réception"
+      },
+      "paiement": {
+        "titre": "Paiement fournisseur",
+        "info": "{{numero}} · {{fournisseur}} · {{objet}} · {{montant}} FCFA",
+        "mode": "Mode de paiement",
+        "annuler": "Annuler",
+        "valider": "Enregistrer le paiement"
+      },
+      "toasts": {
+        "planifiee": "Réception planifiée · {{numero}}",
+        "quantiteRecue": "Indiquez la quantité reçue",
+        "recue": "Réception enregistrée · stock mis à jour",
+        "partielle": "Réception partielle · manquant enregistré",
+        "relance": "Relance envoyée à {{nom}}",
+        "replanifie": "Reliquat replanifié pour le {{date}}",
+        "paye": "Paiement enregistré · {{numero}}",
+        "recuPret": "Reçu PDF prêt",
+        "erreur": "L’action n’a pas pu être enregistrée. Réessayez.",
+        "dejaFait": "Cette ligne a déjà été traitée. La liste est à jour."
       }
     },
     "semaines": {

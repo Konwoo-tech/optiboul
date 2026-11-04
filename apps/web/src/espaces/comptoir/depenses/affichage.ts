@@ -39,6 +39,9 @@ export function libelleRattachement(
       session: libelleSession(t, rattachement.session, langue),
     });
   }
+  if ('facture' in rattachement) {
+    return t('comptoir.depenses.rattache.facture', { numero: rattachement.facture });
+  }
   if (rattachement.type === 'stock') {
     return t('comptoir.depenses.rattache.stock', {
       matiere: t(`comptoir.depenses.matieres.${rattachement.matiere}.nom`),

@@ -51,7 +51,9 @@ export type Rattachement =
       /** Quantité entrée en stock, dans l'unité de la matière. */
       quantite: number;
       session: SessionRattachee;
-    };
+    }
+  /** Paiement d'une facture fournisseur : l'entrée de stock a eu lieu à la réception (« FAC-41 »). */
+  | { type: 'stock'; facture: string };
 
 export type Depense = {
   id: string;
