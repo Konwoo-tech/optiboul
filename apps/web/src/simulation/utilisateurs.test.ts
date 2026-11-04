@@ -219,3 +219,54 @@ describe('faux serveur Utilisateurs : codes et activation', () => {
     expect((await appeler('PUT', 'nobody/activation/', { actif: false })).statut).toBe(404);
   });
 });
+
+describe('faux serveur Utilisateurs : sessions déjà ouvertes et administrateurs', () => {
+  it('une session ouverte dont le compte est désactivé reçoit 403', async () => {
+    // Deuxième administrateur : Davy passe dans le groupe « Support informatique ».
+    await appeler('PUT', 'davy/groupe/', { groupe: 'g6' });
+    memoriserUtilisateurConnecte('davy');
+    expect((await appeler('GET')).statut).toBe(200);
+    // L'administrateur d'origine désactive Davy, dont la session était ouverte.
+    memoriserUtilisateurConnecte('admin');
+    await appeler('PUT', 'davy/activation/', { actif: false });
+    memoriserUtilisateurConnecte('davy');
+    const refus = await appeler('GET');
+    expect([refus.statut, refus.json.code]).toEqual([403, 'non_authentifie']);
+  });
+
+  it('une session ouverte dont le compte est rétrogradé reçoit 403', async () => {
+    await appeler('PUT', 'davy/groupe/', { groupe: 'g6' });
+    memoriserUtilisateurConnecte('davy');
+    expect((await appeler('GET')).statut).toBe(200);
+    memoriserUtilisateurConnecte('admin');
+    await appeler('PUT', 'davy/groupe/', { groupe: 'g1' });
+    memoriserUtilisateurConnecte('davy');
+    const refus = await appeler('POST', '', nouveau);
+    expect([refus.statut, refus.json.code]).toEqual([403, 'droit_insuffisant']);
+  });
+
+  it('avec deux administrateurs, chacun gère l’autre mais pas lui-même', async () => {
+    await appeler('PUT', 'davy/groupe/', { groupe: 'g6' });
+    memoriserUtilisateurConnecte('davy');
+    expect((await appeler('PUT', 'davy/activation/', { actif: false })).json.code).toBe(
+      'compte_propre',
+    );
+    expect((await appeler('PUT', 'admin/activation/', { actif: false })).statut).toBe(200);
+    expect((await compte('admin')).actif).toBe(false);
+  });
+
+  it('refuse de désactiver ou de rétrograder l’unique administrateur actif', async () => {
+    const desactiver = await appeler('PUT', 'admin/activation/', { actif: false });
+    expect([desactiver.statut, desactiver.json.code]).toEqual([409, 'dernier_administrateur']);
+    const retrograder = await appeler('PUT', 'admin/groupe/', { groupe: 'g1' });
+    expect([retrograder.statut, retrograder.json.code]).toEqual([409, 'dernier_administrateur']);
+    expect(await compte('admin')).toMatchObject({ actif: true, profil: 'administrateur' });
+    // Le garder dans un groupe administrateur reste possible.
+    expect((await appeler('PUT', 'admin/groupe/', { groupe: 'g6' })).statut).toBe(409);
+  });
+
+  it('ignore un booléen d’invitation qui n’en est pas un : l’invitation part', async () => {
+    await appeler('POST', '', { ...nouveau, invitation: 'non' });
+    expect(invitationsEnFile()).toHaveLength(1);
+  });
+});

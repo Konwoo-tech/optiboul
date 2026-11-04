@@ -20,6 +20,7 @@ import {
   ajouterCompte,
   ajouterGroupe,
   compteParId,
+  comptesActifs,
   definirActivation,
   groupeParId,
   tousLesComptes,
@@ -135,6 +136,9 @@ function creerUnUtilisateur(a: Acteur, corps: Corps): Response {
     canal,
   };
   ajouterCompte(a.profil, compte);
+  // Défense en profondeur : seul un vrai « false » retire l'invitation. Un booléen absent ou d'un
+  // autre type (« non », 0, null) est ignoré et l'invitation part : mieux vaut envoyer un lien de
+  // connexion de trop que laisser un compte créé sans moyen de se connecter.
   const invite = corps.invitation !== false;
   if (invite) {
     invitations = [
@@ -154,11 +158,26 @@ function creerUnUtilisateur(a: Acteur, corps: Corps): Response {
   );
 }
 
+/**
+ * Garde explicite : l'unique administrateur actif ne peut ni être désactivé ni quitter le profil
+ * administrateur, sinon plus personne ne gère les comptes (cahier des charges §3.3).
+ */
+const estLeDernierAdministrateur = (compte: CompteVivant): boolean =>
+  compte.actif &&
+  compte.profil === 'administrateur' &&
+  comptesActifs().filter((c) => c.profil === 'administrateur').length <= 1;
+
+const DERNIER_ADMINISTRATEUR = () =>
+  probleme(409, 'dernier_administrateur', 'Il doit rester au moins un administrateur actif.');
+
 function changerDeGroupe(a: Acteur, id: string, corps: Corps): Response {
   const compte = compteParId(id);
   if (!compte) return probleme(404, 'utilisateur_inconnu', 'Utilisateur inconnu.');
   const groupe = groupeParId(texte(corps.groupe));
   if (!groupe) return probleme(404, 'groupe_inconnu', 'Groupe inconnu.');
+  if (estLeDernierAdministrateur(compte) && groupe.profil !== 'administrateur') {
+    return DERNIER_ADMINISTRATEUR();
+  }
   if (compte.id === a.id) {
     return probleme(409, 'compte_propre', 'Vous ne pouvez pas changer votre propre groupe.');
   }
@@ -180,6 +199,7 @@ function activer(a: Acteur, id: string, corps: Corps): Response {
   if (typeof corps.actif !== 'boolean') {
     return probleme(400, 'actif_invalide', 'Indiquez si le compte est actif.');
   }
+  if (corps.actif === false && estLeDernierAdministrateur(compte)) return DERNIER_ADMINISTRATEUR();
   if (compte.id === a.id) {
     return probleme(409, 'compte_propre', 'Vous ne pouvez pas désactiver votre propre compte.');
   }
