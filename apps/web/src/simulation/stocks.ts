@@ -26,6 +26,7 @@ import type { Profil } from '../profils.ts';
 import { dateDuJour, heureCourante } from './comptoir.ts';
 import { receptionsPlanifiees } from './fournisseurs.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
+import { consigner } from './journal.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
 /*
@@ -361,6 +362,7 @@ export function prixDesMatieres(): Record<Matiere, number> {
 
 function tracer(qui: string, quoi: string) {
   lireEtat().journal = [{ heure: heureCourante(), qui, quoi }, ...lireEtat().journal];
+  consigner({ auteur: qui, type: 'stock', texte: quoi });
 }
 
 /** Réceptions planifiées (bons de commande à recevoir) : lues dans `fournisseurs.ts`, leur source. */

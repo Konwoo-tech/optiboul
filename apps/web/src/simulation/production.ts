@@ -53,6 +53,7 @@ import {
 import type { NotificationSimulee } from './notifications.ts';
 import { contexteSemaines } from './planning.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
+import { consigner } from './journal.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 import { prixDesMatieres, sortirDuStockDepuisProduction, stockDesMatieres } from './stocks.ts';
 
@@ -268,8 +269,9 @@ export function journalProduction(): readonly Journal[] {
   return lireEtat().journal;
 }
 
-function tracer(qui: string, quoi: string) {
+function tracer(qui: string, quoi: string, changement?: { avant: string; apres: string }) {
   lireEtat().journal = [{ heure: heureCourante(), qui, quoi }, ...lireEtat().journal];
+  consigner({ auteur: qui, type: 'production', texte: quoi, ...changement });
 }
 
 /**
@@ -907,11 +909,15 @@ function modifierFiche(a: Acteur, id: string, corps: Corps): Response {
     );
   }
   fiche.recette = recette;
+  const versionAvant = fiche.version;
   fiche.version += 1;
   fiche.modifieLe = dateDuJour();
   fiche.modifieA = heureCourante();
   fiche.modifiePar = a.nom;
-  tracer(a.nom, `Fiche technique ${fiche.code} modifiée · version ${fiche.version}`);
+  tracer(a.nom, `Fiche technique ${fiche.code} modifiée · version ${fiche.version}`, {
+    avant: `version ${versionAvant}`,
+    apres: `version ${fiche.version}`,
+  });
   return Response.json({ ...fiches(), fiche: structuredClone(fiche) });
 }
 
