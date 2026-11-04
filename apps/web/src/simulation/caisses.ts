@@ -14,7 +14,8 @@ import type {
   TypeSession,
 } from '../espaces/comptoir/caisses/types.ts';
 import type { Profil } from '../profils.ts';
-import { COMPTES_SIMULES, type ContexteSimule } from './donnees.ts';
+import { compteParId, comptesActifs } from './comptes.ts';
+import type { ContexteSimule } from './donnees.ts';
 import { caissierePrevue } from './planning.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
@@ -41,15 +42,18 @@ type Courante = {
 type EntreeJournal = { heure: string; qui: string; profil: Profil; action: string };
 
 const personne = (id: string): Personne => {
-  const compte = COMPTES_SIMULES.find((c) => c.id === id);
+  const compte = compteParId(id);
   return { id, nom: compte?.nom ?? id };
 };
 
 // Calculés à l'appel, pas au chargement : aucun appel au niveau du module, pour que le paquet de
 // production n'embarque aucune donnée de simulation.
-const caissieres = (): Personne[] => [personne('davy'), personne('rachel')];
+const caissieres = (): Personne[] =>
+  [personne('davy'), personne('rachel')].filter((c) => compteParId(c.id)?.actif);
 const receveurs = (): Personne[] =>
-  COMPTES_SIMULES.filter((c) => c.profil === 'gerant').map((c) => personne(c.id));
+  comptesActifs()
+    .filter((c) => c.profil === 'gerant')
+    .map((c) => personne(c.id));
 
 /** Caisses fermées de la semaine 42 (maquette : `caisses`). */
 const fermee = (

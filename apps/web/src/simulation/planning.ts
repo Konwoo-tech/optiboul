@@ -9,7 +9,8 @@ import type {
   Semaine,
 } from '@/espaces/gestion/semaines/types.ts';
 
-import { COMPTES_SIMULES, type ContexteSimule } from './donnees.ts';
+import { compteParId } from './comptes.ts';
+import type { ContexteSimule } from './donnees.ts';
 
 /*
  * Semaines de travail et planning des caisses : état de la maquette « OptiBoul ERP v2 »
@@ -22,7 +23,7 @@ import { COMPTES_SIMULES, type ContexteSimule } from './donnees.ts';
 type Etat = { semaines: Semaine[]; planning: Planning };
 
 export function personne(id: string): Personne | null {
-  const compte = COMPTES_SIMULES.find((c) => c.id === id);
+  const compte = compteParId(id);
   return compte ? { id: compte.id, nom: compte.nom, profil: compte.profil } : null;
 }
 
