@@ -49,6 +49,9 @@ const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
   'gestion/fournisseurs': EN_SIMULATION
     ? lazy(() => import('./gestion/fournisseurs/EcranFournisseurs.tsx'))
     : null,
+  'gestion/utilisateurs': EN_SIMULATION
+    ? lazy(() => import('./gestion/utilisateurs/EcranUtilisateurs.tsx'))
+    : null,
   'gestion/tableau-de-bord': EN_SIMULATION
     ? lazy(() => import('./gestion/tableau-de-bord/EcranTableauDeBord.tsx'))
     : null,
