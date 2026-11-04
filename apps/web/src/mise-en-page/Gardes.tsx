@@ -1,6 +1,5 @@
 import { useUtilisateurCourant } from '@/auth';
-import { useTranslation } from '@/i18n';
-import { EcranChargement, EcranErreur } from '@/ui';
+import { EcranChargement } from '@/ui';
 import { Navigate, Outlet, useLocation } from 'react-router';
 
 import { cheminAccueil } from '../navigation.ts';
@@ -8,25 +7,15 @@ import { peutOuvrir, type Espace } from '../profils.ts';
 
 /**
  * Sans session, renvoie vers la connexion en gardant la page demandée.
- * Si le serveur ne répond pas, on ne sait rien de la session : on propose de réessayer
- * au lieu de déconnecter.
+ * Si le serveur ne répond pas et qu'aucune session n'est connue, on renvoie aussi vers la
+ * connexion : elle s'affiche sans serveur et propose de réessayer (aucune session n'est perdue,
+ * un utilisateur déjà chargé reste affiché malgré une panne passagère).
  */
 export function RequiertConnexion() {
-  const { t } = useTranslation();
-  const { utilisateur, chargement, injoignable, reessayer } = useUtilisateurCourant();
+  const { utilisateur, chargement, injoignable } = useUtilisateurCourant();
   const { pathname, search, hash } = useLocation();
   if (chargement) return <EcranChargement />;
-  if (injoignable) {
-    return (
-      <EcranErreur
-        titre={t('erreur.injoignableTitre')}
-        message={t('erreur.injoignable')}
-        libelleAction={t('erreur.reessayer')}
-        onAction={reessayer}
-      />
-    );
-  }
-  if (!utilisateur) {
+  if (!utilisateur || injoignable) {
     const suivant = encodeURIComponent(`${pathname}${search}${hash}`);
     return <Navigate to={`/connexion?suivant=${suivant}`} replace />;
   }

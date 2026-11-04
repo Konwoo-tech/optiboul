@@ -50,6 +50,7 @@
     "recharger": "Reload the page",
     "injoignableTitre": "Server unreachable",
     "injoignable": "The server is not answering. You are still signed in: try again in a moment.",
+    "injoignableConnexion": "The server is not responding. Try again in a moment.",
     "reessayer": "Try again"
   },
   "connexion": {
