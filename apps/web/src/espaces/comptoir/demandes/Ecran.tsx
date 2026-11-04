@@ -1,13 +1,14 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { useToast } from '@/ui';
-import { formaterDateCourte, formaterNombre, FUSEAU_BOULANGERIE } from '@/utils';
+import { formaterDateCourte, formaterNombre } from '@/utils';
 import { useRef, type ReactNode, type RefObject } from 'react';
 import { Link } from 'react-router';
 
 import { cheminEcran, ECRANS, type Ecran } from '../../../navigation.ts';
 import type { Profil } from '../../../profils.ts';
 import { EnTeteEcran } from '../../EnTeteEcran.tsx';
+import { formaterMois } from '../../gestion/personnel/affichage.ts';
 import { codeErreur } from '../session/api.ts';
 import { useDecider, useDemandes } from './api.ts';
 import styles from './Demandes.module.css';
@@ -15,16 +16,6 @@ import { codeDemande, destinationDe, peutDecider, repartir, validateurDe } from 
 import type { Demande, ObjetLie } from './types.ts';
 
 type Contexte = { gerant: string; proprietaire: string };
-
-/** Mois de la paie, « Octobre 2026 » : en toutes lettres, avec une majuscule. */
-function formaterMois(mois: string, langue: string): string {
-  const texte = new Intl.DateTimeFormat(langue, {
-    month: 'long',
-    year: 'numeric',
-    timeZone: FUSEAU_BOULANGERIE,
-  }).format(new Date(`${mois}-15T12:00:00Z`));
-  return texte.charAt(0).toLocaleUpperCase(langue) + texte.slice(1);
-}
 
 /**
  * Chemin de l'écran de l'objet lié, dans l'espace où le profil le trouve (celui de l'écran

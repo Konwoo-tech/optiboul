@@ -1,0 +1,598 @@
+/*
+ * Gestion › Personnel et paie, repris valeur par valeur de la maquette « OptiBoul ERP v2 » (bloc
+ * `scr.personnel`, lignes 608-646). Variables : --ob-marque = brand, --ob-surface = surface,
+ * --ob-ligne = line, --ob-ligne-champ = fline, --ob-discret = muted, --ob-encre = ink,
+ * --ob-champ = field, --ob-doux = soft, --ob-fond = bg.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.invisible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Cartes. */
+.carte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.titreEtat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.titre {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.mot {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.motEtat {
+  align-self: flex-start;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.jour {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.jourTexte {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-encre);
+  height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+.choix {
+  height: 44px;
+  min-width: 170px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 10px;
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.choix:focus-visible,
+.champ:focus-visible {
+  outline: none;
+  border-color: var(--ob-marque);
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.principal {
+  min-height: 48px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.refuser {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1.5px solid #a2251b;
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: #c2453a;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.principal[aria-disabled='true'],
+.refuser[aria-disabled='true'] {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.principal:focus-visible,
+.refuser:focus-visible,
+.puce:focus-visible,
+.supprimer:focus-visible,
+.ligne:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.totaux {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.total {
+  border: 1px solid var(--ob-ligne);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.totalLibelle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ob-discret);
+}
+
+.totalValeur {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ob-encre);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tableau des salaires et fiche de l'employé. */
+.rangee {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.tableau {
+  flex: 2 1 560px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.tableauLarge {
+  min-width: 900px;
+}
+
+.grille {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.4fr) repeat(9, minmax(70px, 1fr));
+  gap: 8px;
+  align-items: center;
+  padding: 10px 20px;
+}
+
+.colonnes {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--ob-discret);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--ob-champ);
+}
+
+.lignes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ligne {
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--ob-ligne);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--ob-encre);
+  font-variant-numeric: tabular-nums;
+}
+
+.ligneChoisie {
+  background: var(--ob-fond);
+}
+
+.identite {
+  display: flex;
+  flex-direction: column;
+}
+
+.nom {
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.poste {
+  font-size: 11px;
+  color: var(--ob-discret);
+}
+
+.gain {
+  color: #2f8a4f;
+  font-weight: 700;
+}
+
+.penalite {
+  color: #c2453a;
+  font-weight: 700;
+}
+
+.gras {
+  font-weight: 800;
+}
+
+.formule {
+  margin: 0;
+  padding: 12px 20px;
+  font-size: 12px;
+  color: var(--ob-discret);
+  border-top: 1px solid var(--ob-ligne);
+}
+
+.fiche {
+  flex: 1 1 320px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ficheNom {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.fichePoste {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.decomposition {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.decompo {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--ob-ligne);
+  font-size: 14px;
+}
+
+.decompoLibelle {
+  color: var(--ob-encre);
+}
+
+.decompoValeur {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.sousTitre {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  padding-top: 4px;
+}
+
+.sousTitre:focus {
+  outline: none;
+}
+
+.ajustements {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: contents;
+}
+
+.ajustement {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-top: 1px solid var(--ob-ligne);
+}
+
+.motAjustement {
+  flex: none;
+}
+
+.ajustementTexte {
+  flex: 1;
+  min-width: 0;
+}
+
+.ajustementLibelle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.ajustementMeta {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.ajustementMontant {
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.supprimer {
+  min-width: 36px;
+  min-height: 36px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ob-discret);
+  cursor: pointer;
+}
+
+.sansAjustement {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.verrou {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.saisie {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--ob-doux);
+}
+
+.puces {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.puce {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.puceActive {
+  border-color: var(--ob-marque);
+  background: var(--ob-marque);
+  color: var(--ob-fond);
+}
+
+.etiquette {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.champ {
+  height: 48px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.erreur {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c2453a;
+}
+
+.ajouter {
+  align-self: flex-end;
+  min-height: 44px;
+}
+
+.net {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 2px solid var(--ob-ligne-champ);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.netValeur {
+  font-variant-numeric: tabular-nums;
+}
+
+.cumul {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.cumulLibelle {
+  color: var(--ob-discret);
+}
+
+.cumulValeur {
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.paiements {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: contents;
+}
+
+.paiement {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.paiementBloc {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--ob-champ);
+  border: 1px solid var(--ob-ligne);
+}
+
+.paiementTitre {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.montant {
+  font-size: 20px;
+  font-weight: 800;
+  text-align: right;
+}
+
+.noteBloc {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+/* Calendrier des paies. */
+.calendrier {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.calendrierTitre {
+  margin: 0;
+  padding: 16px 20px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.moisListe {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mois {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--ob-ligne);
+}
+
+.moisNom {
+  width: 150px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.moisJour {
+  min-width: 170px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.moisExtra {
+  flex: 1 1 200px;
+  font-size: 12px;
+  color: var(--ob-discret);
+}
