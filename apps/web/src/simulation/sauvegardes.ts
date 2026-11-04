@@ -113,6 +113,9 @@ function restaurer(a: Acteur, id: string): Response {
   const restauration: Restauration = {
     copie: { ...cible },
     copieAvant: { ...avant },
+    // CONTROLE FICTIF : la simulation ne restaure aucune donnée, donc rien n'est réellement
+    // vérifié. `ok: true` est codé en dur pour que l'écran puisse montrer l'étape de la maquette ;
+    // le vrai contrôle des totaux (sessions, soldes clients, stocks) relève du serveur.
     controles: CONTROLES_RESTAURATION.map((cle) => ({ cle, ok: true })),
   };
   consigner({

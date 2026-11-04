@@ -168,6 +168,42 @@ describe('faux serveur Sauvegardes : restauration guidée', () => {
   });
 });
 
+describe('faux serveur Sauvegardes : restauration, cas limites', () => {
+  it('refuse un non-administrateur (403) sans copie de sûreté ni ligne de journal', async () => {
+    memoriserUtilisateurConnecte('willy');
+    const { statut, json } = await appeler('POST', 'C-2/restaurer/');
+    expect([statut, json.code]).toEqual([403, 'droit_insuffisant']);
+    expect(lesCopies()).toHaveLength(4);
+    expect(lesCopies().some((c) => c.declencheur === 'avant_restauration')).toBe(false);
+    expect(lignesDuJournal()).toHaveLength(0);
+  });
+
+  it('crée la copie de sûreté avant d’écrire au journal', async () => {
+    vi.setSystemTime(new Date('2026-10-14T17:02:00Z'));
+    await appeler('POST', 'C-2/restaurer/');
+    const surete = lesCopies()[0]!;
+    const ligne = lignesDuJournal()[0]!;
+    expect(surete.declencheur).toBe('avant_restauration');
+    expect(Date.parse(surete.instant)).toBeLessThanOrEqual(Date.parse(ligne.quand));
+  });
+
+  it('restaurer deux fois la même copie ajoute deux copies de sûreté et deux lignes', async () => {
+    await appeler('POST', 'C-2/restaurer/');
+    vi.setSystemTime(new Date('2026-10-14T17:10:00Z'));
+    const seconde = (await appeler('POST', 'C-2/restaurer/'))
+      .json as unknown as ReponseRestauration;
+    expect(seconde.restauration.copie.id).toBe('C-2');
+    const surs = lesCopies().filter((c) => c.declencheur === 'avant_restauration');
+    expect(surs).toHaveLength(2);
+    expect(new Set(surs.map((c) => c.id)).size).toBe(2);
+    expect(lignesDuJournal().map((e) => e.texte)).toEqual([
+      'Restauration de la copie du 14 oct. 13:30',
+      'Restauration de la copie du 14 oct. 13:30',
+    ]);
+    expect(lesCopies()).toHaveLength(6);
+  });
+});
+
 describe('faux serveur Sauvegardes : routes inconnues', () => {
   it('ne répond pas aux méthodes ou chemins qui ne sont pas les siens', async () => {
     for (const [methode, chemin] of [
