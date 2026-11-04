@@ -50,6 +50,7 @@
     "recharger": "Recharger la page",
     "injoignableTitre": "Serveur injoignable",
     "injoignable": "Le serveur ne répond pas. Vous n'êtes pas déconnecté : réessayez dans un instant.",
+    "injoignableConnexion": "Le serveur ne répond pas. Réessayez dans un instant.",
     "reessayer": "Réessayer"
   },
   "connexion": {

@@ -45,7 +45,7 @@ export default function Connexion() {
         )}
         {injoignable && (
           <div className={styles.alerte} role="alert">
-            <strong>{t('erreur.injoignableTitre')}</strong> {t('erreur.injoignable')}{' '}
+            <strong>{t('erreur.injoignableTitre')}</strong> {t('erreur.injoignableConnexion')}{' '}
             <button type="button" className={styles.reessayer} onClick={reessayer}>
               {t('erreur.reessayer')}
             </button>

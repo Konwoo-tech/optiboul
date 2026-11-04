@@ -53,6 +53,8 @@ describe('application web', () => {
     ouvrir('/comptoir');
     expect(await screen.findByText('Serveur injoignable', {}, { timeout: 4000 })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Se connecter' })).toBeTruthy();
+    expect(screen.getByText(/Le serveur ne répond pas. Réessayez dans un instant/)).toBeTruthy();
+    expect(screen.queryByText(/Vous n’êtes pas déconnecté/)).toBeNull();
     connecte('caissier');
     fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
     expect(
