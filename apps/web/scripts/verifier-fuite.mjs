@@ -36,6 +36,8 @@ const MARQUEURS = [
   'Gérants de la semaine',
   'boulfaubourg',
   'support.optiboul',
+  'Mouvement interne : ration 12 BAG',
+  'journal_non_modifiable',
 ];
 
 function fichiers(dossier) {

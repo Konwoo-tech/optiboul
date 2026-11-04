@@ -17,6 +17,7 @@ import type { Profil } from '../profils.ts';
 import { compteParId, comptesActifs } from './comptes.ts';
 import type { ContexteSimule } from './donnees.ts';
 import { caissierePrevue } from './planning.ts';
+import { consigner } from './journal.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
 /*
@@ -205,6 +206,7 @@ const maintenant = () => formaterHeure(new Date());
 
 function tracer(qui: { nom: string; profil: Profil }, action: string): void {
   journal = [{ heure: maintenant(), qui: qui.nom, profil: qui.profil, action }, ...journal];
+  consigner({ auteur: qui.nom, type: 'caisse', texte: action });
 }
 
 type Acteur = { id: string; nom: string; profil: Profil };

@@ -80,6 +80,27 @@ describe('registre du journal : ajout seul', () => {
     expect(lireJournal()).toHaveLength(10);
   });
 
+  it('les valeurs avant / après sont copiées : modifier la lecture ne change pas le registre', () => {
+    consigner({
+      auteur: 'Willy',
+      type: 'paie',
+      texte: 'Jour',
+      avant: '2026-10-29',
+      apres: '2026-10-30',
+    });
+    const lue = lireJournal()[0] as { avant?: string; apres?: string };
+    expect(lue).toMatchObject({ avant: '2026-10-29', apres: '2026-10-30' });
+    expect(() => {
+      lue.avant = 'falsifié';
+    }).toThrow();
+    expect(lireJournal()[0]).toMatchObject({ avant: '2026-10-29', apres: '2026-10-30' });
+  });
+
+  it('avant sans après (ou l’inverse) n’est pas consigné', () => {
+    consigner({ auteur: 'Willy', type: 'paie', texte: 'Jour', avant: 'a' });
+    expect(lireJournal()[0]).not.toHaveProperty('avant');
+  });
+
   it('les identifiants sont uniques', () => {
     consigner({ auteur: 'Davy', type: 'caisse', texte: 'A' });
     consigner({ auteur: 'Davy', type: 'caisse', texte: 'B' });
@@ -99,6 +120,12 @@ describe('registre du journal : ajout seul', () => {
   });
 
   it('l’API refuse toute modification (405)', async () => {
+    memoriserUtilisateurConnecte(null);
+    for (const methode of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+      // Même sans connexion : la méthode est refusée avant tout, rien n'est consigné.
+      expect((await appeler(JOURNAL, methode)).statut).toBe(405);
+    }
+    memoriserUtilisateurConnecte('willy');
     for (const methode of ['POST', 'PUT', 'PATCH', 'DELETE']) {
       const r = await appeler(JOURNAL, methode, { id: 'J-1' });
       expect(r.statut).toBe(405);

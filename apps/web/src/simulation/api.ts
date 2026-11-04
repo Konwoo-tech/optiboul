@@ -82,8 +82,9 @@ export async function verifierCodeOtp(code: string): Promise<void> {
   await poster('otp/verifier/', { code });
 }
 
-export async function deconnecterSimulation(): Promise<void> {
-  await poster('deconnexion/');
+/** `raison` : « inactivite » quand la déconnexion est automatique, tracée comme telle dans le journal. */
+export async function deconnecterSimulation(raison?: 'inactivite'): Promise<void> {
+  await poster('deconnexion/', raison ? { raison } : undefined);
 }
 
 export type NotificationVue = NotificationSimulee & { lue: boolean };

@@ -28,7 +28,7 @@ export function MiseEnPage() {
     actif: SIMULATION,
     onExpire: () => {
       memoriserMessageConnexion(t('connexion.inactivite', { minutes: inactiviteMinutes }));
-      void deconnecterSimulation().then(() => client.invalidateQueries());
+      void deconnecterSimulation('inactivite').then(() => client.invalidateQueries());
     },
   });
 
