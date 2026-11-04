@@ -24,6 +24,7 @@ import {
 import type { Profil } from '../profils.ts';
 
 import { dateDuJour, heureCourante } from './comptoir.ts';
+import { receptionsPlanifiees } from './fournisseurs.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
@@ -362,14 +363,9 @@ function tracer(qui: string, quoi: string) {
   lireEtat().journal = [{ heure: heureCourante(), qui, quoi }, ...lireEtat().journal];
 }
 
-/** Réceptions planifiées de la maquette (BC-033 à BC-036), le jour est relatif à aujourd'hui. */
-function receptions(aujourdhui: string): ReceptionPlanifiee[] {
-  return [
-    { matiere: 'levure', jour: aujourdhui, quantite: 8 },
-    { matiere: 'farine', jour: ajouterJours(aujourdhui, 1), quantite: 40 },
-    { matiere: 'bois', jour: ajouterJours(aujourdhui, 2), quantite: 3 },
-    { matiere: 'huile', jour: ajouterJours(aujourdhui, 5), quantite: 20 },
-  ];
+/** Réceptions planifiées (bons de commande à recevoir) : lues dans `fournisseurs.ts`, leur source. */
+function receptions(): ReceptionPlanifiee[] {
+  return receptionsPlanifiees();
 }
 
 function instantane(): InstantaneStocks {
@@ -384,7 +380,7 @@ function instantane(): InstantaneStocks {
     aujourdhui: etat.aujourdhui,
     sacsParSession: SACS_PAR_SESSION,
     matieres,
-    receptions: receptions(etat.aujourdhui),
+    receptions: receptions(),
     mouvements: etat.mouvements,
     inventaires: etat.inventaires,
     controles: controles(etat.aujourdhui),
@@ -450,6 +446,34 @@ export function entrerEnStockDepuisDepense(entree: {
           fournisseur: entree.fournisseur,
         }
       : { genre: 'depense', code: entree.code, achat: 'marche' },
+    entree.par,
+  );
+}
+
+/**
+ * Entrée de stock créée par la réception d'un bon de commande (écran Fournisseurs, US-101) : le
+ * stock de la matière augmente de la quantité réellement livrée, le mouvement porte le numéro du
+ * bon et le fournisseur, et signale une livraison partielle.
+ */
+export function entrerEnStockDepuisReception(entree: {
+  matiere: Matiere;
+  quantite: number;
+  /** Numéro du bon de commande, « BC-032 ». */
+  code: string;
+  fournisseur: string;
+  partielle: boolean;
+  par: string;
+}): void {
+  ajouterMouvement(
+    'entree',
+    entree.matiere,
+    entree.quantite,
+    {
+      genre: 'reception',
+      code: entree.code,
+      fournisseur: entree.fournisseur,
+      partielle: entree.partielle,
+    },
     entree.par,
   );
 }

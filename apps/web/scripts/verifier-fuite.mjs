@@ -27,6 +27,10 @@ const MARQUEURS = [
   'Retard au pétrissage',
   'Vendeuse au guichet',
   'Bois · 2 chargements (BC-027)',
+  'Huilerie Mvog-Mbi',
+  'Bois Nkolondom',
+  '6 99 10 20 30',
+  'gestion/fournisseurs/',
 ];
 
 function fichiers(dossier) {
