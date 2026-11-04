@@ -39,6 +39,8 @@ const MARQUEURS = [
   'Mouvement interne : ration 12 BAG',
   'journal_non_modifiable',
   'gestion/utilisateurs/',
+  'gestion/parametres/',
+  'Paramètre modifié : ',
 ];
 
 function fichiers(dossier) {
