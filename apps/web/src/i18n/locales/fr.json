@@ -1157,6 +1157,80 @@
         "impossible": "Cette semaine ne peut plus être ouverte ou clôturée : l’écran vient d’être actualisé.",
         "droit": "Votre profil ne permet pas cette action."
       }
+    },
+    "utilisateurs": {
+      "sections": "Sections des utilisateurs",
+      "onglets": {
+        "liste": "Utilisateurs · {{nombre}}",
+        "groupes": "Groupes · {{nombre}}",
+        "nouveau": "Nouvel utilisateur"
+      },
+      "nouvelUtilisateur": "Nouvel utilisateur",
+      "erreurChargement": "Impossible de lire les utilisateurs. Réessayez.",
+      "filtres": {
+        "etiquette": "Filtrer par groupe",
+        "tous": "Tous · {{nombre}}",
+        "groupe": "{{nom}} · {{nombre}}"
+      },
+      "liste": {
+        "etiquette": "Utilisateurs",
+        "sousLigne": "{{email}} · +237 {{telephone}} · dernier accès {{acces}}",
+        "groupe": "Groupe",
+        "groupeDe": "Groupe de {{nom}}",
+        "actif": "Actif",
+        "desactive": "Désactivé",
+        "reinitialiser": "Réinitialiser le code",
+        "reinitialiserDe": "Réinitialiser le code de {{nom}}",
+        "desactiver": "Désactiver",
+        "reactiver": "Réactiver",
+        "desactiverDe": "Désactiver le compte de {{nom}}",
+        "reactiverDe": "Réactiver le compte de {{nom}}",
+        "aucunMembre": "Aucun membre pour l’instant."
+      },
+      "droits": {
+        "titre": "Droits par profil",
+        "fonction": "Fonction",
+        "caissier": "Caissier",
+        "gerant": "Gérant",
+        "production": "Chef prod.",
+        "proprietaire": "Propriétaire",
+        "administrateur": "Admin.",
+        "valeurs": {
+          "saisir": "Saisir",
+          "voir": "Voir",
+          "demander": "Demander",
+          "autoriser": "Autoriser",
+          "oui": "Oui",
+          "saisirEtValider": "Saisir et valider",
+          "valider": "Valider",
+          "preparer": "Préparer",
+          "non": "—"
+        },
+        "lignes": {
+          "livraisons": "Livraisons et encaissements",
+          "plafond": "Livraison au-delà du plafond",
+          "cloturerSession": "Clôturer une session",
+          "rouvrirSession": "Rouvrir une session clôturée",
+          "cloturerSemaine": "Clôture de semaine et passation",
+          "production": "Production et consommation réelle",
+          "achats": "Achats et paiement de la farine",
+          "depenses": "Dépenses",
+          "paie": "Paie",
+          "tableauDeBord": "Tableau de bord complet",
+          "parametres": "Tarifs, produits, paramètres",
+          "comptes": "Comptes et sauvegardes"
+        }
+      },
+      "toasts": {
+        "groupeChange": "{{nom}} → {{groupe}} · droits « {{profil}} »",
+        "codeReinitialise": "Code de {{nom}} réinitialisé",
+        "droit": "Votre profil ne permet pas cette action.",
+        "comptePropre": "Vous ne pouvez pas modifier votre propre compte.",
+        "inconnu": "Cet utilisateur n’existe plus. La liste a été relue.",
+        "impossible": "Action impossible. La liste a été relue.",
+        "erreur": "Une erreur est survenue. Réessayez.",
+        "dernierAdministrateur": "Il doit rester au moins un administrateur actif."
+      }
     }
   },
   "atelier": {

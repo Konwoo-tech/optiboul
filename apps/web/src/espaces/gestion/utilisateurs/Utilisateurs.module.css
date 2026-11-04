@@ -1,0 +1,821 @@
+/*
+ * Gestion › Utilisateurs, repris valeur par valeur de la maquette « OptiBoul ERP v2 » (bloc
+ * `scr.users`, lignes 743-852). Variables : --ob-marque = brand, --ob-surface = surface,
+ * --ob-ligne = line, --ob-ligne-champ = fline, --ob-discret = muted, --ob-encre = ink,
+ * --ob-champ = field, --ob-doux = soft, --ob-fond = bg.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.onglets {
+  display: flex;
+  gap: 4px;
+  background: var(--ob-doux);
+  padding: 4px;
+  border-radius: 12px;
+  flex-wrap: wrap;
+}
+
+.onglet {
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  color: var(--ob-discret);
+  box-shadow: none;
+}
+
+.ongletActif {
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  box-shadow: 0 1px 3px rgba(46, 26, 16, 0.15);
+}
+
+.principal {
+  min-height: 48px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.principal:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.secondaire {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.onglet:focus-visible,
+.principal:focus-visible,
+.secondaire:focus-visible,
+.puce:focus-visible,
+.petit:focus-visible,
+.petitDiscret:focus-visible,
+.choix:focus-visible,
+.tabpanel:focus-visible,
+.carteChoix:focus-visible,
+.case:focus-visible,
+.champ:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.champ:focus-visible,
+.choixChamp:focus-visible {
+  border-color: var(--ob-marque);
+}
+
+/* Filtres par groupe. */
+.filtres {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.puce {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.puceActive {
+  border-color: var(--ob-marque);
+  background: var(--ob-marque);
+  color: var(--ob-fond);
+}
+
+/* Cartes. */
+.carte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.defilement {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow-x: auto;
+}
+
+.liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.pastille {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 13px;
+  color: #2e1a10;
+}
+
+.identite {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.nom {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.profil {
+  font-weight: 600;
+}
+
+.sous {
+  font-size: 12px;
+  color: var(--ob-discret);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.choix {
+  height: 44px;
+  min-width: 200px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 10px;
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.mot {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.petit {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 10px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.petitDiscret {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 10px;
+  background: var(--ob-surface);
+  color: var(--ob-discret);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.petit[aria-disabled='true'],
+.petitDiscret[aria-disabled='true'] {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* Onglet ou bouton dont la vue n'est pas encore livrée : même rendu, sans action. */
+.onglet[aria-disabled='true'],
+.principal[aria-disabled='true'] {
+  cursor: default;
+}
+
+.invisible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.vide {
+  padding: 20px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+/* Droits par profil. */
+.droits {
+  min-width: 720px;
+}
+
+.droitsTitre {
+  margin: 0;
+  padding: 16px 20px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.droitsLigne {
+  display: grid;
+  grid-template-columns: 2fr repeat(5, 1fr);
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 13px;
+  color: var(--ob-encre);
+}
+
+.droitsLigne + .droitsLigne {
+  border-top: 1px solid var(--ob-ligne);
+}
+
+.droitsEntete {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ob-discret);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--ob-champ);
+}
+
+.droitsFonction {
+  font-weight: 700;
+}
+
+/* Groupes. */
+.groupes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.carteGroupe {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.carteGroupeNouveau {
+  gap: 12px;
+  border-style: dashed;
+}
+
+.groupeEntete {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.groupeNom {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.groupeProfil {
+  background: var(--ob-doux);
+  color: var(--ob-marque);
+}
+
+.groupeDescription {
+  font-size: 13px;
+  color: var(--ob-discret);
+  line-height: 1.5;
+}
+
+.groupeNombre {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ob-discret);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.membres {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.membre {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.membrePastille {
+  width: 30px;
+  height: 30px;
+  font-size: 10px;
+}
+
+.membreNom {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.membreVide {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.ajouterMembre {
+  padding: 0 14px;
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.titreNouveauGroupe {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+/* Formulaires. */
+.etiquette {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.champ {
+  height: 48px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.choixChamp {
+  height: 48px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 10px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.erreur {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c2453a;
+}
+
+.alignerDroite {
+  align-self: flex-end;
+}
+
+.rangeeFormulaire {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.formulaire {
+  flex: 1.5 1 420px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.etapeTitre {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.deuxColonnes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.aide {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.aideRemontee {
+  margin-top: -8px;
+}
+
+.telephone {
+  display: flex;
+  gap: 8px;
+}
+
+.indicatif {
+  height: 48px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ob-discret);
+  background: var(--ob-doux);
+}
+
+.champTelephone {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.etape {
+  border: 0;
+  margin: 0;
+  min-width: 0;
+  border-top: 1px solid var(--ob-ligne);
+  padding: 18px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.etapeSecurite {
+  gap: 12px;
+}
+
+.aideGroupe {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.cartesGroupes {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.carteChoix {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 84px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 2px solid var(--ob-ligne);
+  background: var(--ob-surface);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.carteChoixActive {
+  border-color: #f2b705;
+  background: var(--ob-fond);
+}
+
+.carteChoixNom {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.carteChoixProfil {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ob-marque);
+}
+
+.carteChoixNombre {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.canal {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.canalLegende {
+  font-size: 13px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.canalPuces {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.puceCanal {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.invitation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.case {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 7px;
+  border: 2px solid var(--ob-marque);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: #2e1a10;
+}
+
+.caseCochee {
+  background: #f2b705;
+}
+
+.invitationTexte {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.actionsFormulaire {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--ob-ligne);
+  padding-top: 16px;
+}
+
+/* Aperçu. */
+.apercu {
+  flex: 1 1 300px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.apercuTitre {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ob-discret);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.apercuIdentite {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.apercuPastille {
+  width: 52px;
+  height: 52px;
+  font-size: 17px;
+}
+
+.apercuNom {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.apercuEmail {
+  font-size: 13px;
+  color: var(--ob-discret);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.apercuLigne {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--ob-ligne);
+  font-size: 14px;
+}
+
+.apercuLibelle {
+  color: var(--ob-discret);
+}
+
+.apercuValeur {
+  font-weight: 800;
+  color: var(--ob-encre);
+  text-align: right;
+}
+
+.apercuSection {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  border-top: 1px solid var(--ob-ligne);
+  padding-top: 12px;
+}
+
+.acces {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.acc {
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--ob-doux);
+  color: var(--ob-marque);
+}
+
+.apercuTexte {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.connexion {
+  font-size: 13px;
+  color: var(--ob-encre);
+  line-height: 1.5;
+}
+
+/* Compte créé. */
+.fait {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 640px;
+}
+
+.faitMot {
+  align-self: flex-start;
+}
+
+.faitIdentite {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.faitPastille {
+  width: 56px;
+  height: 56px;
+  font-size: 19px;
+}
+
+.faitNom {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.faitSous {
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+.faitTexte {
+  font-size: 15px;
+  color: var(--ob-encre);
+  line-height: 1.5;
+}
+
+.faitActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

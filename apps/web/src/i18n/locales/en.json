@@ -1157,6 +1157,80 @@
         "impossible": "This week can no longer be opened or closed: the screen has just been refreshed.",
         "droit": "Your profile does not allow this action."
       }
+    },
+    "utilisateurs": {
+      "sections": "User sections",
+      "onglets": {
+        "liste": "Users · {{nombre}}",
+        "groupes": "Groups · {{nombre}}",
+        "nouveau": "New user"
+      },
+      "nouvelUtilisateur": "New user",
+      "erreurChargement": "Unable to read the users. Please try again.",
+      "filtres": {
+        "etiquette": "Filter by group",
+        "tous": "All · {{nombre}}",
+        "groupe": "{{nom}} · {{nombre}}"
+      },
+      "liste": {
+        "etiquette": "Users",
+        "sousLigne": "{{email}} · +237 {{telephone}} · last access {{acces}}",
+        "groupe": "Group",
+        "groupeDe": "Group of {{nom}}",
+        "actif": "Active",
+        "desactive": "Disabled",
+        "reinitialiser": "Reset code",
+        "reinitialiserDe": "Reset the code of {{nom}}",
+        "desactiver": "Disable",
+        "reactiver": "Enable",
+        "desactiverDe": "Disable the account of {{nom}}",
+        "reactiverDe": "Enable the account of {{nom}}",
+        "aucunMembre": "No members yet."
+      },
+      "droits": {
+        "titre": "Rights by profile",
+        "fonction": "Function",
+        "caissier": "Cashier",
+        "gerant": "Manager",
+        "production": "Head baker",
+        "proprietaire": "Owner",
+        "administrateur": "Admin.",
+        "valeurs": {
+          "saisir": "Enter",
+          "voir": "View",
+          "demander": "Request",
+          "autoriser": "Authorise",
+          "oui": "Yes",
+          "saisirEtValider": "Enter & approve",
+          "valider": "Approve",
+          "preparer": "Prepare",
+          "non": "—"
+        },
+        "lignes": {
+          "livraisons": "Deliveries & payments",
+          "plafond": "Delivery over the limit",
+          "cloturerSession": "Close a session",
+          "rouvrirSession": "Reopen a closed session",
+          "cloturerSemaine": "Week close & handover",
+          "production": "Production & actual use",
+          "achats": "Flour purchasing & payment",
+          "depenses": "Expenses",
+          "paie": "Payroll",
+          "tableauDeBord": "Full dashboard",
+          "parametres": "Prices, products, settings",
+          "comptes": "Accounts & backups"
+        }
+      },
+      "toasts": {
+        "groupeChange": "{{nom}} → {{groupe}} · \"{{profil}}\" rights",
+        "codeReinitialise": "Code for {{nom}} reset",
+        "droit": "Your profile does not allow this action.",
+        "comptePropre": "You cannot change your own account.",
+        "inconnu": "This user no longer exists. The list was refreshed.",
+        "impossible": "Action not possible. The list was refreshed.",
+        "erreur": "Something went wrong. Please try again.",
+        "dernierAdministrateur": "At least one active administrator must remain."
+      }
     }
   },
   "atelier": {

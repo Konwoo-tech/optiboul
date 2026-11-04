@@ -13,6 +13,7 @@ import { scenariosSemaines } from './semaines.ts';
 import { scenariosSession } from './session.ts';
 import { scenariosStocks } from './stocks.ts';
 import { scenariosTableauDeBord } from './tableauDeBord.ts';
+import { scenariosUtilisateurs } from './utilisateurs.ts';
 
 /** Tous les scénarios du banc. Pour en ajouter un : l'exporter depuis un fichier ici et l'ajouter à cette liste. */
 export const scenarios: Scenario[] = [
@@ -30,4 +31,5 @@ export const scenarios: Scenario[] = [
   ...scenariosSemaines,
   ...scenariosPersonnel,
   ...scenariosFournisseurs,
+  ...scenariosUtilisateurs,
 ];
