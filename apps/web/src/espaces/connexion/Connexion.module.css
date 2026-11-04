@@ -313,3 +313,14 @@
   font-size: 14px;
   font-weight: 600;
 }
+
+.reessayer {
+  margin-left: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

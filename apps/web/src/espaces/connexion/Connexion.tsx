@@ -22,7 +22,7 @@ const EcransSimules =
  */
 export default function Connexion() {
   const { t } = useTranslation();
-  const { utilisateur } = useUtilisateurCourant();
+  const { utilisateur, injoignable, reessayer } = useUtilisateurCourant();
   const [parametres] = useSearchParams();
   const suivant = cheminSuivant(parametres.get('suivant'));
   const [message, setMessage] = useState(lireMessageConnexion);
@@ -41,6 +41,14 @@ export default function Connexion() {
         {message && (
           <div className={styles.alerte} role="alert">
             {message}
+          </div>
+        )}
+        {injoignable && (
+          <div className={styles.alerte} role="alert">
+            <strong>{t('erreur.injoignableTitre')}</strong> {t('erreur.injoignable')}{' '}
+            <button type="button" className={styles.reessayer} onClick={reessayer}>
+              {t('erreur.reessayer')}
+            </button>
           </div>
         )}
         {utilisateur ? (

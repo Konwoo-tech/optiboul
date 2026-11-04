@@ -48,11 +48,11 @@ describe('application web', () => {
     expect(await screen.findByRole('link', { name: 'Se connecter' })).toBeTruthy();
   });
 
-  it('serveur en panne : propose de réessayer sans renvoyer à la connexion', async () => {
+  it('serveur en panne : la connexion s’affiche avec un bandeau et propose de réessayer', async () => {
     serveur.use(http.get('*/api/v1/users/me/', () => new HttpResponse(null, { status: 503 })));
     ouvrir('/comptoir');
     expect(await screen.findByText('Serveur injoignable', {}, { timeout: 4000 })).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Se connecter' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Se connecter' })).toBeTruthy();
     connecte('caissier');
     fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
     expect(
@@ -60,7 +60,7 @@ describe('application web', () => {
     ).toBeTruthy();
   });
 
-  it('coupure réseau : même comportement, pas de déconnexion', async () => {
+  it('coupure réseau : même comportement, la page de connexion reste visible', async () => {
     serveur.use(http.get('*/api/v1/users/me/', () => HttpResponse.error()));
     ouvrir('/');
     expect(await screen.findByText('Serveur injoignable', {}, { timeout: 4000 })).toBeTruthy();
