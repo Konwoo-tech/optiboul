@@ -501,6 +501,40 @@ function creerDepense(a: Acteur, corps: Corps): Response {
   return Response.json({ instantane: instantane(), depense: creee, demande });
 }
 
+/**
+ * Dépense « Salaires » créée par un paiement de la paie (US-124) : validée d'office, rattachée à
+ * la semaine courante, sans justificatif (maquette : `pay`). Le paiement en espèces sort de la
+ * caisse de l'établissement ; la caisse de la session n'est pas touchée.
+ */
+export function enregistrerSalaire(
+  a: Acteur,
+  salaire: { libelle: string; montant: number; mode: ModeDepense },
+): Depense {
+  const etat = lireEtat();
+  const numero = Math.max(0, ...etat.depenses.map((d) => d.numero)) + 1;
+  const creee: Depense = {
+    id: `e${Date.now()}-${++sequence}`,
+    numero,
+    date: dateDuJour(),
+    semaine: semaineCourante(),
+    categorie: 'salaires',
+    libelle: salaire.libelle,
+    montant: salaire.montant,
+    mode: salaire.mode,
+    par: a.nom,
+    parProfil: a.profil,
+    statut: 'validee',
+    photo: false,
+    rattachement: { type: 'semaine' },
+  };
+  etat.depenses = [creee, ...etat.depenses];
+  tracer(
+    a.nom,
+    `Dépense ${numeroDepense(numero)} : ${salaire.libelle} – ${salaire.montant} FCFA, rattachée à la semaine ${semaineCourante()}`,
+  );
+  return structuredClone(creee);
+}
+
 /** Dépenses rattachées à une semaine, hors refusées (indicateurs de l'écran des semaines). */
 export function depensesDeSemaine(semaine: string): { nombre: number; montant: number } {
   const retenues = lireEtat().depenses.filter(

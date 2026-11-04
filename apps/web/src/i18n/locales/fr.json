@@ -749,6 +749,116 @@
         }
       }
     },
+    "personnel": {
+      "erreurChargement": "L’état de paie n’a pas pu être chargé. Réessayez dans un instant.",
+      "titreEtat": "État de paie · {{mois}}",
+      "statuts": {
+        "brouillon": "Brouillon · préparé par le gérant",
+        "soumis": "Soumis · en attente du propriétaire",
+        "valide": "Validé par {{nom}} · à payer",
+        "en-paiement": "Paiement en cours",
+        "payee": "Payée"
+      },
+      "jourDePaie": "Jour de paie",
+      "jourDePaieDe": "Jour de paie de {{mois}}",
+      "decompte_one": "{{jour}} · dans {{count}} jour",
+      "decompte_other": "{{jour}} · dans {{count}} jours",
+      "decompteAujourdhui": "{{jour}} · aujourd’hui",
+      "decomptePasse_one": "{{jour}} · il y a {{count}} jour",
+      "decomptePasse_other": "{{jour}} · il y a {{count}} jours",
+      "soumettre": "Soumettre au propriétaire",
+      "valider": "Valider l’état de paie",
+      "refuser": "Refuser",
+      "payerTout": "Payer tous les restes · {{montant}} FCFA",
+      "totaux": {
+        "net": "Net à payer",
+        "paye": "Déjà payé",
+        "reste": "Reste à payer",
+        "impayes": "Impayés repris de {{mois}}"
+      },
+      "salaires": "Salaires du mois",
+      "colonnes": {
+        "employe": "Employé",
+        "base": "Base",
+        "absences": "Absences",
+        "avances": "Avances",
+        "gains": "Gains",
+        "penalites": "Pénalités",
+        "impaye": "Impayé antérieur",
+        "net": "Net",
+        "paye": "Payé",
+        "reste": "Reste"
+      },
+      "absencesCellule": "{{jours}} j · −{{montant}}",
+      "formule": "Net = base − absences − avances − pénalités + gains + impayé antérieur.",
+      "fiche": {
+        "base": "Salaire de base",
+        "absences": "Absences",
+        "absencesDetail": "Absences ({{jours}} j × base ÷ 26)",
+        "avances": "Avances sur salaire",
+        "impaye": "Impayé de {{mois}}",
+        "ajustements": "Gains et pénalités",
+        "aucun": "Aucun gain ni pénalité ce mois-ci.",
+        "gain": "Gain",
+        "penalite": "Pénalité",
+        "meta": "{{type}} · {{date}} · par {{nom}}",
+        "supprimer": "Supprimer la ligne « {{libelle}} »",
+        "verrou": "Les lignes sont verrouillées une fois l’état de paie soumis.",
+        "net": "Net à payer",
+        "paye": "Payé",
+        "reste": "Reste",
+        "paiement": "{{date}} · {{montant}} FCFA · {{mode}} · par {{nom}}"
+      },
+      "saisie": {
+        "types": {
+          "gain": "Gain / prime",
+          "penalite": "Pénalité"
+        },
+        "type": "Type de ligne",
+        "description": "Description",
+        "montant": "Montant (FCFA)",
+        "ajouter": "Ajouter la ligne",
+        "erreurs": {
+          "libelle": "Description et montant obligatoires.",
+          "montant": "Description et montant obligatoires.",
+          "defaut": "La ligne n’a pas pu être ajoutée."
+        }
+      },
+      "paiement": {
+        "titre": "Paiement",
+        "mode": "Mode de paiement",
+        "modes": {
+          "especes": "Espèces",
+          "mobile": "Mobile money",
+          "banque": "Banque"
+        },
+        "payer": "Payer {{nom}}",
+        "note": "Un paiement partiel laisse un impayé reporté sur la paie suivante. Chaque paiement crée une dépense « Salaires » rattachée à la semaine.",
+        "attente": "Le paiement s’ouvre après validation par le propriétaire.",
+        "attenteProprietaire": "Le gérant effectue les paiements une fois l’état validé."
+      },
+      "calendrier": {
+        "titre": "Calendrier des paies",
+        "statuts": {
+          "payee": "Payée",
+          "partielle": "Impayés reportés",
+          "planifiee": "Planifiée"
+        },
+        "total": "{{total}} FCFA",
+        "totalImpayes": "{{total}} FCFA · impayés reportés : {{impayes}} FCFA"
+      },
+      "toasts": {
+        "soumis": "État de paie soumis au propriétaire",
+        "paiement": "Paiement enregistré · {{code}}",
+        "payes_one": "{{count}} salaire payé",
+        "payes_other": "{{count}} salaires payés",
+        "droit": "Votre profil ne permet pas cette action.",
+        "verrouille": "Les lignes sont verrouillées : l’état de paie a été soumis.",
+        "paiementFerme": "Le paiement n’est pas encore ouvert.",
+        "impossible": "Action impossible dans l’état actuel de la paie.",
+        "erreur": "L’action n’a pas pu être enregistrée : réessayez."
+      }
+    },
     "semaines": {
       "sections": "Semaines de travail",
       "erreurChargement": "Les semaines n’ont pas pu être chargées. Réessayez dans un instant.",

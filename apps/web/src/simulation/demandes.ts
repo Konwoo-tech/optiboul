@@ -1,3 +1,4 @@
+import { formaterMois } from '@/espaces/gestion/personnel/affichage.ts';
 import { peutDecider, peutVoirToutes } from '@/espaces/comptoir/demandes/regles.ts';
 import type {
   Demande,
@@ -10,6 +11,7 @@ import { formaterNombre } from '@/utils';
 import { numeroDepense } from '@/espaces/comptoir/depenses/regles.ts';
 import { demandesDePlafond, trancherDemandeDePlafond } from './comptoir.ts';
 import { demandesDeDepense, trancherDemandeDeDepense, type Acteur } from './depenses.ts';
+import { demandesDePaie, trancherDemandeDePaie } from './personnel.ts';
 import { demandesDeProduction, trancherDemandeDeProduction } from './production.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 import { demandesDInventaire, trancherDemandeDInventaire } from './stocks.ts';
@@ -32,6 +34,7 @@ type DemandeDePlafond = ReturnType<typeof demandesDePlafond>[number];
 type DemandeDeDepense = ReturnType<typeof demandesDeDepense>[number];
 type DemandeDInventaire = ReturnType<typeof demandesDInventaire>[number];
 type DemandeDeProduction = ReturnType<typeof demandesDeProduction>[number];
+type DemandeDePaie = ReturnType<typeof demandesDePaie>[number];
 
 /** Demande de plafond de la session, au format commun ; une décision sans auteur ni heure est une erreur. */
 function duPlafond(d: DemandeDePlafond): Demande {
@@ -142,6 +145,29 @@ function deProduction(d: DemandeDeProduction): Demande {
   return { ...commun, statut: d.statut, decidePar: d.decidePar, decideA: d.decideA };
 }
 
+/** Demande de validation de l'état de paie (Gestion › Personnel), au format commun. */
+function dePaie(d: DemandeDePaie): Demande {
+  const commun = {
+    id: d.id,
+    numero: d.numero,
+    type: 'paie',
+    titre: `État de paie · ${formaterMois(d.mois, 'fr')}`,
+    titreEn: `Payroll · ${formaterMois(d.mois, 'en')}`,
+    detail: d.detail,
+    detailEn: d.detailEn,
+    par: d.par,
+    parProfil: 'gerant',
+    jour: d.jour,
+    heure: d.heure,
+    objet: { genre: 'paie', mois: d.mois },
+  } as const;
+  if (d.statut === 'en-attente') return { ...commun, statut: 'en-attente' };
+  if (!d.decidePar || !d.decideA) {
+    throw new Error(`Demande ${d.id} décidée sans auteur ni heure.`);
+  }
+  return { ...commun, statut: d.statut, decidePar: d.decidePar, decideA: d.decideA };
+}
+
 /** Toutes les demandes, plus récentes d'abord. */
 function toutes(): Demande[] {
   return [
@@ -149,6 +175,7 @@ function toutes(): Demande[] {
     ...demandesDeDepense().map(deDepense),
     ...demandesDInventaire().map(deInventaire),
     ...demandesDeProduction().map(deProduction),
+    ...demandesDePaie().map(dePaie),
   ].sort((x, y) => y.numero - x.numero);
 }
 
@@ -183,6 +210,12 @@ function decider(a: Acteur, id: string, accord: boolean): Response {
     if (!trancherDemandeDePlafond(id, accord, a.nom)) return dejaDecidee();
   } else if (demande.type === 'inventaire') {
     const resultat = trancherDemandeDInventaire(a, id, accord);
+    if (resultat === 'interdit') {
+      return probleme(403, 'droit_insuffisant', 'Votre profil ne peut pas décider cette demande.');
+    }
+    if (resultat !== 'ok') return dejaDecidee();
+  } else if (demande.type === 'paie') {
+    const resultat = trancherDemandeDePaie(a, id, accord);
     if (resultat === 'interdit') {
       return probleme(403, 'droit_insuffisant', 'Votre profil ne peut pas décider cette demande.');
     }

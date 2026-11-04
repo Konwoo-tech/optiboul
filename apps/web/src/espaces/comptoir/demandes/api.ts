@@ -48,6 +48,8 @@ export function useDecider(utilisateur: string | undefined) {
         // Une augmentation de production accordée s'ajoute au plan, et ses notifications partent.
         client.invalidateQueries({ queryKey: ['simulation', 'atelier', 'production'] }),
         client.invalidateQueries({ queryKey: ['simulation', 'notifications'] }),
+        // Un état de paie accordé ouvre le paiement ; refusé, il revient en brouillon.
+        client.invalidateQueries({ queryKey: ['simulation', 'gestion', 'personnel'] }),
       ]),
   });
 }

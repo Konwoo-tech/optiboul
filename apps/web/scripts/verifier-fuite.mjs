@@ -22,6 +22,10 @@ const MARQUEURS = [
   'Gros court 170',
   'FAC-0198',
   'gestion/tableau-de-bord/',
+  'Prime caisse juste',
+  'Heures supplémentaires · sam. 10 oct.',
+  'Retard au pétrissage',
+  'Vendeuse au guichet',
   'Bois · 2 chargements (BC-027)',
 ];
 

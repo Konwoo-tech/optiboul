@@ -749,6 +749,116 @@
         }
       }
     },
+    "personnel": {
+      "erreurChargement": "The payroll could not be loaded. Try again in a moment.",
+      "titreEtat": "Payroll · {{mois}}",
+      "statuts": {
+        "brouillon": "Draft · prepared by the manager",
+        "soumis": "Submitted · awaiting the owner",
+        "valide": "Approved by {{nom}} · to pay",
+        "en-paiement": "Payment in progress",
+        "payee": "Paid"
+      },
+      "jourDePaie": "Payday",
+      "jourDePaieDe": "Payday for {{mois}}",
+      "decompte_one": "{{jour}} · in {{count}} day",
+      "decompte_other": "{{jour}} · in {{count}} days",
+      "decompteAujourdhui": "{{jour}} · today",
+      "decomptePasse_one": "{{jour}} · {{count}} day ago",
+      "decomptePasse_other": "{{jour}} · {{count}} days ago",
+      "soumettre": "Submit to the owner",
+      "valider": "Approve payroll",
+      "refuser": "Refuse",
+      "payerTout": "Pay all balances · {{montant}} FCFA",
+      "totaux": {
+        "net": "Net pay",
+        "paye": "Already paid",
+        "reste": "Left to pay",
+        "impayes": "Arrears from {{mois}}"
+      },
+      "salaires": "Salaries this month",
+      "colonnes": {
+        "employe": "Employee",
+        "base": "Base",
+        "absences": "Absences",
+        "avances": "Advances",
+        "gains": "Gains",
+        "penalites": "Penalties",
+        "impaye": "Arrears",
+        "net": "Net",
+        "paye": "Paid",
+        "reste": "Left"
+      },
+      "absencesCellule": "{{jours}} d · −{{montant}}",
+      "formule": "Net = base − absences − advances − penalties + gains + arrears.",
+      "fiche": {
+        "base": "Base salary",
+        "absences": "Absences",
+        "absencesDetail": "Absences ({{jours}} d × base ÷ 26)",
+        "avances": "Salary advances",
+        "impaye": "{{mois}} arrears",
+        "ajustements": "Gains and penalties",
+        "aucun": "No gains or penalties this month.",
+        "gain": "Gain",
+        "penalite": "Penalty",
+        "meta": "{{type}} · {{date}} · by {{nom}}",
+        "supprimer": "Delete line “{{libelle}}”",
+        "verrou": "Lines are locked once the payroll is submitted.",
+        "net": "Net pay",
+        "paye": "Paid",
+        "reste": "Left",
+        "paiement": "{{date}} · {{montant}} FCFA · {{mode}} · by {{nom}}"
+      },
+      "saisie": {
+        "types": {
+          "gain": "Gain / bonus",
+          "penalite": "Penalty"
+        },
+        "type": "Line type",
+        "description": "Description",
+        "montant": "Amount (FCFA)",
+        "ajouter": "Add line",
+        "erreurs": {
+          "libelle": "Description and amount required.",
+          "montant": "Description and amount required.",
+          "defaut": "The line could not be added."
+        }
+      },
+      "paiement": {
+        "titre": "Payment",
+        "mode": "Payment method",
+        "modes": {
+          "especes": "Cash",
+          "mobile": "Mobile money",
+          "banque": "Bank"
+        },
+        "payer": "Pay {{nom}}",
+        "note": "A partial payment leaves arrears carried to the next payroll. Each payment creates a \"Salaries\" expense linked to the week.",
+        "attente": "Payment opens after approval by the owner.",
+        "attenteProprietaire": "The manager makes the payments once the payroll is approved."
+      },
+      "calendrier": {
+        "titre": "Payroll calendar",
+        "statuts": {
+          "payee": "Paid",
+          "partielle": "Arrears carried",
+          "planifiee": "Planned"
+        },
+        "total": "{{total}} FCFA",
+        "totalImpayes": "{{total}} FCFA · arrears carried: {{impayes}} FCFA"
+      },
+      "toasts": {
+        "soumis": "Payroll submitted to the owner",
+        "paiement": "Payment recorded · {{code}}",
+        "payes_one": "{{count}} salary paid",
+        "payes_other": "{{count}} salaries paid",
+        "droit": "Your profile cannot do this.",
+        "verrouille": "Lines are locked: the payroll has been submitted.",
+        "paiementFerme": "Payment is not open yet.",
+        "impossible": "Not possible in the current state of the payroll.",
+        "erreur": "The action could not be saved: try again."
+      }
+    },
     "semaines": {
       "sections": "Work weeks",
       "erreurChargement": "The weeks could not be loaded. Try again in a moment.",
