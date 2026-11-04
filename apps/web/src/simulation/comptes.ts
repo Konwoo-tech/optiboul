@@ -1,3 +1,4 @@
+import type { Profil } from '../profils.ts';
 import type { CompteSimule, GroupeSimule, UtilisateurSimule } from './donnees.ts';
 
 /*
@@ -65,29 +66,42 @@ export const tousLesGroupes = (): readonly GroupeSimule[] => lireEtat().groupes;
 export const groupeParId = (id: string): GroupeSimule | undefined =>
   lireEtat().groupes.find((g) => g.id === id);
 
-export function ajouterCompte(compte: CompteVivant): void {
+/**
+ * Les écritures sur les comptes et les groupes sont réservées à l'administrateur (cahier des
+ * charges §3.3) : chacune reçoit le profil de l'auteur et renvoie faux, sans rien changer, s'il
+ * n'a pas le droit. L'API du faux serveur répond 403 avant d'arriver ici ; c'est une seconde garde.
+ */
+const peutEcrire = (par: Profil): boolean => par === 'administrateur';
+
+export function ajouterCompte(par: Profil, compte: CompteVivant): boolean {
+  if (!peutEcrire(par)) return false;
   lireEtat().comptes.push(compte);
+  return true;
 }
 
 /** Le groupe porte le profil : le compte prend celui du nouveau groupe, tout de suite. */
-export function affecterAuGroupe(id: string, groupe: GroupeSimule): void {
+export function affecterAuGroupe(par: Profil, id: string, groupe: GroupeSimule): boolean {
   const compte = compteParId(id);
-  if (compte) {
-    compte.groupe = groupe.id;
-    compte.profil = groupe.profil;
-  }
+  if (!compte || !peutEcrire(par)) return false;
+  compte.groupe = groupe.id;
+  compte.profil = groupe.profil;
+  return true;
 }
 
-export function definirActivation(id: string, actif: boolean): void {
+export function definirActivation(par: Profil, id: string, actif: boolean): boolean {
   const compte = compteParId(id);
-  if (compte) compte.actif = actif;
+  if (!compte || !peutEcrire(par)) return false;
+  compte.actif = actif;
+  return true;
+}
+
+export function ajouterGroupe(par: Profil, groupe: GroupeSimule): boolean {
+  if (!peutEcrire(par)) return false;
+  lireEtat().groupes.push(groupe);
+  return true;
 }
 
 export function noterAcces(id: string, dernierAcces: string): void {
   const compte = compteParId(id);
   if (compte) compte.dernierAcces = dernierAcces;
-}
-
-export function ajouterGroupe(groupe: GroupeSimule): void {
-  lireEtat().groupes.push(groupe);
 }

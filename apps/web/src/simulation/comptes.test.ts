@@ -47,8 +47,8 @@ describe('comptes : source unique', () => {
   });
 
   it('se remet à zéro avec la simulation', () => {
-    definirActivation('davy', false);
-    ajouterGroupe({ id: 'gx', nom: 'X', profil: 'caissier', description: '' });
+    definirActivation('administrateur', 'davy', false);
+    ajouterGroupe('administrateur', { id: 'gx', nom: 'X', profil: 'caissier', description: '' });
     reinitialiserSimulation();
     expect(compteParId('davy')?.actif).toBe(true);
     expect(tousLesGroupes()).toHaveLength(6);
@@ -57,7 +57,7 @@ describe('comptes : source unique', () => {
 
 describe('comptes : effets sur le reste de la simulation', () => {
   it('un compte désactivé ne se connecte plus et quitte la liste de connexion', () => {
-    definirActivation('davy', false);
+    definirActivation('administrateur', 'davy', false);
     expect(identifier({ methode: 'code', utilisateur: 'davy', code: '1234' }).status).toBe(400);
     expect(
       identifier({
@@ -74,7 +74,7 @@ describe('comptes : effets sur le reste de la simulation', () => {
   it('un changement de groupe change aussitôt le profil de la session', () => {
     memoriserUtilisateurConnecte('davy');
     expect(lireUtilisateurConnecte()?.profil).toBe('caissier');
-    affecterAuGroupe('davy', groupeParId('g3')!);
+    affecterAuGroupe('administrateur', 'davy', groupeParId('g3')!);
     expect(lireUtilisateurConnecte()?.profil).toBe('gerant');
     expect(personne('davy')?.profil).toBe('gerant');
   });
@@ -87,7 +87,7 @@ describe('comptes : effets sur le reste de la simulation', () => {
   });
 
   it('un compte ajouté se connecte par e-mail', () => {
-    ajouterCompte({
+    ajouterCompte('administrateur', {
       id: 'ada001',
       nom: 'Ada',
       profil: 'caissier',
@@ -118,7 +118,7 @@ describe('comptes : effets sur le reste de la simulation', () => {
         gerants: { id: string }[];
       };
     expect((await semaines()).gerants.map((g) => g.id)).toEqual(['willy', 'patrick', 'christelle']);
-    definirActivation('patrick', false);
+    definirActivation('administrateur', 'patrick', false);
     expect((await semaines()).gerants.map((g) => g.id)).toEqual(['willy', 'christelle']);
 
     const caisses = async () =>
@@ -126,14 +126,14 @@ describe('comptes : effets sur le reste de la simulation', () => {
         caissieres: { id: string }[];
       };
     expect((await caisses()).caissieres.map((c) => c.id)).toEqual(['davy', 'rachel']);
-    definirActivation('davy', false);
+    definirActivation('administrateur', 'davy', false);
     expect((await caisses()).caissieres.map((c) => c.id)).toEqual(['rachel']);
     // Le planning garde le nom d'un compte désactivé (historique).
     expect(personne('patrick')?.nom).toBe('Patrick');
   });
 
   it('la liste de connexion ne porte aucun champ sensible et ignore les comptes désactivés', async () => {
-    definirActivation('rachel', false);
+    definirActivation('administrateur', 'rachel', false);
     const liste = (await repondre(
       new URL('http://x/api/v1/simulation/utilisateurs/'),
       'GET',
@@ -149,9 +149,30 @@ describe('comptes : effets sur le reste de la simulation', () => {
       200,
     );
     memoriserUtilisateurConnecte(null);
-    definirActivation('davy', false);
+    definirActivation('administrateur', 'davy', false);
     const reponse = identifier({ methode: 'google', email: 'davy.boulfaubourg@gmail.com' });
     expect(reponse.status).toBe(400);
     expect(lireUtilisateurConnecte()).toBeUndefined();
+  });
+});
+
+describe('comptes : écritures réservées à l’administrateur', () => {
+  it('refuse tout autre profil sans rien changer', () => {
+    const groupe = { id: 'gx', nom: 'X', profil: 'caissier' as const, description: '' };
+    const compte = { ...compteParId('davy')!, id: 'x001', email: 'x@gmail.com' };
+    for (const profil of ['caissier', 'gerant', 'production', 'proprietaire'] as const) {
+      expect(ajouterCompte(profil, compte)).toBe(false);
+      expect(ajouterGroupe(profil, groupe)).toBe(false);
+      expect(affecterAuGroupe(profil, 'davy', groupeParId('g3')!)).toBe(false);
+      expect(definirActivation(profil, 'davy', false)).toBe(false);
+    }
+    expect(tousLesComptes()).toHaveLength(9);
+    expect(tousLesGroupes()).toHaveLength(6);
+    expect(compteParId('davy')).toMatchObject({ groupe: 'g1', profil: 'caissier', actif: true });
+  });
+
+  it('refuse un compte inconnu même pour l’administrateur', () => {
+    expect(definirActivation('administrateur', 'nobody', false)).toBe(false);
+    expect(affecterAuGroupe('administrateur', 'nobody', groupeParId('g3')!)).toBe(false);
   });
 });

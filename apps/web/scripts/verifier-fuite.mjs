@@ -38,6 +38,7 @@ const MARQUEURS = [
   'support.optiboul',
   'Mouvement interne : ration 12 BAG',
   'journal_non_modifiable',
+  'gestion/utilisateurs/',
 ];
 
 function fichiers(dossier) {
