@@ -124,13 +124,158 @@ describe('Gestion › Utilisateurs : liste', () => {
   });
 });
 
+/** Les appels qui modifient (pas les lectures) reçoivent cette réponse du « serveur ». */
+function repondreAuxEcritures(reponse: () => Response) {
+  const reel = globalThis.fetch;
+  const ecritures: string[] = [];
+  globalThis.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
+    const methode = (init?.method ?? 'GET').toUpperCase();
+    if (methode === 'GET') return reel(entree, init);
+    ecritures.push(methode);
+    return reponse();
+  }) as typeof fetch;
+  return ecritures;
+}
+
+const refus = (status: number, code: string) => () =>
+  Response.json({ detail: 'Refusé.', code }, { status });
+
+describe('Gestion › Utilisateurs : refus du serveur', () => {
+  const textes: Array<[number, string, string]> = [
+    [409, 'compte_propre', 'Vous ne pouvez pas modifier votre propre compte.'],
+    [409, 'dernier_administrateur', 'Il doit rester au moins un administrateur actif.'],
+    [404, 'utilisateur_inconnu', 'Cet utilisateur n’existe plus. La liste a été relue.'],
+    [409, 'autre_conflit', 'Action impossible. La liste a été relue.'],
+    [403, 'droit_insuffisant', 'Votre profil ne permet pas cette action.'],
+  ];
+
+  it.each(textes)('dit le refus %i %s et relit la liste', async (status, code, texte) => {
+    await ouvrir();
+    await screen.findByLabelText('Groupe de Davy');
+    const reel = globalThis.fetch;
+    let relues = 0;
+    const ecritures = repondreAuxEcritures(refus(status, code));
+    const enveloppe = globalThis.fetch;
+    globalThis.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
+      if ((init?.method ?? 'GET').toUpperCase() === 'GET') relues += 1;
+      return enveloppe(entree, init);
+    }) as typeof fetch;
+    fireEvent.click(screen.getByRole('button', { name: 'Réinitialiser le code de Rachel' }));
+    expect(await screen.findByText(texte)).toBeTruthy();
+    expect(ecritures).toEqual(['POST']);
+    await waitFor(() => expect(relues).toBeGreaterThan(0));
+    globalThis.fetch = reel;
+  });
+
+  it('dit une erreur réseau et relit la liste', async () => {
+    await ouvrir();
+    await screen.findByLabelText('Groupe de Davy');
+    const reel = globalThis.fetch;
+    let relues = 0;
+    globalThis.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
+      if ((init?.method ?? 'GET').toUpperCase() === 'GET') {
+        relues += 1;
+        return reel(entree, init);
+      }
+      throw new TypeError('Failed to fetch');
+    }) as typeof fetch;
+    fireEvent.click(screen.getByRole('button', { name: 'Désactiver le compte de Rachel' }));
+    expect(await screen.findByText('Une erreur est survenue. Réessayez.')).toBeTruthy();
+    await waitFor(() => expect(relues).toBeGreaterThan(0));
+    globalThis.fetch = reel;
+  });
+
+  it('ne lance qu’une écriture pour deux clics rapprochés, et garde le focus', async () => {
+    await ouvrir();
+    const bouton = await screen.findByRole('button', { name: 'Réinitialiser le code de Rachel' });
+    const ecritures = repondreAuxEcritures(() => new Response('{}', { status: 500 }));
+    bouton.focus();
+    fireEvent.click(bouton);
+    fireEvent.click(bouton);
+    await screen.findByText('Une erreur est survenue. Réessayez.');
+    expect(ecritures).toHaveLength(1);
+    // aria-disabled et non disabled : le bouton cliqué ne perd jamais le focus.
+    expect(bouton.hasAttribute('disabled')).toBe(false);
+    expect(document.activeElement).toBe(bouton);
+  });
+
+  it('ne lance qu’un changement de groupe pour deux changements rapprochés', async () => {
+    await ouvrir();
+    const choix = await screen.findByLabelText('Groupe de Davy');
+    const ecritures = repondreAuxEcritures(refus(409, 'compte_propre'));
+    fireEvent.change(choix, { target: { value: 'g3' } });
+    fireEvent.change(choix, { target: { value: 'g2' } });
+    await screen.findByText('Vous ne pouvez pas modifier votre propre compte.');
+    expect(ecritures).toHaveLength(1);
+  });
+});
+
+describe('Gestion › Utilisateurs : chargement', () => {
+  it('propose « Réessayer » quand la lecture échoue, puis affiche la liste', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    await initI18n('fr').changeLanguage('fr');
+    configurerApi({ baseUrl: 'http://localhost' });
+    retablir = installerApiSimulee({ latenceMs: 0 });
+    reinitialiserSimulation();
+    memoriserUtilisateurConnecte('admin');
+    const reel = globalThis.fetch;
+    let echecs = 1;
+    globalThis.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(entree instanceof Request ? entree.url : entree);
+      if (echecs > 0 && url.includes('/gestion/utilisateurs/')) {
+        echecs -= 1;
+        return new Response('{}', { status: 500 });
+      }
+      return reel(entree, init);
+    }) as typeof fetch;
+    const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'utilisateurs')!;
+    render(
+      <OptiboulProvider>
+        <QueryClientProvider
+          client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+        >
+          <MemoryRouter initialEntries={['/gestion/utilisateurs']}>
+            <EcranUtilisateurs ecran={ecran} />
+          </MemoryRouter>
+        </QueryClientProvider>
+      </OptiboulProvider>,
+    );
+    expect(await screen.findByText('Impossible de lire les utilisateurs. Réessayez.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
+    expect(await screen.findByRole('tab', { name: 'Utilisateurs · 9' })).toBeTruthy();
+  });
+});
+
 describe('Gestion › Utilisateurs : accès', () => {
-  it('navigue entre onglets au clavier', async () => {
+  it('rend non actionnables les vues du lot suivant, sans changer leur rendu', async () => {
+    await ouvrir();
+    const groupes = await screen.findByRole('tab', { name: /Groupes · 6/ });
+    expect(groupes.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(groupes);
+    expect(onglet(/Utilisateurs · 9/).getAttribute('aria-selected')).toBe('true');
+    expect(groupes.getAttribute('aria-selected')).toBe('false');
+    const nouveau = screen.getByRole('button', { name: '+ Nouvel utilisateur' });
+    expect(nouveau.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(nouveau);
+    expect(onglet(/Utilisateurs · 9/).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tabpanel').getAttribute('tabindex')).toBe('0');
+    expect(screen.getByRole('tabpanel').textContent).not.toBe('');
+  });
+
+  it('garde le focus sur l’onglet livré avec les flèches, Début et Fin', async () => {
     await ouvrir();
     const premier = await screen.findByRole('tab', { name: 'Utilisateurs · 9' });
-    fireEvent.keyDown(premier, { key: 'ArrowRight' });
-    await waitFor(() => expect(onglet(/Groupes/).getAttribute('aria-selected')).toBe('true'));
-    expect(premier.getAttribute('tabindex')).toBe('-1');
+    for (const touche of ['ArrowRight', 'ArrowLeft', 'Home', 'End']) {
+      fireEvent.keyDown(premier, { key: touche });
+      expect(premier.getAttribute('aria-selected')).toBe('true');
+    }
+  });
+
+  it('nomme le groupe de filtres et le tableau des droits', async () => {
+    await ouvrir();
+    expect(await screen.findByRole('group', { name: 'Filtrer par groupe' })).toBeTruthy();
+    const tableau = screen.getByRole('table', { name: 'Droits par profil' });
+    expect(within(tableau).queryByRole('heading')).toBeNull();
   });
 
   it('un profil sans le droit voit une erreur, pas la liste', async () => {

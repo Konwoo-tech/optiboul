@@ -85,6 +85,7 @@
 .petit:focus-visible,
 .petitDiscret:focus-visible,
 .choix:focus-visible,
+.tabpanel:focus-visible,
 .carteChoix:focus-visible,
 .case:focus-visible,
 .champ:focus-visible {
@@ -239,10 +240,28 @@
   cursor: pointer;
 }
 
-.petit:disabled,
-.petitDiscret:disabled {
+.petit[aria-disabled='true'],
+.petitDiscret[aria-disabled='true'] {
   cursor: default;
   opacity: 0.6;
+}
+
+/* Onglet ou bouton dont la vue n'est pas encore livrée : même rendu, sans action. */
+.onglet[aria-disabled='true'],
+.principal[aria-disabled='true'] {
+  cursor: default;
+}
+
+.invisible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .vide {

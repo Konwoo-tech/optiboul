@@ -15,30 +15,32 @@ export function DroitsParProfil() {
   /* oxlint-disable jsx-a11y/prefer-tag-over-role */
   return (
     <div className={styles.defilement}>
-      <div className={styles.droits} role="table" aria-labelledby={titre}>
+      <div className={styles.droits}>
         <h2 id={titre} className={styles.droitsTitre}>
           {t('gestion.utilisateurs.droits.titre')}
         </h2>
-        <div role="row" className={`${styles.droitsLigne} ${styles.droitsEntete}`}>
-          <span role="columnheader">{t('gestion.utilisateurs.droits.fonction')}</span>
-          {COLONNES.map((c) => (
-            <span key={c} role="columnheader">
-              {t(`gestion.utilisateurs.droits.${c}`)}
-            </span>
-          ))}
-        </div>
-        {MATRICE_DES_DROITS.map((ligne) => (
-          <div key={ligne.cle} role="row" className={styles.droitsLigne}>
-            <span role="rowheader" className={styles.droitsFonction}>
-              {t(`gestion.utilisateurs.droits.lignes.${ligne.cle}`)}
-            </span>
-            {ligne.droits.map((d, rang) => (
-              <span key={COLONNES[rang]} role="cell">
-                {t(`gestion.utilisateurs.droits.valeurs.${d}`)}
+        <div role="table" aria-labelledby={titre}>
+          <div role="row" className={`${styles.droitsLigne} ${styles.droitsEntete}`}>
+            <span role="columnheader">{t('gestion.utilisateurs.droits.fonction')}</span>
+            {COLONNES.map((c) => (
+              <span key={c} role="columnheader">
+                {t(`gestion.utilisateurs.droits.${c}`)}
               </span>
             ))}
           </div>
-        ))}
+          {MATRICE_DES_DROITS.map((ligne) => (
+            <div key={ligne.cle} role="row" className={styles.droitsLigne}>
+              <span role="rowheader" className={styles.droitsFonction}>
+                {t(`gestion.utilisateurs.droits.lignes.${ligne.cle}`)}
+              </span>
+              {ligne.droits.map((d, rang) => (
+                <span key={COLONNES[rang]} role="cell">
+                  {t(`gestion.utilisateurs.droits.valeurs.${d}`)}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

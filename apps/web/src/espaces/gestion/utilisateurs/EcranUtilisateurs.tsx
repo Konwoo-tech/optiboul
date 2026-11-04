@@ -46,7 +46,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
 
   const instantane = requete.data;
   const demande = parametres.get('onglet');
-  const onglet: Onglet = ONGLETS.find((o) => o === demande) ?? 'liste';
+  const onglet: Onglet = ONGLETS_LIVRES.find((o) => o === demande) ?? 'liste';
 
   if (!instantane || !nom) {
     return (
@@ -80,12 +80,23 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
       { replace: true },
     );
 
+  /** Flèches, Début et Fin : parmi les onglets livrés seulement. */
   const naviguerEntreOnglets = (e: KeyboardEvent<HTMLButtonElement>) => {
-    const sens = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
-    if (!sens) return;
+    const rang = ONGLETS_LIVRES.indexOf(onglet);
+    const dernier = ONGLETS_LIVRES.length - 1;
+    const cible =
+      e.key === 'ArrowRight'
+        ? (rang + 1) % ONGLETS_LIVRES.length
+        : e.key === 'ArrowLeft'
+          ? (rang - 1 + ONGLETS_LIVRES.length) % ONGLETS_LIVRES.length
+          : e.key === 'Home'
+            ? 0
+            : e.key === 'End'
+              ? dernier
+              : -1;
+    if (cible < 0) return;
     e.preventDefault();
-    const rang = ONGLETS.indexOf(onglet);
-    const suivant = ONGLETS[(rang + sens + ONGLETS.length) % ONGLETS.length]!;
+    const suivant = ONGLETS_LIVRES[cible]!;
     choisirOnglet(suivant);
     document.getElementById(`onglet-utilisateurs-${suivant}`)?.focus();
   };
@@ -177,10 +188,11 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
                 id={`onglet-utilisateurs-${cle}`}
                 role="tab"
                 aria-selected={onglet === cle}
-                aria-controls="panneau-utilisateurs"
+                aria-disabled={ONGLETS_LIVRES.includes(cle) ? undefined : true}
+                aria-controls={ONGLETS_LIVRES.includes(cle) ? 'panneau-utilisateurs' : undefined}
                 tabIndex={onglet === cle ? 0 : -1}
                 className={`${styles.onglet} ${onglet === cle ? styles.ongletActif : ''}`}
-                onClick={() => choisirOnglet(cle)}
+                onClick={() => ONGLETS_LIVRES.includes(cle) && choisirOnglet(cle)}
                 onKeyDown={naviguerEntreOnglets}
               >
                 {t(`gestion.utilisateurs.onglets.${cle}`, {
@@ -192,7 +204,8 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
           <button
             type="button"
             className={styles.principal}
-            onClick={() => choisirOnglet('nouveau')}
+            aria-disabled
+            onClick={() => ONGLETS_LIVRES.includes('nouveau') && choisirOnglet('nouveau')}
           >
             + {t('gestion.utilisateurs.nouvelUtilisateur')}
           </button>
@@ -202,7 +215,8 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
           id="panneau-utilisateurs"
           role="tabpanel"
           aria-labelledby={`onglet-utilisateurs-${onglet}`}
-          className={styles.page}
+          tabIndex={0}
+          className={`${styles.page} ${styles.tabpanel}`}
         >
           {ONGLETS_LIVRES.includes(onglet) && (
             <ListeUtilisateurs

@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n';
+import { useId } from 'react';
 
 import { DroitsParProfil } from './DroitsParProfil.tsx';
 import { Mot, Pastille } from './Pastille.tsx';
@@ -32,6 +33,7 @@ export function ListeUtilisateurs({
   onActiver,
 }: Props) {
   const { t, i18n } = useTranslation();
+  const idFiltres = useId();
   const visibles = utilisateurs.filter((u) => filtre === 'all' || u.groupe === filtre);
   const filtres = [
     { id: 'all', libelle: t('gestion.utilisateurs.filtres.tous', { nombre: utilisateurs.length }) },
@@ -46,7 +48,10 @@ export function ListeUtilisateurs({
 
   return (
     <>
-      <fieldset className={styles.filtres} aria-label={t('gestion.utilisateurs.filtres.etiquette')}>
+      <fieldset className={styles.filtres} aria-labelledby={idFiltres}>
+        <span id={idFiltres} className={styles.invisible}>
+          {t('gestion.utilisateurs.filtres.etiquette')}
+        </span>
         {filtres.map((f) => (
           <button
             type="button"
@@ -82,7 +87,8 @@ export function ListeUtilisateurs({
                 <select
                   className={styles.choix}
                   value={u.groupe}
-                  disabled={lui || occupe}
+                  disabled={lui}
+                  aria-disabled={occupe || undefined}
                   aria-label={t('gestion.utilisateurs.liste.groupeDe', { nom: u.nom })}
                   onChange={(e) => onGroupe(u, e.target.value)}
                 >
@@ -102,7 +108,7 @@ export function ListeUtilisateurs({
                 <button
                   type="button"
                   className={styles.petit}
-                  disabled={occupe}
+                  aria-disabled={occupe || undefined}
                   aria-label={t('gestion.utilisateurs.liste.reinitialiserDe', { nom: u.nom })}
                   onClick={() => onReinitialiser(u)}
                 >
@@ -112,7 +118,7 @@ export function ListeUtilisateurs({
                   <button
                     type="button"
                     className={styles.petitDiscret}
-                    disabled={occupe}
+                    aria-disabled={occupe || undefined}
                     aria-label={t(
                       u.actif
                         ? 'gestion.utilisateurs.liste.desactiverDe'
