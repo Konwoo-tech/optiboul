@@ -6,7 +6,7 @@ import type {
 } from '@/espaces/gestion/tableau-de-bord/types.ts';
 
 import { manquesDeCaisse } from './caisses.ts';
-import { clientsSimules, PLAFOND } from './clients.ts';
+import { clientsSimules, plafondDeDette } from './clients.ts';
 import { demandesDePlafond, syntheseDeSession } from './comptoir.ts';
 import { budgetDuMois, demandesDeDepense } from './depenses.ts';
 import { commandesPartiellesSimulees, facturesSimulees } from './fournisseurs.ts';
@@ -87,7 +87,7 @@ function joursPrecedents(jour: string, nombre: number): string[] {
 function alertes(): Alerte[] {
   const enRetard = factures().filter((f) => !f.payee && f.enRetard);
   const bas = matieresEnStockBas();
-  const auDela = clientsSimules().filter((c) => c.solde < -PLAFOND).length;
+  const auDela = clientsSimules().filter((c) => c.solde < -plafondDeDette()).length;
   const signaux = signauxDeProduction();
   const budgets = budgetDuMois().lignes.filter((ligne) => ligne.realise > ligne.budget);
   const enAttente =
@@ -118,7 +118,7 @@ function alertes(): Alerte[] {
       niveau: 'bloquant',
       type: 'clients-au-dela-du-plafond',
       clients: auDela,
-      plafond: PLAFOND,
+      plafond: plafondDeDette(),
       destination: { espace: 'gestion', ecran: 'clients', parametres: { filtre: 'depasse' } },
     });
   }
@@ -217,7 +217,7 @@ function instantane(contexte: SemaineEnCours): InstantaneTableauDeBord {
     dettesClients: {
       montant: -enDette.reduce((somme, c) => somme + c.solde, 0),
       clients: enDette.length,
-      auDessusDuPlafond: enDette.filter((c) => c.solde < -PLAFOND).length,
+      auDessusDuPlafond: enDette.filter((c) => c.solde < -plafondDeDette()).length,
     },
     dettesFournisseurs: {
       montant: impayees.reduce((somme, f) => somme + f.montant, 0),

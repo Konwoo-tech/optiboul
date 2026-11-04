@@ -82,14 +82,20 @@ export function ecartPourcent(theorique: number, compte: number): number {
  * Une matière hors tolérance : écart de plus de 5 % (strict) du théorique. Un théorique nul avec
  * un comptage positif est toujours un écart (pas de pourcentage défini, mais de la matière apparaît).
  */
-export function ligneHorsTolerance(ligne: Pick<LigneInventaire, 'theorique' | 'compte'>): boolean {
+export function ligneHorsTolerance(
+  ligne: Pick<LigneInventaire, 'theorique' | 'compte'>,
+  tolerance: number = TOLERANCE_INVENTAIRE,
+): boolean {
   if (!ligne.theorique) return ligne.compte > 0;
-  return Math.abs((ligne.compte - ligne.theorique) / ligne.theorique) > TOLERANCE_INVENTAIRE / 100;
+  return Math.abs((ligne.compte - ligne.theorique) / ligne.theorique) > tolerance / 100;
 }
 
 /** Un écart de plus de 5 % sur une matière envoie l'inventaire au propriétaire (R9). */
-export function ecartDepasseLaTolerance(lignes: readonly LigneInventaire[]): boolean {
-  return lignes.some(ligneHorsTolerance);
+export function ecartDepasseLaTolerance(
+  lignes: readonly LigneInventaire[],
+  tolerance: number = TOLERANCE_INVENTAIRE,
+): boolean {
+  return lignes.some((ligne) => ligneHorsTolerance(ligne, tolerance));
 }
 
 export const lignesEnEcart = (inventaire: Pick<Inventaire, 'lignes'>): LigneInventaire[] =>

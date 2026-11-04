@@ -3,7 +3,6 @@ import {
   exigeValidation,
   numeroDepense,
   peutDecider,
-  SEUIL_PAR_DEFAUT,
 } from '@/espaces/comptoir/depenses/regles.ts';
 import {
   CATEGORIES,
@@ -23,6 +22,7 @@ import {
 } from '@/espaces/comptoir/depenses/types.ts';
 import type { Profil } from '../profils.ts';
 
+import { valeurDuParametre } from './parametres.ts';
 import { repercuterDepenseEnCaisse } from './caisses.ts';
 import {
   abonnerChangementDeSession,
@@ -361,7 +361,7 @@ function instantane(): InstantaneDepenses {
   const { type, date } = sessionDeProduction();
   return structuredClone({
     mois: MOIS_DU_BUDGET,
-    seuil: SEUIL_PAR_DEFAUT,
+    seuil: valeurDuParametre('seuil_validation_depenses'),
     semaineCourante: courante,
     semaines: toutes,
     gerantDeLaSemaine: semaineCouranteSimulee().gerant?.nom ?? '—',
@@ -443,7 +443,7 @@ function creerDepense(a: Acteur, corps: Corps): Response {
 
   const etat = lireEtat();
   const numero = Math.max(0, ...etat.depenses.map((d) => d.numero)) + 1;
-  const attend = exigeValidation(montant, SEUIL_PAR_DEFAUT, a.profil);
+  const attend = exigeValidation(montant, valeurDuParametre('seuil_validation_depenses'), a.profil);
   const creee: Depense = {
     id: `e${Date.now()}-${++sequence}`,
     numero,
