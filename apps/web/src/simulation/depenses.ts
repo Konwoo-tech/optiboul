@@ -34,6 +34,8 @@ import {
 import { fournisseursSimules } from './fournisseurs.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
 import { semaineCouranteSimulee } from './planning.ts';
+import { formaterNombre } from '@/utils';
+import { consigner } from './journal.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 import { entrerEnStockDepuisDepense } from './stocks.ts';
 
@@ -317,6 +319,7 @@ export function journalDepenses(): readonly Journal[] {
 
 function tracer(qui: string, quoi: string) {
   lireEtat().journal = [{ heure: heureCourante(), qui, quoi }, ...lireEtat().journal];
+  consigner({ auteur: qui, type: 'depense', texte: quoi });
 }
 
 /**
@@ -488,7 +491,7 @@ function creerDepense(a: Acteur, corps: Corps): Response {
 
   tracer(
     a.nom,
-    `Dépense ${numeroDepense(numero)} : ${libelle} – ${montant} FCFA, rattachée à ${
+    `Dépense ${numeroDepense(numero)} : ${libelle} – ${formaterNombre(montant)} FCFA, rattachée à ${
       rattachement.type === 'stock'
         ? `stock (${rattachement.matiere} +${rattachement.quantite})`
         : rattachement.type === 'production'
@@ -528,7 +531,7 @@ export function enregistrerSalaire(
   etat.depenses = [creee, ...etat.depenses];
   tracer(
     a.nom,
-    `Dépense ${numeroDepense(numero)} : ${salaire.libelle} – ${salaire.montant} FCFA, rattachée à la semaine ${semaineCourante()}`,
+    `Dépense ${numeroDepense(numero)} : ${salaire.libelle} – ${formaterNombre(salaire.montant)} FCFA, rattachée à la semaine ${semaineCourante()}`,
   );
   return structuredClone(creee);
 }

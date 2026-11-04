@@ -77,4 +77,24 @@ describe('horodatage et type', () => {
     );
     expect(typeDeLAction('stock', 'Mouvement de stock manuel')).toBe('stock');
   });
+
+  it('range les libellés réels des faux serveurs : décisions en « demande », le reste à l’écran appelant', () => {
+    // Libellés émis par comptoir.ts et depenses.ts.
+    expect(typeDeLAction('session', 'Accord – Livraison au-delà du plafond : Brice')).toBe(
+      'demande',
+    );
+    expect(typeDeLAction('session', 'Refus – Livraison au-delà du plafond : Brice')).toBe(
+      'demande',
+    );
+    expect(typeDeLAction('depense', 'Refus – Dépense DEP-0014')).toBe('demande');
+    expect(typeDeLAction('session', 'Demande d’autorisation : Brice')).toBe('demande');
+    expect(typeDeLAction('production', 'Demande d’augmentation de production : +1 sac')).toBe(
+      'demande',
+    );
+    expect(typeDeLAction('session', 'Livraison Alex – 5 000 FCFA dû, 4 000 reçu')).toBe('session');
+    expect(typeDeLAction('depense', 'Dépense DEP-0017 : Joint – 8 000 FCFA')).toBe('depense');
+    expect(typeDeLAction('depense', 'Dépense soumise : Réparation du pétrin')).toBe('depense');
+    expect(typeDeLAction('caisse', 'Fermeture de caisse · écart -500 FCFA')).toBe('caisse');
+    expect(typeDeLAction('connexion', 'Connexion via e-mail')).toBe('connexion');
+  });
 });

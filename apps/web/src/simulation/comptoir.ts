@@ -21,12 +21,19 @@ import {
   type Saisies,
   type TypeMouvement,
 } from '@/espaces/comptoir/session/types.ts';
-import { creneauDe, formaterHeure, FUSEAU_BOULANGERIE, type Creneau } from '@/utils';
+import {
+  creneauDe,
+  formaterHeure,
+  formaterNombre,
+  FUSEAU_BOULANGERIE,
+  type Creneau,
+} from '@/utils';
 
 import { comptesActifs } from './comptes.ts';
 import { CODE_DEMO } from './donnees.ts';
 import type { NotificationSimulee } from './notifications.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
+import { consigner } from './journal.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
 /*
@@ -350,6 +357,7 @@ const reponse = (extra: object = {}) => Response.json({ instantane: instantane()
 
 function tracer(qui: string, quoi: string) {
   lireEtat().journal = [{ heure: heureCourante(), qui, quoi }, ...lireEtat().journal];
+  consigner({ auteur: qui, type: 'session', texte: quoi });
 }
 
 /** Personne connectée : seuls le caissier, le gérant et le propriétaire voient la session. */
@@ -450,7 +458,7 @@ function enregistrerLivraison(a: Acteur, corps: Corps): Response {
   lireEtat().dernierBon = livraison.id;
   tracer(
     a.nom,
-    `Livraison ${livraison.nom} – ${livraison.du} FCFA dû, ${livraison.recu} reçu` +
+    `Livraison ${livraison.nom} – ${formaterNombre(livraison.du)} FCFA dû, ${formaterNombre(livraison.recu)} reçu` +
       (livraison.autorisePar ? ` (autorisée par ${livraison.autorisePar})` : ''),
   );
   return reponse({ livraison });
@@ -470,7 +478,10 @@ function demanderAutorisation(a: Acteur, corps: Corps): Response {
   }
   if (estDirection(a)) {
     lireEtat().autorisations[cible.id] = { par: a.nom, heure: heureCourante(), soldeApres };
-    tracer(a.nom, `Autorisation de dépassement du plafond : ${cible.nom} (${soldeApres} FCFA)`);
+    tracer(
+      a.nom,
+      `Autorisation de dépassement du plafond : ${cible.nom} (${formaterNombre(soldeApres)} FCFA)`,
+    );
     return reponse({ autorise: true });
   }
   const existante = lireEtat().demandes.find(

@@ -37,6 +37,7 @@ import {
   reinitialiserProduction,
   repondreProduction,
 } from './production.ts';
+import { consigner, reinitialiserJournal, repondreJournal } from './journal.ts';
 import { contexteSemaines, reinitialiserPlanning } from './planning.ts';
 import { reinitialiserSemaines, repondreSemaines } from './semaines.ts';
 import { lireUtilisateurConnecte, memoriserUtilisateurConnecte } from './session.ts';
@@ -83,6 +84,7 @@ export function reinitialiserSimulation(): void {
   reinitialiserPlanning();
   reinitialiserSemaines();
   reinitialiserNumerosDemandes();
+  reinitialiserJournal();
   memoriserUtilisateurConnecte(null);
 }
 
@@ -90,6 +92,15 @@ const probleme = (status: number, code: string, detail: string, autres: object =
   Response.json({ detail, code, ...autres }, { status });
 
 const sansContenu = () => new Response(null, { status: 204 });
+
+/** Consigne la connexion au journal, comme la maquette : « Connexion via e-mail · double authentification par SMS ». */
+function tracerConnexion(compte: CompteSimule, via: Via, canal?: Canal): void {
+  const texte =
+    'Connexion' +
+    (via === 'code' ? '' : ` via ${via}`) +
+    (canal ? ` · double authentification par ${canal === 'sms' ? 'SMS' : 'WhatsApp'}` : '');
+  consigner({ auteur: compte.nom, type: 'connexion', texte });
+}
 
 type Corps = Record<string, unknown>;
 
@@ -137,6 +148,7 @@ function identifier(corps: Corps): Response {
 
   if (corps.deuxFacteurs === false) {
     ouvrirLaSession(compte.id);
+    tracerConnexion(compte, via);
     return Response.json({ deuxFacteurs: false });
   }
   enAttente = { compte, via, canal: 'sms', envoye: false, essais: 0 };
@@ -163,6 +175,7 @@ function verifierCode(corps: Corps): Response {
   }
   if (corps.code === CODE_OTP_DEMO) {
     ouvrirLaSession(enAttente.compte.id);
+    tracerConnexion(enAttente.compte, enAttente.via, enAttente.canal);
     enAttente = null;
     return sansContenu();
   }
@@ -245,10 +258,22 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
       return sansContenu();
     }
 
-    case 'POST /api/v1/simulation/deconnexion/':
+    case 'POST /api/v1/simulation/deconnexion/': {
+      const partant = lireUtilisateurConnecte();
+      if (partant) {
+        consigner({
+          auteur: partant.nom,
+          type: 'connexion',
+          texte:
+            corps.raison === 'inactivite'
+              ? 'Déconnexion automatique (inactivité)'
+              : 'Changement d’utilisateur',
+        });
+      }
       enAttente = null;
       memoriserUtilisateurConnecte(null);
       return sansContenu();
+    }
 
     default:
       return (
@@ -260,6 +285,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
         repondreFournisseurs(url, methode, corps) ??
         repondreSemaines(url, methode, corps) ??
         repondrePersonnel(url, methode, corps) ??
+        repondreJournal(url, methode, corps) ??
         repondreDemandes(methode, chemin, corps) ??
         repondreProduction(methode, chemin, corps) ??
         repondreTableauDeBord(url, methode, corps, CONTEXTE) ??
