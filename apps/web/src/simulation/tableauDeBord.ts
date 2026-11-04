@@ -9,6 +9,7 @@ import { manquesDeCaisse } from './caisses.ts';
 import { clientsSimules, PLAFOND } from './clients.ts';
 import { demandesDePlafond, syntheseDeSession } from './comptoir.ts';
 import { budgetDuMois, demandesDeDepense } from './depenses.ts';
+import { commandesPartiellesSimulees, facturesSimulees } from './fournisseurs.ts';
 import { signauxDeProduction } from './production.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 import { demandesDInventaire, matieresEnStockBas } from './stocks.ts';
@@ -20,8 +21,8 @@ import { demandesDInventaire, matieresEnStockBas } from './stocks.ts';
  * l'écran Clients), les caisses (manques), les dépenses (budget), les stocks (stock bas, le même
  * niveau que l'écran Stocks), la production (non clôturée, écart de matières), les demandes. Ne
  * sont pas encore simulés ailleurs, donc portés ici en données de départ : le cumul du mois avant
- * la session, les recettes des nuits passées, les factures fournisseurs, les réceptions partielles
- * et la production du mois.
+ * la session, les recettes des nuits passées et la production du mois. Les factures et les
+ * réceptions partielles viennent de `fournisseurs.ts`.
  */
 
 type Corps = Record<string, unknown>;
@@ -44,19 +45,23 @@ type Facture = { numero: string; montant: number; payee: boolean; enRetard: bool
 
 /** Fonctions et non constantes : aucun appel au chargement du module, rien dans le paquet de production. */
 
-/** Factures fournisseurs de la maquette (`invoices`), tant que l'écran Fournisseurs n'existe pas. */
-const factures = (): Facture[] => [
-  { numero: 'FAC-41', montant: 1_405_800, payee: false, enRetard: true },
-  { numero: 'FAC-42', montant: 859_100, payee: false, enRetard: false },
-  { numero: 'FAC-0213', montant: 30_000, payee: false, enRetard: false },
-  { numero: 'FAC-0198', montant: 40_000, payee: false, enRetard: true },
-  { numero: 'FAC-40', montant: 1_581_525, payee: true, enRetard: false },
-];
+/** Factures fournisseurs : lues dans `fournisseurs.ts`, leur source (écran Gestion › Fournisseurs). */
+const factures = (): Facture[] =>
+  facturesSimulees().map((f) => ({
+    numero: f.numero,
+    montant: f.montant,
+    payee: f.statut === 'payee',
+    enRetard: f.enRetard,
+  }));
 
-/** Réceptions partielles (`orders` au statut « partielle ») : BC-032, 6 kg de levure sur 10. */
-const receptionsPartielles = () => [
-  { commande: 'BC-032', matiere: 'levure', commandee: 10, recue: 6 } as const,
-];
+/** Réceptions partielles (bons livrés en partie) : le manquant reste à relancer ou à replanifier. */
+const receptionsPartielles = () =>
+  commandesPartiellesSimulees().map((c) => ({
+    commande: c.numero,
+    matiere: c.matiere,
+    commandee: c.commandee,
+    recue: c.recue,
+  }));
 
 /** Production du mois par produit, en pains (maquette : `prodBars`). */
 const production = (): ProductionDuProduit[] => [

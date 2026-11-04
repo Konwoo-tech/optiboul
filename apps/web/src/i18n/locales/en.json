@@ -445,6 +445,7 @@
       "rattache": {
         "production": "Production · {{session}}",
         "stock": "Stock · {{matiere}} +{{quantite}} {{unite}}",
+        "facture": "Stock · {{numero}}",
         "semaine": "Week {{numero}}"
       },
       "ligne": {
@@ -862,6 +863,129 @@
         "reference": "Enter the mobile money transaction reference in the sheet.",
         "impossible": "Not possible in the current state of the payroll.",
         "erreur": "The action could not be saved: try again."
+      }
+    },
+    "fournisseurs": {
+      "sections": "Suppliers",
+      "erreurChargement": "Suppliers could not be loaded. Please try again in a moment.",
+      "kpis": {
+        "dette": "Supplier debt",
+        "retard": "Overdue invoices",
+        "manquants": "Short deliveries",
+        "planifiees": "Scheduled deliveries"
+      },
+      "onglets": {
+        "receptions": "Deliveries",
+        "fournisseurs": "Suppliers",
+        "dettes": "Invoices & debts"
+      },
+      "receptions": {
+        "liste": "Purchase orders",
+        "regle": "The manager schedules deliveries, then receives them on arrival by counting the quantity delivered. Each delivery creates a stock entry; a shortfall stays tracked until the remainder is delivered.",
+        "statuts": {
+          "planifiee": "Planned",
+          "recue": "Received",
+          "partielle": "Short"
+        },
+        "planifieePar": "Planned by {{nom}}",
+        "recuePar": "Received by {{nom}} · {{date}}",
+        "manque": "Short {{quantite}} {{unite}}",
+        "receptionner": "Receive",
+        "relancer": "Remind",
+        "replanifier": "Reschedule remainder",
+        "vide": "No purchase orders."
+      },
+      "planifier": {
+        "titre": "Schedule a delivery",
+        "fournisseur": "Supplier",
+        "matiere": "Material",
+        "quantite": "Quantity ordered",
+        "date": "Planned delivery date",
+        "enregistrer": "Schedule",
+        "erreurs": {
+          "quantite": "Enter a quantity.",
+          "quantite_obligatoire": "Enter a quantity.",
+          "defaut": "The delivery could not be scheduled. Please try again.",
+          "quantite_trop_grande": "Quantity too high (maximum {{max}})."
+        }
+      },
+      "fiches": {
+        "liste": "Supplier cards",
+        "conditions": "Terms",
+        "dette": "Debt",
+        "prochaine": "Next delivery",
+        "manquant": "Shortfall",
+        "telephone": "+237 {{numero}}",
+        "conditionsValeurs": {
+          "credit-lundi-mardi": "Delivered on credit · paid the following Monday or Tuesday",
+          "sept-jours": "Payment within 7 days",
+          "a-la-livraison": "Cash on delivery"
+        }
+      },
+      "factures": {
+        "liste": "Invoices",
+        "regle": "Invoices come from deliveries. Flour is grouped per week and paid the following Monday or Tuesday. Each payment creates an expense linked to stock.",
+        "statuts": {
+          "en-retard": "Overdue",
+          "a-payer": "To pay",
+          "en-cours": "Ongoing",
+          "payee": "Paid"
+        },
+        "echeance": "Due: {{date}}",
+        "payeeLe": "Paid on {{date}} · {{mode}}",
+        "payer": "Pay",
+        "recu": "PDF receipt",
+        "objets": {
+          "farine": "Flour · week {{semaine}} ({{sacs}} sacks)",
+          "farineEnCours": "Flour · week {{semaine}} ({{sacs}} sacks so far)",
+          "reception": "{{commande}} · {{matiere}}, {{quantite}} {{unite}}",
+          "receptionPartielle": "{{commande}} · {{matiere}}, {{quantite}} {{unite}} received of {{commandee}}",
+          "livraison": "{{matiere}} · {{quantite}} {{unite}} ({{commande}})"
+        },
+        "vide": "No invoices.",
+        "reference": " · ref. {{reference}}"
+      },
+      "modes": {
+        "especes": "Cash",
+        "banque": "Bank",
+        "mobile": "Mobile money"
+      },
+      "reception": {
+        "titre": "Delivery {{numero}}",
+        "ligne": "{{fournisseur}} · {{matiere}} · ordered: {{quantite}} {{unite}} · due {{date}}",
+        "quantite": "Quantity actually delivered",
+        "observation": "Note (optional)",
+        "aide": "If the quantity is below the order, the shortfall stays to be delivered and appears in the tracking.",
+        "annuler": "Cancel",
+        "valider": "Confirm delivery",
+        "erreurs": {
+          "quantite_trop_grande": "Quantity too high (maximum {{max}}).",
+          "defaut": "The delivery could not be recorded. Please try again."
+        }
+      },
+      "paiement": {
+        "titre": "Supplier payment",
+        "info": "{{numero}} · {{fournisseur}} · {{objet}} · {{montant}} FCFA",
+        "mode": "Payment method",
+        "annuler": "Cancel",
+        "valider": "Record payment",
+        "reference": "Transaction reference",
+        "referenceObligatoire": "Enter the mobile money transaction reference.",
+        "erreurs": {
+          "defaut": "The payment could not be recorded. Please try again."
+        }
+      },
+      "toasts": {
+        "planifiee": "Delivery scheduled · {{numero}}",
+        "quantiteRecue": "Enter the quantity received",
+        "recue": "Delivery recorded · stock updated",
+        "partielle": "Partial delivery · shortfall recorded",
+        "relance": "Reminder sent to {{nom}}",
+        "replanifie": "Remainder rescheduled for {{date}}",
+        "paye": "Payment recorded · {{numero}}",
+        "recuPret": "PDF receipt ready",
+        "erreur": "The action could not be saved. Please try again.",
+        "dejaFait": "This line has already been handled. The list is up to date."
       }
     },
     "semaines": {

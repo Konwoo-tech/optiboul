@@ -31,6 +31,7 @@ import {
   repercuterDepenseDeSession,
   sessionDeProduction,
 } from './comptoir.ts';
+import { fournisseursSimules } from './fournisseurs.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
 import { semaineCouranteSimulee } from './planning.ts';
 import { lireUtilisateurConnecte } from './session.ts';
@@ -76,13 +77,9 @@ const semaines = (): Semaine[] => [
   { id: 'S44', numero: 44, du: '2026-10-26', au: '2026-11-01' },
 ];
 
-const fournisseurs = (): Fournisseur[] => [
-  { id: 'f1', nom: 'Grands Moulins du Centre', matieres: ['farine'] },
-  { id: 'f2', nom: 'Mfoundi Levures & Sel', matieres: ['levure', 'sel', 'ameliorant'] },
-  { id: 'f3', nom: 'Glacière d’Olembé', matieres: ['glace'] },
-  { id: 'f4', nom: 'Bois Nkolondom', matieres: ['bois'] },
-  { id: 'f5', nom: 'Huilerie Mvog-Mbi', matieres: ['huile'] },
-];
+/** Les fournisseurs viennent de leur source unique (`fournisseurs.ts`). */
+const fournisseurs = (): Fournisseur[] =>
+  fournisseursSimules().map(({ id, nom, matieres }) => ({ id, nom, matieres }));
 
 const NUIT_14 = { type: 'nuit', date: '2026-10-14' } as const;
 
@@ -328,7 +325,8 @@ function tracer(qui: string, quoi: string) {
  */
 function entrerEnStock(depense: Depense) {
   const { rattachement } = depense;
-  if (rattachement.type !== 'stock') return;
+  // Un paiement de facture n'entre rien en stock : la matière est entrée à la réception.
+  if (rattachement.type !== 'stock' || 'facture' in rattachement) return;
   entrerEnStockDepuisDepense({
     matiere: rattachement.matiere,
     quantite: rattachement.quantite,
@@ -533,6 +531,44 @@ export function enregistrerSalaire(
     `Dépense ${numeroDepense(numero)} : ${salaire.libelle} – ${salaire.montant} FCFA, rattachée à la semaine ${semaineCourante()}`,
   );
   return structuredClone(creee);
+}
+
+/**
+ * Dépense créée par le paiement d'une facture fournisseur (US-103) : catégorie matières premières,
+ * rattachée au stock par le numéro de la facture, validée d'office (maquette). L'entrée de stock a
+ * déjà eu lieu à la réception : aucune entrée n'est refaite ici. Renvoie le numéro « DEP-0017 ».
+ */
+export function enregistrerPaiementFournisseur(paiement: {
+  facture: string;
+  fournisseur: string;
+  montant: number;
+  mode: ModeDepense;
+  par: string;
+  parProfil: Profil;
+}): string {
+  const etat = lireEtat();
+  const numero = Math.max(0, ...etat.depenses.map((d) => d.numero)) + 1;
+  const creee: Depense = {
+    id: `e${Date.now()}-${++sequence}`,
+    numero,
+    date: dateDuJour(),
+    semaine: semaineCourante(),
+    categorie: 'matieres',
+    libelle: `Paiement ${paiement.facture} · ${paiement.fournisseur}`,
+    montant: paiement.montant,
+    mode: paiement.mode,
+    par: paiement.par,
+    parProfil: paiement.parProfil,
+    statut: 'validee',
+    photo: false,
+    rattachement: { type: 'stock', facture: paiement.facture },
+  };
+  etat.depenses = [creee, ...etat.depenses];
+  tracer(
+    paiement.par,
+    `Dépense ${numeroDepense(numero)} : ${creee.libelle} – ${paiement.montant} FCFA, rattachée au stock (${paiement.facture})`,
+  );
+  return numeroDepense(numero);
 }
 
 /** Dépenses rattachées à une semaine, hors refusées (indicateurs de l'écran des semaines). */

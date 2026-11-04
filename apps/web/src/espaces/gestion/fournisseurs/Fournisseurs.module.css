@@ -1,0 +1,454 @@
+/*
+ * Gestion › Fournisseurs, repris valeur par valeur de la maquette « OptiBoul ERP v2 » (bloc
+ * `scr.fournisseurs`, lignes 576-607, fenêtres `mRec` et `modal.pay`). Variables : --ob-marque =
+ * brand, --ob-surface = surface, --ob-ligne = line, --ob-ligne-champ = fline, --ob-discret =
+ * muted, --ob-encre = ink, --ob-champ = field, --ob-doux = soft, --ob-fond = bg.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panneau {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.kpi {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 16px 18px;
+}
+
+.kpiLibelle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ob-discret);
+}
+
+.kpiValeur {
+  font-size: 24px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+}
+
+.onglets {
+  display: flex;
+  gap: 4px;
+  background: var(--ob-doux);
+  padding: 4px;
+  border-radius: 12px;
+  align-self: flex-start;
+  flex-wrap: wrap;
+}
+
+.onglet {
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+  background: transparent;
+  color: var(--ob-discret);
+  box-shadow: none;
+}
+
+.ongletActif {
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  box-shadow: 0 1px 3px rgba(46, 26, 16, 0.15);
+}
+
+.receptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.carte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.liste {
+  flex: 2 1 460px;
+  min-width: 0;
+}
+
+.regle {
+  padding: 14px 20px;
+  font-size: 12px;
+  color: var(--ob-discret);
+  line-height: 1.5;
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.lignes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.mot {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.texte {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.texteFacture {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.titre {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.sous {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.manque {
+  font-size: 12px;
+  font-weight: 800;
+  color: #b07a00;
+}
+
+.montant {
+  font-size: 15px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.principal {
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.principal[aria-disabled='true'],
+.secondaire[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.secondaire {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 10px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.formulaire {
+  flex: 1 1 280px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.titreFormulaire {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  margin: 0;
+}
+
+.etiquette {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.champ {
+  height: 48px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.champ:focus-visible,
+.comptage:focus-visible {
+  outline: none;
+  border-color: var(--ob-marque);
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.erreur {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c2453a;
+}
+
+.validerFormulaire {
+  align-self: flex-end;
+  min-height: 48px;
+}
+
+.fiches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fiche {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ficheNom {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ob-encre);
+  margin: 0;
+}
+
+.ficheSous {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.ficheLigne {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  margin: 0;
+}
+
+.ficheLigneHaut {
+  padding-top: 8px;
+  border-top: 1px solid var(--ob-ligne);
+}
+
+.ficheLibelle {
+  color: var(--ob-discret);
+}
+
+.ficheValeur {
+  font-weight: 700;
+  color: var(--ob-encre);
+  margin: 0;
+}
+
+/* Seules les conditions sont alignées à droite dans la maquette. */
+.ficheValeurDroite {
+  text-align: right;
+}
+
+.ficheValeurGrasse {
+  font-weight: 800;
+}
+
+.vide {
+  padding: 20px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+/* Fenêtres : réception et paiement. */
+.recapModale {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.infoPaiement {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.comptage {
+  height: 56px;
+  width: 100%;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 26px;
+  font-weight: 800;
+  text-align: right;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.aide {
+  font-size: 13px;
+  color: var(--ob-discret);
+  margin: 0;
+}
+
+.groupe {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.legende {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.puce {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.puceActive {
+  border-color: #f2b705;
+  background: #f2b705;
+  color: #2e1a10;
+}
+
+.boutons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.annuler {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.confirmer {
+  min-height: 48px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.confirmer[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Le panneau d'un onglet se joint au clavier (défilement). */
+.panneau:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.erreurModale {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c2453a;
+}
+
+/* La liste de définitions reste invisible pour la mise en page : les lignes sont des enfants de la carte. */
+.ficheDl {
+  display: contents;
+}

@@ -29,6 +29,7 @@ import {
 } from './comptoir.ts';
 import { demandesEnAttente } from './demandes.ts';
 import { depensesDeSemaine } from './depenses.ts';
+import { facturesSimulees, libelleFactureFr, receptionsParSemaine } from './fournisseurs.ts';
 import { COMPTES_SIMULES } from './donnees.ts';
 import {
   affecter,
@@ -48,9 +49,8 @@ import { matieresSousLeBesoin } from './stocks.ts';
  * Faux serveur de « Gestion › Semaines » (US-172, récits US-030 à US-035) : les règles de la
  * maquette « OptiBoul ERP v2 » (fonction `vSemaines`, états `weeks`, `planning`). Les semaines et
  * le planning vivent dans `planning.ts` ; les caisses, les dépenses, les demandes, les clients et
- * le stock sont lus à leur source. La production est lue dans `production.ts`. Les réceptions et les factures
- * fournisseurs n'ont pas encore de faux serveur : leurs chiffres sont ceux de la maquette, ici, en
- * attendant l'écran Gestion › Fournisseurs.
+ * le stock sont lus à leur source. La production est lue dans `production.ts`, les réceptions et
+ * les factures fournisseurs dans `fournisseurs.ts`.
  */
 
 type Corps = Record<string, unknown>;
@@ -69,9 +69,6 @@ const SACS_SANS_PLAN = 8;
 /** Recette des semaines dont les caisses ne sont plus détaillées (maquette : `weeks[].recette`). */
 const RECETTE_ANTERIEURE = (): Record<string, number> => ({ S41: 2_214_600 });
 
-/** Réceptions fournisseurs rattachées à chaque semaine (maquette : `orders[].week`). */
-const RECEPTIONS = (): Record<string, number> => ({ S42: 6, S43: 1 });
-
 type Facture = {
   numero: string;
   libelle: string;
@@ -80,44 +77,15 @@ type Facture = {
   retard: boolean;
 };
 
-/** Factures fournisseurs (maquette : `invoices`). */
-const FACTURES = (): Facture[] => [
-  {
-    numero: 'FAC-41',
-    libelle: 'Farine · semaine 41 (72 sacs)',
-    montant: 1_405_800,
-    payee: false,
-    retard: true,
-  },
-  {
-    numero: 'FAC-42',
-    libelle: 'Farine · semaine 42 (44 sacs à ce jour)',
-    montant: 859_100,
-    payee: false,
-    retard: false,
-  },
-  {
-    numero: 'FAC-0213',
-    libelle: 'BC-032 · Levure, 6 kg reçus sur 10',
-    montant: 30_000,
-    payee: false,
-    retard: false,
-  },
-  {
-    numero: 'FAC-0198',
-    libelle: 'Bois · 2 chargements (BC-027)',
-    montant: 40_000,
-    payee: false,
-    retard: true,
-  },
-  {
-    numero: 'FAC-40',
-    libelle: 'Farine · semaine 40 (81 sacs)',
-    montant: 1_581_525,
-    payee: true,
-    retard: false,
-  },
-];
+/** Factures fournisseurs, lues dans `fournisseurs.ts` (leur source) avec le libellé français des contrôles. */
+const FACTURES = (): Facture[] =>
+  facturesSimulees().map((f) => ({
+    numero: f.numero,
+    libelle: libelleFactureFr(f),
+    montant: f.montant,
+    payee: f.statut === 'payee',
+    retard: f.enRetard,
+  }));
 
 let journal: Journal[] = [];
 
@@ -169,7 +137,7 @@ function indicateurs(semaines: readonly Semaine[]): Record<string, Indicateurs> 
   const { sessions } = lectureCaisses();
   const { historique, enCours } = productionsRattachees();
   const anterieures = RECETTE_ANTERIEURE();
-  const receptions = RECEPTIONS();
+  const receptions = receptionsParSemaine();
   const enDirect = enCours ? semaineDuJour(semaines, enCours.date)?.id : undefined;
   return Object.fromEntries(
     semaines.map((s) => {
