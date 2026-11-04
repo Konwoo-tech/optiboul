@@ -13,7 +13,7 @@ import {
 } from '@/espaces/gestion/journal/types.ts';
 import { formaterHeure, FUSEAU_BOULANGERIE } from '@/utils';
 
-import { COMPTES_SIMULES } from './donnees.ts';
+import { tousLesComptes } from './comptes.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
 /*
@@ -47,7 +47,9 @@ const jourDe = (date: Date) =>
 const instantDe = (jour: string, heure: string) => new Date(`${jour}T${heure}:00+01:00`);
 
 function profilDe(auteur: string) {
-  return COMPTES_SIMULES.find((c) => c.nom === auteur)?.profil ?? null;
+  // Comptes vivants, désactivés compris : une action passée garde son auteur. Le profil est celui
+  // du moment de l'action, il ne change pas quand le compte change de groupe ensuite.
+  return tousLesComptes().find((c) => c.nom === auteur)?.profil ?? null;
 }
 
 let entrees: readonly EntreeJournal[] | undefined;
