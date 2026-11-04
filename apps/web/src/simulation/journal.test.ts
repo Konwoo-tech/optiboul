@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { InstantaneJournal } from '@/espaces/gestion/journal/types.ts';
 
-import { consigner, lireJournal, reinitialiserJournal, repondreJournal } from './journal.ts';
+import { ajouterCompte, affecterAuGroupe } from './comptes.ts';
+import { consigner, lireJournal, repondreJournal } from './journal.ts';
+import { reinitialiserSimulation } from './routeur.ts';
 import { memoriserUtilisateurConnecte } from './session.ts';
 
 const JOURNAL = '/api/v1/simulation/gestion/journal/';
@@ -28,7 +30,7 @@ const lire = async (requete = '') =>
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-10-14T17:02:00Z'));
-  reinitialiserJournal();
+  reinitialiserSimulation();
   memoriserUtilisateurConnecte('willy');
 });
 afterEach(() => vi.useRealTimers());
@@ -52,6 +54,33 @@ describe('registre du journal : données de départ', () => {
       auteur: 'Willy',
       profil: 'gerant',
     });
+  });
+});
+
+describe('registre du journal : profil de l’auteur (comptes vivants)', () => {
+  it('retrouve le profil d’un compte créé, puis garde celui du moment après un changement de groupe', () => {
+    ajouterCompte({
+      id: 'zoe',
+      nom: 'Zoé',
+      profil: 'caissier',
+      email: 'zoe@exemple.cm',
+      telephone: '6 00 00 00 00',
+      groupe: 'g1',
+      dernierAcces: '—',
+      actif: true,
+      canal: 'sms',
+    });
+    consigner({ auteur: 'Zoé', type: 'caisse', texte: 'Avant le changement' });
+    affecterAuGroupe('zoe', { id: 'g-test', nom: 'Gérants', profil: 'gerant', description: '' });
+    consigner({ auteur: 'Zoé', type: 'caisse', texte: 'Après le changement' });
+    const [apres, avant] = lireJournal();
+    expect(apres).toMatchObject({ texte: 'Après le changement', profil: 'gerant' });
+    expect(avant).toMatchObject({ texte: 'Avant le changement', profil: 'caissier' });
+  });
+
+  it('un auteur sans compte (le système) n’a pas de profil', () => {
+    consigner({ auteur: 'Système', type: 'production', texte: 'Archivage' });
+    expect(lireJournal()[0]!.profil).toBeNull();
   });
 });
 
