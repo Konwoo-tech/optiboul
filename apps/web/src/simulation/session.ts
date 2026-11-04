@@ -1,4 +1,5 @@
-import { UTILISATEURS_SIMULES, type UtilisateurSimule } from './donnees.ts';
+import { utilisateursActifs } from './comptes.ts';
+import type { UtilisateurSimule } from './donnees.ts';
 
 const CLE = 'optiboul-simulation-utilisateur';
 
@@ -12,7 +13,7 @@ export function lireUtilisateurConnecte(): UtilisateurSimule | undefined {
   } catch {
     // stockage indisponible
   }
-  return UTILISATEURS_SIMULES.find((utilisateur) => utilisateur.id === id);
+  return utilisateursActifs().find((utilisateur) => utilisateur.id === id);
 }
 
 export function memoriserUtilisateurConnecte(id: string | null): void {

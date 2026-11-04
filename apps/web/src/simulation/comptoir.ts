@@ -23,7 +23,8 @@ import {
 } from '@/espaces/comptoir/session/types.ts';
 import { creneauDe, formaterHeure, FUSEAU_BOULANGERIE, type Creneau } from '@/utils';
 
-import { CODE_DEMO, COMPTES_SIMULES } from './donnees.ts';
+import { comptesActifs } from './comptes.ts';
+import { CODE_DEMO } from './donnees.ts';
 import type { NotificationSimulee } from './notifications.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
 import { lireUtilisateurConnecte } from './session.ts';
@@ -499,7 +500,7 @@ function deciderAutorisation(corps: Corps): Response {
     return probleme(404, 'demande_inconnue', 'Aucune demande en attente.');
   }
   // Le code est celui du gérant de la semaine ou du propriétaire, saisi sur ce poste.
-  const decideur = COMPTES_SIMULES.find(
+  const decideur = comptesActifs().find(
     (c) => (c.profil === 'gerant' || c.profil === 'proprietaire') && corps.code === CODE_DEMO,
   );
   if (!decideur) {

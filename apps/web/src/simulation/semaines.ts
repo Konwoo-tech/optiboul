@@ -29,8 +29,8 @@ import {
 } from './comptoir.ts';
 import { demandesEnAttente } from './demandes.ts';
 import { depensesDeSemaine } from './depenses.ts';
+import { comptesActifs } from './comptes.ts';
 import { facturesSimulees, libelleFactureFr, receptionsParSemaine } from './fournisseurs.ts';
-import { COMPTES_SIMULES } from './donnees.ts';
 import {
   affecter,
   cloturerSemaine,
@@ -108,7 +108,9 @@ const comme = (id: string, nom: string): Personne =>
 
 /** Comptes de démonstration d'un profil, dans l'ordre de l'écran de connexion. */
 const comptes = (profil: Profil): Personne[] =>
-  COMPTES_SIMULES.filter((c) => c.profil === profil).map((c) => comme(c.id, c.nom));
+  comptesActifs()
+    .filter((c) => c.profil === profil)
+    .map((c) => comme(c.id, c.nom));
 
 const ecartDe = (c: { compte: number | null; attendu: number }): number =>
   c.compte === null ? 0 : c.compte - c.attendu;

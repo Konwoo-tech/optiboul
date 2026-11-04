@@ -1,17 +1,25 @@
 import { formaterHeure } from '@/utils';
 
 import {
+  comptesActifs,
+  declarerComptesDeDepart,
+  noterAcces,
+  utilisateursActifs,
+} from './comptes.ts';
+import {
   CODE_DEMO,
   CODE_OTP_DEMO,
   COMPTES_SIMULES,
+  GROUPES_SIMULES,
   MOT_DE_PASSE_DEMO,
-  UTILISATEURS_SIMULES,
   type CompteSimule,
   type ContexteSimule,
 } from './donnees.ts';
 import { reinitialiserClients, repondreClients } from './clients.ts';
 import {
   adapterNotificationsAuComptoir,
+  dateDuJour,
+  heureCourante,
   reinitialiserComptoir,
   repondreComptoir,
 } from './comptoir.ts';
@@ -63,6 +71,7 @@ const lues = new Map<string, Set<string>>();
 export function reinitialiserSimulation(): void {
   enAttente = null;
   lues.clear();
+  declarerComptesDeDepart(COMPTES_SIMULES, GROUPES_SIMULES);
   reinitialiserClients();
   reinitialiserCaisses();
   reinitialiserComptoir();
@@ -89,6 +98,12 @@ export function masquerTelephone(telephone: string): string {
   return `+237 ${telephone.slice(0, 1)} •• •• ${telephone.slice(-5)}`;
 }
 
+/** La personne est connectée : son dernier accès est maintenant (maquette : `finishLogin`). */
+function ouvrirLaSession(id: string): void {
+  noterAcces(id, `${dateDuJour()}T${heureCourante()}`);
+  memoriserUtilisateurConnecte(id);
+}
+
 function projeter({ id, nom, profil, email }: CompteSimule) {
   return { id, nom, profil, email };
 }
@@ -100,7 +115,7 @@ function identifier(corps: Corps): Response {
 
   if (methode === 'code') {
     via = 'code';
-    compte = COMPTES_SIMULES.find((c) => c.id === corps.utilisateur);
+    compte = comptesActifs().find((c) => c.id === corps.utilisateur);
     if (!compte) return probleme(400, 'utilisateur_inconnu', 'Utilisateur inconnu.');
     if (corps.code !== CODE_DEMO) return probleme(400, 'code_incorrect', 'Code incorrect.');
   } else if (methode === 'email') {
@@ -108,20 +123,20 @@ function identifier(corps: Corps): Response {
     const saisi = String(corps.email ?? '')
       .trim()
       .toLowerCase();
-    compte = COMPTES_SIMULES.find((c) => c.email === saisi || c.id === saisi);
+    compte = comptesActifs().find((c) => c.email === saisi || c.id === saisi);
     if (!compte || corps.motDePasse !== MOT_DE_PASSE_DEMO) {
       return probleme(400, 'identifiants_incorrects', 'E-mail ou mot de passe incorrect.');
     }
   } else if (methode === 'google') {
     via = 'Google';
-    compte = COMPTES_SIMULES.find((c) => c.email === String(corps.email ?? '').toLowerCase());
+    compte = comptesActifs().find((c) => c.email === String(corps.email ?? '').toLowerCase());
     if (!compte) return probleme(400, 'compte_inconnu', 'Compte Google non autorisé.');
   } else {
     return probleme(400, 'methode_inconnue', 'Méthode de connexion inconnue.');
   }
 
   if (corps.deuxFacteurs === false) {
-    memoriserUtilisateurConnecte(compte.id);
+    ouvrirLaSession(compte.id);
     return Response.json({ deuxFacteurs: false });
   }
   enAttente = { compte, via, canal: 'sms', envoye: false, essais: 0 };
@@ -147,7 +162,7 @@ function verifierCode(corps: Corps): Response {
     return probleme(400, 'trop_d_essais', 'Trop d’essais.', { essaisRestants: 0 });
   }
   if (corps.code === CODE_OTP_DEMO) {
-    memoriserUtilisateurConnecte(enAttente.compte.id);
+    ouvrirLaSession(enAttente.compte.id);
     enAttente = null;
     return sansContenu();
   }
@@ -183,7 +198,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
     }
 
     case 'GET /api/v1/simulation/utilisateurs/':
-      return Response.json(UTILISATEURS_SIMULES);
+      return Response.json(utilisateursActifs());
 
     case 'GET /api/v1/simulation/contexte/':
       return Response.json({ ...CONTEXTE, ...contexteCaisses(), ...contexteSemaines() });
@@ -270,6 +285,7 @@ const attendre = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms
  * fichiers) passe par le vrai `fetch`. Renvoie une fonction qui rétablit l'original.
  */
 export function installerApiSimulee({ latenceMs = 120 }: { latenceMs?: number } = {}) {
+  declarerComptesDeDepart(COMPTES_SIMULES, GROUPES_SIMULES);
   const fetchReel = globalThis.fetch.bind(globalThis);
   globalThis.fetch = async (entree, init) => {
     const adresse = entree instanceof Request ? entree.url : String(entree);

@@ -31,6 +31,11 @@ const MARQUEURS = [
   'Bois Nkolondom',
   '6 99 10 20 30',
   'gestion/fournisseurs/',
+  'Caisse – équipe de nuit',
+  'Support informatique',
+  'Gérants de la semaine',
+  'boulfaubourg',
+  'support.optiboul',
 ];
 
 function fichiers(dossier) {
