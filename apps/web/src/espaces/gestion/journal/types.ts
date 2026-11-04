@@ -15,6 +15,7 @@ export const TYPES_ACTION = [
   'production',
   'semaine',
   'paie',
+  'utilisateur',
 ] as const;
 
 export type TypeAction = (typeof TYPES_ACTION)[number];

@@ -16,6 +16,7 @@ import type { Matiere } from '@/espaces/comptoir/depenses/types.ts';
 import { ajouterJours } from '@/espaces/atelier/stocks/regles.ts';
 
 import { dateDuJour, heureCourante } from './comptoir.ts';
+import { consigner } from './journal.ts';
 import { lireSemaines, semaineDuJourSimulee } from './planning.ts';
 
 /*
@@ -226,6 +227,7 @@ export function journalFournisseurs(): readonly Journal[] {
 export function tracerFournisseurs(qui: string, quoi: string): void {
   const etat = lireEtat();
   etat.journal = [{ heure: heureCourante(), qui, quoi }, ...etat.journal];
+  consigner({ auteur: qui, type: 'fournisseur', texte: quoi });
 }
 
 export const fournisseursSimules = (): Fournisseur[] => FOURNISSEURS();
