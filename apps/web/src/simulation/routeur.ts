@@ -24,6 +24,7 @@ import {
   repondreComptoir,
 } from './comptoir.ts';
 import { reinitialiserDepenses, repondreDepenses } from './depenses.ts';
+import { reinitialiserParametres, repondreParametres } from './parametres.ts';
 import { reinitialiserPersonnel, repondrePersonnel } from './personnel.ts';
 import { reinitialiserFournisseurs } from './fournisseurs.ts';
 import { repondreFournisseurs } from './fournisseursApi.ts';
@@ -89,6 +90,7 @@ export function reinitialiserSimulation(): void {
   reinitialiserNumerosDemandes();
   reinitialiserJournal();
   reinitialiserSauvegardes();
+  reinitialiserParametres();
   memoriserUtilisateurConnecte(null);
 }
 
@@ -290,6 +292,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
         repondreSemaines(url, methode, corps) ??
         repondrePersonnel(url, methode, corps) ??
         repondreJournal(url, methode, corps) ??
+        repondreParametres(url, methode, corps) ??
         repondreUtilisateurs(url, methode, corps) ??
         repondreSauvegardes(url, methode, corps) ??
         repondreDemandes(methode, chemin, corps) ??

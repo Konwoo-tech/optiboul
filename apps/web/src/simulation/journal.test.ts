@@ -59,7 +59,7 @@ describe('registre du journal : données de départ', () => {
 
 describe('registre du journal : profil de l’auteur (comptes vivants)', () => {
   it('retrouve le profil d’un compte créé, puis garde celui du moment après un changement de groupe', () => {
-    ajouterCompte({
+    ajouterCompte('administrateur', {
       id: 'zoe',
       nom: 'Zoé',
       profil: 'caissier',
@@ -71,7 +71,12 @@ describe('registre du journal : profil de l’auteur (comptes vivants)', () => {
       canal: 'sms',
     });
     consigner({ auteur: 'Zoé', type: 'caisse', texte: 'Avant le changement' });
-    affecterAuGroupe('zoe', { id: 'g-test', nom: 'Gérants', profil: 'gerant', description: '' });
+    affecterAuGroupe('administrateur', 'zoe', {
+      id: 'g-test',
+      nom: 'Gérants',
+      profil: 'gerant',
+      description: '',
+    });
     consigner({ auteur: 'Zoé', type: 'caisse', texte: 'Après le changement' });
     const [apres, avant] = lireJournal();
     expect(apres).toMatchObject({ texte: 'Après le changement', profil: 'gerant' });

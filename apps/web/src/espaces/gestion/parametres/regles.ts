@@ -1,0 +1,106 @@
+import { formaterNombre } from '@/utils';
+
+import type { Profil } from '../../../profils.ts';
+import {
+  JOURS_DE_LA_SEMAINE,
+  type ErreurValeur,
+  type Parametre,
+  type ValeurParametre,
+} from './types.ts';
+
+/*
+ * Règles des paramètres métier (cahier des charges §3.3 et §9, domaine `core/domain/parametres.py`).
+ * Python pur côté serveur, ici TypeScript pur : le faux serveur et l'écran appliquent exactement
+ * les mêmes contrôles.
+ */
+
+/** §3.3 : le propriétaire modifie les paramètres, l'administrateur les consulte, pas le gérant. */
+export const peutConsulterParametres = (profil: Profil | null | undefined): boolean =>
+  profil === 'proprietaire' || profil === 'administrateur';
+
+export const peutModifierParametres = (profil: Profil | null | undefined): boolean =>
+  profil === 'proprietaire';
+
+const HEURE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+const estJour = (valeur: unknown): valeur is string =>
+  typeof valeur === 'string' && (JOURS_DE_LA_SEMAINE as readonly string[]).includes(valeur);
+
+type Contrainte = Pick<Parametre, 'genre' | 'minimum' | 'maximum'> & { choix: readonly number[] };
+
+export type ResultatValeur =
+  { ok: true; valeur: ValeurParametre } | { ok: false; erreur: ErreurValeur };
+
+const refus = (erreur: ErreurValeur): ResultatValeur => ({ ok: false, erreur });
+
+/** Valide et normalise une valeur selon le genre du paramètre (mêmes règles que l'API). */
+export function validerValeur(parametre: Contrainte, valeur: unknown): ResultatValeur {
+  switch (parametre.genre) {
+    case 'montant':
+    case 'entier':
+    case 'pourcentage': {
+      if (typeof valeur !== 'number' || !Number.isInteger(valeur)) return refus({ code: 'entier' });
+      const minimum = parametre.minimum ?? 0;
+      const maximum = parametre.genre === 'pourcentage' ? 100 : parametre.maximum;
+      if (valeur < minimum || (maximum !== null && valeur > maximum)) {
+        return refus({ code: 'bornes', minimum, maximum });
+      }
+      return { ok: true, valeur };
+    }
+    case 'choix':
+      return typeof valeur === 'number' && parametre.choix.includes(valeur)
+        ? { ok: true, valeur }
+        : refus({ code: 'choix', permis: parametre.choix });
+    case 'heure':
+      return typeof valeur === 'string' && HEURE.test(valeur)
+        ? { ok: true, valeur }
+        : refus({ code: 'heure' });
+    case 'jour':
+      return estJour(valeur) ? { ok: true, valeur } : refus({ code: 'jour' });
+    case 'jours':
+      if (!Array.isArray(valeur) || valeur.length === 0 || !valeur.every(estJour)) {
+        return refus({ code: 'jours' });
+      }
+      // Ordre de la semaine, sans doublon.
+      return { ok: true, valeur: JOURS_DE_LA_SEMAINE.filter((jour) => valeur.includes(jour)) };
+  }
+}
+
+/** Phrase de refus du serveur (français, comme l'API). */
+export function messageDeLErreur(erreur: ErreurValeur): string {
+  switch (erreur.code) {
+    case 'entier':
+      return 'Nombre entier attendu.';
+    case 'bornes':
+      return `Valeur attendue entre ${erreur.minimum} et ${erreur.maximum ?? '∞'}.`;
+    case 'choix':
+      return `Valeur permise : ${erreur.permis.join(', ')}.`;
+    case 'heure':
+      return 'Heure attendue au format HH:MM.';
+    case 'jour':
+      return 'Jour de la semaine attendu (lundi… dimanche).';
+    case 'jours':
+      return 'Liste non vide de jours de la semaine attendue.';
+  }
+}
+
+/** Égalité de deux valeurs (les listes de jours se comparent élément par élément). */
+export function memeValeur(a: ValeurParametre, b: ValeurParametre): boolean {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((jour, rang) => jour === b[rang]);
+  }
+  return a === b;
+}
+
+/** « 2 000 FCFA », « 5 % », « 10:00 », « jeudi, samedi » : la valeur telle qu'on la lit. */
+export function formaterValeur(
+  parametre: Pick<Parametre, 'genre' | 'unite'>,
+  valeur: ValeurParametre,
+): string {
+  if (Array.isArray(valeur)) return valeur.join(', ');
+  if (typeof valeur === 'string') return valeur;
+  const nombre = formaterNombre(valeur);
+  if (parametre.genre === 'pourcentage') return `${nombre} %`;
+  // « heures (et à chaque clôture) » : seule l'unité précède la précision.
+  return parametre.unite ? `${nombre} ${parametre.unite.split(' (')[0]}` : nombre;
+}

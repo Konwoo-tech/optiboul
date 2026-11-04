@@ -41,6 +41,8 @@ const MARQUEURS = [
   'gestion/utilisateurs/',
   'gestion/sauvegardes/',
   'avant_restauration',
+  'gestion/parametres/',
+  'Paramètre modifié : ',
 ];
 
 function fichiers(dossier) {
