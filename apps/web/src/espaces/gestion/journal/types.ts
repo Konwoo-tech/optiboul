@@ -15,6 +15,7 @@ export const TYPES_ACTION = [
   'production',
   'semaine',
   'paie',
+  'sauvegarde',
   'parametre',
 ] as const;
 
