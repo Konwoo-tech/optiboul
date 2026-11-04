@@ -23,6 +23,7 @@ import {
 } from '@/espaces/atelier/stocks/types.ts';
 import type { Profil } from '../profils.ts';
 
+import { valeurDuParametre } from './parametres.ts';
 import { dateDuJour, heureCourante } from './comptoir.ts';
 import { receptionsPlanifiees } from './fournisseurs.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
@@ -567,7 +568,7 @@ function creerInventaire(a: ActeurStocks, corps: Corps): Response {
     lignes.push({ matiere, theorique: etat.stock[matiere], compte });
   }
   const numero = Math.max(0, ...etat.inventaires.map((i) => i.numero)) + 1;
-  const attend = ecartDepasseLaTolerance(lignes);
+  const attend = ecartDepasseLaTolerance(lignes, valeurDuParametre('tolerance_inventaire'));
   const inventaire: Inventaire = {
     id: numeroInventaire(numero),
     numero,

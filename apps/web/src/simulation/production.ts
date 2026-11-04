@@ -11,7 +11,6 @@ import {
   limiteEcartKg,
   peutSaisir,
   realiseComplet,
-  SEUIL_ECART_KG_PAR_SAC,
   sortiesDeStock,
   supplementEnDemande,
   supplementPossible,
@@ -44,6 +43,7 @@ import { CLES_PRODUIT } from '@/espaces/comptoir/session/types.ts';
 import { formaterDateCourte, formaterNombre, type Creneau } from '@/utils';
 
 import type { Profil } from '../profils.ts';
+import { valeurDuParametre } from './parametres.ts';
 import {
   abonnerOuvertureDeSession,
   commandesDeLaSession,
@@ -375,7 +375,7 @@ function instantane(): InstantaneProduction {
     realise: etat.realise,
     consommation: etat.consommation,
     justification: etat.justification,
-    seuilEcartKg: SEUIL_ECART_KG_PAR_SAC,
+    seuilEcartKg: valeurDuParametre('ecart_matiere_kg_par_sac'),
     stock: stockDesMatieres(),
     demandeEnAttente: attente
       ? {
@@ -535,7 +535,9 @@ function justifier(a: Acteur, corps: Corps): Response {
   }
   const plan = calculerPlan(commandesDeLaSession().pains, etat.supplement);
   const kg = ecartEnKg(consommation, plan.sacs);
-  if (!ecartAJustifier(kg, limiteEcartKg(SEUIL_ECART_KG_PAR_SAC, plan.sacs))) {
+  if (
+    !ecartAJustifier(kg, limiteEcartKg(valeurDuParametre('ecart_matiere_kg_par_sac'), plan.sacs))
+  ) {
     return probleme(
       409,
       'pas_d_ecart',
@@ -589,7 +591,7 @@ function cloturer(a: Acteur, corps: Corps): Response {
     !etat.justification &&
     ecartAJustifier(
       ecartEnKg(consommation, sacsDuPlan),
-      limiteEcartKg(SEUIL_ECART_KG_PAR_SAC, sacsDuPlan),
+      limiteEcartKg(valeurDuParametre('ecart_matiere_kg_par_sac'), sacsDuPlan),
     )
   ) {
     return probleme(

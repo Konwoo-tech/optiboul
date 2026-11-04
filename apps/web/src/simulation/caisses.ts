@@ -1,10 +1,6 @@
 import { formaterHeure } from '@/utils';
 
-import {
-  attenduDeCaisse,
-  FONDS_PROPOSE,
-  PLAFOND_CAISSE,
-} from '../espaces/comptoir/caisses/regles.ts';
+import { attenduDeCaisse } from '../espaces/comptoir/caisses/regles.ts';
 import type {
   DetailEspeces,
   Passage,
@@ -14,6 +10,7 @@ import type {
   TypeSession,
 } from '../espaces/comptoir/caisses/types.ts';
 import type { Profil } from '../profils.ts';
+import { valeurDuParametre } from './parametres.ts';
 import { compteParId, comptesActifs } from './comptes.ts';
 import type { ContexteSimule } from './donnees.ts';
 import { caissierePrevue } from './planning.ts';
@@ -239,7 +236,7 @@ function reponseCaisses(acteur: Acteur): ReponseCaisses {
     detail: ouverte && (direction || estSaCaisse(acteur)) ? detailDe(courante) : null,
     prochaine: { ...suivant, planifiee: planifieePour(suivant.jour, suivant.type) },
     rouvrable: !ouverte && direction,
-    plafond: PLAFOND_CAISSE,
+    plafond: valeurDuParametre('plafond_especes'),
     receveurs: receveurs(),
   };
 }
@@ -256,7 +253,7 @@ function ouvrir(acteur: Acteur, corps: Corps): Response {
   if (courante.statut === 'ouverte') {
     return probleme(409, 'caisse_deja_ouverte', 'Une caisse est déjà ouverte.');
   }
-  const fonds = entier(corps.fonds ?? FONDS_PROPOSE);
+  const fonds = entier(corps.fonds ?? valeurDuParametre('fonds_caisse'));
   if (fonds === null || fonds < 0) {
     return probleme(400, 'fonds_invalide', 'Le fonds de caisse est un montant entier en FCFA.');
   }
