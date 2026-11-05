@@ -43,6 +43,9 @@ const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
   'gestion/depenses': EN_SIMULATION
     ? lazy(() => import('./comptoir/depenses/EcranDepenses.tsx'))
     : null,
+  'gestion/journal': EN_SIMULATION
+    ? lazy(() => import('./gestion/journal/EcranJournal.tsx'))
+    : null,
   'gestion/personnel': EN_SIMULATION
     ? lazy(() => import('./gestion/personnel/EcranPersonnel.tsx'))
     : null,
