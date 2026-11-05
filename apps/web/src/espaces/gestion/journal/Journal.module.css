@@ -1,0 +1,59 @@
+/*
+ * Gestion › Journal des actions, repris valeur par valeur de la maquette « OptiBoul ERP v2 » (bloc
+ * `scr.journal`, lignes 856-862).
+ */
+.carte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.titre {
+  margin: 0;
+  padding: 16px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-discret);
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--ob-ligne);
+  font-size: 14px;
+}
+
+.heure {
+  width: 96px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-marque);
+}
+
+.auteur {
+  width: 200px;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.quoi {
+  flex: 1 1 240px;
+  color: var(--ob-encre);
+}
+
+.vide {
+  margin: 0;
+  padding: 16px 20px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}
