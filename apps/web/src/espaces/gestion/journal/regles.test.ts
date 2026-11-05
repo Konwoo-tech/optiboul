@@ -8,7 +8,7 @@ import {
   repondAuxFiltres,
   typeDeLAction,
 } from './regles.ts';
-import { SANS_FILTRE, type EntreeJournal } from './types.ts';
+import { SANS_FILTRE, TYPES_ACTION, type EntreeJournal } from './types.ts';
 
 const entree: EntreeJournal = {
   id: 'J-1',
@@ -96,5 +96,26 @@ describe('horodatage et type', () => {
     expect(typeDeLAction('depense', 'Dépense soumise : Réparation du pétrin')).toBe('depense');
     expect(typeDeLAction('caisse', 'Fermeture de caisse · écart -500 FCFA')).toBe('caisse');
     expect(typeDeLAction('connexion', 'Connexion via e-mail')).toBe('connexion');
+  });
+});
+
+describe('types d’action', () => {
+  it('la liste des valeurs est figée : en ajouter une demande son libellé FR / EN et ce test', () => {
+    expect([...TYPES_ACTION]).toEqual([
+      'connexion',
+      'session',
+      'caisse',
+      'depense',
+      'demande',
+      'stock',
+      'fournisseur',
+      'production',
+      'semaine',
+      'paie',
+      'utilisateur',
+      'sauvegarde',
+      'parametre',
+    ]);
+    expect(new Set(TYPES_ACTION).size).toBe(TYPES_ACTION.length);
   });
 });
