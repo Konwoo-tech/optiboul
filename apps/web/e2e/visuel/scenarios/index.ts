@@ -9,6 +9,7 @@ import { scenariosDemandes } from './demandes.ts';
 import { scenariosPersonnel } from './personnel.ts';
 import { scenariosFournisseurs } from './fournisseurs.ts';
 import { scenariosFiche, scenariosProduction } from './production.ts';
+import { scenariosSauvegardes } from './sauvegardes.ts';
 import { scenariosSemaines } from './semaines.ts';
 import { scenariosSession } from './session.ts';
 import { scenariosStocks } from './stocks.ts';
@@ -32,4 +33,5 @@ export const scenarios: Scenario[] = [
   ...scenariosPersonnel,
   ...scenariosFournisseurs,
   ...scenariosUtilisateurs,
+  ...scenariosSauvegardes,
 ];

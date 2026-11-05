@@ -1,0 +1,243 @@
+/*
+ * Gestion › Sauvegardes, repris valeur par valeur de la maquette « OptiBoul ERP v2 » (bloc
+ * `scr.backups`, lignes 862-889, et fenêtre `modal.restore`). Variables : --ob-marque = brand,
+ * --ob-surface = surface, --ob-ligne = line, --ob-discret = muted, --ob-encre = ink.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.alerte {
+  border: 1.5px solid #e7a69d;
+  /* La maquette garde ces couleurs claires dans les deux thèmes. */
+  background: #fbe0dc;
+  color: #a2251b;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.cartes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.carte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.enteteCarte {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.titreCarte {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ob-discret);
+}
+
+.valeur {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.sous {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.mot {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.secondaire {
+  align-self: flex-start;
+  margin-top: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.principal {
+  align-self: flex-start;
+  margin-top: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.secondaire[aria-disabled='true'],
+.principal[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.liste {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.titreListe {
+  margin: 0;
+  padding: 16px 20px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.copies {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.copie {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.date {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.genre {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.restaurer {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 10px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.etape {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.numero {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  background: #f2b705;
+  color: #2e1a10;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.texteEtape {
+  font-size: 15px;
+  padding-top: 3px;
+}
+
+.etapes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.boutons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.annuler {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.confirmer {
+  min-height: 48px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.confirmer[aria-disabled='true'],
+.annuler[aria-disabled='true'] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.erreurModale {
+  font-size: 13px;
+  font-weight: 600;
+  color: #c2453a;
+}
