@@ -22,9 +22,9 @@ import { formaterNombre } from '@/utils';
 
 import { dateDuJour, heureCourante } from './comptoir.ts';
 import { enregistrerSalaire, type Acteur } from './depenses.ts';
+import { consigner } from './journal.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
 import { personne } from './planning.ts';
-import { consigner } from './journal.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
 /*

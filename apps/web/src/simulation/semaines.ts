@@ -31,6 +31,7 @@ import { demandesEnAttente } from './demandes.ts';
 import { depensesDeSemaine } from './depenses.ts';
 import { comptesActifs } from './comptes.ts';
 import { facturesSimulees, libelleFactureFr, receptionsParSemaine } from './fournisseurs.ts';
+import { consigner } from './journal.ts';
 import {
   affecter,
   cloturerSemaine,
@@ -42,7 +43,6 @@ import {
   planifierCreneau,
 } from './planning.ts';
 import { productionsRattachees } from './production.ts';
-import { consigner } from './journal.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 import { matieresSousLeBesoin } from './stocks.ts';
 
