@@ -1231,6 +1231,112 @@
         "erreur": "Something went wrong. Please try again.",
         "dernierAdministrateur": "At least one active administrator must remain."
       }
+    },
+    "parametres": {
+      "erreurChargement": "Could not load the settings. Try again.",
+      "interdit": "Settings are reserved for the owner and the administrator.",
+      "lectureSeule": "Read only: only the owner changes the settings.",
+      "seuils": {
+        "titre": "Thresholds & rules"
+      },
+      "produits": {
+        "titre": "Products & technical sheets",
+        "produit": "Product",
+        "boule": "Ball (g)",
+        "painsBoule": "Loaves / ball",
+        "painsSac": "Loaves / sack",
+        "prix": "Observed prices (FCFA)",
+        "fiche": "Sheet ›",
+        "erreurChargement": "Could not load the products."
+      },
+      "autres": {
+        "titre": "All business settings",
+        "aide": "Every change is saved with its author and recorded in the log."
+      },
+      "groupes": {
+        "dettes": "Debts & reminders",
+        "caisse": "Cash desk & budget",
+        "stocks": "Materials & stock",
+        "production": "Production",
+        "paie": "Payroll",
+        "securite": "Security & backups",
+        "autres": "Other settings"
+      },
+      "libelles": {
+        "plafond_dette_client": "Debt limit per customer",
+        "seuil_validation_depenses": "Expense approval threshold",
+        "ecart_matiere_kg_par_sac": "Tolerated material gap per sack",
+        "echeance_dettes": "Debt due day",
+        "relances_jours": "Automatic reminder days",
+        "relances_heure": "Automatic reminder time",
+        "fonds_caisse": "Cash float",
+        "plafond_especes": "Cash limit in the till",
+        "seuil_budget_surveiller": "Budget “watch” threshold",
+        "ecart_matiere_grammes": "Tolerated gap for inputs weighed in grams",
+        "tolerance_inventaire": "Stocktake tolerance",
+        "tolerance_validation_plan": "Automatic plan approval tolerance",
+        "heure_limite_commandes_nuit": "Order cut-off time (night)",
+        "heure_limite_commandes_jour": "Order cut-off time (day)",
+        "heure_petrissage_nuit": "Kneading time (night)",
+        "heure_petrissage_jour": "Kneading time (day)",
+        "echeance_demande_plafond": "Limit request expiry",
+        "inactivite_comptoir": "Inactivity before sign-out at the counter",
+        "sauvegarde_locale": "Local backup interval",
+        "alerte_sauvegarde_cloud": "No-cloud-copy alert",
+        "prix_sac_farine": "Flour sack price",
+        "demande_estimee_sessions": "Estimated demand: sessions of the same type",
+        "supplement_auto_sacs": "Automatic extra granted (sacks per product)",
+        "supplement_auto_pourcentage": "Automatic extra granted (share of the plan)",
+        "rappel_clients_habituels": "Reminder to regular customers before the cut-off",
+        "jour_de_paie": "Payday of the month",
+        "stock_sessions_bas": "Low stock: sessions left",
+        "stock_sessions_commande": "To order: sessions left",
+        "controles_stock_jours": "Stock check days"
+      },
+      "jours": {
+        "lundi": "Monday",
+        "mardi": "Tuesday",
+        "mercredi": "Wednesday",
+        "jeudi": "Thursday",
+        "vendredi": "Friday",
+        "samedi": "Saturday",
+        "dimanche": "Sunday"
+      },
+      "unites": {
+        "FCFA": "FCFA",
+        "kg": "kg",
+        "%": "%",
+        "minutes": "minutes",
+        "heures": "hours",
+        "sessions": "sessions",
+        "sac": "sack",
+        "jour": "day"
+      },
+      "valeurParDefaut": "Default value: {{valeur}}",
+      "modifiePar": "Changed on {{date}} by {{par}}",
+      "enregistre": "{{libelle}} saved",
+      "erreurs": {
+        "entier": "Enter a whole number.",
+        "bornes": "Enter a value between {{minimum}} and {{maximum}}.",
+        "bornesMin": "Enter a value of at least {{minimum}}.",
+        "choix": "Allowed values: {{permis}}.",
+        "heure": "Enter a time as HH:MM.",
+        "jour": "Choose a day of the week.",
+        "jours": "Tick at least one day.",
+        "serveur": "The setting could not be saved. Try again.",
+        "droit": "Only the owner changes the settings."
+      },
+      "historique": {
+        "titre": "Value history",
+        "choisir": "Setting",
+        "vide": "No change: the default value is in force.",
+        "erreurChargement": "Could not load the history.",
+        "colonnes": {
+          "date": "Date",
+          "valeur": "Value",
+          "auteur": "Author"
+        }
+      }
     }
   },
   "atelier": {
@@ -1694,7 +1800,8 @@
         },
         "regleModifiable": "Each edit creates a new version, recorded in the activity log. Unit prices follow stock purchases.",
         "regleLecture": "Read-only. Only the owner and the administrator edit technical sheets.",
-        "regleChef": "Quantities and baking times are the kneading reference."
+        "regleChef": "Quantities and baking times are the kneading reference.",
+        "retourProduits": "‹ All products"
       }
     }
   }

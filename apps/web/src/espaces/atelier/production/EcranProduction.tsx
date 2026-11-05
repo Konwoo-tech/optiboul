@@ -73,6 +73,11 @@ export default function EcranProduction({ ecran }: { ecran: Ecran }) {
         }
         estChef={utilisateur.profil === 'production'}
         cheminRetour={cheminEcran(ecran)}
+        depuis={
+          parametres.get('depuis') === 'parametres' && utilisateur.profil !== 'production'
+            ? { chemin: cheminEcran({ espace: 'gestion', cle: 'parametres' }) }
+            : undefined
+        }
       />
     );
   }

@@ -222,3 +222,41 @@ describe('faux serveur Paramètres : compléments', () => {
     expect(valeurDuParametre<string[]>('controles_stock_jours')).toEqual(['lundi']);
   });
 });
+
+describe('faux serveur Paramètres : produits', () => {
+  const produits = (id: string) => {
+    memoriserUtilisateurConnecte(id);
+    const reponse = repondre(new URL(`http://x${RACINE}produits/`), 'GET', {});
+    return reponse.json().then((json: any) => ({ statut: reponse.status, json }));
+  };
+
+  it('livre le résumé des sept fiches au propriétaire et à l’administrateur', async () => {
+    for (const id of ['fotso', 'admin']) {
+      const { statut, json } = await produits(id);
+      expect(statut).toBe(200);
+      expect(json).toHaveLength(7);
+      expect(json[0]).toEqual({
+        id: 'bag',
+        code: 'BAG',
+        nom: 'Baguette',
+        nomEn: 'Baguette',
+        boule: 5000,
+        pb: 20,
+        painsParSac: 315,
+        prix: [100, 110],
+      });
+      expect(json.find((p: any) => p.id === 'gc170').prix).toBeNull();
+    }
+  });
+
+  it('refuse les autres profils, et toute méthode autre que GET', async () => {
+    for (const id of ['davy', 'willy', 'serge']) {
+      const { statut, json } = await produits(id);
+      expect([statut, json.code]).toEqual([403, 'droit_insuffisant']);
+    }
+    memoriserUtilisateurConnecte(null);
+    expect((await produits('')).statut).toBe(403);
+    memoriserUtilisateurConnecte('fotso');
+    expect((await appeler('POST', 'produits/')).statut).toBe(405);
+  });
+});

@@ -1231,6 +1231,112 @@
         "erreur": "Une erreur est survenue. Réessayez.",
         "dernierAdministrateur": "Il doit rester au moins un administrateur actif."
       }
+    },
+    "parametres": {
+      "erreurChargement": "Impossible de charger les paramètres. Réessayez.",
+      "interdit": "Les paramètres sont réservés au propriétaire et à l’administrateur.",
+      "lectureSeule": "Lecture seule : seul le propriétaire modifie les paramètres.",
+      "seuils": {
+        "titre": "Seuils et règles"
+      },
+      "produits": {
+        "titre": "Produits et fiches techniques",
+        "produit": "Produit",
+        "boule": "Boule (g)",
+        "painsBoule": "Pains / boule",
+        "painsSac": "Pains / sac",
+        "prix": "Prix observés (FCFA)",
+        "fiche": "Fiche ›",
+        "erreurChargement": "Impossible de charger les produits."
+      },
+      "autres": {
+        "titre": "Tous les paramètres métier",
+        "aide": "Chaque modification est enregistrée avec son auteur et tracée dans le journal."
+      },
+      "groupes": {
+        "dettes": "Dettes et relances",
+        "caisse": "Caisse et budget",
+        "stocks": "Matières et stocks",
+        "production": "Production",
+        "paie": "Paie",
+        "securite": "Sécurité et sauvegardes",
+        "autres": "Autres paramètres"
+      },
+      "libelles": {
+        "plafond_dette_client": "Plafond de dette par client",
+        "seuil_validation_depenses": "Seuil de validation des dépenses",
+        "ecart_matiere_kg_par_sac": "Écart matière toléré par sac",
+        "echeance_dettes": "Échéance des dettes",
+        "relances_jours": "Jours des relances automatiques",
+        "relances_heure": "Heure des relances automatiques",
+        "fonds_caisse": "Fonds de caisse",
+        "plafond_especes": "Plafond d’espèces en caisse",
+        "seuil_budget_surveiller": "Seuil « à surveiller » du budget",
+        "ecart_matiere_grammes": "Écart matière toléré pour les intrants en grammes",
+        "tolerance_inventaire": "Tolérance d’inventaire",
+        "tolerance_validation_plan": "Tolérance de validation automatique du plan",
+        "heure_limite_commandes_nuit": "Heure limite des commandes (nuit)",
+        "heure_limite_commandes_jour": "Heure limite des commandes (jour)",
+        "heure_petrissage_nuit": "Heure du pétrissage (nuit)",
+        "heure_petrissage_jour": "Heure du pétrissage (jour)",
+        "echeance_demande_plafond": "Échéance d’une demande de plafond",
+        "inactivite_comptoir": "Inactivité avant déconnexion au comptoir",
+        "sauvegarde_locale": "Intervalle de la sauvegarde locale",
+        "alerte_sauvegarde_cloud": "Alerte sans copie cloud",
+        "prix_sac_farine": "Prix du sac de farine",
+        "demande_estimee_sessions": "Demande estimée : sessions du même type",
+        "supplement_auto_sacs": "Supplément accordé automatiquement (sacs par produit)",
+        "supplement_auto_pourcentage": "Supplément accordé automatiquement (part du plan)",
+        "rappel_clients_habituels": "Rappel aux clients habituels avant l’heure limite",
+        "jour_de_paie": "Jour de paie du mois",
+        "stock_sessions_bas": "Stock bas : sessions restantes",
+        "stock_sessions_commande": "À commander : sessions restantes",
+        "controles_stock_jours": "Jours des contrôles de stock"
+      },
+      "jours": {
+        "lundi": "lundi",
+        "mardi": "mardi",
+        "mercredi": "mercredi",
+        "jeudi": "jeudi",
+        "vendredi": "vendredi",
+        "samedi": "samedi",
+        "dimanche": "dimanche"
+      },
+      "unites": {
+        "FCFA": "FCFA",
+        "kg": "kg",
+        "%": "%",
+        "minutes": "minutes",
+        "heures": "heures",
+        "sessions": "sessions",
+        "sac": "sac",
+        "jour": "jour"
+      },
+      "valeurParDefaut": "Valeur par défaut : {{valeur}}",
+      "modifiePar": "Modifié le {{date}} par {{par}}",
+      "enregistre": "{{libelle}} enregistré",
+      "erreurs": {
+        "entier": "Saisissez un nombre entier.",
+        "bornes": "Saisissez une valeur entre {{minimum}} et {{maximum}}.",
+        "bornesMin": "Saisissez une valeur d’au moins {{minimum}}.",
+        "choix": "Valeurs permises : {{permis}}.",
+        "heure": "Saisissez une heure au format HH:MM.",
+        "jour": "Choisissez un jour de la semaine.",
+        "jours": "Cochez au moins un jour.",
+        "serveur": "Le paramètre n’a pas pu être enregistré. Réessayez.",
+        "droit": "Seul le propriétaire modifie les paramètres."
+      },
+      "historique": {
+        "titre": "Historique des valeurs",
+        "choisir": "Paramètre",
+        "vide": "Aucune modification : la valeur par défaut est en vigueur.",
+        "erreurChargement": "Impossible de charger l’historique.",
+        "colonnes": {
+          "date": "Date",
+          "valeur": "Valeur",
+          "auteur": "Auteur"
+        }
+      }
     }
   },
   "atelier": {
@@ -1694,7 +1800,8 @@
         },
         "regleModifiable": "Chaque modification crée une nouvelle version, enregistrée dans le journal des actions. Les prix unitaires suivent les achats en stock.",
         "regleLecture": "Lecture seule. Seuls le propriétaire et l’administrateur modifient les fiches techniques.",
-        "regleChef": "Les quantités et les temps de cuisson servent de référence au pétrissage."
+        "regleChef": "Les quantités et les temps de cuisson servent de référence au pétrissage.",
+        "retourProduits": "‹ Tous les produits"
       }
     }
   }

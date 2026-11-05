@@ -55,6 +55,9 @@ const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
   'gestion/tableau-de-bord': EN_SIMULATION
     ? lazy(() => import('./gestion/tableau-de-bord/EcranTableauDeBord.tsx'))
     : null,
+  'gestion/parametres': EN_SIMULATION
+    ? lazy(() => import('./gestion/parametres/EcranParametres.tsx'))
+    : null,
   'gestion/semaines': EN_SIMULATION
     ? lazy(() => import('./gestion/semaines/EcranSemaines.tsx'))
     : null,
