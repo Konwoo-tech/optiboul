@@ -164,7 +164,9 @@ describe('Gestion › Sauvegardes : restauration guidée', () => {
     const confirmer = within(fenetre).getByRole('button', { name: 'Restaurer cette copie' });
     fireEvent.click(confirmer);
     fireEvent.click(confirmer);
-    expect(await screen.findByText('Restauration terminée et vérifiée')).toBeTruthy();
+    expect(
+      await screen.findByText('Restauration terminée et vérifiée (contrôle simulé)'),
+    ).toBeTruthy();
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(lesCopies()).toHaveLength(5);
     expect(lignesDuJournal().map((e) => e.texte)).toEqual([

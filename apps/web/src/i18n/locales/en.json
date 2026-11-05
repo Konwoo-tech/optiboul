@@ -1194,6 +1194,7 @@
         "etape1": "A copy of the current state is made automatically.",
         "etape2": "The copy of {{date}} is restored.",
         "etape3": "Totals are checked: sessions, customer balances, stock.",
+        "simule": "Simulation: the totals check is fictitious, no data is actually restored.",
         "annuler": "Cancel",
         "confirmer": "Restore this copy"
       },
@@ -1201,7 +1202,7 @@
         "locale": "Local copy made at {{heure}}",
         "cloud": "Cloud copy sent and verified",
         "cloudEnAttente": "Offline: cloud backup pending",
-        "restauree": "Restore completed and verified",
+        "restauree": "Restore completed and verified (simulated check)",
         "droit": "Your profile does not allow this action.",
         "inconnue": "This copy no longer exists: the list has just been refreshed.",
         "erreur": "The action could not be saved. Try again."

@@ -45,6 +45,10 @@ export function ModaleRestauration({ date, enCours, erreur, onFermer, onConfirme
           </li>
         ))}
       </ol>
+      {/* Mention de simulation : masquée au banc visuel (`[data-simulation]`), absente du prototype. */}
+      <span className={styles.simule} data-simulation>
+        {t('gestion.sauvegardes.restauration.simule')}
+      </span>
       {erreur && (
         <span className={styles.erreurModale} id={idErreur} role="alert">
           {erreur}

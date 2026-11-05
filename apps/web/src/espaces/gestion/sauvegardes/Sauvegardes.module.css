@@ -236,6 +236,11 @@
   cursor: default;
 }
 
+.simule {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
 .erreurModale {
   font-size: 13px;
   font-weight: 600;
