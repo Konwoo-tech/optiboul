@@ -145,7 +145,8 @@ const livraisonDeDepart = (
 
 type Journal = { heure: string; qui: string; quoi: string };
 
-type Etat = InstantaneSession & { journal: Journal[] };
+/** Le plafond n'est pas mémorisé : il est lu dans les paramètres à chaque instantané. */
+type Etat = Omit<InstantaneSession, 'plafond'> & { journal: Journal[] };
 
 export const heureCourante = () => formaterHeure(new Date());
 
@@ -201,7 +202,6 @@ function etatInitial(): Etat {
       rouvertePar: '',
       rouverteA: '',
     },
-    plafond: valeurDuParametre('plafond_dette_client'),
     clients: clientsDeDepart().map((c) => ({ ...c, prix: { ...c.prix } })),
     commandes,
     habituelles: Object.fromEntries(
@@ -350,7 +350,7 @@ export function repercuterDepenseDeSession(montant: number): void {
 
 const instantane = (): InstantaneSession => {
   const { journal: _journal, ...reste } = lireEtat();
-  return structuredClone(reste);
+  return { ...structuredClone(reste), plafond: valeurDuParametre('plafond_dette_client') };
 };
 
 const reponse = (extra: object = {}) => Response.json({ instantane: instantane(), ...extra });
