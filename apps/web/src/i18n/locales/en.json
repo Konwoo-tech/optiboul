@@ -710,6 +710,12 @@
     "toastDejaDecidee": "This request has already been answered."
   },
   "gestion": {
+    "journal": {
+      "titre": "Every action, with author and time",
+      "interdit": "The activity log is reserved for the manager, the owner and the administrator.",
+      "erreurChargement": "The log could not be loaded. Try again in a moment.",
+      "vide": "No action recorded yet."
+    },
     "tableauDeBord": {
       "erreurChargement": "Could not load the dashboard.",
       "interdit": "The full dashboard is reserved for the manager and the owner.",

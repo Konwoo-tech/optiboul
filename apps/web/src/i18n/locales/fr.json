@@ -710,6 +710,12 @@
     "toastDejaDecidee": "Cette demande a déjà reçu une réponse."
   },
   "gestion": {
+    "journal": {
+      "titre": "Toutes les actions, avec auteur et heure",
+      "interdit": "Le journal des actions est réservé au gérant, au propriétaire et à l’administrateur.",
+      "erreurChargement": "Le journal n’a pas pu être chargé. Réessayez dans un instant.",
+      "vide": "Aucune action consignée pour l’instant."
+    },
     "tableauDeBord": {
       "erreurChargement": "Impossible de charger le tableau de bord.",
       "interdit": "Le tableau de bord complet est réservé au gérant et au propriétaire.",

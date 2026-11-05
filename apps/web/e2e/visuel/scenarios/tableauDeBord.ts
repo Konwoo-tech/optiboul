@@ -39,7 +39,7 @@ function zones(sansBadge = false): Record<string, Zone> {
     : { contenu: CONTENU };
 }
 
-type Etapes = (page: Page) => Promise<void>;
+export type Etapes = (page: Page) => Promise<void>;
 
 type Options = {
   nom: string;
@@ -148,12 +148,12 @@ const livrerAvecDette = async (page: Page) => {
   await attendreFinDuToast(page);
 };
 
-const livraisonDansLePrototype: Etapes = async (page) => {
+export const livraisonDansLePrototype: Etapes = async (page) => {
   await cliquerTexte(page, /^\s*Session en cours/);
   await livrerAvecDette(page);
 };
 
-const livraisonDansLApplication: Etapes = async (page) => {
+export const livraisonDansLApplication: Etapes = async (page) => {
   await page.getByRole('link', { name: 'Comptoir', exact: true }).click();
   await page.getByRole('link', { name: 'Session en cours', exact: true }).click();
   await page.getByRole('tab', { name: 'Livraisons' }).waitFor();
@@ -163,7 +163,7 @@ const livraisonDansLApplication: Etapes = async (page) => {
 /** 22 450 FCFA comptés pour 22 950 attendus : un manque de 500 FCFA. */
 const COMPTE = '22450';
 
-const fermetureDansLePrototype: Etapes = async (page) => {
+export const fermetureDansLePrototype: Etapes = async (page) => {
   await cliquerTexte(page, /^\s*Session en cours/);
   await cliquerTexte(page, 'Clôture');
   await page.getByLabel('Espèces comptées').fill(COMPTE);
@@ -172,7 +172,7 @@ const fermetureDansLePrototype: Etapes = async (page) => {
   await attendreFinDuToast(page);
 };
 
-const fermetureDansLApplication: Etapes = async (page) => {
+export const fermetureDansLApplication: Etapes = async (page) => {
   await page.getByRole('link', { name: 'Comptoir', exact: true }).click();
   await page.getByRole('link', { name: 'Caisses', exact: true }).click();
   await cliquer(page, 'Fermer la caisse');
@@ -199,12 +199,12 @@ const accordDuProprietaireApplication: Etapes = async (page) => {
   await page.waitForTimeout(500);
 };
 
-const basculerEn: Etapes = async (page) => {
+export const basculerEn: Etapes = async (page) => {
   await page.getByRole('button', { name: 'EN', exact: true }).click();
   await page.waitForTimeout(300);
 };
 
-const basculerSombre: Etapes = async (page) => {
+export const basculerSombre: Etapes = async (page) => {
   await page.getByRole('button', { name: 'Sombre', exact: true }).click();
   await page.waitForTimeout(300);
 };
