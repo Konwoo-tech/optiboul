@@ -25,6 +25,9 @@ import {
  * reste hors zone comme dans les scénarios du tableau de bord.
  *
  * Écarts assumés, listés ici :
+ * - le bloc des filtres (auteur, type, période) vient d'US-024 et n'existe pas dans la maquette :
+ *   il est masqué dans l'application pour la comparaison (`[data-filtres-journal]`), son rendu est
+ *   couvert par les tests de l'écran ;
  * - les valeurs avant / après (US-024) n'existent pas dans la maquette : aucune action des
  *   scénarios n'en produit ;
  * - en anglais, la maquette laisse en français le texte des actions et la date « 13 oct. » de la
@@ -68,6 +71,8 @@ const ouvrirDansLApplication = async (page: Page) => {
   if ((await espace.count()) > 0) await espace.click();
   await page.getByRole('link', { name: 'Journal des actions', exact: true }).click();
   await page.getByRole('heading', { name: 'Toutes les actions, avec auteur et heure' }).waitFor();
+  // Les filtres n'existent pas dans la maquette.
+  await page.addStyleTag({ content: '[data-filtres-journal]{display:none!important}' });
 };
 
 /**

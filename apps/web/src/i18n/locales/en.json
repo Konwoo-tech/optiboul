@@ -714,7 +714,39 @@
       "titre": "Every action, with author and time",
       "interdit": "The activity log is reserved for the manager, the owner and the administrator.",
       "erreurChargement": "The log could not be loaded. Try again in a moment.",
-      "vide": "No action recorded yet."
+      "vide": "No action recorded yet.",
+      "videFiltre": "No action matches these filters.",
+      "limite": "Last {{affichees}} actions shown out of {{total}}: narrow down by author, type or period.",
+      "changement": "Before: {{avant}} → After: {{apres}}",
+      "colonnes": { "heure": "Time: ", "auteur": "Author: ", "action": "Action: " },
+      "filtres": {
+        "titre": "Filter the log",
+        "auteur": "Author",
+        "type": "Action type",
+        "du": "From",
+        "au": "To",
+        "tous": "All",
+        "reinitialiser": "Clear filters"
+      },
+      "erreurs": {
+        "periode-invalide": "Dates must be valid calendar days.",
+        "periode-inversee": "The first day must come before the last."
+      },
+      "types": {
+        "connexion": "Sign-ins",
+        "session": "Session and deliveries",
+        "caisse": "Cash registers",
+        "depense": "Expenses",
+        "demande": "Requests and decisions",
+        "stock": "Stock",
+        "fournisseur": "Suppliers",
+        "production": "Production",
+        "semaine": "Weeks",
+        "paie": "Staff and payroll",
+        "utilisateur": "Users and groups",
+        "sauvegarde": "Backups",
+        "parametre": "Settings"
+      }
     },
     "tableauDeBord": {
       "erreurChargement": "Could not load the dashboard.",

@@ -714,7 +714,39 @@
       "titre": "Toutes les actions, avec auteur et heure",
       "interdit": "Le journal des actions est réservé au gérant, au propriétaire et à l’administrateur.",
       "erreurChargement": "Le journal n’a pas pu être chargé. Réessayez dans un instant.",
-      "vide": "Aucune action consignée pour l’instant."
+      "vide": "Aucune action consignée pour l’instant.",
+      "videFiltre": "Aucune action ne correspond à ces filtres.",
+      "limite": "{{affichees}} dernières actions affichées sur {{total}} : affinez par auteur, type ou période.",
+      "changement": "Avant : {{avant}} → Après : {{apres}}",
+      "colonnes": { "heure": "Heure : ", "auteur": "Auteur : ", "action": "Action : " },
+      "filtres": {
+        "titre": "Filtrer le journal",
+        "auteur": "Auteur",
+        "type": "Type d’action",
+        "du": "Du",
+        "au": "Au",
+        "tous": "Tous",
+        "reinitialiser": "Effacer les filtres"
+      },
+      "erreurs": {
+        "periode-invalide": "Les dates doivent être des jours valides.",
+        "periode-inversee": "Le premier jour doit précéder le dernier."
+      },
+      "types": {
+        "connexion": "Connexions",
+        "session": "Session et livraisons",
+        "caisse": "Caisses",
+        "depense": "Dépenses",
+        "demande": "Demandes et décisions",
+        "stock": "Stocks",
+        "fournisseur": "Fournisseurs",
+        "production": "Production",
+        "semaine": "Semaines",
+        "paie": "Personnel et paie",
+        "utilisateur": "Utilisateurs et groupes",
+        "sauvegarde": "Sauvegardes",
+        "parametre": "Paramètres"
+      }
     },
     "tableauDeBord": {
       "erreurChargement": "Impossible de charger le tableau de bord.",
