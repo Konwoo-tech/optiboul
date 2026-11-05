@@ -5,7 +5,6 @@ import {
   FONDS_DE_CAISSE,
   lireEntier,
   planDeSacs,
-  PLAFOND_PAR_DEFAUT,
   totauxDesLivraisons,
 } from '@/espaces/comptoir/session/calculs.ts';
 import {
@@ -29,6 +28,7 @@ import {
   type Creneau,
 } from '@/utils';
 
+import { valeurDuParametre } from './parametres.ts';
 import { comptesActifs } from './comptes.ts';
 import { CODE_DEMO } from './donnees.ts';
 import type { NotificationSimulee } from './notifications.ts';
@@ -145,7 +145,8 @@ const livraisonDeDepart = (
 
 type Journal = { heure: string; qui: string; quoi: string };
 
-type Etat = InstantaneSession & { journal: Journal[] };
+/** Le plafond n'est pas mémorisé : il est lu dans les paramètres à chaque instantané. */
+type Etat = Omit<InstantaneSession, 'plafond'> & { journal: Journal[] };
 
 export const heureCourante = () => formaterHeure(new Date());
 
@@ -201,7 +202,6 @@ function etatInitial(): Etat {
       rouvertePar: '',
       rouverteA: '',
     },
-    plafond: PLAFOND_PAR_DEFAUT,
     clients: clientsDeDepart().map((c) => ({ ...c, prix: { ...c.prix } })),
     commandes,
     habituelles: Object.fromEntries(
@@ -350,7 +350,7 @@ export function repercuterDepenseDeSession(montant: number): void {
 
 const instantane = (): InstantaneSession => {
   const { journal: _journal, ...reste } = lireEtat();
-  return structuredClone(reste);
+  return { ...structuredClone(reste), plafond: valeurDuParametre('plafond_dette_client') };
 };
 
 const reponse = (extra: object = {}) => Response.json({ instantane: instantane(), ...extra });
@@ -422,7 +422,7 @@ function enregistrerLivraison(a: Acteur, corps: Corps): Response {
     recu: String(recu),
     mode,
     reference,
-    plafond: lireEtat().plafond,
+    plafond: valeurDuParametre('plafond_dette_client'),
     soldeAutorise: autorisation ? autorisation.soldeApres : null,
     peutSaisir: true,
   });
@@ -473,7 +473,7 @@ function demanderAutorisation(a: Acteur, corps: Corps): Response {
     return probleme(400, 'solde_invalide', 'Solde après livraison invalide.');
   }
   // Seul un client réellement en dépassement a besoin d'une autorisation.
-  if (soldeApres >= -lireEtat().plafond) {
+  if (soldeApres >= -valeurDuParametre('plafond_dette_client')) {
     return probleme(400, 'pas_de_depassement', 'Ce client ne dépasse pas le plafond.');
   }
   if (estDirection(a)) {
@@ -494,7 +494,7 @@ function demanderAutorisation(a: Acteur, corps: Corps): Response {
     clientId: cible.id,
     clientNom: cible.nom,
     soldeApres,
-    plafond: lireEtat().plafond,
+    plafond: valeurDuParametre('plafond_dette_client'),
     par: a.nom,
     jour: dateDuJour(),
     heure: heureCourante(),
