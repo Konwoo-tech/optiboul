@@ -402,6 +402,12 @@
   margin-top: auto;
 }
 
+/* Sans action tant que le formulaire de création n'est pas livré, rendu inchangé (maquette). */
+.petit.ajouterMembre[aria-disabled='true'] {
+  opacity: 1;
+  cursor: default;
+}
+
 .titreNouveauGroupe {
   margin: 0;
   font-size: 16px;

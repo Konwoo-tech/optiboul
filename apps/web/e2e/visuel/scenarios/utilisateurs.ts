@@ -3,6 +3,7 @@ import type { Page } from '@playwright/test';
 import { attendrePolices } from '../outils.ts';
 import { definirScenario, type Scenario, type Zone } from '../scenario.ts';
 import {
+  attendreFinDuToast,
   cliquerTexte,
   connecterLApplication,
   connecterLePrototype,
@@ -13,7 +14,7 @@ import {
  * Gestion › Utilisateurs, vue « Utilisateurs » (US-020 à US-022), comparée au bloc `scr.users` du
  * prototype : liste et droits par profil (clair et sombre), filtre par groupe, changement de groupe,
  * désactivation. Toute la zone de contenu est comparée, en-tête compris ; le menu de gauche ne
- * l'est pas. Les onglets Groupes et Nouvel utilisateur ont leurs scénarios dans la PR suivante.
+ * l'est pas. L'onglet Groupes a ses scénarios plus bas, Nouvel utilisateur dans la PR suivante.
  *
  * Écarts assumés (non joués ici) : l'application écrit le dernier accès en anglais (« Oct 14 »)
  * là où le prototype garde le français : la liste n'est donc pas comparée en anglais. L'aperçu des
@@ -28,6 +29,16 @@ const VUE = { width: 1280, height: HAUTEUR };
 const CONTENU: Zone = { x: 248, y: 0, width: 1032, height: HAUTEUR };
 
 type Etapes = (page: Page) => Promise<void>;
+
+const onglet =
+  (nom: string): Etapes =>
+  (page) =>
+    cliquerTexte(page, nom);
+
+const basculerEn: Etapes = async (page) => {
+  await page.getByRole('button', { name: 'EN', exact: true }).click();
+  await page.waitForTimeout(300);
+};
 
 const ADMIN = /Support/;
 
@@ -93,6 +104,30 @@ export const scenariosUtilisateurs: Scenario[] = [
     etapes: async (page) => {
       await cliquerTexte(page, 'Désactiver');
       await page.waitForTimeout(300);
+    },
+  }),
+  scenarioUtilisateurs({ nom: 'utilisateurs-groupes', etapes: onglet('Groupes · 6') }),
+  scenarioUtilisateurs({
+    nom: 'utilisateurs-groupes-en',
+    etapes: async (page) => {
+      await onglet('Groupes · 6')(page);
+      await basculerEn(page);
+    },
+  }),
+  scenarioUtilisateurs({
+    nom: 'utilisateurs-groupe-erreur',
+    etapes: async (page) => {
+      await onglet('Groupes · 6')(page);
+      await cliquerTexte(page, 'Créer le groupe');
+    },
+  }),
+  scenarioUtilisateurs({
+    nom: 'utilisateurs-groupe-cree',
+    etapes: async (page) => {
+      await onglet('Groupes · 6')(page);
+      await page.getByLabel('Nom du groupe').fill('Livreurs');
+      await cliquerTexte(page, 'Créer le groupe');
+      await attendreFinDuToast(page);
     },
   }),
 ];
