@@ -1,40 +1,55 @@
-import { jetonCsrf } from '@/api';
+import { connexionChangerUtilisateurCreate, connexionDeconnexionCreate } from '@/api';
 import { useTranslation } from '@/i18n';
 import { deconnecterSimulation, SIMULATION } from '@/simulation';
 import { useQueryClient } from '@tanstack/react-query';
+import { useRef } from 'react';
 
-type Props = { libelle?: string; className?: string };
+import { useToast } from './toast.ts';
+
+type Props = {
+  libelle?: string;
+  className?: string;
+  /**
+   * `changer` : « Changer d'utilisateur » — la session se ferme, le poste et les brouillons
+   * restent. `deconnexion` : fermeture simple de la session.
+   */
+  action?: 'deconnexion' | 'changer';
+};
 
 /**
- * Fermeture de la session django-allauth : un POST de formulaire avec le jeton CSRF, comme
- * la page de connexion (même origine). Allauth renvoie ensuite vers l'application.
- * En simulation, il n'y a pas de backend : on referme la session simulée sur place.
- * Le formulaire n'a pas de boîte propre (`display: contents`) : le bouton se place directement
- * dans la mise en page du parent.
+ * Ferme la session sur le vrai serveur (`POST /connexion/deconnexion/` ou
+ * `/connexion/changer-utilisateur/`) puis relit tout : la personne suivante ne voit rien de la
+ * précédente. En simulation, il n'y a pas de backend : on referme la session simulée sur place.
  */
-export function BoutonDeconnexion({ libelle, className }: Props) {
+export function BoutonDeconnexion({ libelle, className, action = 'deconnexion' }: Props) {
   const { t } = useTranslation();
   const client = useQueryClient();
+  const afficherToast = useToast();
+  const enCours = useRef(false);
+
+  const fermer = async () => {
+    if (enCours.current) return;
+    enCours.current = true;
+    try {
+      if (SIMULATION) {
+        await deconnecterSimulation();
+        await client.invalidateQueries();
+        return;
+      }
+      await (action === 'changer'
+        ? connexionChangerUtilisateurCreate()
+        : connexionDeconnexionCreate());
+      await client.resetQueries();
+    } catch {
+      afficherToast(t('erreur.injoignable'));
+    } finally {
+      enCours.current = false;
+    }
+  };
+
   return (
-    <form
-      method="post"
-      action="/accounts/logout/"
-      style={{ display: 'contents' }}
-      onSubmit={(evenement) => {
-        if (SIMULATION) {
-          evenement.preventDefault();
-          void deconnecterSimulation().then(() => client.invalidateQueries());
-          return;
-        }
-        // Lu à l'envoi : le cookie peut avoir changé depuis l'affichage.
-        const champ = evenement.currentTarget.elements.namedItem('csrfmiddlewaretoken');
-        if (champ instanceof HTMLInputElement) champ.value = jetonCsrf() ?? '';
-      }}
-    >
-      <input type="hidden" name="csrfmiddlewaretoken" defaultValue="" />
-      <button type="submit" className={className}>
-        {libelle ?? t('commun.deconnexion')}
-      </button>
-    </form>
+    <button type="button" className={className} onClick={() => void fermer()}>
+      {libelle ?? t('commun.deconnexion')}
+    </button>
   );
 }
