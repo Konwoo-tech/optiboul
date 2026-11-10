@@ -105,7 +105,11 @@ export function BarreLaterale() {
               <span className={styles.identiteRole}>{t(`profils.${profil}`)}</span>
             </span>
           </div>
-          <BoutonDeconnexion libelle={t('commun.changerUtilisateur')} className={styles.changer} />
+          <BoutonDeconnexion
+            action="changer"
+            libelle={t('commun.changerUtilisateur')}
+            className={styles.changer}
+          />
         </div>
       )}
     </aside>
@@ -147,7 +151,11 @@ export function BarreTelephone() {
               <span className={styles.piedTelephoneNom}>
                 {utilisateur.name} · {t(`profils.${profil}`)}
               </span>
-              <BoutonDeconnexion libelle={t('coque.changer')} className={styles.changer} />
+              <BoutonDeconnexion
+                action="changer"
+                libelle={t('coque.changer')}
+                className={styles.changer}
+              />
             </div>
           )}
         </div>

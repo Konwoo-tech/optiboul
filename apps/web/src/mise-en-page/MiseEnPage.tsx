@@ -1,4 +1,5 @@
 import { useMediaQuery } from '@mantine/hooks';
+import { connexionDeconnexionCreate, useConnexionSessionRetrieve } from '@/api';
 import { memoriserMessageConnexion, useDeconnexionAutomatique } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { configurationSimulee, deconnecterSimulation, SIMULATION } from '@/simulation';
@@ -19,16 +20,26 @@ export function MiseEnPage() {
   const { pathname } = useLocation();
   const telephone = useMediaQuery('(max-width: 767px)') ?? false;
   const client = useQueryClient();
-  const { inactiviteMinutes } = configurationSimulee();
+  // Poste partagé : une session oubliée se ferme seule. Le délai vient du serveur (connexion par
+  // code seulement : `null` pour une connexion par e-mail ou Google, qui n'a pas de minuteur).
+  const session = useConnexionSessionRetrieve({
+    query: { enabled: !SIMULATION, staleTime: Infinity, retry: false },
+  });
+  const inactiviteMinutes = SIMULATION
+    ? configurationSimulee().inactiviteMinutes
+    : ((session.data?.data as { inactiviteMinutes?: number | null } | undefined)
+        ?.inactiviteMinutes ?? 0);
 
-  // Poste partagé : une session oubliée se ferme seule. Pour l'instant en simulation seulement ;
-  // la vraie déconnexion passe par django-allauth.
   useDeconnexionAutomatique({
     minutes: inactiviteMinutes,
-    actif: SIMULATION,
+    actif: SIMULATION || inactiviteMinutes > 0,
     onExpire: () => {
       memoriserMessageConnexion(t('connexion.inactivite', { minutes: inactiviteMinutes }));
-      void deconnecterSimulation('inactivite').then(() => client.invalidateQueries());
+      if (SIMULATION) {
+        void deconnecterSimulation('inactivite').then(() => client.invalidateQueries());
+        return;
+      }
+      void connexionDeconnexionCreate().then(() => client.resetQueries());
     },
   });
 
