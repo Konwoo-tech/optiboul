@@ -2,7 +2,12 @@ import { useTranslation } from '@/i18n';
 import {
   annulerIdentification,
   configurationSimulee,
+  envoyerCodeOtp,
   identifier,
+  MOT_DE_PASSE_DEMO,
+  texteDemo,
+  useUtilisateursSimules,
+  verifierCodeOtp,
   type Identification,
 } from '@/simulation';
 import { useQueryClient } from '@tanstack/react-query';
@@ -26,8 +31,9 @@ type Props = {
  * Rend un fragment : les blocs sont les enfants directs de la colonne de droite.
  */
 export default function EcransSimules({ onMessage }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const client = useQueryClient();
+  const { data: comptes } = useUtilisateursSimules();
   const configuration = configurationSimulee();
   const [googleOuvert, setGoogleOuvert] = useState(false);
   const [attente, setAttente] = useState<EnAttente | null>(null);
@@ -48,6 +54,9 @@ export default function EcransSimules({ onMessage }: Props) {
     return (
       <VerificationDeuxEtapes
         attente={attente}
+        envoyerCode={envoyerCodeOtp}
+        verifierCode={verifierCodeOtp}
+        aide={texteDemo('otpDemo', i18n.language)}
         onRetour={() => {
           void annulerIdentification();
           setAttente(null);
@@ -57,7 +66,15 @@ export default function EcransSimules({ onMessage }: Props) {
     );
   }
   if (configuration.mode === 'code') {
-    return <ChoixUtilisateur identifier={identifierEtSuivre} onChoisi={() => onMessage('')} />;
+    if (!comptes) return null;
+    return (
+      <ChoixUtilisateur
+        utilisateurs={comptes}
+        identifier={identifierEtSuivre}
+        onChoisi={() => onMessage('')}
+        aide={texteDemo('codeDemo', i18n.language)}
+      />
+    );
   }
   if (googleOuvert) {
     return (
@@ -74,6 +91,11 @@ export default function EcransSimules({ onMessage }: Props) {
   return (
     <FormulaireEmail
       identifier={identifierEtSuivre}
+      demo={{
+        comptes: comptes ?? [],
+        motDePasse: MOT_DE_PASSE_DEMO,
+        texte: texteDemo('demoIdentifiants', i18n.language),
+      }}
       onGoogle={() => {
         onMessage('');
         setGoogleOuvert(true);

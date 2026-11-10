@@ -1,6 +1,12 @@
 import { configurerApi } from '@/api';
 import { initI18n } from '@/i18n';
-import { identifier, installerApiSimulee, type Identification } from '@/simulation';
+import {
+  identifier,
+  installerApiSimulee,
+  texteDemo,
+  useUtilisateursSimules,
+  type Identification,
+} from '@/simulation';
 import { reinitialiserSimulation } from '@/simulation/routeur.ts';
 import { lireUtilisateurConnecte } from '@/simulation/session.ts';
 import { OptiboulProvider } from '@/ui';
@@ -17,6 +23,19 @@ const identifierSansDeuxFacteurs = async (identification: Identification) => {
   await identifier(identification, false);
 };
 
+// Les comptes viennent du faux serveur, comme dans l'application en simulation.
+function Hote() {
+  const { data } = useUtilisateursSimules();
+  if (!data) return null;
+  return (
+    <ChoixUtilisateur
+      utilisateurs={data}
+      identifier={identifierSansDeuxFacteurs}
+      aide={texteDemo('codeDemo', 'fr')}
+    />
+  );
+}
+
 beforeEach(() => {
   initI18n();
   configurerApi({ baseUrl: 'http://localhost' });
@@ -27,7 +46,7 @@ beforeEach(() => {
       <QueryClientProvider
         client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
       >
-        <ChoixUtilisateur identifier={identifierSansDeuxFacteurs} />
+        <Hote />
       </QueryClientProvider>
     </OptiboulProvider>,
   );

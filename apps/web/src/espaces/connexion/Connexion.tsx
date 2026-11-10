@@ -7,6 +7,7 @@ import { Navigate, useSearchParams } from 'react-router';
 import { cheminAccueil } from '../../navigation.ts';
 import { ColonneSession } from './ColonneSession.tsx';
 import styles from './Connexion.module.css';
+import EcransReels from './EcransReels.tsx';
 
 // Chargé seulement en mode simulation. La condition lit `import.meta.env.MODE` ici même : le
 // compilateur la remplace par `false` en production et retire alors l'import et tout ce qu'il
@@ -16,9 +17,9 @@ const EcransSimules =
   import.meta.env.MODE === 'simulation' ? lazy(() => import('./EcransSimules.tsx')) : null;
 
 /**
- * Connexion. En attendant les écrans dédiés (US-010 code à 4 chiffres, US-011 double
- * authentification), le bouton ouvre la connexion django-allauth sur la même origine.
- * En simulation, le parcours de la maquette est joué sur de fausses données.
+ * Connexion : identification (nom + code sur un poste de confiance, ou adresse e-mail), puis
+ * vérification en deux étapes, sur le vrai serveur. En simulation, le parcours de la maquette est
+ * joué sur de fausses données.
  */
 export default function Connexion() {
   const { t } = useTranslation();
@@ -60,15 +61,7 @@ export default function Connexion() {
             <EcransSimules onMessage={setMessage} />
           </Suspense>
         ) : (
-          <div className={styles.allauth}>
-            <h1 className={styles.titre}>{t('connexion.titre')}</h1>
-            <a
-              className={styles.boutonAllauth}
-              href={`/accounts/login/?next=${encodeURIComponent(suivant ?? '/')}`}
-            >
-              {t('connexion.seConnecter')}
-            </a>
-          </div>
+          <EcransReels onMessage={setMessage} />
         )}
       </div>
     </div>

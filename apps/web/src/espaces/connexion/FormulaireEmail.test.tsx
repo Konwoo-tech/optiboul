@@ -1,6 +1,12 @@
 import { configurerApi } from '@/api';
 import { initI18n } from '@/i18n';
-import { installerApiSimulee, type Identification } from '@/simulation';
+import {
+  installerApiSimulee,
+  MOT_DE_PASSE_DEMO,
+  texteDemo,
+  useUtilisateursSimules,
+  type Identification,
+} from '@/simulation';
 import { reinitialiserSimulation } from '@/simulation/routeur.ts';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -12,6 +18,22 @@ import { FormulaireEmail } from './FormulaireEmail.tsx';
 let retablir: () => void;
 const identifier = vi.fn<(identification: Identification) => Promise<void>>();
 const surGoogle = vi.fn();
+
+// Les comptes de démonstration viennent du faux serveur, comme dans l'application en simulation.
+function Hote() {
+  const { data } = useUtilisateursSimules();
+  return (
+    <FormulaireEmail
+      identifier={identifier}
+      onGoogle={surGoogle}
+      demo={{
+        comptes: data ?? [],
+        motDePasse: MOT_DE_PASSE_DEMO,
+        texte: texteDemo('demoIdentifiants', 'fr'),
+      }}
+    />
+  );
+}
 
 beforeEach(() => {
   initI18n();
@@ -25,7 +47,7 @@ beforeEach(() => {
       <QueryClientProvider
         client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
       >
-        <FormulaireEmail identifier={identifier} onGoogle={surGoogle} />
+        <Hote />
       </QueryClientProvider>
     </OptiboulProvider>,
   );

@@ -1,25 +1,28 @@
+import type { Identification, PersonneConnexion } from '@/auth/connexion.ts';
 import { useTranslation } from '@/i18n';
-import {
-  MOT_DE_PASSE_DEMO,
-  texteDemo,
-  useUtilisateursSimules,
-  type Identification,
-} from '@/simulation';
 import { AvatarUtilisateur, LogoGoogle, useToast } from '@/ui';
 import { useState, type FormEvent } from 'react';
 
 import styles from './Etapes.module.css';
 
+/** Comptes de démonstration à toucher pour remplir le formulaire : seulement en simulation. */
+export type DemoIdentifiants = {
+  comptes: PersonneConnexion[];
+  motDePasse: string;
+  texte: string;
+};
+
 type Props = {
-  onGoogle: () => void;
+  /** Absent : pas de bouton Google (le vrai serveur demande un jeton Google Identity Services). */
+  onGoogle?: () => void;
   identifier: (identification: Identification) => Promise<void>;
+  demo?: DemoIdentifiants;
 };
 
 /** Connexion par Google, ou par e-mail et mot de passe (maquette, lignes 64-86). */
-export function FormulaireEmail({ onGoogle, identifier }: Props) {
-  const { t, i18n } = useTranslation();
+export function FormulaireEmail({ onGoogle, identifier, demo }: Props) {
+  const { t } = useTranslation();
   const afficherToast = useToast();
-  const { data: comptes } = useUtilisateursSimules();
   const [email, setEmail] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [visible, setVisible] = useState(false);
@@ -47,11 +50,15 @@ export function FormulaireEmail({ onGoogle, identifier }: Props) {
         <h1 className={styles.titre}>{t('connexion.titre')}</h1>
         <p className={styles.sousTitre}>{t('connexion.sousTitreEmail')}</p>
       </div>
-      <button type="button" className={styles.boutonGoogle} onClick={onGoogle}>
-        <LogoGoogle />
-        <span>{t('connexion.google')}</span>
-      </button>
-      <div className={styles.separateur}>{t('connexion.ou')}</div>
+      {onGoogle && (
+        <>
+          <button type="button" className={styles.boutonGoogle} onClick={onGoogle}>
+            <LogoGoogle />
+            <span>{t('connexion.google')}</span>
+          </button>
+          <div className={styles.separateur}>{t('connexion.ou')}</div>
+        </>
+      )}
       <form className={styles.formulaire} onSubmit={(e) => void envoyer(e)}>
         <label className={styles.champ}>
           {t('connexion.email')}
@@ -113,40 +120,40 @@ export function FormulaireEmail({ onGoogle, identifier }: Props) {
           {t('connexion.seConnecter')}
         </button>
       </form>
-      <div className={styles.demoProfils}>
-        <div className={styles.demoEntete}>
-          <span className={styles.demoTitre}>{t('connexion.demoTitre')}</span>
-          <span className={styles.demoAstuce}>{t('connexion.demoAstuce')}</span>
-        </div>
-        <div className={styles.demoGrille}>
-          {comptes?.map((compte) => (
-            <button
-              key={compte.id}
-              type="button"
-              className={styles.demoCarte}
-              aria-pressed={adresseSaisie === compte.email}
-              onClick={() => {
-                setEmail(compte.email);
-                setMotDePasse(MOT_DE_PASSE_DEMO);
-                setErreur('');
-              }}
-            >
-              <AvatarUtilisateur nom={compte.nom} profil={compte.profil} taille={34} />
-              <span className={styles.demoTextes}>
-                <span className={styles.demoNom}>
-                  {compte.nom}
-                  {' · '}
-                  <span className={styles.demoRole}>{t(`profils.${compte.profil}`)}</span>
+      {demo && (
+        <div className={styles.demoProfils}>
+          <div className={styles.demoEntete}>
+            <span className={styles.demoTitre}>{t('connexion.demoTitre')}</span>
+            <span className={styles.demoAstuce}>{t('connexion.demoAstuce')}</span>
+          </div>
+          <div className={styles.demoGrille}>
+            {demo.comptes.map((compte) => (
+              <button
+                key={compte.id}
+                type="button"
+                className={styles.demoCarte}
+                aria-pressed={adresseSaisie === compte.email}
+                onClick={() => {
+                  setEmail(compte.email);
+                  setMotDePasse(demo.motDePasse);
+                  setErreur('');
+                }}
+              >
+                <AvatarUtilisateur nom={compte.nom} profil={compte.profil} taille={34} />
+                <span className={styles.demoTextes}>
+                  <span className={styles.demoNom}>
+                    {compte.nom}
+                    {' · '}
+                    <span className={styles.demoRole}>{t(`profils.${compte.profil}`)}</span>
+                  </span>
+                  <span className={styles.demoEmail}>{compte.email}</span>
                 </span>
-                <span className={styles.demoEmail}>{compte.email}</span>
-              </span>
-            </button>
-          ))}
+              </button>
+            ))}
+          </div>
+          <div className={styles.demoIdentifiants}>{demo.texte}</div>
         </div>
-        <div className={styles.demoIdentifiants}>
-          {texteDemo('demoIdentifiants', i18n.language)}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -45,14 +45,14 @@ describe('application web', () => {
   it('sans session, affiche la connexion', async () => {
     serveur.use(http.get('*/api/v1/users/me/', () => new HttpResponse(null, { status: 403 })));
     ouvrir('/comptoir');
-    expect(await screen.findByRole('link', { name: 'Se connecter' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Se connecter' })).toBeTruthy();
   });
 
   it('serveur en panne : la connexion s’affiche avec un bandeau et propose de réessayer', async () => {
     serveur.use(http.get('*/api/v1/users/me/', () => new HttpResponse(null, { status: 503 })));
     ouvrir('/comptoir');
     expect(await screen.findByText('Serveur injoignable', {}, { timeout: 4000 })).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Se connecter' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Se connecter' })).toBeTruthy();
     expect(screen.getByText(/Le serveur ne répond pas. Réessayez dans un instant/)).toBeTruthy();
     expect(screen.queryByText(/Vous n’êtes pas déconnecté/)).toBeNull();
     connecte('caissier');
