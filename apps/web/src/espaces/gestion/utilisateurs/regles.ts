@@ -48,6 +48,10 @@ export function apercuTelephone(saisi: string): string {
 const FORME_EMAIL = /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/;
 const FORME_TELEPHONE = /^6\d{8}$/;
 
+/** Longueurs maximales du nom et de l'adresse e-mail d'un utilisateur (client et serveur). */
+export const NOM_UTILISATEUR_MAX = 60;
+export const EMAIL_MAX = 120;
+
 export const normaliserEmail = (saisi: string): string => saisi.trim().toLowerCase();
 
 /**
@@ -62,7 +66,9 @@ export function validerNouvelUtilisateur(
   const erreurs: ErreursUtilisateur = {};
   const email = normaliserEmail(entree.email);
   if (!entree.nom.trim()) erreurs.nom = 'nom_obligatoire';
-  if (!FORME_EMAIL.test(email)) erreurs.email = 'email_invalide';
+  else if (entree.nom.trim().length > NOM_UTILISATEUR_MAX) erreurs.nom = 'nom_trop_long';
+  if (email.length > EMAIL_MAX) erreurs.email = 'email_trop_long';
+  else if (!FORME_EMAIL.test(email)) erreurs.email = 'email_invalide';
   else if (emailsPris.includes(email)) erreurs.email = 'email_deja_utilise';
   if (!FORME_TELEPHONE.test(chiffres(entree.telephone))) erreurs.telephone = 'telephone_invalide';
   if (!entree.groupe || (groupesConnus && !groupesConnus.includes(entree.groupe))) {

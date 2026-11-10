@@ -73,6 +73,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
   const [brouillon, setBrouillon] = useState<Brouillon>(BROUILLON_VIDE);
   const [erreurs, setErreurs] = useState<ErreursUtilisateur>({});
   const [creeId, setCreeId] = useState<string | null>(null);
+  const [tentative, setTentative] = useState(0);
   // Garde synchrone : deux clics avant le rendu suivant ne lancent qu'une seule action.
   const enCours = useRef(false);
 
@@ -262,6 +263,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
     );
     if (aDesErreurs(trouvees)) {
       setErreurs(trouvees);
+      setTentative((n) => n + 1);
       return;
     }
     enCours.current = true;
@@ -277,8 +279,10 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
         },
         onError: (erreur) => {
           const champs = erreursDeChamps(erreur);
-          if (aDesErreurs(champs)) setErreurs(champs);
-          else signaler(erreur);
+          if (aDesErreurs(champs)) {
+            setErreurs(champs);
+            setTentative((n) => n + 1);
+          } else signaler(erreur);
         },
       },
     );
@@ -343,6 +347,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
               utilisateurs={utilisateurs}
               cree={cree}
               occupe={occupe}
+              tentative={tentative}
               onChamp={surChamp}
               onGroupe={(g) => {
                 setBrouillon((b) => ({ ...b, groupe: g }));

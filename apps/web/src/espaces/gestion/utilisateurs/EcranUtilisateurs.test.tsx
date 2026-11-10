@@ -483,6 +483,60 @@ describe('Gestion › Utilisateurs : nouvel utilisateur', () => {
     expect(await screen.findByText('Votre profil ne permet pas cette action.')).toBeTruthy();
   });
 
+  it('borne le nom (60) et l’adresse (120) dans les champs', async () => {
+    await ouvrir('admin', 'fr', '?onglet=nouveau');
+    expect(((await screen.findByLabelText('Nom complet')) as HTMLInputElement).maxLength).toBe(60);
+    expect((screen.getByLabelText('Adresse Gmail') as HTMLInputElement).maxLength).toBe(120);
+  });
+
+  it('met le focus sur le premier champ en erreur, sans le déplacer à la saisie', async () => {
+    await ouvrir('admin', 'fr', '?onglet=nouveau');
+    await screen.findByText('1. Identité');
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
+    expect(document.activeElement).toBe(screen.getByLabelText('Nom complet'));
+    saisir('Nom complet', 'Ada');
+    screen.getByLabelText('Adresse Gmail').focus();
+    saisir('Adresse Gmail', 'a');
+    expect(document.activeElement).toBe(screen.getByLabelText('Adresse Gmail'));
+    // Seul le groupe manque : le focus va aux groupes.
+    saisir('Adresse Gmail', 'ada@gmail.com');
+    saisir(/Téléphone/, '677412018');
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
+    expect(document.activeElement).toBe(
+      screen.getByRole('group', { name: 'Groupe d’utilisateurs' }).querySelector('button'),
+    );
+  });
+
+  it('se parcourt au clavier dans l’ordre des étapes et se valide par Entrée', async () => {
+    await remplir();
+    const formulaire = screen.getByRole('button', { name: 'Créer l’utilisateur' }).closest('form')!;
+    const ordre = [...formulaire.querySelectorAll<HTMLElement>('input, button')].map(
+      (e) => e.getAttribute('aria-labelledby') ?? e.textContent,
+    );
+    const rang = (motif: RegExp) => ordre.findIndex((x) => x && motif.test(x));
+    expect(rang(/nom-libelle/)).toBeLessThan(rang(/email-libelle/));
+    expect(rang(/email-libelle/)).toBeLessThan(rang(/telephone-libelle/));
+    expect(rang(/telephone-libelle/)).toBeLessThan(rang(/Direction/));
+    expect(rang(/Direction/)).toBeLessThan(rang(/^WhatsApp$/));
+    expect(rang(/^SMS$/)).toBeLessThan(rang(/Envoyer l’invitation/));
+    expect(rang(/Envoyer l’invitation/)).toBeLessThan(rang(/^Annuler$/));
+    expect(rang(/^Annuler$/)).toBeLessThan(rang(/Créer l’utilisateur/));
+    // Entrée dans un champ valide le formulaire.
+    fireEvent.submit(formulaire);
+    expect(await screen.findByText('Compte créé')).toBeTruthy();
+  });
+
+  it('un non-administrateur reçoit 403 à la création et aucun compte n’est créé', async () => {
+    await remplir();
+    memoriserUtilisateurConnecte('willy');
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
+    expect(await screen.findByText('Votre profil ne permet pas cette action.')).toBeTruthy();
+    memoriserUtilisateurConnecte('admin');
+    expect(
+      (await (await fetch('/api/v1/simulation/gestion/utilisateurs/')).json()).utilisateurs,
+    ).toHaveLength(9);
+  });
+
   it('annule et décoche l’invitation', async () => {
     await ouvrir('admin', 'fr', '?onglet=nouveau');
     const invitation = await screen.findByRole('checkbox', {

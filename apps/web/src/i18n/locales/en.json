@@ -1359,7 +1359,9 @@
           "email_invalide": "Invalid email address.",
           "email_deja_utilise": "This address is already in use.",
           "telephone_invalide": "9 digits starting with 6.",
-          "groupe_obligatoire": "Choose a user group."
+          "groupe_obligatoire": "Choose a user group.",
+          "nom_trop_long": "The name is at most 60 characters long.",
+          "email_trop_long": "The address is at most 120 characters long."
         }
       },
       "apercu": {

@@ -36,6 +36,14 @@ const MARQUEURS = [
   'Gérants de la semaine',
   'boulfaubourg',
   'support.optiboul',
+  // Compte créé (Gestion › Utilisateurs) : le gabarit des traductions porte {{motDePasse}}, la valeur
+  // vient de MOT_DE_PASSE_DEMO. Au branchement du vrai backend, ce texte ne citera plus de mot de
+  // passe : l'invitation enverra un lien de connexion. Phrases entières : le mot nu « optiboul »
+  // donnerait des faux positifs (clés « optiboul-* »).
+  'Mot de passe provisoire : optiboul',
+  'mot de passe provisoire « optiboul »',
+  'Temporary password: optiboul',
+  'temporary password "optiboul"',
   'Mouvement interne : ration 12 BAG',
   'journal_non_modifiable',
   'gestion/utilisateurs/',

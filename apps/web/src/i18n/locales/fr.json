@@ -1359,7 +1359,9 @@
           "email_invalide": "Adresse e-mail invalide.",
           "email_deja_utilise": "Cette adresse est déjà utilisée.",
           "telephone_invalide": "9 chiffres commençant par 6.",
-          "groupe_obligatoire": "Choisissez un groupe d’utilisateurs."
+          "groupe_obligatoire": "Choisissez un groupe d’utilisateurs.",
+          "nom_trop_long": "Le nom ne dépasse pas 60 caractères.",
+          "email_trop_long": "L’adresse ne dépasse pas 120 caractères."
         }
       },
       "apercu": {

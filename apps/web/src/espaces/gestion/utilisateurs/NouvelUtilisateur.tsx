@@ -1,14 +1,16 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- bouton à rôle « checkbox » : case de la maquette */
 import { useTranslation } from '@/i18n';
 import { MOT_DE_PASSE_DEMO } from '@/simulation';
-import { useId } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 import { Mot, Pastille } from './Pastille.tsx';
 import {
   apercuTelephone,
+  EMAIL_MAX,
   ecransAccessibles,
   membresDuGroupe,
   nomDuGroupe,
+  NOM_UTILISATEUR_MAX,
   saisirTelephone,
 } from './regles.ts';
 import styles from './Utilisateurs.module.css';
@@ -32,6 +34,8 @@ type Props = {
   /** Compte qui vient d'être créé : la confirmation remplace le formulaire. */
   cree: Utilisateur | null;
   occupe: boolean;
+  /** Numéro de la dernière tentative refusée : le focus va au premier champ en erreur. */
+  tentative: number;
   onChamp: (champ: 'nom' | 'email' | 'telephone', valeur: string) => void;
   onGroupe: (groupe: string) => void;
   onCanal: (canal: Canal) => void;
@@ -47,6 +51,18 @@ export function NouvelUtilisateur(props: Props) {
   const { t, i18n } = useTranslation();
   const { brouillon, erreurs, groupes, utilisateurs, cree, occupe } = props;
   const prefixe = useId();
+  const champs = useRef<Record<string, HTMLInputElement | null>>({});
+  const groupesRef = useRef<HTMLFieldSetElement>(null);
+  const { tentative } = props;
+  // Après un refus, le focus va au premier champ en erreur (le lecteur d'écran lit l'erreur reliée).
+  // Les erreurs ne sont lues qu'à la tentative : taper dans un champ ne doit pas déplacer le focus.
+  useEffect(() => {
+    if (!tentative) return;
+    const premier = (['nom', 'email', 'telephone'] as const).find((c) => props.erreurs[c]);
+    if (premier) champs.current[premier]?.focus();
+    else if (props.erreurs.groupe) groupesRef.current?.querySelector('button')?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tentative]);
 
   if (cree) {
     const groupe = groupes.find((g) => g.id === cree.groupe);
@@ -101,6 +117,9 @@ export function NouvelUtilisateur(props: Props) {
         <span className={styles.telephone}>
           <span className={styles.indicatif}>+237</span>
           <input
+            ref={(el) => {
+              champs.current[cle] = el;
+            }}
             className={`${styles.champ} ${styles.champTelephone}`}
             value={brouillon.telephone}
             inputMode="tel"
@@ -113,8 +132,12 @@ export function NouvelUtilisateur(props: Props) {
         </span>
       ) : (
         <input
+          ref={(el) => {
+            champs.current[cle] = el;
+          }}
           className={styles.champ}
           type={attributs.type}
+          maxLength={cle === 'nom' ? NOM_UTILISATEUR_MAX : EMAIL_MAX}
           value={brouillon[cle]}
           placeholder={attributs.placeholder}
           aria-labelledby={id(`${cle}-libelle`)}
@@ -166,6 +189,7 @@ export function NouvelUtilisateur(props: Props) {
           </h2>
           <div className={styles.aideGroupe}>{t('gestion.utilisateurs.formulaire.groupeAide')}</div>
           <fieldset
+            ref={groupesRef}
             className={styles.cartesGroupes}
             aria-label={t('gestion.utilisateurs.formulaire.groupes')}
             aria-describedby={erreurs.groupe ? id('groupe-erreur') : undefined}

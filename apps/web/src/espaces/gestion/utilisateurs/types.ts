@@ -51,6 +51,8 @@ export type ChampUtilisateur = 'nom' | 'email' | 'telephone' | 'groupe';
 /** Code d'erreur de validation d'un champ (jamais un texte : il est traduit à l'affichage). */
 export type CodeErreurChamp =
   | 'nom_obligatoire'
+  | 'nom_trop_long'
+  | 'email_trop_long'
   | 'email_invalide'
   | 'email_deja_utilise'
   | 'telephone_invalide'
