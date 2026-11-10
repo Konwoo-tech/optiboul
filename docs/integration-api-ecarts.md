@@ -1,0 +1,92 @@
+# Intégration du front avec l'API : manques et écarts
+
+Document vivant. Il consigne, au fil de l'intégration de `apps/web` avec les vrais services de `apps/api`, tout ce qui **manque** à l'API ou **diffère** de ce que le front attendait (le faux serveur du mode simulation). Une entrée est ajoutée à chaque constat ; son statut est mis à jour quand l'équipe API répond.
+
+Règles :
+
+- Le front ne modifie **jamais** `apps/api`. Un manque ou un écart côté API est consigné ici, puis remonté à l'équipe API par le ticket de suivi.
+- Un écart **absorbé par le front** (adaptateur, conversion de noms) est consigné pour mémoire, sans demande à l'équipe API.
+- Aucune décision de produit n'est prise ici : la colonne « Proposition » est une suggestion, validée par l'équipe avant d'agir.
+
+## Format d'une entrée
+
+| Champ             | Contenu                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| **Réf.**          | `M` + numéro (manque côté API), `E` + numéro (écart de contrat)           |
+| **Écran / vague** | Écran du front concerné et vague d'intégration                            |
+| **Constat**       | Ce qui manque ou diffère, avec la route de l'API                          |
+| **Impact**        | Ce que le front ne peut pas faire, ou doit contourner                     |
+| **Proposition**   | Suggestion, à valider                                                     |
+| **Statut**        | `à remonter`, `remonté (#n)`, `répondu`, `résolu`, `absorbé par le front` |
+
+## Manques côté API (à remonter à l'équipe API)
+
+| Réf. | Écran / vague              | Constat                                                                                                                                                                 | Impact                                                                                                                                  | Proposition                                                                                                    | Statut               |
+| ---- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------- |
+| M1   | Connexion, coque (vague 1) | `GET /api/v1/users/me/` renvoie seulement `name`, `url` et `profil`, sans identifiant ni e-mail.                                                                        | Le front utilise l'identifiant de l'utilisateur connecté (journal, auteur d'une action, « mon » compte dans la liste des utilisateurs). | Ajouter `id` et `email` à la réponse, ou une route équivalente.                                                | à remonter           |
+| M2   | Utilisateurs (vague 7)     | Aucune route de modification ni de désactivation d'un utilisateur. Seuls existent `POST /utilisateurs/`, `{id}/code`, `{id}/debloquer`, `{id}/groupe` et `{id}/apercu`. | L'écran Utilisateurs propose « Désactiver » et « Réactiver » un compte.                                                                 | Ajouter l'activation/désactivation (et la modification du nom, du téléphone, du canal).                        | à remonter           |
+| M3   | Utilisateurs (vague 7)     | Pas de suppression de groupe ; `groupes/` ne propose que la liste, la création et la modification.                                                                      | Aucun écran ne supprime un groupe aujourd'hui ; à confirmer que c'est voulu.                                                            | Confirmer.                                                                                                     | à remonter           |
+| M4   | Sauvegardes (vague 7)      | Pas de restauration par l'API, seulement la commande `restaurer_sauvegarde` ; pas de configuration cloud.                                                               | L'écran Sauvegardes propose une restauration guidée en trois étapes.                                                                    | Exposer la restauration (administrateur seul, avec copie de sûreté préalable), ou retirer l'action de l'écran. | à remonter           |
+| M5   | Dépenses (vague 4)         | Pas de modification ni d'annulation d'une dépense (`depenses/` : GET et POST seulement).                                                                                | Le faux serveur rattache une entrée de stock à une dépense et la retire au refus.                                                       | Confirmer le comportement attendu au refus d'une demande de dépense.                                           | à remonter           |
+| M6   | Coque (vague 2)            | Pas de canal temps réel (ni SSE ni websocket).                                                                                                                          | Les notifications « en direct » et l'état de la session de l'écran Session passent par du polling (`notifications/non-lues/`).          | Pas de demande immédiate ; à reconsidérer si le polling est trop coûteux.                                      | absorbé par le front |
+
+## Écarts de contrat (absorbés par le front, pour mémoire)
+
+| Réf. | Écran / vague                    | Constat                                                                                                                                                                                                                                                                                                                         | Impact                                                                            | Proposition                                                            | Statut               |
+| ---- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | -------------------- |
+| E1   | Tous                             | Le faux serveur expose des **vues agrégées** par écran (un instantané complet, `/api/v1/simulation/…`) ; l'API réelle est **granulaire** (une ressource par route, une action par route).                                                                                                                                       | Un adaptateur par écran compose plusieurs appels et reconstruit l'instantané.     | Aucune.                                                                | absorbé par le front |
+| E2   | Tous                             | Identifiants : le front manipule des chaînes (`id: string`) et des clés de produit par nom (`baguette`) ; l'API utilise des entiers.                                                                                                                                                                                            | Un référentiel (produits, matières, comptes) est chargé via l'API, puis converti. | Aucune.                                                                | absorbé par le front |
+| E3   | Tous                             | Casse des champs : le front est en camelCase, l'API en snake_case (avec quelques camelCase à la connexion : `deuxFacteurs`, `motDePasse`, `codesSecours`).                                                                                                                                                                      | Conversion dans l'adaptateur de chaque écran.                                     | Aucune.                                                                | absorbé par le front |
+| E4   | Journal (vague 7)                | Pagination : l'API réelle du journal a sa propre pagination (`PaginationJournal`) ; les autres listes utilisent `PageNumberPagination` (`count`, `next`, `previous`, `results`, 50 par page) ; la simulation renvoyait une liste simple avec `total`.                                                                           | Le mapping du journal (`espaces/gestion/journal/mapping.ts`) isole déjà l'écart.  | Aucune.                                                                | absorbé par le front |
+| E5   | Journal (vague 7)                | Types d'événements différents (`connexion.fermee`, `poste.enregistre`, …) de ceux du faux serveur.                                                                                                                                                                                                                              | Table de correspondance dans le mapping du journal.                               | Fournir la liste complète des types d'événements.                      | à remonter           |
+| E6   | Connexion (vague 1)              | La connexion par code exige un cookie de poste de confiance `optiboul_poste` (HttpOnly, SameSite=Strict) et un en-tête CSRF ; elle est refusée si l'en-tête `X-Optiboul-Entree: distante` est présent. Le premier poste est amorcé par l'administrateur (`POST /postes/`) après une connexion par e-mail avec deuxième facteur. | Le comptoir ne peut pas se connecter par code avant l'amorçage du poste.          | Documenter la procédure d'amorçage d'un poste pour la mise en service. | à remonter           |
+| E7   | Connexion (vague 1)              | Le faux serveur répond à une seule étape d'identification ; l'API la découpe en `connexion/code`, `connexion/email`, `connexion/google`, puis `connexion/otp/*` et `connexion/totp`, et renvoie `deuxFacteurs`, `telephoneMasque`, `canal`, `applicationAuthentification`.                                                      | Adaptateur de connexion à écrire côté front.                                      | Aucune.                                                                | absorbé par le front |
+| E8   | Clients, Fournisseurs, Personnel | Relevé de client, reçu de paiement fournisseur et bulletin de paie sont des PDF binaires ; le client généré (orval) les gère mal.                                                                                                                                                                                               | Appel `fetch` brut pour ces trois routes.                                         | Aucune.                                                                | absorbé par le front |
+
+## Environnement de développement local (sans Docker, Windows)
+
+À titre d'information pour l'équipe : ce qui a été constaté en lançant l'API sur un poste Windows sans Docker.
+
+- **`psycopg[c]` n'est pas installable** sans compilateur C ni `pg_config`. Le contournement local est `uv sync --no-install-package psycopg-c`, puis l'installation de `psycopg-binary` dans le venv de l'API (`uv pip install --python .venv/Scripts/python.exe psycopg-binary==3.3.6`). Un `uv sync` complet échouera donc sur ce poste.
+- **SQLite n'est pas une solution de repli** : les migrations utilisent des déclencheurs et des fonctions propres à PostgreSQL.
+- **Celery n'est pas indispensable** pour les écrans. Sans worker, le code à six chiffres du deuxième facteur est lisible en clair dans `MessageSortant.contenu` ; la passerelle locale est `PasserelleJournalisation`.
+- La documentation interactive (`/api/v1/docs/`) est réservée aux administrateurs (403 pour un visiteur).
+
+### Démarrage
+
+1. Créer le rôle et la base PostgreSQL (une fois, avec le superutilisateur) :
+
+   ```
+   CREATE ROLE optiboul LOGIN PASSWORD 'optiboul_dev' CREATEDB;
+   CREATE DATABASE optiboul_dev OWNER optiboul;
+   ```
+
+2. Variables de session (PowerShell), depuis `apps/api` :
+
+   ```powershell
+   Remove-Item Env:VIRTUAL_ENV -ErrorAction SilentlyContinue   # ne pas réutiliser le venv d'un autre projet
+   $env:DJANGO_SETTINGS_MODULE = "config.settings.local"
+   $env:USE_DOCKER = "no"
+   $env:DATABASE_URL = "postgres://optiboul:optiboul_dev@localhost:5432/optiboul_dev"
+   $env:REDIS_URL = "redis://localhost:6379/5"
+   $env:DJANGO_EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+   ```
+
+3. Migrations, comptes de démonstration, serveur :
+
+   ```powershell
+   .venv\Scripts\python.exe manage.py migrate
+   .venv\Scripts\python.exe manage.py shell -c "exec(open(r'..\..\docs\api-local\seed_dev.py', encoding='utf8').read())"
+   .venv\Scripts\python.exe manage.py runserver 8001
+   ```
+
+   Le script crée un compte par profil (codes à 4 chiffres de démonstration) et un poste de confiance, puis affiche la valeur du cookie `optiboul_poste`. **Local uniquement : ne jamais l'exécuter sur un serveur réel.**
+
+4. Front contre cette API : `OPTIBOUL_API_URL=http://127.0.0.1:8001` pour le proxy de Vite (`apps/web/vite.config.ts`).
+
+## Journal des mises à jour
+
+| Date       | Entrée           | Note                                                                                            |
+| ---------- | ---------------- | ----------------------------------------------------------------------------------------------- |
+| 2026-11-10 | M1 à M6, E1 à E8 | Création, à partir de l'inventaire front ↔ API (171 routes lues, toutes implémentées côté API). |
+| 2026-11-10 | M1 à M5, E5, E6  | Remontés à l’équipe API par le ticket #260.                                                     |
