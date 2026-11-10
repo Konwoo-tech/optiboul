@@ -76,6 +76,18 @@ export function useModifierParametre(utilisateur: string | undefined) {
   });
 }
 
+/**
+ * La phrase d'un refus 400 du serveur : `{ valeur: "…" }` (API réelle) ou `{ detail: "…" }`. Les
+ * autres erreurs (500, réseau) n'en ont pas : l'écran affiche alors son message générique.
+ */
+export function phraseDuServeur(erreur: unknown): string | undefined {
+  if (!(erreur instanceof ErreurApi) || erreur.status !== 400) return undefined;
+  const corps = (erreur.details ?? {}) as { valeur?: unknown; detail?: unknown };
+  const brute = Array.isArray(corps.valeur) ? corps.valeur[0] : corps.valeur;
+  const phrase = typeof brute === 'string' ? brute : corps.detail;
+  return typeof phrase === 'string' && phrase.trim() ? phrase : undefined;
+}
+
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
 export function codeErreur(erreur: unknown): string | undefined {
   return erreur instanceof ErreurApi ? erreur.code : undefined;

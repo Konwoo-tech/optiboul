@@ -38,12 +38,12 @@ const PROPRIETAIRE = /Fotso/;
 /**
  * Bruit de police : le prototype charge la Manrope statique de Google Fonts, l'application la
  * Manrope variable. Dans les colonnes de chiffres à chasse fixe, le dernier « 6 » de « 426 » et de
- * « 216 » (trois lignes) et le « 1 » de « 160 / 165 » tombent à un tiers de pixel d'écart (4 zones
- * de 8 x 10 px, 225 à 235 pixels). Rien d'autre ne diffère.
+ * « 216 » (quatre lignes) et le « 1 » de « 160 / 165 » tombent à un tiers de pixel d'écart (5 zones
+ * de 8 x 10 px au plus, 225 à 235 pixels, mesurées image par image). Rien d'autre ne diffère.
  */
 const SEUIL = 240;
 const JUSTIFICATION =
-  'Bruit de police (Manrope statique du prototype contre Manrope variable) : 4 chiffres, 6 et 1, décalés d’un tiers de pixel dans les colonnes de chiffres.';
+  'Bruit de police (Manrope statique du prototype contre Manrope variable) : 5 chiffres (quatre 6 et un 1), décalés d’un tiers de pixel dans les colonnes de chiffres.';
 
 function scenarioParametres(options: {
   nom: string;

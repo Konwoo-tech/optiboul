@@ -194,9 +194,3 @@ export function lireLaSaisie(parametre: Contrainte, saisie: string): ResultatVal
   if (!/^\d+$/.test(nette)) return { ok: false, erreur: { code: 'entier' } };
   return validerValeur(parametre, Number(nette));
 }
-
-/** Vrai si la saisie, une fois lue, est la valeur déjà enregistrée : rien à envoyer. */
-export function saisieInchangee(parametre: Parametre, saisie: string): boolean {
-  const lue = lireLaSaisie(parametre, saisie);
-  return lue.ok && memeValeur(lue.valeur, parametre.valeur);
-}

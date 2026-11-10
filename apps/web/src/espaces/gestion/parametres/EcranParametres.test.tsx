@@ -23,12 +23,17 @@ vi.mock('@/simulation', async (original) => ({
 
 let retablir: () => void;
 
-async function ouvrir(utilisateur = 'fotso', langue: 'fr' | 'en' = 'fr') {
+async function ouvrir(
+  utilisateur = 'fotso',
+  langue: 'fr' | 'en' = 'fr',
+  apresInstallation?: () => void,
+) {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-10-14T17:02:00Z'));
   await initI18n('fr').changeLanguage(langue);
   configurerApi({ baseUrl: 'http://localhost' });
   retablir = installerApiSimulee({ latenceMs: 0 });
+  apresInstallation?.();
   reinitialiserSimulation();
   memoriserUtilisateurConnecte(utilisateur);
   const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'parametres')!;
@@ -313,5 +318,186 @@ describe('Gestion › Paramètres : droits et langue', () => {
     expect(
       (await screen.findByRole('link', { name: '‹ Tous les produits' })).getAttribute('href'),
     ).toBe('/gestion/parametres');
+  });
+});
+
+/**
+ * Intercepte les appels du faux serveur : `regle` renvoie une réponse pour la remplacer, ou
+ * `undefined` pour laisser passer. Chaque test rétablit `fetch` avec la fonction renvoyée.
+ */
+function intercepter(
+  regle: (methode: string, adresse: string) => Response | Promise<Response | undefined> | undefined,
+) {
+  const reel = globalThis.fetch;
+  globalThis.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
+    const adresse = entree instanceof Request ? entree.url : String(entree);
+    const methode = (
+      init?.method ?? (entree instanceof Request ? entree.method : 'GET')
+    ).toUpperCase();
+    return (await regle(methode, adresse)) ?? reel(entree, init);
+  }) as typeof fetch;
+  return () => {
+    globalThis.fetch = reel;
+  };
+}
+
+const refus = (statut: number, corps: object) => Response.json(corps, { status: statut });
+
+describe('Gestion › Paramètres : échecs et envois', () => {
+  it('affiche la phrase du serveur pour un 400 sans code', async () => {
+    await ouvrir();
+    const defaire = intercepter((m) =>
+      m === 'PUT' ? refus(400, { valeur: 'Valeur trop haute pour la caisse.' }) : undefined,
+    );
+    const plafond = await champ('Plafond de dette par client');
+    fireEvent.change(plafond, { target: { value: '3000' } });
+    fireEvent.blur(plafond);
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Valeur trop haute pour la caisse.',
+    );
+    expect(plafond.getAttribute('aria-invalid')).toBe('true');
+    expect(plafond.value).toBe('3000');
+    defaire();
+  });
+
+  it('affiche le message générique pour un 500, et garde la saisie', async () => {
+    await ouvrir();
+    const defaire = intercepter((m) => (m === 'PUT' ? refus(500, { detail: 'Boum' }) : undefined));
+    const plafond = await champ('Plafond de dette par client');
+    fireEvent.change(plafond, { target: { value: '3000' } });
+    fireEvent.blur(plafond);
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Le paramètre n’a pas pu être enregistré. Réessayez.',
+    );
+    expect(plafond.value).toBe('3000');
+    expect(valeurDuParametre('plafond_dette_client')).toBe(2000);
+    defaire();
+  });
+
+  it('dit que seul le propriétaire modifie quand le serveur répond 403 pendant l’enregistrement', async () => {
+    await ouvrir();
+    const defaire = intercepter((m) =>
+      m === 'PUT' ? refus(403, { detail: 'Interdit', code: 'droit_insuffisant' }) : undefined,
+    );
+    const plafond = await champ('Plafond de dette par client');
+    fireEvent.change(plafond, { target: { value: '3000' } });
+    fireEvent.blur(plafond);
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Seul le propriétaire modifie les paramètres.',
+    );
+    defaire();
+  });
+
+  it('ne part qu’une fois quand le champ est quitté deux fois pendant l’envoi', async () => {
+    await ouvrir();
+    let envois = 0;
+    let liberer!: () => void;
+    const attente = new Promise<void>((r) => (liberer = r));
+    const reel = globalThis.fetch;
+    const defaire = intercepter(async (m, adresse) => {
+      if (m !== 'PUT') return undefined;
+      envois += 1;
+      await attente;
+      return reel(adresse, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ valeur: 3000 }),
+      });
+    });
+    const plafond = await champ('Plafond de dette par client');
+    fireEvent.change(plafond, { target: { value: '3000' } });
+    fireEvent.blur(plafond);
+    fireEvent.blur(plafond);
+    fireEvent.keyDown(plafond, { key: 'Enter' });
+    liberer();
+    await waitFor(() => expect(valeurDuParametre('plafond_dette_client')).toBe(3000));
+    expect(envois).toBe(1);
+    expect(tracesDeParametres()).toHaveLength(1);
+    defaire();
+  });
+
+  it('n’écrase pas une saisie retapée pendant l’envoi', async () => {
+    await ouvrir();
+    let liberer!: () => void;
+    const attente = new Promise<void>((r) => (liberer = r));
+    const reel = globalThis.fetch;
+    const defaire = intercepter(async (m, adresse) => {
+      if (m !== 'PUT') return undefined;
+      await attente;
+      return reel(adresse, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ valeur: 3000 }),
+      });
+    });
+    const plafond = await champ('Plafond de dette par client');
+    fireEvent.change(plafond, { target: { value: '3000' } });
+    fireEvent.blur(plafond);
+    fireEvent.change(plafond, { target: { value: '3500' } });
+    liberer();
+    await waitFor(() => expect(valeurDuParametre('plafond_dette_client')).toBe(3000));
+    expect(plafond.value).toBe('3500');
+    defaire();
+    // La nouvelle saisie s'enregistre à la sortie suivante.
+    fireEvent.blur(plafond);
+    await waitFor(() => expect(valeurDuParametre('plafond_dette_client')).toBe(3500));
+  });
+
+  it('garde les seuils quand les produits ne se chargent pas', async () => {
+    let defaire = () => {};
+    await ouvrir('fotso', 'fr', () => {
+      defaire = intercepter((m, adresse) =>
+        m === 'GET' && adresse.includes('/parametres/produits/')
+          ? refus(500, { detail: 'Boum' })
+          : undefined,
+      );
+    });
+    expect((await champ('Plafond de dette par client')).value).toBe('2000');
+    expect(await screen.findByText('Impossible de charger les produits.')).toBeTruthy();
+    expect(screen.queryByRole('table', { name: 'Produits et fiches techniques' })).toBeNull();
+    defaire();
+  });
+
+  it('dit quand l’historique ne se charge pas', async () => {
+    let defaire = () => {};
+    await ouvrir('fotso', 'fr', () => {
+      defaire = intercepter((m, adresse) =>
+        m === 'GET' && adresse.includes('/historique/')
+          ? refus(500, { detail: 'Boum' })
+          : undefined,
+      );
+    });
+    expect(await screen.findByText('Impossible de charger l’historique.')).toBeTruthy();
+    defaire();
+  });
+});
+
+describe('Gestion › Paramètres : effets sur les autres écrans', () => {
+  const lireSimule = async (chemin: string) =>
+    (await (await fetch(`http://localhost/api/v1/simulation/${chemin}`)).json()) as any;
+
+  it('un plafond de dette modifié ici se voit au comptoir, chez les clients et au tableau de bord', async () => {
+    await ouvrir();
+    const plafond = await champ('Plafond de dette par client');
+    fireEvent.change(plafond, { target: { value: '4000' } });
+    fireEvent.blur(plafond);
+    await waitFor(() => expect(valeurDuParametre('plafond_dette_client')).toBe(4000));
+    memoriserUtilisateurConnecte('davy');
+    expect((await lireSimule('comptoir/session/')).plafond).toBe(4000);
+    expect((await lireSimule('clients/')).plafond).toBe(4000);
+    memoriserUtilisateurConnecte('willy');
+    expect(JSON.stringify(await lireSimule('gestion/tableau-de-bord/'))).toContain(
+      '"plafond":4000',
+    );
+  });
+
+  it('un seuil de validation modifié ici change le seuil des dépenses', async () => {
+    await ouvrir();
+    const seuil = await champ('Seuil de validation des dépenses');
+    fireEvent.change(seuil, { target: { value: '80000' } });
+    fireEvent.blur(seuil);
+    await waitFor(() => expect(valeurDuParametre('seuil_validation_depenses')).toBe(80000));
+    memoriserUtilisateurConnecte('davy');
+    expect((await lireSimule('comptoir/depenses/')).seuil).toBe(80000);
   });
 });

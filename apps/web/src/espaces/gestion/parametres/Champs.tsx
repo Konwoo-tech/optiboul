@@ -1,18 +1,13 @@
 import { useTranslation } from '@/i18n';
 import { useId, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 
-import { messageDErreur, nomDuJour, uniteDe, libelleDe } from './affichage.ts';
+import { messageDErreur, nomDuJour, uniteDe, libelleDe, type ErreurAffichee } from './affichage.ts';
 import { lireLaSaisie, saisieDe, validerValeur } from './regles.ts';
 import styles from './Parametres.module.css';
-import {
-  JOURS_DE_LA_SEMAINE,
-  type ErreurValeur,
-  type Parametre,
-  type ValeurParametre,
-} from './types.ts';
+import { JOURS_DE_LA_SEMAINE, type Parametre, type ValeurParametre } from './types.ts';
 
 /** Résultat d'un enregistrement : `null` quand la valeur est prise en compte. */
-export type Echec = ErreurValeur | 'serveur' | 'droit' | null;
+export type Echec = ErreurAffichee | null;
 export type Enregistrer = (parametre: Parametre, valeur: ValeurParametre) => Promise<Echec>;
 
 type Props = {
@@ -51,6 +46,8 @@ export function ChampTexte({
   const [echec, setEchec] = useState<Exclude<Echec, null> | null>(null);
   // Garde synchrone : Entrée puis sortie du champ ne lancent qu'un seul envoi.
   const envoi = useRef(false);
+  // Dernière saisie tapée : une saisie retapée pendant l'envoi n'est pas écrasée.
+  const saisieCourante = useRef<string | null>(null);
   const heure = parametre.genre === 'heure';
   const affichee = saisie ?? (heure ? String(parametre.valeur) : saisieDe(parametre.valeur));
   const unite = avecUnite ? uniteDe(t, parametre) : '';
@@ -64,11 +61,16 @@ export function ChampTexte({
     }
     envoi.current = true;
     try {
+      const envoyee = saisie;
       const resultat = await enregistrer(parametre, lue.valeur);
       if (resultat) setEchec(resultat);
       else {
-        setSaisie(null);
-        setEchec(null);
+        // Retapé pendant l'envoi : la nouvelle saisie reste, elle sera lue à la prochaine sortie.
+        if (saisieCourante.current === envoyee) {
+          saisieCourante.current = null;
+          setSaisie(null);
+          setEchec(null);
+        }
       }
     } finally {
       envoi.current = false;
@@ -80,6 +82,7 @@ export function ChampTexte({
       e.preventDefault();
       void valider();
     } else if (e.key === 'Escape') {
+      saisieCourante.current = null;
       setSaisie(null);
       setEchec(null);
     }
@@ -100,6 +103,7 @@ export function ChampTexte({
           aria-invalid={echec ? true : undefined}
           aria-describedby={echec ? `${identifiant}-erreur` : undefined}
           onChange={(e: ChangeEvent<HTMLInputElement>) => {
+            saisieCourante.current = e.target.value;
             setSaisie(e.target.value);
             setEchec(null);
           }}

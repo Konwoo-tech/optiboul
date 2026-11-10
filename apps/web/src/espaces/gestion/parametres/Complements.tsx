@@ -113,8 +113,8 @@ export function HistoriqueDesValeurs({
             </tr>
           </thead>
           <tbody>
-            {valeurs.map((v) => (
-              <tr key={v.le}>
+            {valeurs.map((v, rang) => (
+              <tr key={`${v.le}-${rang}`}>
                 <td>{dateHeure(v.le, i18n.language)}</td>
                 <td>{courant ? valeurLisible(t, courant, v.valeur) : String(v.valeur)}</td>
                 <td>{v.auteur}</td>

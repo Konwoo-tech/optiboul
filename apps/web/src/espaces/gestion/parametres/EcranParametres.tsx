@@ -7,7 +7,13 @@ import { useRef } from 'react';
 import { cheminEcran, ecransDe, type Ecran } from '../../../navigation.ts';
 import { EnTeteEcran } from '../../EnTeteEcran.tsx';
 import { libelleDe } from './affichage.ts';
-import { codeErreur, useModifierParametre, useParametres, useProduits } from './api.ts';
+import {
+  codeErreur,
+  phraseDuServeur,
+  useModifierParametre,
+  useParametres,
+  useProduits,
+} from './api.ts';
 import type { Enregistrer } from './Champs.tsx';
 import { AutresParametres, HistoriqueDesValeurs } from './Complements.tsx';
 import styles from './Parametres.module.css';
@@ -92,7 +98,9 @@ export default function EcranParametres({ ecran }: { ecran: Ecran }) {
       afficher(t('gestion.parametres.enregistre', { libelle: libelleDe(t, parametre) }));
       return null;
     } catch (erreur) {
-      return codeErreur(erreur) === 'droit_insuffisant' ? 'droit' : 'serveur';
+      if (codeErreur(erreur) === 'droit_insuffisant') return 'droit';
+      const phrase = phraseDuServeur(erreur);
+      return phrase ? { code: 'message', texte: phrase } : 'serveur';
     } finally {
       enCours.current.delete(parametre.cle);
     }

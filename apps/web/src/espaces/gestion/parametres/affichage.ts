@@ -35,10 +35,16 @@ export function valeurLisible(
   return unite ? `${nombre} ${unite}` : nombre;
 }
 
+/** Ce qui peut s'afficher sous un champ : un refus de valeur, un échec d'envoi ou la phrase du serveur. */
+export type ErreurAffichee =
+  ErreurValeur | 'serveur' | 'droit' | { code: 'message'; texte: string };
+
 /** Phrase d'erreur d'une valeur refusée, dans la langue de l'interface. */
-export function messageDErreur(t: TFunction, erreur: ErreurValeur | 'serveur' | 'droit'): string {
+export function messageDErreur(t: TFunction, erreur: ErreurAffichee): string {
   if (erreur === 'serveur' || erreur === 'droit') return t(`gestion.parametres.erreurs.${erreur}`);
   switch (erreur.code) {
+    case 'message':
+      return erreur.texte;
     case 'bornes':
       return erreur.maximum === null
         ? t('gestion.parametres.erreurs.bornesMin', { minimum: erreur.minimum })
