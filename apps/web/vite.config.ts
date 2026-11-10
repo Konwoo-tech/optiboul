@@ -6,6 +6,10 @@ import { defineConfig } from 'vitest/config';
 // En développement, l'application garde une seule origine : Django est relayé par Vite,
 // les cookies de session et le jeton CSRF fonctionnent comme en production.
 const API = process.env.OPTIBOUL_API_URL ?? 'http://localhost:8000';
+// Le comptoir se connecte depuis un poste de confiance (cookie HttpOnly `optiboul_poste`, O1) : le
+// navigateur de développement n'en a pas. Si cette variable est définie, le proxy l'ajoute aux
+// requêtes vers l'API, sans toucher aux cookies de session du navigateur.
+const COOKIE_POSTE = process.env.OPTIBOUL_POSTE_COOKIE;
 
 export default defineConfig({
   plugins: [react()],
@@ -17,7 +21,32 @@ export default defineConfig({
     strictPort: true,
     // Django sert aussi la connexion allauth, l'admin et ses fichiers statiques.
     proxy: Object.fromEntries(
-      ['/api', '/accounts', '/admin', '/static'].map((prefixe) => [prefixe, { target: API }]),
+      ['/api', '/accounts', '/admin', '/static'].map((prefixe) => [
+        prefixe,
+        {
+          target: API,
+          configure: (proxy: {
+            on: (
+              evenement: 'proxyReq',
+              ecouteur: (requete: {
+                getHeader: (nom: string) => unknown;
+                setHeader: (nom: string, valeur: string) => void;
+              }) => void,
+            ) => void;
+          }) => {
+            if (!COOKIE_POSTE) return;
+            proxy.on('proxyReq', (requete) => {
+              const existants = requete.getHeader('cookie');
+              requete.setHeader(
+                'cookie',
+                [typeof existants === 'string' ? existants : '', `optiboul_poste=${COOKIE_POSTE}`]
+                  .filter(Boolean)
+                  .join('; '),
+              );
+            });
+          },
+        },
+      ]),
     ),
   },
   preview: { port: 5173, strictPort: true },

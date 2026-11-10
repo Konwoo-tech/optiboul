@@ -2,8 +2,11 @@ import { configurerApi } from '@/api';
 import { initI18n } from '@/i18n';
 import {
   CODE_OTP_DEMO,
+  envoyerCodeOtp,
   identifier,
   installerApiSimulee,
+  texteDemo,
+  verifierCodeOtp,
   type ReponseIdentification,
 } from '@/simulation';
 import { reinitialiserSimulation } from '@/simulation/routeur.ts';
@@ -26,6 +29,9 @@ async function ouvrir() {
     <OptiboulProvider>
       <VerificationDeuxEtapes
         attente={reponse as EnAttente}
+        envoyerCode={envoyerCodeOtp}
+        verifierCode={verifierCodeOtp}
+        aide={texteDemo('otpDemo', 'fr')}
         onRetour={surRetour}
         onTermine={surTermine}
       />

@@ -1,12 +1,6 @@
 import { ErreurApi } from '@/api';
+import type { Canal, ReponseIdentification } from '@/auth/connexion.ts';
 import { useTranslation } from '@/i18n';
-import {
-  envoyerCodeOtp,
-  texteDemo,
-  verifierCodeOtp,
-  type Canal,
-  type ReponseIdentification,
-} from '@/simulation';
 import { AvatarUtilisateur, useToast } from '@/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -16,6 +10,12 @@ export type EnAttente = Extract<ReponseIdentification, { deuxFacteurs: true }>;
 
 type Props = {
   attente: EnAttente;
+  /** Envoie le code à 6 chiffres par ce canal. Renvoie l'heure d'envoi, « HH:MM ». */
+  envoyerCode: (canal: Canal) => Promise<string>;
+  /** Vérifie le code ; une erreur `code_incorrect` porte `essaisRestants` dans `details`. */
+  verifierCode: (code: string) => Promise<void>;
+  /** Texte d'aide sous le champ (code de démonstration) : seulement en simulation. */
+  aide?: string;
   onRetour: () => void;
   /** Le code est bon : la session est ouverte. */
   onTermine: () => void;
@@ -29,8 +29,15 @@ const NOM_CANAL: Record<Canal, string> = { sms: 'SMS', whatsapp: 'WhatsApp' };
 const COULEUR_CANAL: Record<Canal, string> = { sms: '#F2B705', whatsapp: '#25D366' };
 
 /** Double authentification par SMS ou WhatsApp (maquette, lignes 97-118). */
-export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) {
-  const { t, i18n } = useTranslation();
+export function VerificationDeuxEtapes({
+  attente,
+  envoyerCode,
+  verifierCode,
+  aide,
+  onRetour,
+  onTermine,
+}: Props) {
+  const { t } = useTranslation();
   const afficherToast = useToast();
   const champ = useRef<HTMLInputElement>(null);
   // Une seule requête à la fois, et la vérification différée de 150 ms s'annule (Entrée, bouton
@@ -70,7 +77,7 @@ export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) 
       enCours.current = true;
       let heureEnvoi: string;
       try {
-        heureEnvoi = await envoyerCodeOtp(choix);
+        heureEnvoi = await envoyerCode(choix);
       } finally {
         enCours.current = false;
       }
@@ -84,7 +91,7 @@ export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) 
       setRenvoiPossibleA(Date.now() + DELAI_RENVOI_MS);
       afficherToast(t('connexion.toastEnvoye', { canal: NOM_CANAL[choix] }));
     },
-    [afficherToast, t],
+    [afficherToast, envoyerCode, t],
   );
 
   const verifier = useCallback(
@@ -97,7 +104,7 @@ export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) 
       }
       enCours.current = true;
       try {
-        await verifierCodeOtp(saisi);
+        await verifierCode(saisi);
         onTermine();
       } catch (e) {
         setCode('');
@@ -112,7 +119,7 @@ export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) 
         enCours.current = false;
       }
     },
-    [bloque, onTermine, t],
+    [bloque, onTermine, t, verifierCode],
   );
 
   const autre: Canal = canal === 'sms' ? 'whatsapp' : 'sms';
@@ -240,7 +247,7 @@ export function VerificationDeuxEtapes({ attente, onRetour, onTermine }: Props) 
           </div>
         </>
       )}
-      <div className={styles.otpDemo}>{texteDemo('otpDemo', i18n.language)}</div>
+      {aide && <div className={styles.otpDemo}>{aide}</div>}
     </div>
   );
 }

@@ -2,9 +2,12 @@ import { optiboulFetch } from '@/api';
 import { useQuery } from '@tanstack/react-query';
 
 import { SIMULATION } from './actif.ts';
+import type { Identification, ReponseIdentification } from '@/auth/connexion.ts';
 import type { ContexteSimule, UtilisateurSimule } from './donnees.ts';
 import type { NotificationSimulee } from './notifications.ts';
-import type { Canal, Via } from './routeur.ts';
+import type { Canal } from './routeur.ts';
+
+export type { Identification, ReponseIdentification };
 
 type Reponse<T> = { data: T };
 
@@ -40,20 +43,6 @@ export function useContexteSimule() {
     staleTime: Infinity,
   });
 }
-
-export type Identification =
-  | { methode: 'code'; utilisateur: string; code: string }
-  | { methode: 'email'; email: string; motDePasse: string }
-  | { methode: 'google'; email: string };
-
-export type ReponseIdentification =
-  | { deuxFacteurs: false }
-  | {
-      deuxFacteurs: true;
-      utilisateur: UtilisateurSimule;
-      telephoneMasque: string;
-      via: Via;
-    };
 
 /** Première étape : qui êtes-vous ? Ouvre la session, ou attend la double authentification. */
 export async function identifier(

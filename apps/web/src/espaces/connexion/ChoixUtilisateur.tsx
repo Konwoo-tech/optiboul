@@ -1,11 +1,6 @@
 import { ErreurApi } from '@/api';
+import type { Identification, PersonneDuPoste } from '@/auth/connexion.ts';
 import { useTranslation } from '@/i18n';
-import {
-  texteDemo,
-  useUtilisateursSimules,
-  type Identification,
-  type UtilisateurSimule,
-} from '@/simulation';
 import { AvatarUtilisateur } from '@/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -16,20 +11,23 @@ import { PavePin } from './PavePin.tsx';
 const DELAI_VERIFICATION_MS = 160;
 
 type Props = {
+  /** Les personnes à toucher : celles du poste de confiance (vrai serveur) ou du faux serveur. */
+  utilisateurs: PersonneDuPoste[];
   identifier: (identification: Identification) => Promise<void>;
   /** Une personne est touchée : le message de déconnexion automatique peut disparaître. */
   onChoisi?: () => void;
+  /** Texte d'aide sous le clavier (codes de démonstration) : seulement en simulation. */
+  aide?: string;
 };
 
 /**
- * Connexion de poste « nom + code à 4 chiffres » (O1, US-010), en simulation : on touche son nom,
- * puis on saisit son code. Le vrai backend n'expose pas encore cette connexion.
+ * Connexion de poste « nom + code à 4 chiffres » (O1, US-010) : on touche son nom, puis on saisit
+ * son code.
  * Rend un fragment : les blocs sont les enfants directs de la colonne de droite.
  */
-export function ChoixUtilisateur({ identifier, onChoisi }: Props) {
-  const { t, i18n } = useTranslation();
-  const { data: utilisateurs } = useUtilisateursSimules();
-  const [choisi, setChoisi] = useState<UtilisateurSimule | null>(null);
+export function ChoixUtilisateur({ utilisateurs, identifier, onChoisi, aide }: Props) {
+  const { t } = useTranslation();
+  const [choisi, setChoisi] = useState<PersonneDuPoste | null>(null);
   const [code, setCode] = useState('');
   const [erreur, setErreur] = useState('');
   const [occupe, setOccupe] = useState(false);
@@ -64,8 +62,6 @@ export function ChoixUtilisateur({ identifier, onChoisi }: Props) {
     [choisi, identifier, t],
   );
 
-  if (!utilisateurs) return null;
-
   if (choisi) {
     return (
       <div className={styles.pin}>
@@ -92,7 +88,7 @@ export function ChoixUtilisateur({ identifier, onChoisi }: Props) {
           onValider={(saisi) => void verifier(saisi)}
           onRetour={revenir}
         />
-        <div className={styles.demo}>{texteDemo('codeDemo', i18n.language)}</div>
+        {aide && <div className={styles.demo}>{aide}</div>}
       </div>
     );
   }
