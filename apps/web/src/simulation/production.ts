@@ -1,6 +1,7 @@
 import {
   actionDuCycle,
   bornerSupplement,
+  calculerFiche,
   calculerPlan,
   calculerDemande,
   champInvalide,
@@ -39,6 +40,8 @@ import {
   type Recette,
 } from '@/espaces/atelier/production/types.ts';
 import { MATIERES } from '@/espaces/comptoir/depenses/types.ts';
+import { peutConsulterParametres } from '@/espaces/gestion/parametres/regles.ts';
+import type { ProduitParametre } from '@/espaces/gestion/parametres/types.ts';
 import { CLES_PRODUIT } from '@/espaces/comptoir/session/types.ts';
 import { formaterDateCourte, formaterNombre, type Creneau } from '@/utils';
 
@@ -1116,4 +1119,32 @@ export function repondreProduction(
       return undefined;
     }
   }
+}
+
+/**
+ * `GET /api/v1/simulation/gestion/parametres/produits/` : le tableau « Produits et fiches
+ * techniques » de Gestion › Paramètres (propriétaire et administrateur). Résumé des fiches, sans la
+ * recette ; `undefined` quand l'appel n'est pas pour cette route. Vit ici parce que les fiches
+ * sont à ce module.
+ */
+export function repondreProduitsDesParametres(url: URL, methode: string): Response | undefined {
+  if (url.pathname !== '/api/v1/simulation/gestion/parametres/produits/') return undefined;
+  const utilisateur = lireUtilisateurConnecte();
+  if (!utilisateur) return probleme(403, 'non_authentifie', 'Connexion requise.');
+  if (!peutConsulterParametres(utilisateur.profil)) {
+    return probleme(403, 'droit_insuffisant', 'Votre profil ne consulte pas les paramètres.');
+  }
+  if (methode !== 'GET') return probleme(405, 'methode_refusee', 'Méthode non permise.');
+  const prix = prixDesMatieres();
+  const produits: ProduitParametre[] = lireEtat().fiches.map((f) => ({
+    id: f.id,
+    code: f.code,
+    nom: f.nom,
+    nomEn: f.nomEn,
+    boule: f.recette.boule,
+    pb: f.recette.pb,
+    painsParSac: calculerFiche(f.recette, prix, f.prix).painsParSac,
+    prix: f.prix ? [...f.prix] : null,
+  }));
+  return Response.json(produits);
 }

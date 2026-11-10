@@ -104,3 +104,93 @@ export function formaterValeur(
   // « heures (et à chaque clôture) » : seule l'unité précède la précision.
   return parametre.unite ? `${nombre} ${parametre.unite.split(' (')[0]}` : nombre;
 }
+
+// ---------------------------------------------------------------------------
+// Présentation : seuils de la maquette, groupes des autres paramètres
+// ---------------------------------------------------------------------------
+
+/** Les trois seuils de la maquette (bloc `thr`), dans son ordre. */
+export const SEUILS_DE_LA_MAQUETTE = [
+  'plafond_dette_client',
+  'seuil_validation_depenses',
+  'ecart_matiere_kg_par_sac',
+] as const;
+
+/** Familles des autres paramètres (cahier des charges §9), dans l'ordre d'affichage. */
+export const GROUPES_DE_PARAMETRES = [
+  {
+    cle: 'dettes',
+    parametres: ['echeance_dettes', 'relances_jours', 'relances_heure'],
+  },
+  { cle: 'caisse', parametres: ['fonds_caisse', 'plafond_especes', 'seuil_budget_surveiller'] },
+  {
+    cle: 'stocks',
+    parametres: [
+      'ecart_matiere_grammes',
+      'tolerance_inventaire',
+      'prix_sac_farine',
+      'stock_sessions_bas',
+      'stock_sessions_commande',
+      'controles_stock_jours',
+    ],
+  },
+  {
+    cle: 'production',
+    parametres: [
+      'tolerance_validation_plan',
+      'heure_limite_commandes_nuit',
+      'heure_limite_commandes_jour',
+      'heure_petrissage_nuit',
+      'heure_petrissage_jour',
+      'echeance_demande_plafond',
+      'demande_estimee_sessions',
+      'supplement_auto_sacs',
+      'supplement_auto_pourcentage',
+      'rappel_clients_habituels',
+    ],
+  },
+  { cle: 'paie', parametres: ['jour_de_paie'] },
+  {
+    cle: 'securite',
+    parametres: ['inactivite_comptoir', 'sauvegarde_locale', 'alerte_sauvegarde_cloud'],
+  },
+] as const;
+
+export type GroupeAffiche = { cle: string; parametres: Parametre[] };
+
+/**
+ * Sépare les trois seuils de la maquette des autres paramètres, rangés par famille. Un paramètre
+ * que le serveur ajouterait sans qu'on le connaisse tombe dans la famille « autres » : il reste
+ * modifiable.
+ */
+export function repartirLesParametres(parametres: readonly Parametre[]): {
+  seuils: Parametre[];
+  groupes: GroupeAffiche[];
+} {
+  const parCle = new Map(parametres.map((p) => [p.cle, p]));
+  const seuils = SEUILS_DE_LA_MAQUETTE.flatMap((cle) => parCle.get(cle) ?? []);
+  const rangees = new Set<string>(SEUILS_DE_LA_MAQUETTE);
+  const groupes: GroupeAffiche[] = GROUPES_DE_PARAMETRES.map((g) => ({
+    cle: g.cle,
+    parametres: g.parametres.flatMap((cle) => {
+      rangees.add(cle);
+      return parCle.get(cle) ?? [];
+    }),
+  }));
+  const autres = parametres.filter((p) => !rangees.has(p.cle));
+  if (autres.length > 0) groupes.push({ cle: 'autres', parametres: autres });
+  return { seuils, groupes: groupes.filter((g) => g.parametres.length > 0) };
+}
+
+/** Le texte tapé pour une valeur numérique : l'entier tel quel, sans séparateur (maquette). */
+export const saisieDe = (valeur: ValeurParametre): string => String(valeur);
+
+/**
+ * Lit une saisie numérique : des chiffres seuls (espaces ignorés), puis les bornes du paramètre.
+ * Une saisie vide ou qui n'est pas un entier est refusée (`entier`).
+ */
+export function lireLaSaisie(parametre: Contrainte, saisie: string): ResultatValeur {
+  const nette = saisie.replace(/\s/g, '');
+  if (!/^\d+$/.test(nette)) return { ok: false, erreur: { code: 'entier' } };
+  return validerValeur(parametre, Number(nette));
+}

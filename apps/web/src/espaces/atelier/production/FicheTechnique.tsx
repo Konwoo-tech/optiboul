@@ -23,6 +23,8 @@ type Props = {
   estChef: boolean;
   /** Chemin de l'écran de production, où mène « Retour ». */
   cheminRetour: string;
+  /** Ouverte depuis Gestion › Paramètres (`?depuis=parametres`) : « Retour » y ramène. */
+  depuis?: { chemin: string };
 };
 
 type ChampRecette = 'boule' | 'pb' | Ingredient;
@@ -62,6 +64,7 @@ export function FicheTechnique({
   peutModifier,
   estChef,
   cheminRetour,
+  depuis,
 }: Props) {
   const { t, i18n } = useTranslation();
   const langue = i18n.language === 'en' ? 'en' : 'fr';
@@ -106,7 +109,9 @@ export function FicheTechnique({
   const choisir = (id: string) => {
     setBrouillon(null);
     setErreur(null);
-    void navigate(`${cheminRetour}?fiche=${id}`, { replace: true });
+    void navigate(`${cheminRetour}?fiche=${id}${depuis ? '&depuis=parametres' : ''}`, {
+      replace: true,
+    });
   };
 
   const saisir =
@@ -261,14 +266,14 @@ export function FicheTechnique({
 
   const modifieLe =
     dateCourte(fiche.modifieLe, langue) + (fiche.modifieA ? ` · ${fiche.modifieA}` : '');
-  const retourLibelle = tf('retour');
+  const retourLibelle = tf(depuis ? 'retourProduits' : 'retour');
 
   return (
     <>
       <EnTeteEcran ecran={ecran} titre={t('atelier.production.fiche.titre')} />
       <div className={styles.page}>
         <div className={styles.barre}>
-          <Link className={styles.retour} to={cheminRetour}>
+          <Link className={styles.retour} to={depuis ? depuis.chemin : cheminRetour}>
             {retourLibelle}
           </Link>
           <div role="group" aria-label={tf('produits')} style={{ display: 'contents' }}>

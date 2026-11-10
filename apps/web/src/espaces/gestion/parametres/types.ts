@@ -57,6 +57,24 @@ export type ValeurPassee = {
   le: string;
 };
 
+/** Une ligne du tableau « Produits et fiches techniques » (résumé de la fiche, sans la recette). */
+export type ProduitParametre = {
+  /** Identifiant d'adresse de la fiche : `?fiche=gc135`. */
+  id: string;
+  /** Code affiché : « GC 135 ». */
+  code: string;
+  nom: string;
+  nomEn: string;
+  /** Poids d'une boule de pâte, en grammes. */
+  boule: number;
+  /** Pains par boule. */
+  pb: number;
+  /** Pains par sac de 50 kg de farine. */
+  painsParSac: number;
+  /** Prix observés : revendeur et détail ; absent : aucun prix relevé. */
+  prix: [revendeur: number, detail: number] | null;
+};
+
 /** Motif d'un refus de valeur ; l'écran le traduit, le serveur en fait une phrase. */
 export type ErreurValeur =
   | { code: 'entier' }

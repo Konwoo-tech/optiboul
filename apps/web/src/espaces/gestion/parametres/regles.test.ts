@@ -2,12 +2,17 @@ import { describe, expect, it } from 'vitest';
 
 import { formatFCFA } from '@/utils';
 
+import type { Parametre } from './types.ts';
 import {
   formaterValeur,
+  GROUPES_DE_PARAMETRES,
+  lireLaSaisie,
   memeValeur,
   messageDeLErreur,
   peutConsulterParametres,
   peutModifierParametres,
+  repartirLesParametres,
+  SEUILS_DE_LA_MAQUETTE,
   validerValeur,
 } from './regles.ts';
 
@@ -118,5 +123,58 @@ describe('messages et formats', () => {
       'jeudi, samedi',
     );
     expect(formaterValeur({ genre: 'heure', unite: '' }, '10:00')).toBe('10:00');
+  });
+});
+
+describe('lecture d’une saisie numérique', () => {
+  const borne = { genre: 'entier', choix: [], minimum: 1, maximum: 28 } as const;
+
+  it('lit des chiffres seuls, espaces ignorés, puis applique les bornes', () => {
+    expect(lireLaSaisie(montant, '70 000')).toEqual({ ok: true, valeur: 70000 });
+    expect(lireLaSaisie(borne, '28')).toEqual({ ok: true, valeur: 28 });
+    expect(lireLaSaisie(borne, '29').ok).toBe(false);
+    for (const faux of ['', ' ', '-5', '2,5', '1e3', 'abc']) {
+      expect(lireLaSaisie(montant, faux)).toEqual({ ok: false, erreur: { code: 'entier' } });
+    }
+  });
+});
+
+describe('répartition des paramètres', () => {
+  const fiche = (cle: string): Parametre => ({
+    cle,
+    libelle: cle,
+    genre: 'entier',
+    unite: '',
+    usage: '',
+    valeur: 1,
+    defaut: 1,
+    choix: [],
+    minimum: null,
+    maximum: null,
+    modifie_le: null,
+    modifie_par: '',
+  });
+  const tous = [
+    ...SEUILS_DE_LA_MAQUETTE,
+    ...GROUPES_DE_PARAMETRES.flatMap((g) => g.parametres),
+  ].map(fiche);
+
+  it('met les trois seuils de la maquette à part, dans son ordre', () => {
+    const { seuils } = repartirLesParametres([...tous].reverse());
+    expect(seuils.map((p) => p.cle)).toEqual([...SEUILS_DE_LA_MAQUETTE]);
+  });
+
+  it('range les 29 paramètres du catalogue exactement une fois', () => {
+    const { seuils, groupes } = repartirLesParametres(tous);
+    const cles = [...seuils, ...groupes.flatMap((g) => g.parametres)].map((p) => p.cle);
+    expect(cles).toHaveLength(29);
+    expect(new Set(cles).size).toBe(29);
+    expect(groupes.map((g) => g.cle)).not.toContain('autres');
+  });
+
+  it('garde un paramètre inconnu dans « autres » et saute les familles vides', () => {
+    const { groupes } = repartirLesParametres([fiche('nouveau_parametre'), fiche('jour_de_paie')]);
+    expect(groupes.map((g) => g.cle)).toEqual(['paie', 'autres']);
+    expect(groupes[1]!.parametres.map((p) => p.cle)).toEqual(['nouveau_parametre']);
   });
 });

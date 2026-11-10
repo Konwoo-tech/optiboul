@@ -1,0 +1,297 @@
+/*
+ * Gestion › Paramètres, repris valeur par valeur de la maquette « OptiBoul ERP v2 » (bloc
+ * `scr.parametres`, lignes 934-956). Variables : --brand = marque, --surface = surface,
+ * --line = ligne, --fline = ligne-champ, --muted = discret, --ink = encre, --field = champ.
+ * Les blocs `.complements` (autres paramètres, historique) ne sont pas dans la maquette.
+ */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.carte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.titre {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: inherit;
+  color: var(--ob-marque);
+}
+
+.seuils {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.etiquette {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.ligneChamp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.champ {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 14px;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+  box-sizing: border-box;
+}
+
+.champ:focus {
+  outline: none;
+  border-color: var(--ob-marque);
+}
+
+.champ[aria-invalid='true'] {
+  border-color: #c2453a;
+}
+
+.unite {
+  font-size: 13px;
+  color: var(--ob-discret);
+  width: 40px;
+}
+
+.erreur {
+  font-size: 13px;
+  font-weight: 600;
+  color: #c2453a;
+}
+
+/* Tableau « Produits et fiches techniques » */
+.tableau {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow-x: auto;
+}
+
+.tableauInterne {
+  min-width: 620px;
+}
+
+.tableauTitre {
+  padding: 16px 20px;
+}
+
+.rangeeProduits {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr 70px;
+  gap: 8px;
+  align-items: center;
+}
+
+.enteteProduits {
+  align-items: normal;
+  padding: 10px 20px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ob-discret);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--ob-champ);
+}
+
+.ligneProduit {
+  position: relative;
+  padding: 11px 20px;
+  border-top: 1px solid var(--ob-ligne);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-encre);
+}
+
+.ligneProduitOuvrable:hover {
+  background: var(--ob-champ);
+}
+
+.ligneProduitOuvrable:focus-within {
+  outline: 3px solid #f2b705;
+  outline-offset: -3px;
+}
+
+.nomProduit {
+  font-weight: 800;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Lien étendu : toute la ligne ouvre la fiche. */
+.nomProduit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.nomProduit:focus-visible {
+  outline: none;
+}
+
+.droite {
+  text-align: right;
+}
+
+.ouvrir {
+  text-align: right;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+/* Blocs ajoutés sous la maquette : autres paramètres et historique */
+.complements {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ob-discret);
+  text-wrap: pretty;
+}
+
+.groupe {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.groupeTitre {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ob-discret);
+}
+
+.liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.parametre {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 8px 16px;
+  align-items: start;
+  padding: 12px 0;
+  border-top: 1px solid var(--ob-ligne);
+}
+
+.parametreNom {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.meta {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ob-discret);
+}
+
+.controle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.champCompact {
+  height: 44px;
+  font-size: 16px;
+}
+
+.selecteur {
+  composes: champ;
+  text-align: left;
+  flex: 1;
+}
+
+.jours {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jour {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--ob-encre);
+}
+
+.jour input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ob-marque);
+}
+
+.historique {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.historique th {
+  text-align: left;
+  padding: 8px 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ob-discret);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.historique td {
+  padding: 8px 0;
+  border-top: 1px solid var(--ob-ligne);
+  color: var(--ob-encre);
+}
+
+@media (max-width: 640px) {
+  .parametre {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
