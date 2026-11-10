@@ -246,29 +246,113 @@ describe('Gestion › Utilisateurs : chargement', () => {
   });
 });
 
-describe('Gestion › Utilisateurs : accès', () => {
-  it('rend non actionnables les vues du lot suivant, sans changer leur rendu', async () => {
-    await ouvrir();
-    const groupes = await screen.findByRole('tab', { name: /Groupes · 6/ });
-    expect(groupes.getAttribute('aria-disabled')).toBe('true');
-    fireEvent.click(groupes);
-    expect(onglet(/Utilisateurs · 9/).getAttribute('aria-selected')).toBe('true');
-    expect(groupes.getAttribute('aria-selected')).toBe('false');
-    const nouveau = screen.getByRole('button', { name: '+ Nouvel utilisateur' });
-    expect(nouveau.getAttribute('aria-disabled')).toBe('true');
-    fireEvent.click(nouveau);
-    expect(onglet(/Utilisateurs · 9/).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByRole('tabpanel').getAttribute('tabindex')).toBe('0');
-    expect(screen.getByRole('tabpanel').textContent).not.toBe('');
+describe('Gestion › Utilisateurs : groupes', () => {
+  it('liste les groupes avec leurs membres', async () => {
+    await ouvrir('admin', 'fr', '?onglet=groupes');
+    expect(await screen.findByRole('heading', { name: 'Gérants de la semaine' })).toBeTruthy();
+    const carte = screen.getByRole('region', { name: 'Gérants de la semaine' });
+    expect(within(carte).getByText('3 membres')).toBeTruthy();
+    expect(within(carte).getByText('Patrick')).toBeTruthy();
+    expect(
+      within(screen.getByRole('region', { name: 'Direction' })).getByText('1 membre'),
+    ).toBeTruthy();
   });
 
-  it('garde le focus sur l’onglet livré avec les flèches, Début et Fin', async () => {
+  it('garde « Ajouter un membre » sans action tant que le formulaire n’est pas livré', async () => {
+    await ouvrir('admin', 'fr', '?onglet=groupes');
+    const bouton = await screen.findByRole('button', {
+      name: 'Ajouter un membre au groupe Direction',
+    });
+    expect(bouton.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(bouton);
+    expect(onglet(/Groupes/).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('crée un groupe, efface l’erreur à la saisie, refuse un nom vide ou en double', async () => {
+    await ouvrir('admin', 'fr', '?onglet=groupes');
+    await screen.findByRole('heading', { name: 'Nouveau groupe' });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
+    const alerte = screen.getByRole('alert');
+    expect(alerte.textContent).toBe('Indiquez le nom du groupe.');
+    const champ = screen.getByLabelText('Nom du groupe');
+    expect(champ.getAttribute('aria-describedby')).toBe(alerte.id);
+    expect(champ.getAttribute('aria-invalid')).toBe('true');
+    fireEvent.change(champ, { target: { value: 'direction' } });
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
+    expect(screen.getByRole('alert').textContent).toBe('Un groupe porte déjà ce nom.');
+    fireEvent.change(champ, { target: { value: 'Livreurs' } });
+    fireEvent.change(screen.getByLabelText('Profil de droits'), { target: { value: 'gerant' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
+    expect(await screen.findByText('Groupe créé')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Livreurs' })).toBeTruthy();
+    expect(screen.getByText('Profil de droits : Gérant de la semaine')).toBeTruthy();
+    await waitFor(() =>
+      expect((screen.getByLabelText('Nom du groupe') as HTMLInputElement).value).toBe(''),
+    );
+    expect(onglet(/Groupes · 7/)).toBeTruthy();
+    expect(journalUtilisateurs()[0]?.quoi).toBe(
+      'Création du groupe Livreurs (Gérant de la semaine)',
+    );
+  });
+
+  it('dit le refus du serveur pour un nom en double', async () => {
+    await ouvrir('admin', 'fr', '?onglet=groupes');
+    await screen.findByRole('heading', { name: 'Nouveau groupe' });
+    repondreAuxEcritures(refus(409, 'groupe_existant'));
+    fireEvent.change(screen.getByLabelText('Nom du groupe'), { target: { value: 'Autre' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
+    expect(await screen.findByText('Un groupe porte déjà ce nom.')).toBeTruthy();
+    // Le formulaire garde la saisie pour la corriger.
+    expect((screen.getByLabelText('Nom du groupe') as HTMLInputElement).value).toBe('Autre');
+  });
+
+  it('ne crée qu’un groupe pour deux clics rapprochés', async () => {
+    await ouvrir('admin', 'fr', '?onglet=groupes');
+    await screen.findByRole('heading', { name: 'Nouveau groupe' });
+    fireEvent.change(screen.getByLabelText('Nom du groupe'), { target: { value: 'Livreurs' } });
+    const bouton = screen.getByRole('button', { name: 'Créer le groupe' });
+    fireEvent.click(bouton);
+    fireEvent.click(bouton);
+    await screen.findByText('Groupe créé');
+    expect(
+      journalUtilisateurs().filter((j) => j.quoi.startsWith('Création du groupe')),
+    ).toHaveLength(1);
+  });
+
+  it('s’affiche en anglais', async () => {
+    await ouvrir('admin', 'en', '?onglet=groupes');
+    expect(await screen.findByRole('heading', { name: 'Managers of the week' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'New group' })).toBeTruthy();
+    expect(screen.getAllByText('3 members').length).toBeGreaterThan(0);
+  });
+});
+
+describe('Gestion › Utilisateurs : accès', () => {
+  it('rend non actionnable la vue du lot suivant, sans changer son rendu', async () => {
+    await ouvrir();
+    await screen.findByRole('tab', { name: /Utilisateurs · 9/ });
+    const nouvelUtilisateur = screen.getByRole('tab', { name: 'Nouvel utilisateur' });
+    expect(nouvelUtilisateur.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(nouvelUtilisateur);
+    expect(onglet(/Utilisateurs · 9/).getAttribute('aria-selected')).toBe('true');
+    const bouton = screen.getByRole('button', { name: '+ Nouvel utilisateur' });
+    expect(bouton.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(bouton);
+    expect(onglet(/Utilisateurs · 9/).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tabpanel').getAttribute('tabindex')).toBe('0');
+  });
+
+  it('navigue entre les onglets livrés avec les flèches, Début et Fin', async () => {
     await ouvrir();
     const premier = await screen.findByRole('tab', { name: 'Utilisateurs · 9' });
-    for (const touche of ['ArrowRight', 'ArrowLeft', 'Home', 'End']) {
-      fireEvent.keyDown(premier, { key: touche });
-      expect(premier.getAttribute('aria-selected')).toBe('true');
-    }
+    fireEvent.keyDown(premier, { key: 'ArrowRight' });
+    await waitFor(() => expect(onglet(/Groupes/).getAttribute('aria-selected')).toBe('true'));
+    expect(premier.getAttribute('tabindex')).toBe('-1');
+    fireEvent.keyDown(onglet(/Groupes/), { key: 'Home' });
+    await waitFor(() => expect(onglet(/Utilisateurs/).getAttribute('aria-selected')).toBe('true'));
+    fireEvent.keyDown(onglet(/Utilisateurs/), { key: 'End' });
+    await waitFor(() => expect(onglet(/Groupes/).getAttribute('aria-selected')).toBe('true'));
   });
 
   it('nomme le groupe de filtres et le tableau des droits', async () => {

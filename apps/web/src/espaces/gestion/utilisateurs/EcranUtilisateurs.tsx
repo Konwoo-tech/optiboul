@@ -10,19 +10,21 @@ import {
   codeErreur,
   useActiver,
   useChangerDeGroupe,
+  useCreerUnGroupe,
   useReinitialiserLeCode,
   useUtilisateurs,
 } from './api.ts';
 import { ListeUtilisateurs } from './ListeUtilisateurs.tsx';
 import { nomDuGroupe } from './regles.ts';
-import type { Utilisateur } from './types.ts';
+import type { NouveauGroupe, Utilisateur } from './types.ts';
 import styles from './Utilisateurs.module.css';
+import { VueGroupes } from './VueGroupes.tsx';
 
 const ONGLETS = ['liste', 'groupes', 'nouveau'] as const;
 type Onglet = (typeof ONGLETS)[number];
 
 /** Onglets dont la vue est livrée ; les autres arrivent avec le lot suivant. */
-const ONGLETS_LIVRES: readonly Onglet[] = ['liste'];
+const ONGLETS_LIVRES: readonly Onglet[] = ['liste', 'groupes'];
 
 /**
  * Gestion › Utilisateurs (US-020 à US-022), vue « Utilisateurs » : l'administrateur change un
@@ -39,6 +41,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
   const changerDeGroupe = useChangerDeGroupe(nom);
   const reinitialiser = useReinitialiserLeCode(nom);
   const activer = useActiver(nom);
+  const creerGroupe = useCreerUnGroupe(nom);
   const [parametres, setParametres] = useSearchParams();
   const [filtre, setFiltre] = useState('all');
   // Garde synchrone : deux clics avant le rendu suivant ne lancent qu'une seule action.
@@ -67,7 +70,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
   }
 
   const { utilisateurs, groupes, moi } = instantane;
-  const occupe = [changerDeGroupe, reinitialiser, activer].some((m) => m.isPending);
+  const occupe = [changerDeGroupe, reinitialiser, activer, creerGroupe].some((m) => m.isPending);
 
   const choisirOnglet = (suivant: Onglet) =>
     setParametres(
@@ -119,13 +122,15 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
           ? 'gestion.utilisateurs.toasts.droit'
           : code === 'compte_propre'
             ? 'gestion.utilisateurs.toasts.comptePropre'
-            : code === 'dernier_administrateur'
-              ? 'gestion.utilisateurs.toasts.dernierAdministrateur'
-              : code === 'utilisateur_inconnu' || code === 'groupe_inconnu'
-                ? 'gestion.utilisateurs.toasts.inconnu'
-                : code
-                  ? 'gestion.utilisateurs.toasts.impossible'
-                  : 'gestion.utilisateurs.toasts.erreur',
+            : code === 'groupe_existant'
+              ? 'gestion.utilisateurs.groupes.erreurExiste'
+              : code === 'dernier_administrateur'
+                ? 'gestion.utilisateurs.toasts.dernierAdministrateur'
+                : code === 'utilisateur_inconnu' || code === 'groupe_inconnu'
+                  ? 'gestion.utilisateurs.toasts.inconnu'
+                  : code
+                    ? 'gestion.utilisateurs.toasts.impossible'
+                    : 'gestion.utilisateurs.toasts.erreur',
       ),
     );
     void requete.refetch();
@@ -170,6 +175,25 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
       activer.mutate({ id: u.id, actif: !u.actif }, { onSettled: fin, onError: signaler }),
     );
   };
+
+  const surCreerGroupe = (groupe: NouveauGroupe) =>
+    new Promise<boolean>((resoudre) => {
+      if (occupe || enCours.current) return resoudre(false);
+      enCours.current = true;
+      creerGroupe.mutate(groupe, {
+        onSettled: () => {
+          enCours.current = false;
+        },
+        onSuccess: () => {
+          afficher(t('gestion.utilisateurs.toasts.groupeCree'));
+          resoudre(true);
+        },
+        onError: (erreur) => {
+          signaler(erreur);
+          resoudre(false);
+        },
+      });
+    });
 
   return (
     <>
@@ -218,7 +242,15 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
           tabIndex={0}
           className={`${styles.page} ${styles.tabpanel}`}
         >
-          {ONGLETS_LIVRES.includes(onglet) && (
+          {onglet === 'groupes' && (
+            <VueGroupes
+              groupes={groupes}
+              utilisateurs={utilisateurs}
+              occupe={occupe}
+              onCreer={surCreerGroupe}
+            />
+          )}
+          {onglet === 'liste' && (
             <ListeUtilisateurs
               utilisateurs={utilisateurs}
               groupes={groupes}
