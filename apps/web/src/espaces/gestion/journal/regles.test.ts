@@ -115,6 +115,7 @@ describe('types d’action', () => {
       'utilisateur',
       'sauvegarde',
       'parametre',
+      'autre',
     ]);
     expect(new Set(TYPES_ACTION).size).toBe(TYPES_ACTION.length);
   });
