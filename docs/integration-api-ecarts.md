@@ -89,3 +89,4 @@ Règles :
 | Date       | Entrée           | Note                                                                                            |
 | ---------- | ---------------- | ----------------------------------------------------------------------------------------------- |
 | 2026-11-10 | M1 à M6, E1 à E8 | Création, à partir de l'inventaire front ↔ API (171 routes lues, toutes implémentées côté API). |
+| 2026-11-10 | M1 à M5, E5, E6  | Remontés à l’équipe API par le ticket #260.                                                     |
