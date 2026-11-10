@@ -720,7 +720,11 @@
       "changement": "Before: {{avant}} → After: {{apres}}",
       "resultats_one": "{{count}} result",
       "resultats_other": "{{count}} results",
-      "colonnes": { "heure": "Time: ", "auteur": "Author: ", "action": "Action: " },
+      "colonnes": {
+        "heure": "Time: ",
+        "auteur": "Author: ",
+        "action": "Action: "
+      },
       "filtres": {
         "titre": "Filter the log",
         "auteur": "Author",
@@ -1315,7 +1319,8 @@
         "impossible": "Action not possible. The list was refreshed.",
         "erreur": "Something went wrong. Please try again.",
         "dernierAdministrateur": "At least one active administrator must remain.",
-        "groupeCree": "Group created"
+        "groupeCree": "Group created",
+        "cree": "{{nom}} can now sign in"
       },
       "groupes": {
         "membre": "{{nombre}} member",
@@ -1329,7 +1334,52 @@
         "descriptionParDefaut": "Rights profile: {{profil}}",
         "creer": "Create group",
         "erreurNom": "Enter the group name.",
-        "erreurExiste": "A group already has this name."
+        "erreurExiste": "A group already has this name.",
+        "erreurNomLong": "The group name is at most {{max}} characters long.",
+        "erreurDescriptionLongue": "The description is at most {{max}} characters long."
+      },
+      "formulaire": {
+        "etape1": "1. Identity",
+        "etape2": "2. User group",
+        "etape3": "3. Sign-in & security",
+        "nom": "Full name",
+        "nomExemple": "Ex. Christelle Ndongo",
+        "email": "Gmail address",
+        "emailAide": "Used for \"Continue with Google\" and email sign-in.",
+        "telephone": "Phone for two-step verification",
+        "telephoneExemple": "6 XX XX XX XX",
+        "groupeAide": "The group sets the account’s rights. It can be changed later from the list.",
+        "groupes": "User group",
+        "canal": "Default verification channel",
+        "invitation": "Send the invitation via {{canal}} with the sign-in link",
+        "annuler": "Cancel",
+        "creer": "Create user",
+        "erreurs": {
+          "nom_obligatoire": "Enter the full name.",
+          "email_invalide": "Invalid email address.",
+          "email_deja_utilise": "This address is already in use.",
+          "telephone_invalide": "9 digits starting with 6.",
+          "groupe_obligatoire": "Choose a user group."
+        }
+      },
+      "apercu": {
+        "titre": "Account preview",
+        "nomParDefaut": "New user",
+        "emailParDefaut": "nom@gmail.com",
+        "groupe": "Group",
+        "profil": "Rights profile",
+        "acces": "Access in the app",
+        "choisirGroupe": "Choose a group to see the access.",
+        "connexion": "Sign-in",
+        "google": "Continue with Google: {{email}}",
+        "emailMotDePasse": "Email and temporary password \"{{motDePasse}}\"",
+        "doubleAuthentification": "Two-step verification via {{canal}} to {{telephone}}"
+      },
+      "cree": {
+        "titre": "Account created",
+        "texte": "{{nom}} now appears on the sign-in screen. Temporary password: {{motDePasse}}, to be changed at first sign-in. The verification code will arrive via {{canal}} at +237 {{telephone}}.",
+        "voirListe": "See in the list",
+        "autre": "Create another user"
       }
     },
     "parametres": {

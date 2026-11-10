@@ -1,7 +1,13 @@
 import { ErreurApi, optiboulFetch } from '@/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { InstantaneUtilisateurs, NouveauGroupe } from './types.ts';
+import type {
+  ErreursUtilisateur,
+  InstantaneUtilisateurs,
+  NouveauGroupe,
+  NouvelUtilisateur,
+  ReponseCreation,
+} from './types.ts';
 
 // Le backend n'a pas encore ces routes : l'écran lit le faux serveur (`simulation/utilisateurs.ts`).
 const RACINE = '/api/v1/simulation/gestion/utilisateurs/';
@@ -34,15 +40,18 @@ async function envoyer<T>(chemin: string, methode: string, corps?: unknown): Pro
 }
 
 /** Une action sur les comptes : l'écran prend l'instantané renvoyé et relit ce qui en dépend. */
-function useAction<Demande>(
-  utilisateur: string | undefined,
-  action: (demande: Demande) => Promise<InstantaneUtilisateurs>,
-) {
+function useAction<
+  Demande,
+  Resultat extends InstantaneUtilisateurs | ReponseCreation = InstantaneUtilisateurs,
+>(utilisateur: string | undefined, action: (demande: Demande) => Promise<Resultat>) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: action,
     onSuccess: (resultat) => {
-      client.setQueryData(cleUtilisateurs(utilisateur), resultat);
+      client.setQueryData(
+        cleUtilisateurs(utilisateur),
+        'instantane' in resultat ? resultat.instantane : resultat,
+      );
       // La liste de l'écran de connexion, les affectations de semaine et le contexte en dépendent.
       void client.invalidateQueries({ queryKey: ['simulation', 'utilisateurs'] });
       void client.invalidateQueries({ queryKey: ['simulation', 'contexte'] });
@@ -51,6 +60,10 @@ function useAction<Demande>(
   });
 }
 
+export const useCreerUtilisateur = (utilisateur: string | undefined) =>
+  useAction<NouvelUtilisateur, ReponseCreation>(utilisateur, (nouveau) =>
+    envoyer<ReponseCreation>('', 'POST', nouveau),
+  );
 export const useChangerDeGroupe = (utilisateur: string | undefined) =>
   useAction<{ id: string; groupe: string }>(utilisateur, (d) =>
     envoyer<InstantaneUtilisateurs>(`${encodeURIComponent(d.id)}/groupe/`, 'PUT', {
@@ -76,4 +89,10 @@ export const useCreerUnGroupe = (utilisateur: string | undefined) =>
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
 export function codeErreur(erreur: unknown): string | undefined {
   return erreur instanceof ErreurApi ? erreur.code : undefined;
+}
+
+/** Erreurs par champ d'un refus `champs_invalides`. */
+export function erreursDeChamps(erreur: unknown): ErreursUtilisateur {
+  if (!(erreur instanceof ErreurApi) || erreur.code !== 'champs_invalides') return {};
+  return (erreur.details as { erreurs?: ErreursUtilisateur } | undefined)?.erreurs ?? {};
 }

@@ -168,6 +168,20 @@ describe('faux serveur Utilisateurs : groupes (US-021)', () => {
     );
   });
 
+  it('refuse un nom ou une description de groupe trop longs (400)', async () => {
+    const nom = await appeler('POST', 'groupes/', { nom: 'x'.repeat(61), profil: 'caissier' });
+    expect([nom.statut, nom.json.code]).toEqual([400, 'nom_trop_long']);
+    const description = await appeler('POST', 'groupes/', {
+      nom: 'Ok',
+      profil: 'caissier',
+      description: 'x'.repeat(201),
+    });
+    expect([description.statut, description.json.code]).toEqual([400, 'description_trop_longue']);
+    expect(
+      (await appeler('POST', 'groupes/', { nom: 'x'.repeat(60), profil: 'caissier' })).statut,
+    ).toBe(201);
+  });
+
   it('crée un groupe, refuse un nom vide, un doublon et un profil inconnu', async () => {
     const cree = await appeler('POST', 'groupes/', {
       nom: 'Livreurs',

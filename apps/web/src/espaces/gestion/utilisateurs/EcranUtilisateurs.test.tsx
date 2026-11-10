@@ -258,14 +258,15 @@ describe('Gestion › Utilisateurs : groupes', () => {
     ).toBeTruthy();
   });
 
-  it('garde « Ajouter un membre » sans action tant que le formulaire n’est pas livré', async () => {
+  it('« Ajouter un membre » ouvre le formulaire avec le groupe choisi', async () => {
     await ouvrir('admin', 'fr', '?onglet=groupes');
-    const bouton = await screen.findByRole('button', {
-      name: 'Ajouter un membre au groupe Direction',
-    });
-    expect(bouton.getAttribute('aria-disabled')).toBe('true');
-    fireEvent.click(bouton);
-    expect(onglet(/Groupes/).getAttribute('aria-selected')).toBe('true');
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Ajouter un membre au groupe Direction' }),
+    );
+    expect(await screen.findByText('1. Identité')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Direction/ }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
   });
 
   it('crée un groupe, efface l’erreur à la saisie, refuse un nom vide ou en double', async () => {
@@ -302,9 +303,38 @@ describe('Gestion › Utilisateurs : groupes', () => {
     repondreAuxEcritures(refus(409, 'groupe_existant'));
     fireEvent.change(screen.getByLabelText('Nom du groupe'), { target: { value: 'Autre' } });
     fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
-    expect(await screen.findByText('Un groupe porte déjà ce nom.')).toBeTruthy();
+    const alerte = await screen.findByRole('alert');
+    expect(alerte.textContent).toBe('Un groupe porte déjà ce nom.');
+    const champ = screen.getByLabelText('Nom du groupe');
+    expect(champ.getAttribute('aria-invalid')).toBe('true');
+    expect(champ.getAttribute('aria-describedby')).toBe(alerte.id);
+    expect(document.activeElement).toBe(champ);
     // Le formulaire garde la saisie pour la corriger.
     expect((screen.getByLabelText('Nom du groupe') as HTMLInputElement).value).toBe('Autre');
+  });
+
+  it('rogne le nom, borne les longueurs et met le focus sur le nom après une erreur', async () => {
+    await ouvrir('admin', 'fr', '?onglet=groupes');
+    const champ = (await screen.findByLabelText('Nom du groupe')) as HTMLInputElement;
+    expect(champ.maxLength).toBe(60);
+    expect((screen.getByLabelText('Description') as HTMLInputElement).maxLength).toBe(200);
+    fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
+    expect(document.activeElement).toBe(champ);
+    fireEvent.change(champ, { target: { value: '  Livreurs  ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
+    expect(await screen.findByRole('heading', { name: 'Livreurs' })).toBeTruthy();
+    expect(journalUtilisateurs()[0]?.quoi).toBe('Création du groupe Livreurs (Caissier)');
+  });
+
+  it('lit sous le champ le refus 400 d’un nom trop long', async () => {
+    await ouvrir('admin', 'fr', '?onglet=groupes');
+    await screen.findByRole('heading', { name: 'Nouveau groupe' });
+    repondreAuxEcritures(refus(400, 'nom_trop_long'));
+    fireEvent.change(screen.getByLabelText('Nom du groupe'), { target: { value: 'Autre' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Le nom du groupe ne dépasse pas 60 caractères.',
+    );
   });
 
   it('ne crée qu’un groupe pour deux clics rapprochés', async () => {
@@ -328,21 +358,149 @@ describe('Gestion › Utilisateurs : groupes', () => {
   });
 });
 
-describe('Gestion › Utilisateurs : accès', () => {
-  it('rend non actionnable la vue du lot suivant, sans changer son rendu', async () => {
-    await ouvrir();
-    await screen.findByRole('tab', { name: /Utilisateurs · 9/ });
-    const nouvelUtilisateur = screen.getByRole('tab', { name: 'Nouvel utilisateur' });
-    expect(nouvelUtilisateur.getAttribute('aria-disabled')).toBe('true');
-    fireEvent.click(nouvelUtilisateur);
-    expect(onglet(/Utilisateurs · 9/).getAttribute('aria-selected')).toBe('true');
-    const bouton = screen.getByRole('button', { name: '+ Nouvel utilisateur' });
-    expect(bouton.getAttribute('aria-disabled')).toBe('true');
-    fireEvent.click(bouton);
-    expect(onglet(/Utilisateurs · 9/).getAttribute('aria-selected')).toBe('true');
-    expect(screen.getByRole('tabpanel').getAttribute('tabindex')).toBe('0');
+const saisir = (nom: RegExp | string, valeur: string) =>
+  fireEvent.change(screen.getByLabelText(nom), { target: { value: valeur } });
+
+async function remplir() {
+  await ouvrir('admin', 'fr', '?onglet=nouveau');
+  await screen.findByText('1. Identité');
+  saisir('Nom complet', 'Ada Lovelace');
+  saisir('Adresse Gmail', 'ada@gmail.com');
+  saisir(/Téléphone/, '677412018');
+  fireEvent.click(screen.getByRole('button', { name: /Caisse – équipe de jour/ }));
+}
+
+describe('Gestion › Utilisateurs : nouvel utilisateur', () => {
+  it('montre l’aperçu qui suit la saisie et les accès du groupe', async () => {
+    await ouvrir('admin', 'fr', '?onglet=nouveau');
+    expect(await screen.findByText('Choisissez un groupe pour voir les accès.')).toBeTruthy();
+    saisir('Nom complet', 'Ada Lovelace');
+    saisir(/Téléphone/, '677412018');
+    fireEvent.click(screen.getByRole('button', { name: /Direction/ }));
+    const apercu = screen.getByRole('complementary', { name: 'Aperçu du compte' });
+    expect(within(apercu).getByText('Ada Lovelace')).toBeTruthy();
+    expect(within(apercu).getByText('Paramètres')).toBeTruthy();
+    expect(
+      within(apercu).getByText('Double authentification par WhatsApp au +237 6 77 41 20 18'),
+    ).toBeTruthy();
   });
 
+  it('montre l’aperçu en anglais', async () => {
+    await ouvrir('admin', 'en', '?onglet=nouveau');
+    expect(await screen.findByText('Choose a group to see the access.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Cash desk – day team/ }));
+    const apercu = screen.getByRole('complementary', { name: 'Account preview' });
+    expect(within(apercu).getByText('Current session')).toBeTruthy();
+    expect(within(apercu).getByText('Cashier')).toBeTruthy();
+  });
+
+  it('affiche les erreurs, les rattache aux champs et les efface à la saisie', async () => {
+    await ouvrir('admin', 'fr', '?onglet=nouveau');
+    await screen.findByText('1. Identité');
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
+    const nom = screen.getByLabelText('Nom complet');
+    expect(nom.getAttribute('aria-invalid')).toBe('true');
+    expect(screen.getByText('Indiquez le nom complet.').id).toBe(
+      nom.getAttribute('aria-describedby'),
+    );
+    expect(screen.getByText('Adresse e-mail invalide.')).toBeTruthy();
+    expect(screen.getByText('9 chiffres commençant par 6.')).toBeTruthy();
+    expect(screen.getByText('Choisissez un groupe d’utilisateurs.')).toBeTruthy();
+    saisir('Nom complet', 'A');
+    expect(screen.queryByText('Indiquez le nom complet.')).toBeNull();
+    expect(nom.getAttribute('aria-invalid')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Direction/ }));
+    expect(screen.queryByText('Choisissez un groupe d’utilisateurs.')).toBeNull();
+  });
+
+  it('refuse une adresse déjà utilisée', async () => {
+    await remplir();
+    saisir('Adresse Gmail', 'DAVY.boulfaubourg@gmail.com');
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
+    expect(await screen.findByText('Cette adresse est déjà utilisée.')).toBeTruthy();
+  });
+
+  it('crée le compte, confirme, puis revient à la liste filtrée sur son groupe', async () => {
+    await remplir();
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
+    expect(await screen.findByText('Ada Lovelace peut maintenant se connecter')).toBeTruthy();
+    expect(await screen.findByText('Compte créé')).toBeTruthy();
+    expect(screen.getByText(/Mot de passe provisoire : optiboul/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Voir dans la liste' }));
+    expect(await screen.findByRole('tab', { name: 'Utilisateurs · 10' })).toBeTruthy();
+    expect(
+      screen
+        .getByRole('button', { name: 'Caisse – équipe de jour · 2' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(screen.getByLabelText('Groupe de Ada Lovelace')).toBeTruthy();
+  });
+
+  it('rogne le nom avant de l’envoyer', async () => {
+    await remplir();
+    saisir('Nom complet', '   Ada Lovelace  ');
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
+    expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+  });
+
+  it('propose d’en créer un autre en gardant le groupe', async () => {
+    await remplir();
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Créer un autre utilisateur' }));
+    expect(((await screen.findByLabelText('Nom complet')) as HTMLInputElement).value).toBe('');
+    expect(
+      screen.getByRole('button', { name: /Caisse – équipe de jour/ }).getAttribute('aria-pressed'),
+    ).toBe('true');
+  });
+
+  it('ne crée qu’un compte pour deux clics rapprochés', async () => {
+    await remplir();
+    const bouton = screen.getByRole('button', { name: 'Créer l’utilisateur' });
+    fireEvent.click(bouton);
+    fireEvent.click(bouton);
+    await screen.findByText('Compte créé');
+    expect(
+      journalUtilisateurs().filter((j) => j.quoi.startsWith('Création de l’utilisateur')),
+    ).toHaveLength(1);
+  });
+
+  it('dit le refus du serveur sur un champ, sinon par un message', async () => {
+    await remplir();
+    repondreAuxEcritures(() =>
+      Response.json(
+        {
+          detail: 'Champs invalides.',
+          code: 'champs_invalides',
+          erreurs: { email: 'email_deja_utilise' },
+        },
+        { status: 400 },
+      ),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
+    expect(await screen.findByText('Cette adresse est déjà utilisée.')).toBeTruthy();
+    repondreAuxEcritures(refus(403, 'droit_insuffisant'));
+    fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
+    expect(await screen.findByText('Votre profil ne permet pas cette action.')).toBeTruthy();
+  });
+
+  it('annule et décoche l’invitation', async () => {
+    await ouvrir('admin', 'fr', '?onglet=nouveau');
+    const invitation = await screen.findByRole('checkbox', {
+      name: /Envoyer l’invitation par WhatsApp/,
+    });
+    expect(invitation.getAttribute('aria-checked')).toBe('true');
+    fireEvent.click(invitation);
+    expect(invitation.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(screen.getByRole('button', { name: 'SMS' }));
+    expect(screen.getByRole('checkbox', { name: /par SMS/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    expect(
+      await screen.findByRole('tab', { name: 'Utilisateurs · 9', selected: true }),
+    ).toBeTruthy();
+  });
+});
+
+describe('Gestion › Utilisateurs : accès', () => {
   it('navigue entre les onglets livrés avec les flèches, Début et Fin', async () => {
     await ouvrir();
     const premier = await screen.findByRole('tab', { name: 'Utilisateurs · 9' });
@@ -352,7 +510,11 @@ describe('Gestion › Utilisateurs : accès', () => {
     fireEvent.keyDown(onglet(/Groupes/), { key: 'Home' });
     await waitFor(() => expect(onglet(/Utilisateurs/).getAttribute('aria-selected')).toBe('true'));
     fireEvent.keyDown(onglet(/Utilisateurs/), { key: 'End' });
-    await waitFor(() => expect(onglet(/Groupes/).getAttribute('aria-selected')).toBe('true'));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('tab', { name: 'Nouvel utilisateur' }).getAttribute('aria-selected'),
+      ).toBe('true'),
+    );
   });
 
   it('nomme le groupe de filtres et le tableau des droits', async () => {

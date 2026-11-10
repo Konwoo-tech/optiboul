@@ -720,7 +720,11 @@
       "changement": "Avant : {{avant}} → Après : {{apres}}",
       "resultats_one": "{{count}} résultat",
       "resultats_other": "{{count}} résultats",
-      "colonnes": { "heure": "Heure : ", "auteur": "Auteur : ", "action": "Action : " },
+      "colonnes": {
+        "heure": "Heure : ",
+        "auteur": "Auteur : ",
+        "action": "Action : "
+      },
       "filtres": {
         "titre": "Filtrer le journal",
         "auteur": "Auteur",
@@ -1315,7 +1319,8 @@
         "impossible": "Action impossible. La liste a été relue.",
         "erreur": "Une erreur est survenue. Réessayez.",
         "dernierAdministrateur": "Il doit rester au moins un administrateur actif.",
-        "groupeCree": "Groupe créé"
+        "groupeCree": "Groupe créé",
+        "cree": "{{nom}} peut maintenant se connecter"
       },
       "groupes": {
         "membre": "{{nombre}} membre",
@@ -1329,7 +1334,52 @@
         "descriptionParDefaut": "Profil de droits : {{profil}}",
         "creer": "Créer le groupe",
         "erreurNom": "Indiquez le nom du groupe.",
-        "erreurExiste": "Un groupe porte déjà ce nom."
+        "erreurExiste": "Un groupe porte déjà ce nom.",
+        "erreurNomLong": "Le nom du groupe ne dépasse pas {{max}} caractères.",
+        "erreurDescriptionLongue": "La description ne dépasse pas {{max}} caractères."
+      },
+      "formulaire": {
+        "etape1": "1. Identité",
+        "etape2": "2. Groupe d’utilisateurs",
+        "etape3": "3. Connexion et sécurité",
+        "nom": "Nom complet",
+        "nomExemple": "Ex. Christelle Ndongo",
+        "email": "Adresse Gmail",
+        "emailAide": "Sert à « Continuer avec Google » et à la connexion par e-mail.",
+        "telephone": "Téléphone pour la double authentification",
+        "telephoneExemple": "6 XX XX XX XX",
+        "groupeAide": "Le groupe définit les droits du compte. Il peut être changé plus tard depuis la liste.",
+        "groupes": "Groupe d’utilisateurs",
+        "canal": "Canal de vérification par défaut",
+        "invitation": "Envoyer l’invitation par {{canal}} avec le lien de connexion",
+        "annuler": "Annuler",
+        "creer": "Créer l’utilisateur",
+        "erreurs": {
+          "nom_obligatoire": "Indiquez le nom complet.",
+          "email_invalide": "Adresse e-mail invalide.",
+          "email_deja_utilise": "Cette adresse est déjà utilisée.",
+          "telephone_invalide": "9 chiffres commençant par 6.",
+          "groupe_obligatoire": "Choisissez un groupe d’utilisateurs."
+        }
+      },
+      "apercu": {
+        "titre": "Aperçu du compte",
+        "nomParDefaut": "Nouvel utilisateur",
+        "emailParDefaut": "nom@gmail.com",
+        "groupe": "Groupe",
+        "profil": "Profil de droits",
+        "acces": "Accès dans l’application",
+        "choisirGroupe": "Choisissez un groupe pour voir les accès.",
+        "connexion": "Connexion",
+        "google": "Continuer avec Google : {{email}}",
+        "emailMotDePasse": "E-mail et mot de passe provisoire « {{motDePasse}} »",
+        "doubleAuthentification": "Double authentification par {{canal}} au {{telephone}}"
+      },
+      "cree": {
+        "titre": "Compte créé",
+        "texte": "{{nom}} apparaît maintenant sur l’écran de connexion. Mot de passe provisoire : {{motDePasse}}, à changer à la première connexion. Le code de vérification arrivera par {{canal}} au +237 {{telephone}}.",
+        "voirListe": "Voir dans la liste",
+        "autre": "Créer un autre utilisateur"
       }
     },
     "parametres": {

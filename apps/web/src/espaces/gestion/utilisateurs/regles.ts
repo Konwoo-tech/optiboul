@@ -77,6 +77,10 @@ export const aDesErreurs = (erreurs: ErreursUtilisateur): boolean =>
 /** Un groupe a besoin d'un nom (US-021). */
 export const nomDeGroupeValide = (nom: string): boolean => nom.trim().length > 0;
 
+/** Longueurs maximales d'un nom et d'une description de groupe (client et serveur). */
+export const NOM_DE_GROUPE_MAX = 60;
+export const DESCRIPTION_DE_GROUPE_MAX = 200;
+
 /** Deux groupes ne portent pas le même nom (sans tenir compte des majuscules). */
 export const nomDeGroupePris = (nom: string, groupes: readonly Pick<Groupe, 'nom'>[]): boolean =>
   groupes.some((g) => g.nom.trim().toLocaleLowerCase('fr') === nom.trim().toLocaleLowerCase('fr'));
