@@ -1196,6 +1196,50 @@
         "droit": "Votre profil ne permet pas cette action."
       }
     },
+    "sauvegardes": {
+      "erreurChargement": "Impossible de lire les sauvegardes. Réessayez.",
+      "alerte": "Aucune copie cloud depuis plus de 48 h (dernière : {{date}}).",
+      "alerteJamais": "Aucune copie cloud n’a encore été faite.",
+      "locale": {
+        "titre": "Copie locale",
+        "sous": "Toutes les 4 h et à chaque clôture de session",
+        "lancer": "Sauvegarder maintenant"
+      },
+      "cloud": {
+        "titre": "Copie cloud",
+        "lancer": "Lancer la sauvegarde cloud",
+        "connexion": "Connexion disponible",
+        "horsLigne": "Hors ligne : la copie partira au retour d’internet",
+        "aJour": "À jour",
+        "enRetard": "En retard"
+      },
+      "aucune": "—",
+      "copies": {
+        "titre": "Copies disponibles",
+        "locale": "Locale",
+        "cloud": "Cloud",
+        "restaurer": "Restaurer",
+        "restaurerCopie": "Restaurer la copie du {{date}}"
+      },
+      "restauration": {
+        "titre": "Restauration guidée",
+        "etape1": "Une copie de l’état actuel est faite automatiquement.",
+        "etape2": "La copie du {{date}} est restaurée.",
+        "etape3": "Les totaux sont vérifiés : sessions, soldes clients, stocks.",
+        "simule": "Simulation : le contrôle des totaux est fictif, aucune donnée n’est réellement restaurée.",
+        "annuler": "Annuler",
+        "confirmer": "Restaurer cette copie"
+      },
+      "toasts": {
+        "locale": "Copie locale faite à {{heure}}",
+        "cloud": "Copie cloud envoyée et vérifiée",
+        "cloudEnAttente": "Hors ligne : sauvegarde cloud en attente",
+        "restauree": "Restauration terminée et vérifiée (contrôle simulé)",
+        "droit": "Votre profil ne permet pas cette action.",
+        "inconnue": "Cette copie n’existe plus : la liste vient d’être actualisée.",
+        "erreur": "L’action n’a pas pu être enregistrée. Réessayez."
+      }
+    },
     "utilisateurs": {
       "sections": "Sections des utilisateurs",
       "onglets": {
