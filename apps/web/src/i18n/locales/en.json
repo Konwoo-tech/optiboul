@@ -710,6 +710,12 @@
     "toastDejaDecidee": "This request has already been answered."
   },
   "gestion": {
+    "journal": {
+      "titre": "Every action, with author and time",
+      "interdit": "The activity log is reserved for the manager, the owner and the administrator.",
+      "erreurChargement": "The log could not be loaded. Try again in a moment.",
+      "vide": "No action recorded yet."
+    },
     "tableauDeBord": {
       "erreurChargement": "Could not load the dashboard.",
       "interdit": "The full dashboard is reserved for the manager and the owner.",
@@ -1156,6 +1162,50 @@
         "bloquants": "Close the cash desk and the production before closing the week.",
         "impossible": "This week can no longer be opened or closed: the screen has just been refreshed.",
         "droit": "Your profile does not allow this action."
+      }
+    },
+    "sauvegardes": {
+      "erreurChargement": "Unable to read the backups. Try again.",
+      "alerte": "No cloud copy for over 48 h (last: {{date}}).",
+      "alerteJamais": "No cloud copy has been made yet.",
+      "locale": {
+        "titre": "Local copy",
+        "sous": "Every 4 h and at each session close",
+        "lancer": "Back up now"
+      },
+      "cloud": {
+        "titre": "Cloud copy",
+        "lancer": "Start cloud backup",
+        "connexion": "Connection available",
+        "horsLigne": "Offline: the copy will be sent when internet returns",
+        "aJour": "Up to date",
+        "enRetard": "Overdue"
+      },
+      "aucune": "—",
+      "copies": {
+        "titre": "Available copies",
+        "locale": "Local",
+        "cloud": "Cloud",
+        "restaurer": "Restore",
+        "restaurerCopie": "Restore the copy of {{date}}"
+      },
+      "restauration": {
+        "titre": "Guided restore",
+        "etape1": "A copy of the current state is made automatically.",
+        "etape2": "The copy of {{date}} is restored.",
+        "etape3": "Totals are checked: sessions, customer balances, stock.",
+        "simule": "Simulation: the totals check is fictitious, no data is actually restored.",
+        "annuler": "Cancel",
+        "confirmer": "Restore this copy"
+      },
+      "toasts": {
+        "locale": "Local copy made at {{heure}}",
+        "cloud": "Cloud copy sent and verified",
+        "cloudEnAttente": "Offline: cloud backup pending",
+        "restauree": "Restore completed and verified (simulated check)",
+        "droit": "Your profile does not allow this action.",
+        "inconnue": "This copy no longer exists: the list has just been refreshed.",
+        "erreur": "The action could not be saved. Try again."
       }
     },
     "utilisateurs": {
