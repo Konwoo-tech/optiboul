@@ -1229,7 +1229,22 @@
         "inconnu": "Cet utilisateur n’existe plus. La liste a été relue.",
         "impossible": "Action impossible. La liste a été relue.",
         "erreur": "Une erreur est survenue. Réessayez.",
-        "dernierAdministrateur": "Il doit rester au moins un administrateur actif."
+        "dernierAdministrateur": "Il doit rester au moins un administrateur actif.",
+        "groupeCree": "Groupe créé"
+      },
+      "groupes": {
+        "membre": "{{nombre}} membre",
+        "membres": "{{nombre}} membres",
+        "ajouterMembre": "Ajouter un membre",
+        "ajouterMembreA": "Ajouter un membre au groupe {{nom}}",
+        "nouveau": "Nouveau groupe",
+        "nom": "Nom du groupe",
+        "profil": "Profil de droits",
+        "description": "Description",
+        "descriptionParDefaut": "Profil de droits : {{profil}}",
+        "creer": "Créer le groupe",
+        "erreurNom": "Indiquez le nom du groupe.",
+        "erreurExiste": "Un groupe porte déjà ce nom."
       }
     }
   },

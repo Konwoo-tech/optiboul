@@ -1229,7 +1229,22 @@
         "inconnu": "This user no longer exists. The list was refreshed.",
         "impossible": "Action not possible. The list was refreshed.",
         "erreur": "Something went wrong. Please try again.",
-        "dernierAdministrateur": "At least one active administrator must remain."
+        "dernierAdministrateur": "At least one active administrator must remain.",
+        "groupeCree": "Group created"
+      },
+      "groupes": {
+        "membre": "{{nombre}} member",
+        "membres": "{{nombre}} members",
+        "ajouterMembre": "Add a member",
+        "ajouterMembreA": "Add a member to the group {{nom}}",
+        "nouveau": "New group",
+        "nom": "Group name",
+        "profil": "Rights profile",
+        "description": "Description",
+        "descriptionParDefaut": "Rights profile: {{profil}}",
+        "creer": "Create group",
+        "erreurNom": "Enter the group name.",
+        "erreurExiste": "A group already has this name."
       }
     }
   },

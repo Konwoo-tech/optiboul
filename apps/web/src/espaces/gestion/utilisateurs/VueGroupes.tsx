@@ -1,0 +1,160 @@
+import { useTranslation } from '@/i18n';
+import { useId, useState } from 'react';
+
+import type { Profil } from '../../../profils.ts';
+import { Pastille } from './Pastille.tsx';
+import {
+  descriptionDuGroupe,
+  membresDuGroupe,
+  nomDeGroupePris,
+  nomDeGroupeValide,
+  nomDuGroupe,
+  PROFILS_DE_DROITS,
+} from './regles.ts';
+import styles from './Utilisateurs.module.css';
+import type { Groupe, NouveauGroupe, Utilisateur } from './types.ts';
+
+type Props = {
+  groupes: Groupe[];
+  utilisateurs: Utilisateur[];
+  occupe: boolean;
+  /** Absent tant que le formulaire de création n'est pas livré : le bouton reste sans action. */
+  onAjouterMembre?: (groupe: string) => void;
+  /** Renvoie vrai quand le serveur a créé le groupe (le formulaire se vide alors). */
+  onCreer: (groupe: NouveauGroupe) => Promise<boolean>;
+};
+
+/** Onglet « Groupes » : une carte par groupe et le formulaire d'un nouveau groupe (US-021). */
+export function VueGroupes({ groupes, utilisateurs, occupe, onAjouterMembre, onCreer }: Props) {
+  const { t, i18n } = useTranslation();
+  const idErreur = useId();
+  const [nom, setNom] = useState('');
+  const [profil, setProfil] = useState<Profil>('caissier');
+  const [description, setDescription] = useState('');
+  const [erreur, setErreur] = useState('');
+
+  const creer = async () => {
+    if (occupe) return;
+    if (!nomDeGroupeValide(nom)) {
+      setErreur(t('gestion.utilisateurs.groupes.erreurNom'));
+      return;
+    }
+    if (nomDeGroupePris(nom, groupes)) {
+      setErreur(t('gestion.utilisateurs.groupes.erreurExiste'));
+      return;
+    }
+    if (await onCreer({ nom, profil, description })) {
+      setNom('');
+      setProfil('caissier');
+      setDescription('');
+      setErreur('');
+    }
+  };
+
+  const nombreDeMembres = (n: number) =>
+    t(n > 1 ? 'gestion.utilisateurs.groupes.membres' : 'gestion.utilisateurs.groupes.membre', {
+      nombre: n,
+    });
+
+  return (
+    <div className={styles.groupes}>
+      {groupes.map((g) => {
+        const membres = membresDuGroupe(utilisateurs, g.id);
+        const nomLocalise = nomDuGroupe(g, i18n.language);
+        return (
+          <section key={g.id} className={styles.carteGroupe} aria-label={nomLocalise}>
+            <div className={styles.groupeEntete}>
+              <h2 className={styles.groupeNom}>{nomLocalise}</h2>
+              <span className={`${styles.mot} ${styles.groupeProfil}`}>
+                {t(`profils.${g.profil}`)}
+              </span>
+            </div>
+            <div className={styles.groupeDescription}>
+              {descriptionDuGroupe(g, i18n.language) ||
+                t('gestion.utilisateurs.groupes.descriptionParDefaut', {
+                  profil: t(`profils.${g.profil}`),
+                })}
+            </div>
+            <div className={styles.groupeNombre}>{nombreDeMembres(membres.length)}</div>
+            <ul className={styles.membres}>
+              {membres.map((u) => (
+                <li key={u.id} className={styles.membre}>
+                  <Pastille nom={u.nom} profil={u.profil} className={styles.membrePastille} />
+                  <span className={styles.membreNom}>{u.nom}</span>
+                </li>
+              ))}
+              {membres.length === 0 && (
+                <li className={styles.membreVide}>{t('gestion.utilisateurs.liste.aucunMembre')}</li>
+              )}
+            </ul>
+            <button
+              type="button"
+              className={`${styles.petit} ${styles.ajouterMembre}`}
+              aria-label={t('gestion.utilisateurs.groupes.ajouterMembreA', { nom: nomLocalise })}
+              aria-disabled={onAjouterMembre ? undefined : true}
+              onClick={() => onAjouterMembre?.(g.id)}
+            >
+              + {t('gestion.utilisateurs.groupes.ajouterMembre')}
+            </button>
+          </section>
+        );
+      })}
+
+      <form
+        className={`${styles.carteGroupe} ${styles.carteGroupeNouveau}`}
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          void creer();
+        }}
+      >
+        <h2 className={styles.titreNouveauGroupe}>{t('gestion.utilisateurs.groupes.nouveau')}</h2>
+        <label className={styles.etiquette}>
+          {t('gestion.utilisateurs.groupes.nom')}
+          <input
+            className={styles.champ}
+            value={nom}
+            aria-invalid={erreur ? true : undefined}
+            aria-describedby={erreur ? idErreur : undefined}
+            onChange={(e) => {
+              setNom(e.target.value);
+              setErreur('');
+            }}
+          />
+        </label>
+        <label className={styles.etiquette}>
+          {t('gestion.utilisateurs.groupes.profil')}
+          <select
+            className={styles.choixChamp}
+            value={profil}
+            onChange={(e) => setProfil(e.target.value as Profil)}
+          >
+            {PROFILS_DE_DROITS.map((p) => (
+              <option key={p} value={p}>
+                {t(`profils.${p}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className={styles.etiquette}>
+          {t('gestion.utilisateurs.groupes.description')}
+          <input
+            className={styles.champ}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </label>
+        <span id={idErreur} className={styles.erreur} role={erreur ? 'alert' : undefined}>
+          {erreur}
+        </span>
+        <button
+          type="submit"
+          className={`${styles.principal} ${styles.alignerDroite}`}
+          disabled={occupe}
+        >
+          {t('gestion.utilisateurs.groupes.creer')}
+        </button>
+      </form>
+    </div>
+  );
+}

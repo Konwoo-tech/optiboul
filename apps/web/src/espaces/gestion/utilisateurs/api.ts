@@ -1,7 +1,7 @@
 import { ErreurApi, optiboulFetch } from '@/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { InstantaneUtilisateurs } from './types.ts';
+import type { InstantaneUtilisateurs, NouveauGroupe } from './types.ts';
 
 // Le backend n'a pas encore ces routes : l'écran lit le faux serveur (`simulation/utilisateurs.ts`).
 const RACINE = '/api/v1/simulation/gestion/utilisateurs/';
@@ -66,6 +66,11 @@ export const useActiver = (utilisateur: string | undefined) =>
     envoyer<InstantaneUtilisateurs>(`${encodeURIComponent(d.id)}/activation/`, 'PUT', {
       actif: d.actif,
     }),
+  );
+
+export const useCreerUnGroupe = (utilisateur: string | undefined) =>
+  useAction<NouveauGroupe>(utilisateur, (g) =>
+    envoyer<InstantaneUtilisateurs>('groupes/', 'POST', g),
   );
 
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
