@@ -53,6 +53,15 @@ describe('contrôles de création', () => {
   it('exige le nom', () => {
     expect(validerNouvelUtilisateur({ ...valide, nom: '  ' }, []).nom).toBe('nom_obligatoire');
   });
+  it('borne le nom à 60 caractères et l’adresse à 120', () => {
+    expect(validerNouvelUtilisateur({ ...valide, nom: 'x'.repeat(61) }, []).nom).toBe(
+      'nom_trop_long',
+    );
+    expect(validerNouvelUtilisateur({ ...valide, nom: 'x'.repeat(60) }, []).nom).toBeUndefined();
+    expect(
+      validerNouvelUtilisateur({ ...valide, email: `${'a'.repeat(111)}@gmail.com` }, []).email,
+    ).toBe('email_trop_long');
+  });
   it('contrôle la forme de l’e-mail', () => {
     for (const email of ['', 'ada', 'ada@', 'ada@gmail', 'a da@gmail.com']) {
       expect(validerNouvelUtilisateur({ ...valide, email }, []).email).toBe('email_invalide');

@@ -11,20 +11,45 @@ import {
   useActiver,
   useChangerDeGroupe,
   useCreerUnGroupe,
+  useCreerUtilisateur,
+  erreursDeChamps,
   useReinitialiserLeCode,
   useUtilisateurs,
 } from './api.ts';
 import { ListeUtilisateurs } from './ListeUtilisateurs.tsx';
-import { nomDuGroupe } from './regles.ts';
-import type { NouveauGroupe, Utilisateur } from './types.ts';
+import { NouvelUtilisateur } from './NouvelUtilisateur.tsx';
+import {
+  aDesErreurs,
+  DESCRIPTION_DE_GROUPE_MAX,
+  NOM_DE_GROUPE_MAX,
+  nomDuGroupe,
+  normaliserEmail,
+  validerNouvelUtilisateur,
+} from './regles.ts';
+import type {
+  Canal,
+  ErreursUtilisateur,
+  NouveauGroupe,
+  NouvelUtilisateur as Brouillon,
+  Utilisateur,
+} from './types.ts';
 import styles from './Utilisateurs.module.css';
 import { VueGroupes } from './VueGroupes.tsx';
 
 const ONGLETS = ['liste', 'groupes', 'nouveau'] as const;
 type Onglet = (typeof ONGLETS)[number];
 
+const BROUILLON_VIDE: Brouillon = {
+  nom: '',
+  email: '',
+  telephone: '',
+  groupe: '',
+  canal: 'whatsapp' as Canal,
+  invitation: true,
+};
+
 /** Onglets dont la vue est livrée ; les autres arrivent avec le lot suivant. */
-const ONGLETS_LIVRES: readonly Onglet[] = ['liste', 'groupes'];
+const ONGLETS_LIVRES: readonly Onglet[] = ['liste', 'groupes', 'nouveau'];
 
 /**
  * Gestion › Utilisateurs (US-020 à US-022), vue « Utilisateurs » : l'administrateur change un
@@ -42,8 +67,13 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
   const reinitialiser = useReinitialiserLeCode(nom);
   const activer = useActiver(nom);
   const creerGroupe = useCreerUnGroupe(nom);
+  const creer = useCreerUtilisateur(nom);
   const [parametres, setParametres] = useSearchParams();
   const [filtre, setFiltre] = useState('all');
+  const [brouillon, setBrouillon] = useState<Brouillon>(BROUILLON_VIDE);
+  const [erreurs, setErreurs] = useState<ErreursUtilisateur>({});
+  const [creeId, setCreeId] = useState<string | null>(null);
+  const [tentative, setTentative] = useState(0);
   // Garde synchrone : deux clics avant le rendu suivant ne lancent qu'une seule action.
   const enCours = useRef(false);
 
@@ -70,7 +100,10 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
   }
 
   const { utilisateurs, groupes, moi } = instantane;
-  const occupe = [changerDeGroupe, reinitialiser, activer, creerGroupe].some((m) => m.isPending);
+  const cree = utilisateurs.find((u) => u.id === creeId) ?? null;
+  const occupe = [changerDeGroupe, reinitialiser, activer, creerGroupe, creer].some(
+    (m) => m.isPending,
+  );
 
   const choisirOnglet = (suivant: Onglet) =>
     setParametres(
@@ -177,8 +210,8 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
   };
 
   const surCreerGroupe = (groupe: NouveauGroupe) =>
-    new Promise<boolean>((resoudre) => {
-      if (occupe || enCours.current) return resoudre(false);
+    new Promise<string | null>((resoudre) => {
+      if (occupe || enCours.current) return resoudre('');
       enCours.current = true;
       creerGroupe.mutate(groupe, {
         onSettled: () => {
@@ -186,14 +219,74 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
         },
         onSuccess: () => {
           afficher(t('gestion.utilisateurs.toasts.groupeCree'));
-          resoudre(true);
+          resoudre(null);
         },
         onError: (erreur) => {
-          signaler(erreur);
-          resoudre(false);
+          const code = codeErreur(erreur);
+          const message =
+            code === 'groupe_existant'
+              ? t('gestion.utilisateurs.groupes.erreurExiste')
+              : code === 'nom_obligatoire'
+                ? t('gestion.utilisateurs.groupes.erreurNom')
+                : code === 'nom_trop_long'
+                  ? t('gestion.utilisateurs.groupes.erreurNomLong', { max: NOM_DE_GROUPE_MAX })
+                  : code === 'description_trop_longue'
+                    ? t('gestion.utilisateurs.groupes.erreurDescriptionLongue', {
+                        max: DESCRIPTION_DE_GROUPE_MAX,
+                      })
+                    : '';
+          // Une erreur de champ se lit sous le champ ; les autres passent par le message.
+          if (!message) signaler(erreur);
+          resoudre(message);
         },
       });
     });
+
+  const nouveau = (groupe = '') => {
+    setBrouillon({ ...BROUILLON_VIDE, groupe });
+    setErreurs({});
+    setCreeId(null);
+    choisirOnglet('nouveau');
+  };
+
+  const surChamp = (champ: 'nom' | 'email' | 'telephone', valeur: string) => {
+    setBrouillon((b) => ({ ...b, [champ]: valeur }));
+    setErreurs((e) => ({ ...e, [champ]: undefined }));
+  };
+
+  const surCreer = () => {
+    if (occupe || enCours.current) return;
+    const trouvees = validerNouvelUtilisateur(
+      { ...brouillon, nom: brouillon.nom.trim() },
+      utilisateurs.map((u) => u.email),
+      groupes.map((g) => g.id),
+    );
+    if (aDesErreurs(trouvees)) {
+      setErreurs(trouvees);
+      setTentative((n) => n + 1);
+      return;
+    }
+    enCours.current = true;
+    creer.mutate(
+      { ...brouillon, nom: brouillon.nom.trim(), email: normaliserEmail(brouillon.email) },
+      {
+        onSettled: () => {
+          enCours.current = false;
+        },
+        onSuccess: (reponse) => {
+          setCreeId(reponse.utilisateur.id);
+          afficher(t('gestion.utilisateurs.toasts.cree', { nom: reponse.utilisateur.nom }));
+        },
+        onError: (erreur) => {
+          const champs = erreursDeChamps(erreur);
+          if (aDesErreurs(champs)) {
+            setErreurs(champs);
+            setTentative((n) => n + 1);
+          } else signaler(erreur);
+        },
+      },
+    );
+  };
 
   return (
     <>
@@ -225,12 +318,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            className={styles.principal}
-            aria-disabled
-            onClick={() => ONGLETS_LIVRES.includes('nouveau') && choisirOnglet('nouveau')}
-          >
+          <button type="button" className={styles.principal} onClick={() => nouveau()}>
             + {t('gestion.utilisateurs.nouvelUtilisateur')}
           </button>
         </div>
@@ -247,7 +335,43 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
               groupes={groupes}
               utilisateurs={utilisateurs}
               occupe={occupe}
+              onAjouterMembre={(g) => nouveau(g)}
               onCreer={surCreerGroupe}
+            />
+          )}
+          {onglet === 'nouveau' && (
+            <NouvelUtilisateur
+              brouillon={brouillon}
+              erreurs={erreurs}
+              groupes={groupes}
+              utilisateurs={utilisateurs}
+              cree={cree}
+              occupe={occupe}
+              tentative={tentative}
+              onChamp={surChamp}
+              onGroupe={(g) => {
+                setBrouillon((b) => ({ ...b, groupe: g }));
+                setErreurs((e) => ({ ...e, groupe: undefined }));
+              }}
+              onCanal={(canal) => setBrouillon((b) => ({ ...b, canal }))}
+              onInvitation={() => setBrouillon((b) => ({ ...b, invitation: !b.invitation }))}
+              onAnnuler={() => {
+                setBrouillon(BROUILLON_VIDE);
+                setErreurs({});
+                choisirOnglet('liste');
+              }}
+              onCreer={surCreer}
+              onVoirLaListe={() => {
+                setFiltre(cree?.groupe ?? 'all');
+                setBrouillon(BROUILLON_VIDE);
+                setCreeId(null);
+                choisirOnglet('liste');
+              }}
+              onAutre={() => {
+                setBrouillon({ ...BROUILLON_VIDE, groupe: brouillon.groupe });
+                setErreurs({});
+                setCreeId(null);
+              }}
             />
           )}
           {onglet === 'liste' && (

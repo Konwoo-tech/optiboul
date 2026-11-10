@@ -5,6 +5,8 @@ import {
   nomDeGroupePris,
   nomDeGroupeValide,
   normaliserEmail,
+  DESCRIPTION_DE_GROUPE_MAX,
+  NOM_DE_GROUPE_MAX,
   PROFILS_DE_DROITS,
   peutAdministrer,
   validerNouvelUtilisateur,
@@ -214,6 +216,12 @@ function creerUnGroupe(a: Acteur, corps: Corps): Response {
   const nom = texte(corps.nom);
   if (!nomDeGroupeValide(nom))
     return probleme(400, 'nom_obligatoire', 'Indiquez le nom du groupe.');
+  if (nom.trim().length > NOM_DE_GROUPE_MAX) {
+    return probleme(400, 'nom_trop_long', 'Le nom du groupe est trop long.');
+  }
+  if (texte(corps.description).trim().length > DESCRIPTION_DE_GROUPE_MAX) {
+    return probleme(400, 'description_trop_longue', 'La description est trop longue.');
+  }
   const profil = PROFILS_DE_DROITS.find((p) => p === corps.profil);
   if (!profil) return probleme(400, 'profil_inconnu', 'Profil de droits inconnu.');
   if (nomDeGroupePris(nom, tousLesGroupes())) {

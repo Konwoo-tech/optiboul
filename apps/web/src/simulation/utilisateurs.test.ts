@@ -113,6 +113,16 @@ describe('faux serveur Utilisateurs : création (US-020)', () => {
     });
   });
 
+  it('refuse un nom de plus de 60 caractères et une adresse de plus de 120 (400)', async () => {
+    const nom = await appeler('POST', '', { ...nouveau, nom: 'x'.repeat(61) });
+    expect([nom.statut, nom.json.erreurs]).toEqual([400, { nom: 'nom_trop_long' }]);
+    const adresse = `${'a'.repeat(115)}@gmail.com`;
+    const email = await appeler('POST', '', { ...nouveau, email: adresse });
+    expect([email.statut, email.json.erreurs]).toEqual([400, { email: 'email_trop_long' }]);
+    expect((await appeler('POST', '', { ...nouveau, nom: 'x'.repeat(60) })).statut).toBe(201);
+    expect((await lire()).utilisateurs).toHaveLength(10);
+  });
+
   it('refuse un e-mail déjà utilisé, sans tenir compte de la casse', async () => {
     const { statut, json } = await appeler('POST', '', {
       ...nouveau,
@@ -166,6 +176,20 @@ describe('faux serveur Utilisateurs : groupes (US-021)', () => {
     expect((await appeler('PUT', 'davy/groupe/', { groupe: 'g99' })).json.code).toBe(
       'groupe_inconnu',
     );
+  });
+
+  it('refuse un nom ou une description de groupe trop longs (400)', async () => {
+    const nom = await appeler('POST', 'groupes/', { nom: 'x'.repeat(61), profil: 'caissier' });
+    expect([nom.statut, nom.json.code]).toEqual([400, 'nom_trop_long']);
+    const description = await appeler('POST', 'groupes/', {
+      nom: 'Ok',
+      profil: 'caissier',
+      description: 'x'.repeat(201),
+    });
+    expect([description.statut, description.json.code]).toEqual([400, 'description_trop_longue']);
+    expect(
+      (await appeler('POST', 'groupes/', { nom: 'x'.repeat(60), profil: 'caissier' })).statut,
+    ).toBe(201);
   });
 
   it('crée un groupe, refuse un nom vide, un doublon et un profil inconnu', async () => {

@@ -1,13 +1,15 @@
 import { useTranslation } from '@/i18n';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import type { Profil } from '../../../profils.ts';
 import { Pastille } from './Pastille.tsx';
 import {
+  DESCRIPTION_DE_GROUPE_MAX,
   descriptionDuGroupe,
   membresDuGroupe,
   nomDeGroupePris,
   nomDeGroupeValide,
+  NOM_DE_GROUPE_MAX,
   nomDuGroupe,
   PROFILS_DE_DROITS,
 } from './regles.ts';
@@ -20,8 +22,11 @@ type Props = {
   occupe: boolean;
   /** Absent tant que le formulaire de création n'est pas livré : le bouton reste sans action. */
   onAjouterMembre?: (groupe: string) => void;
-  /** Renvoie vrai quand le serveur a créé le groupe (le formulaire se vide alors). */
-  onCreer: (groupe: NouveauGroupe) => Promise<boolean>;
+  /**
+   * Rien (`null`) : le groupe est créé et le formulaire se vide. Un texte : refus du serveur, à
+   * afficher sous le champ (la saisie est gardée). Texte vide : refus déjà signalé ailleurs.
+   */
+  onCreer: (groupe: NouveauGroupe) => Promise<string | null>;
 };
 
 /** Onglet « Groupes » : une carte par groupe et le formulaire d'un nouveau groupe (US-021). */
@@ -32,22 +37,27 @@ export function VueGroupes({ groupes, utilisateurs, occupe, onAjouterMembre, onC
   const [profil, setProfil] = useState<Profil>('caissier');
   const [description, setDescription] = useState('');
   const [erreur, setErreur] = useState('');
+  const champNom = useRef<HTMLInputElement>(null);
 
   const creer = async () => {
     if (occupe) return;
-    if (!nomDeGroupeValide(nom)) {
-      setErreur(t('gestion.utilisateurs.groupes.erreurNom'));
-      return;
+    const refuser = (message: string) => {
+      setErreur(message);
+      champNom.current?.focus();
+    };
+    const nomRogne = nom.trim();
+    if (!nomDeGroupeValide(nomRogne)) return refuser(t('gestion.utilisateurs.groupes.erreurNom'));
+    if (nomDeGroupePris(nomRogne, groupes)) {
+      return refuser(t('gestion.utilisateurs.groupes.erreurExiste'));
     }
-    if (nomDeGroupePris(nom, groupes)) {
-      setErreur(t('gestion.utilisateurs.groupes.erreurExiste'));
-      return;
-    }
-    if (await onCreer({ nom, profil, description })) {
+    const refus = await onCreer({ nom: nomRogne, profil, description: description.trim() });
+    if (refus === null) {
       setNom('');
       setProfil('caissier');
       setDescription('');
       setErreur('');
+    } else if (refus) {
+      refuser(refus);
     }
   };
 
@@ -112,8 +122,10 @@ export function VueGroupes({ groupes, utilisateurs, occupe, onAjouterMembre, onC
         <label className={styles.etiquette}>
           {t('gestion.utilisateurs.groupes.nom')}
           <input
+            ref={champNom}
             className={styles.champ}
             value={nom}
+            maxLength={NOM_DE_GROUPE_MAX}
             aria-invalid={erreur ? true : undefined}
             aria-describedby={erreur ? idErreur : undefined}
             onChange={(e) => {
@@ -141,6 +153,7 @@ export function VueGroupes({ groupes, utilisateurs, occupe, onAjouterMembre, onC
           <input
             className={styles.champ}
             value={description}
+            maxLength={DESCRIPTION_DE_GROUPE_MAX}
             onChange={(e) => setDescription(e.target.value)}
           />
         </label>

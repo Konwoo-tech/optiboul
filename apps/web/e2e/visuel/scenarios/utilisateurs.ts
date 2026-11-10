@@ -14,7 +14,7 @@ import {
  * Gestion › Utilisateurs, vue « Utilisateurs » (US-020 à US-022), comparée au bloc `scr.users` du
  * prototype : liste et droits par profil (clair et sombre), filtre par groupe, changement de groupe,
  * désactivation. Toute la zone de contenu est comparée, en-tête compris ; le menu de gauche ne
- * l'est pas. L'onglet Groupes a ses scénarios plus bas, Nouvel utilisateur dans la PR suivante.
+ * l'est pas. Groupes et Nouvel utilisateur (vide, erreurs, aperçu FR/EN, compte créé, retour à la liste) ont leurs scénarios plus bas.
  *
  * Écarts assumés (non joués ici) : l'application écrit le dernier accès en anglais (« Oct 14 »)
  * là où le prototype garde le français : la liste n'est donc pas comparée en anglais. L'aperçu des
@@ -41,6 +41,22 @@ const basculerEn: Etapes = async (page) => {
 };
 
 const ADMIN = /Support/;
+
+const remplirLeFormulaire: Etapes = async (page) => {
+  await cliquerTexte(page, /^\s*\+ Nouvel utilisateur\s*$/);
+  await page.getByLabel('Nom complet').fill('Ada Lovelace');
+  await page.getByLabel('Adresse Gmail').fill('ada@gmail.com');
+  await page.getByLabel(/Téléphone pour la double/).fill('677412018');
+  await cliquerTexte(page, /Caisse – équipe de jour/);
+  await cliquerTexte(page, 'SMS');
+  await page.waitForTimeout(200);
+};
+
+const creerLeCompte: Etapes = async (page) => {
+  await remplirLeFormulaire(page);
+  await cliquerTexte(page, 'Créer l’utilisateur');
+  await attendreFinDuToast(page);
+};
 
 function scenarioUtilisateurs(options: {
   nom: string;
@@ -128,6 +144,33 @@ export const scenariosUtilisateurs: Scenario[] = [
       await page.getByLabel('Nom du groupe').fill('Livreurs');
       await cliquerTexte(page, 'Créer le groupe');
       await attendreFinDuToast(page);
+    },
+  }),
+  scenarioUtilisateurs({
+    nom: 'utilisateurs-nouveau',
+    etapes: (page) => cliquerTexte(page, /^\s*\+ Nouvel utilisateur\s*$/),
+  }),
+  scenarioUtilisateurs({
+    nom: 'utilisateurs-nouveau-erreurs',
+    etapes: async (page) => {
+      await cliquerTexte(page, /^\s*\+ Nouvel utilisateur\s*$/);
+      await cliquerTexte(page, 'Créer l’utilisateur');
+    },
+  }),
+  scenarioUtilisateurs({ nom: 'utilisateurs-nouveau-apercu', etapes: remplirLeFormulaire }),
+  scenarioUtilisateurs({
+    nom: 'utilisateurs-nouveau-apercu-en',
+    etapes: async (page) => {
+      await remplirLeFormulaire(page);
+      await basculerEn(page);
+    },
+  }),
+  scenarioUtilisateurs({ nom: 'utilisateurs-cree', etapes: creerLeCompte }),
+  scenarioUtilisateurs({
+    nom: 'utilisateurs-cree-liste',
+    etapes: async (page) => {
+      await creerLeCompte(page);
+      await cliquerTexte(page, 'Voir dans la liste');
     },
   }),
 ];
