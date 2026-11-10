@@ -30,6 +30,7 @@ import {
 import type { Profil } from '@/profils.ts';
 import { dateDuJour, heureCourante } from './comptoir.ts';
 import type { GroupeSimule } from './donnees.ts';
+import { consigner } from './journal.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
 /*
@@ -77,6 +78,7 @@ export const invitationsEnFile = (): readonly Invitation[] => invitations;
 
 const tracer = (qui: string, quoi: string) => {
   journal = [{ heure: heureCourante(), qui, quoi }, ...journal];
+  consigner({ auteur: qui, type: 'utilisateur', texte: quoi });
 };
 
 const projeter = (c: CompteVivant): Utilisateur => ({

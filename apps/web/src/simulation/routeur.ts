@@ -37,6 +37,7 @@ import {
   adapterNotificationsALaProduction,
   reinitialiserProduction,
   repondreProduction,
+  repondreProduitsDesParametres,
 } from './production.ts';
 import { consigner, reinitialiserJournal, repondreJournal } from './journal.ts';
 import { contexteSemaines, reinitialiserPlanning } from './planning.ts';
@@ -292,6 +293,7 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
         repondreSemaines(url, methode, corps) ??
         repondrePersonnel(url, methode, corps) ??
         repondreJournal(url, methode, corps) ??
+        repondreProduitsDesParametres(url, methode) ??
         repondreParametres(url, methode, corps) ??
         repondreUtilisateurs(url, methode, corps) ??
         repondreSauvegardes(url, methode, corps) ??

@@ -31,6 +31,7 @@ import { demandesEnAttente } from './demandes.ts';
 import { depensesDeSemaine } from './depenses.ts';
 import { comptesActifs } from './comptes.ts';
 import { facturesSimulees, libelleFactureFr, receptionsParSemaine } from './fournisseurs.ts';
+import { consigner } from './journal.ts';
 import {
   affecter,
   cloturerSemaine,
@@ -99,8 +100,9 @@ export function journalSemaines(): readonly Journal[] {
   return journal;
 }
 
-function tracer(qui: string, quoi: string): void {
+function tracer(qui: string, quoi: string, changement?: { avant: string; apres: string }): void {
   journal = [{ heure: heureCourante(), qui, quoi }, ...journal];
+  consigner({ auteur: qui, type: 'semaine', texte: quoi, ...changement });
 }
 
 const comme = (id: string, nom: string): Personne =>
@@ -315,11 +317,13 @@ function affecterPersonne(a: Acteur, corps: Corps): Response {
       role === 'gerant' ? 'Choisissez un gérant.' : 'Choisissez un responsable de production.',
     );
   }
+  const avant = (role === 'gerant' ? s.gerant : s.production)?.nom ?? 'aucun';
   affecter(s.id, role, id);
   marquerPlanifiee(s.id, a.nom);
   tracer(
     a.nom,
     `Affectation semaine ${s.numero} : ${role === 'gerant' ? 'gérant' : 'responsable de production'} → ${personne(id)?.nom ?? 'aucun'}`,
+    { avant, apres: personne(id)?.nom ?? 'aucun' },
   );
   return Response.json(instantane(a));
 }

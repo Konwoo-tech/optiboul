@@ -710,6 +710,47 @@
     "toastDejaDecidee": "Cette demande a déjà reçu une réponse."
   },
   "gestion": {
+    "journal": {
+      "titre": "Toutes les actions, avec auteur et heure",
+      "interdit": "Le journal des actions est réservé au gérant, au propriétaire et à l’administrateur.",
+      "erreurChargement": "Le journal n’a pas pu être chargé. Réessayez dans un instant.",
+      "vide": "Aucune action consignée pour l’instant.",
+      "videFiltre": "Aucune action ne correspond à ces filtres.",
+      "limite": "{{affichees}} dernières actions affichées sur {{total}} : affinez par auteur, type ou période.",
+      "changement": "Avant : {{avant}} → Après : {{apres}}",
+      "resultats_one": "{{count}} résultat",
+      "resultats_other": "{{count}} résultats",
+      "colonnes": { "heure": "Heure : ", "auteur": "Auteur : ", "action": "Action : " },
+      "filtres": {
+        "titre": "Filtrer le journal",
+        "auteur": "Auteur",
+        "type": "Type d’action",
+        "du": "Du",
+        "au": "Au",
+        "tous": "Tous",
+        "reinitialiser": "Effacer les filtres"
+      },
+      "erreurs": {
+        "periode-invalide": "Les dates doivent être des jours valides.",
+        "periode-inversee": "Le premier jour doit précéder le dernier."
+      },
+      "types": {
+        "connexion": "Connexions",
+        "session": "Session et livraisons",
+        "caisse": "Caisses",
+        "depense": "Dépenses",
+        "demande": "Demandes et décisions",
+        "stock": "Stocks",
+        "fournisseur": "Fournisseurs",
+        "production": "Production",
+        "semaine": "Semaines",
+        "paie": "Personnel et paie",
+        "utilisateur": "Utilisateurs et groupes",
+        "sauvegarde": "Sauvegardes",
+        "parametre": "Paramètres",
+        "autre": "Autres"
+      }
+    },
     "tableauDeBord": {
       "erreurChargement": "Impossible de charger le tableau de bord.",
       "interdit": "Le tableau de bord complet est réservé au gérant et au propriétaire.",
@@ -1158,6 +1199,50 @@
         "droit": "Votre profil ne permet pas cette action."
       }
     },
+    "sauvegardes": {
+      "erreurChargement": "Impossible de lire les sauvegardes. Réessayez.",
+      "alerte": "Aucune copie cloud depuis plus de 48 h (dernière : {{date}}).",
+      "alerteJamais": "Aucune copie cloud n’a encore été faite.",
+      "locale": {
+        "titre": "Copie locale",
+        "sous": "Toutes les 4 h et à chaque clôture de session",
+        "lancer": "Sauvegarder maintenant"
+      },
+      "cloud": {
+        "titre": "Copie cloud",
+        "lancer": "Lancer la sauvegarde cloud",
+        "connexion": "Connexion disponible",
+        "horsLigne": "Hors ligne : la copie partira au retour d’internet",
+        "aJour": "À jour",
+        "enRetard": "En retard"
+      },
+      "aucune": "—",
+      "copies": {
+        "titre": "Copies disponibles",
+        "locale": "Locale",
+        "cloud": "Cloud",
+        "restaurer": "Restaurer",
+        "restaurerCopie": "Restaurer la copie du {{date}}"
+      },
+      "restauration": {
+        "titre": "Restauration guidée",
+        "etape1": "Une copie de l’état actuel est faite automatiquement.",
+        "etape2": "La copie du {{date}} est restaurée.",
+        "etape3": "Les totaux sont vérifiés : sessions, soldes clients, stocks.",
+        "simule": "Simulation : le contrôle des totaux est fictif, aucune donnée n’est réellement restaurée.",
+        "annuler": "Annuler",
+        "confirmer": "Restaurer cette copie"
+      },
+      "toasts": {
+        "locale": "Copie locale faite à {{heure}}",
+        "cloud": "Copie cloud envoyée et vérifiée",
+        "cloudEnAttente": "Hors ligne : sauvegarde cloud en attente",
+        "restauree": "Restauration terminée et vérifiée (contrôle simulé)",
+        "droit": "Votre profil ne permet pas cette action.",
+        "inconnue": "Cette copie n’existe plus : la liste vient d’être actualisée.",
+        "erreur": "L’action n’a pas pu être enregistrée. Réessayez."
+      }
+    },
     "utilisateurs": {
       "sections": "Sections des utilisateurs",
       "onglets": {
@@ -1245,6 +1330,112 @@
         "creer": "Créer le groupe",
         "erreurNom": "Indiquez le nom du groupe.",
         "erreurExiste": "Un groupe porte déjà ce nom."
+      }
+    },
+    "parametres": {
+      "erreurChargement": "Impossible de charger les paramètres. Réessayez.",
+      "interdit": "Les paramètres sont réservés au propriétaire et à l’administrateur.",
+      "lectureSeule": "Lecture seule : seul le propriétaire modifie les paramètres.",
+      "seuils": {
+        "titre": "Seuils et règles"
+      },
+      "produits": {
+        "titre": "Produits et fiches techniques",
+        "produit": "Produit",
+        "boule": "Boule (g)",
+        "painsBoule": "Pains / boule",
+        "painsSac": "Pains / sac",
+        "prix": "Prix observés (FCFA)",
+        "fiche": "Fiche ›",
+        "erreurChargement": "Impossible de charger les produits."
+      },
+      "autres": {
+        "titre": "Tous les paramètres métier",
+        "aide": "Chaque modification est enregistrée avec son auteur et tracée dans le journal."
+      },
+      "groupes": {
+        "dettes": "Dettes et relances",
+        "caisse": "Caisse et budget",
+        "stocks": "Matières et stocks",
+        "production": "Production",
+        "paie": "Paie",
+        "securite": "Sécurité et sauvegardes",
+        "autres": "Autres paramètres"
+      },
+      "libelles": {
+        "plafond_dette_client": "Plafond de dette par client",
+        "seuil_validation_depenses": "Seuil de validation des dépenses",
+        "ecart_matiere_kg_par_sac": "Écart matière toléré par sac",
+        "echeance_dettes": "Échéance des dettes",
+        "relances_jours": "Jours des relances automatiques",
+        "relances_heure": "Heure des relances automatiques",
+        "fonds_caisse": "Fonds de caisse",
+        "plafond_especes": "Plafond d’espèces en caisse",
+        "seuil_budget_surveiller": "Seuil « à surveiller » du budget",
+        "ecart_matiere_grammes": "Écart matière toléré pour les intrants en grammes",
+        "tolerance_inventaire": "Tolérance d’inventaire",
+        "tolerance_validation_plan": "Tolérance de validation automatique du plan",
+        "heure_limite_commandes_nuit": "Heure limite des commandes (nuit)",
+        "heure_limite_commandes_jour": "Heure limite des commandes (jour)",
+        "heure_petrissage_nuit": "Heure du pétrissage (nuit)",
+        "heure_petrissage_jour": "Heure du pétrissage (jour)",
+        "echeance_demande_plafond": "Échéance d’une demande de plafond",
+        "inactivite_comptoir": "Inactivité avant déconnexion au comptoir",
+        "sauvegarde_locale": "Intervalle de la sauvegarde locale",
+        "alerte_sauvegarde_cloud": "Alerte sans copie cloud",
+        "prix_sac_farine": "Prix du sac de farine",
+        "demande_estimee_sessions": "Demande estimée : sessions du même type",
+        "supplement_auto_sacs": "Supplément accordé automatiquement (sacs par produit)",
+        "supplement_auto_pourcentage": "Supplément accordé automatiquement (part du plan)",
+        "rappel_clients_habituels": "Rappel aux clients habituels avant l’heure limite",
+        "jour_de_paie": "Jour de paie du mois",
+        "stock_sessions_bas": "Stock bas : sessions restantes",
+        "stock_sessions_commande": "À commander : sessions restantes",
+        "controles_stock_jours": "Jours des contrôles de stock"
+      },
+      "jours": {
+        "lundi": "lundi",
+        "mardi": "mardi",
+        "mercredi": "mercredi",
+        "jeudi": "jeudi",
+        "vendredi": "vendredi",
+        "samedi": "samedi",
+        "dimanche": "dimanche"
+      },
+      "unites": {
+        "FCFA": "FCFA",
+        "kg": "kg",
+        "%": "%",
+        "minutes": "minutes",
+        "heures": "heures",
+        "sessions": "sessions",
+        "sac": "sac",
+        "jour": "jour"
+      },
+      "valeurParDefaut": "Valeur par défaut : {{valeur}}",
+      "modifiePar": "Modifié le {{date}} par {{par}}",
+      "enregistre": "{{libelle}} enregistré",
+      "erreurs": {
+        "entier": "Saisissez un nombre entier.",
+        "bornes": "Saisissez une valeur entre {{minimum}} et {{maximum}}.",
+        "bornesMin": "Saisissez une valeur d’au moins {{minimum}}.",
+        "choix": "Valeurs permises : {{permis}}.",
+        "heure": "Saisissez une heure au format HH:MM.",
+        "jour": "Choisissez un jour de la semaine.",
+        "jours": "Cochez au moins un jour.",
+        "serveur": "Le paramètre n’a pas pu être enregistré. Réessayez.",
+        "droit": "Seul le propriétaire modifie les paramètres."
+      },
+      "historique": {
+        "titre": "Historique des valeurs",
+        "choisir": "Paramètre",
+        "vide": "Aucune modification : la valeur par défaut est en vigueur.",
+        "erreurChargement": "Impossible de charger l’historique.",
+        "colonnes": {
+          "date": "Date",
+          "valeur": "Valeur",
+          "auteur": "Auteur"
+        }
       }
     }
   },
@@ -1709,7 +1900,8 @@
         },
         "regleModifiable": "Chaque modification crée une nouvelle version, enregistrée dans le journal des actions. Les prix unitaires suivent les achats en stock.",
         "regleLecture": "Lecture seule. Seuls le propriétaire et l’administrateur modifient les fiches techniques.",
-        "regleChef": "Les quantités et les temps de cuisson servent de référence au pétrissage."
+        "regleChef": "Les quantités et les temps de cuisson servent de référence au pétrissage.",
+        "retourProduits": "‹ Tous les produits"
       }
     }
   }

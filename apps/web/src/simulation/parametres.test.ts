@@ -198,3 +198,65 @@ describe('faux serveur Paramètres : modification', () => {
     expect(valeurDuParametre('plafond_dette_client')).toBe(2_000);
   });
 });
+
+describe('faux serveur Paramètres : compléments', () => {
+  it('refuse l’administrateur avant de chercher la clé (403 et non 404)', async () => {
+    memoriserUtilisateurConnecte('admin');
+    expect((await modifier('inconnu', 1)).statut).toBe(403);
+  });
+
+  it('rejette les booléens pour chaque genre numérique', async () => {
+    for (const cle of ['plafond_dette_client', 'tolerance_inventaire', 'inactivite_comptoir']) {
+      const { statut, json } = await modifier(cle, true);
+      expect(statut).toBe(400);
+      expect(json.code).toBe('valeur_invalide');
+    }
+  });
+
+  it('valeurDuParametre suit une modification, et une liste modifiée reste isolée', async () => {
+    expect(valeurDuParametre('seuil_validation_depenses')).toBe(50_000);
+    await modifier('seuil_validation_depenses', 60_000);
+    expect(valeurDuParametre('seuil_validation_depenses')).toBe(60_000);
+    await modifier('controles_stock_jours', ['lundi']);
+    valeurDuParametre<string[]>('controles_stock_jours').push('mardi');
+    expect(valeurDuParametre<string[]>('controles_stock_jours')).toEqual(['lundi']);
+  });
+});
+
+describe('faux serveur Paramètres : produits', () => {
+  const produits = (id: string) => {
+    memoriserUtilisateurConnecte(id);
+    const reponse = repondre(new URL(`http://x${RACINE}produits/`), 'GET', {});
+    return reponse.json().then((json: any) => ({ statut: reponse.status, json }));
+  };
+
+  it('livre le résumé des sept fiches au propriétaire et à l’administrateur', async () => {
+    for (const id of ['fotso', 'admin']) {
+      const { statut, json } = await produits(id);
+      expect(statut).toBe(200);
+      expect(json).toHaveLength(7);
+      expect(json[0]).toEqual({
+        id: 'bag',
+        code: 'BAG',
+        nom: 'Baguette',
+        nomEn: 'Baguette',
+        boule: 5000,
+        pb: 20,
+        painsParSac: 315,
+        prix: [100, 110],
+      });
+      expect(json.find((p: any) => p.id === 'gc170').prix).toBeNull();
+    }
+  });
+
+  it('refuse les autres profils, et toute méthode autre que GET', async () => {
+    for (const id of ['davy', 'willy', 'serge']) {
+      const { statut, json } = await produits(id);
+      expect([statut, json.code]).toEqual([403, 'droit_insuffisant']);
+    }
+    memoriserUtilisateurConnecte(null);
+    expect((await produits('')).statut).toBe(403);
+    memoriserUtilisateurConnecte('fotso');
+    expect((await appeler('POST', 'produits/')).statut).toBe(405);
+  });
+});

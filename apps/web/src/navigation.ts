@@ -53,7 +53,12 @@ export const ECRANS: readonly Ecran[] = [
   { cle: 'demandes', espace: 'gestion', profils: DIRECTION, recit: 'US-071' },
   { cle: 'utilisateurs', espace: 'gestion', profils: ['administrateur'], recit: 'US-020' },
   { cle: 'sauvegardes', espace: 'gestion', profils: ['administrateur'], recit: 'US-143' },
-  { cle: 'journal', espace: 'gestion', profils: [...DIRECTION, 'administrateur'] },
+  {
+    cle: 'journal',
+    espace: 'gestion',
+    profils: [...DIRECTION, 'administrateur'],
+    recit: 'US-024',
+  },
   // CdC §3.3 « Paramètres métier » : propriétaire (modifie), administrateur (voit) ; pas le gérant.
   { cle: 'parametres', espace: 'gestion', profils: ['proprietaire', 'administrateur'] },
 ];

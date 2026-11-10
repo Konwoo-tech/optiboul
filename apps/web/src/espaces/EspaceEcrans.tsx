@@ -43,17 +43,26 @@ const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
   'gestion/depenses': EN_SIMULATION
     ? lazy(() => import('./comptoir/depenses/EcranDepenses.tsx'))
     : null,
+  'gestion/journal': EN_SIMULATION
+    ? lazy(() => import('./gestion/journal/EcranJournal.tsx'))
+    : null,
   'gestion/personnel': EN_SIMULATION
     ? lazy(() => import('./gestion/personnel/EcranPersonnel.tsx'))
     : null,
   'gestion/fournisseurs': EN_SIMULATION
     ? lazy(() => import('./gestion/fournisseurs/EcranFournisseurs.tsx'))
     : null,
+  'gestion/sauvegardes': EN_SIMULATION
+    ? lazy(() => import('./gestion/sauvegardes/EcranSauvegardes.tsx'))
+    : null,
   'gestion/utilisateurs': EN_SIMULATION
     ? lazy(() => import('./gestion/utilisateurs/EcranUtilisateurs.tsx'))
     : null,
   'gestion/tableau-de-bord': EN_SIMULATION
     ? lazy(() => import('./gestion/tableau-de-bord/EcranTableauDeBord.tsx'))
+    : null,
+  'gestion/parametres': EN_SIMULATION
+    ? lazy(() => import('./gestion/parametres/EcranParametres.tsx'))
     : null,
   'gestion/semaines': EN_SIMULATION
     ? lazy(() => import('./gestion/semaines/EcranSemaines.tsx'))

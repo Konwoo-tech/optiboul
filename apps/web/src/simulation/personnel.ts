@@ -22,6 +22,7 @@ import { formaterNombre } from '@/utils';
 
 import { dateDuJour, heureCourante } from './comptoir.ts';
 import { enregistrerSalaire, type Acteur } from './depenses.ts';
+import { consigner } from './journal.ts';
 import { prochainNumeroDemande } from './numerosDemandes.ts';
 import { personne } from './planning.ts';
 import { lireUtilisateurConnecte } from './session.ts';
@@ -229,8 +230,9 @@ export function journalPersonnel(): readonly Journal[] {
   return lireEtat().journal;
 }
 
-function tracer(qui: string, quoi: string) {
+function tracer(qui: string, quoi: string, changement?: { avant: string; apres: string }) {
   lireEtat().journal = [{ heure: heureCourante(), qui, quoi }, ...lireEtat().journal];
+  consigner({ auteur: qui, type: 'paie', texte: quoi, ...changement });
 }
 
 /** « octobre 2026 » : le mois en toutes lettres, pour les libellés de dépense. */
@@ -316,8 +318,9 @@ function choisirLeJour(a: Acteur, corps: Corps): Response {
   if (typeof jour !== 'string' || !JOURS_OCTOBRE.includes(jour)) {
     return probleme(400, 'jour_invalide', 'Ce jour de paie n’est pas proposé.');
   }
+  const avant = etat.jourDePaie;
   etat.jourDePaie = jour;
-  tracer(a.nom, `Jour de paie d’octobre fixé au ${jour}`);
+  tracer(a.nom, `Jour de paie d’octobre fixé au ${jour}`, { avant, apres: jour });
   return reponse();
 }
 
@@ -330,8 +333,12 @@ function planifierLeMois(a: Acteur, corps: Corps): Response {
   if (typeof corps.jour !== 'string' || !jours.includes(corps.jour)) {
     return probleme(400, 'jour_invalide', 'Ce jour de paie n’est pas proposé.');
   }
+  const avant = etat.joursPlanifies[mois] ?? '';
   etat.joursPlanifies[mois] = corps.jour;
-  tracer(a.nom, `Jour de paie de ${moisEnToutesLettres(mois)} planifié au ${corps.jour}`);
+  tracer(a.nom, `Jour de paie de ${moisEnToutesLettres(mois)} planifié au ${corps.jour}`, {
+    avant,
+    apres: corps.jour,
+  });
   return reponse();
 }
 

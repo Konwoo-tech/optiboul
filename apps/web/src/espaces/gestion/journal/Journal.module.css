@@ -1,0 +1,137 @@
+/*
+ * Gestion › Journal des actions, repris valeur par valeur de la maquette « OptiBoul ERP v2 » (bloc
+ * `scr.journal`, lignes 856-862).
+ */
+.carte {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.titre {
+  margin: 0;
+  padding: 16px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-discret);
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--ob-ligne);
+  font-size: 14px;
+}
+
+.heure {
+  width: 96px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--ob-marque);
+}
+
+.auteur {
+  width: 200px;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.quoi {
+  flex: 1 1 240px;
+  color: var(--ob-encre);
+}
+
+.vide {
+  margin: 0;
+  padding: 16px 20px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}
+
+/*
+ * Ajouts d'US-024, absents de la maquette : le bloc des filtres (auteur, type, période) au-dessus
+ * de la carte, la ligne « avant / après » sous une action et la note de limite.
+ */
+.filtres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+
+.etiquette {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.champ {
+  height: 44px;
+  min-width: 160px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
+.champ:focus-visible,
+.reinitialiser:focus-visible {
+  outline: none;
+  border-color: var(--ob-marque);
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.reinitialiser {
+  height: 44px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ob-marque);
+  background: var(--ob-surface);
+  cursor: pointer;
+}
+
+.erreur {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #c2453a;
+}
+
+.changement {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.limite {
+  margin: 0;
+  padding: 16px 20px;
+  font-size: 14px;
+  color: var(--ob-discret);
+}

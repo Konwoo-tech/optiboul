@@ -1,4 +1,5 @@
 import type { Profil } from '../profils.ts';
+import { valeurDuParametre } from './parametres.ts';
 import { soldesDesClientsDeSession } from './comptoir.ts';
 import { lireUtilisateurConnecte } from './session.ts';
 
@@ -183,7 +184,8 @@ const LIVRAISONS_DU_JOUR: Record<string, LigneHistoriqueClient> = {
   alex: { bon: 142, date: '2026-10-14', moment: '20:51', du: 12200, recu: 12200 },
 };
 
-export const PLAFOND = 2000;
+/** Plafond de dette en vigueur (paramètre `plafond_dette_client`), lu à chaque appel. */
+export const plafondDeDette = (): number => valeurDuParametre('plafond_dette_client');
 const ECHEANCE = '2026-10-18';
 
 /** Clients ayant déjà reçu une relance pendant cette démonstration. */
@@ -252,7 +254,7 @@ export function repondreClients(
 
   if (methode === 'GET' && reste === '') {
     const liste: ListeClientsSimulee = {
-      plafond: PLAFOND,
+      plafond: plafondDeDette(),
       echeance: ECHEANCE,
       clients: clientsSimules(),
     };
