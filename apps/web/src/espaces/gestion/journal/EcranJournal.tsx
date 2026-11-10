@@ -159,12 +159,16 @@ export default function EcranJournal({ ecran }: { ecran: Ecran }) {
         <h2 id="titre-journal" className={styles.titre}>
           {t('gestion.journal.titre')}
         </h2>
+        {/* Une seule annonce courte quand les filtres changent, au lieu de lire toute la liste. */}
+        <VisuallyHidden component="output">
+          {t('gestion.journal.resultats', { count: instantane.total })}
+        </VisuallyHidden>
         {instantane.entrees.length === 0 ? (
           <p className={styles.vide}>
             {t(filtreActif(filtres) ? 'gestion.journal.videFiltre' : 'gestion.journal.vide')}
           </p>
         ) : (
-          <ol className={styles.liste} aria-live="polite">
+          <ol className={styles.liste}>
             {instantane.entrees.map((entree) => (
               <li key={entree.id} className={styles.ligne}>
                 <span className={styles.heure}>

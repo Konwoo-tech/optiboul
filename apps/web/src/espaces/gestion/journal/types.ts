@@ -18,6 +18,7 @@ export const TYPES_ACTION = [
   'utilisateur',
   'sauvegarde',
   'parametre',
+  'autre',
 ] as const;
 
 export type TypeAction = (typeof TYPES_ACTION)[number];

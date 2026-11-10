@@ -207,15 +207,24 @@ describe('Gestion › Journal : filtres', () => {
     await waitFor(async () => expect(await lignes()).toHaveLength(1));
   });
 
-  it('propose les treize types avec leur libellé', async () => {
+  it('propose les quatorze types avec leur libellé', async () => {
     await ouvrir();
     await lignes();
     const type = screen.getByLabelText('Type d’action') as HTMLSelectElement;
     const libelles = Array.from(type.options).map((o) => o.textContent);
-    expect(libelles).toHaveLength(14);
+    expect(libelles).toHaveLength(15);
     expect(libelles).toEqual(
-      expect.arrayContaining(['Utilisateurs et groupes', 'Sauvegardes', 'Paramètres']),
+      expect.arrayContaining(['Utilisateurs et groupes', 'Sauvegardes', 'Paramètres', 'Autres']),
     );
+  });
+
+  it('annonce le nombre de résultats dans une région d’état, pas la liste entière', async () => {
+    await ouvrir();
+    await lignes();
+    expect((await screen.findByRole('status')).textContent).toBe('10 résultats');
+    expect(document.querySelector('[aria-live]')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Auteur'), { target: { value: 'Serge' } });
+    await waitFor(() => expect(screen.getByRole('status').textContent).toBe('1 résultat'));
   });
 
   it('dit quand rien ne correspond', async () => {

@@ -62,16 +62,35 @@ describe('mapping de l’API réelle vers le modèle de l’écran', () => {
 
   it('garde avant / après (unknown) en texte, et rien quand les deux manquent', () => {
     expect(depuisLigneApi(ligne())).not.toHaveProperty('avant');
+    expect(depuisLigneApi(ligne({ avant: undefined, apres: undefined }))).not.toHaveProperty(
+      'avant',
+    );
     expect(depuisLigneApi(ligne({ avant: { v: 3 }, apres: { v: 4 } }))).toMatchObject({
       avant: '{"v":3}',
       apres: '{"v":4}',
     });
   });
 
-  it('range une ligne dans la famille de son type d’objet ou de son action, sinon « demande »', () => {
+  it('une création (avant absent) ou une suppression (après absent) s’affiche avec « — »', () => {
+    expect(depuisLigneApi(ligne({ avant: null, apres: { v: 1 } }))).toMatchObject({
+      avant: '—',
+      apres: '{"v":1}',
+    });
+    expect(depuisLigneApi(ligne({ avant: 'x', apres: undefined }))).toMatchObject({
+      avant: 'x',
+      apres: '—',
+    });
+    expect(depuisLigneApi(ligne({ avant: '', apres: '' }))).toMatchObject({
+      avant: '—',
+      apres: '—',
+    });
+  });
+
+  it('range une ligne dans la famille de son type d’objet ou de son action, sinon « autre »', () => {
     expect(typeDeLaLigne({ objet_type: 'depense', action: 'creer' })).toBe('depense');
     expect(typeDeLaLigne({ objet_type: '', action: 'connexion.reussie' })).toBe('connexion');
-    expect(typeDeLaLigne({ objet_type: 'inconnu', action: 'autre' })).toBe('demande');
+    expect(typeDeLaLigne({ objet_type: 'inconnu', action: 'zzz' })).toBe('autre');
+    expect(typeDeLaLigne({ objet_type: '', action: '' })).toBe('autre');
   });
 
   it('traduit les filtres en paramètres de l’API (auteur numérique)', () => {

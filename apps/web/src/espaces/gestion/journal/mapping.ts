@@ -16,7 +16,7 @@ import { TYPES_ACTION, type EntreeJournal, type FiltresJournal, type TypeAction 
  *   (id, nom) pour alimenter le filtre : `versParametresApi` reçoit la correspondance nom → id ;
  * - type : l'API filtre par « type d'objet (caisse…) ou préfixe d'action (connexion…) » et ne
  *   connaît pas les familles de l'écran (`TypeAction`) ; `typeDeLaLigne` les déduit du type
- *   d'objet et de l'action, au mieux (repli : `demande`, la famille des décisions) ;
+ *   d'objet et de l'action, au mieux (repli : `autre`) ;
  * - pagination : l'API pagine par curseur (`cursor`, `next`, `previous`), l'écran montre les 40
  *   dernières actions et le total ; le total n'existe pas côté API ;
  * - horodatage : l'API donne un instant (`horodatage`), l'écran affiche jour et heure à l'heure
@@ -54,16 +54,22 @@ export function texteDeValeur(valeur: unknown): string {
   return JSON.stringify(valeur);
 }
 
+const estPresent = (valeur: unknown): boolean => valeur !== null && valeur !== undefined;
+
 const estProfil = (valeur: string): valeur is Profil => valeur in PROFILS;
 
-/** Famille de l'écran d'une ligne de l'API, d'après son type d'objet puis le préfixe de son action. */
+/**
+ * Famille de l'écran d'une ligne de l'API, d'après son type d'objet puis le préfixe de son action.
+ * Une ligne qu'aucune famille ne reconnaît est classée « autre » : jamais rangée à tort parmi les
+ * décisions.
+ */
 export function typeDeLaLigne(ligne: Pick<LigneJournal, 'objet_type' | 'action'>): TypeAction {
   const objet = ligne.objet_type.toLowerCase();
   const action = ligne.action.toLowerCase();
   const candidat = TYPES_ACTION.find(
     (type) => objet.startsWith(type) || action.startsWith(type) || action.startsWith(`${type}.`),
   );
-  return candidat ?? 'demande';
+  return candidat ?? 'autre';
 }
 
 /** Une ligne de l'API en entrée de l'écran. */
@@ -79,7 +85,9 @@ export function depuisLigneApi(ligne: LigneJournal): EntreeJournal {
     profil,
     type: typeDeLaLigne(ligne),
     texte: texteDeLaLigne(ligne),
-    ...(ligne.avant !== null && ligne.apres !== null
+    // Dès qu'une des deux valeurs existe (création : pas d'avant ; suppression : pas d'après),
+    // l'autre s'affiche « — » ; `null` et `undefined` comptent comme absents.
+    ...(estPresent(ligne.avant) || estPresent(ligne.apres)
       ? { avant: texteDeValeur(ligne.avant), apres: texteDeValeur(ligne.apres) }
       : {}),
   };

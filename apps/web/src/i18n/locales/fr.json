@@ -718,6 +718,8 @@
       "videFiltre": "Aucune action ne correspond à ces filtres.",
       "limite": "{{affichees}} dernières actions affichées sur {{total}} : affinez par auteur, type ou période.",
       "changement": "Avant : {{avant}} → Après : {{apres}}",
+      "resultats_one": "{{count}} résultat",
+      "resultats_other": "{{count}} résultats",
       "colonnes": { "heure": "Heure : ", "auteur": "Auteur : ", "action": "Action : " },
       "filtres": {
         "titre": "Filtrer le journal",
@@ -745,7 +747,8 @@
         "paie": "Personnel et paie",
         "utilisateur": "Utilisateurs et groupes",
         "sauvegarde": "Sauvegardes",
-        "parametre": "Paramètres"
+        "parametre": "Paramètres",
+        "autre": "Autres"
       }
     },
     "tableauDeBord": {

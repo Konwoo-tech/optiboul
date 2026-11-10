@@ -718,6 +718,8 @@
       "videFiltre": "No action matches these filters.",
       "limite": "Last {{affichees}} actions shown out of {{total}}: narrow down by author, type or period.",
       "changement": "Before: {{avant}} → After: {{apres}}",
+      "resultats_one": "{{count}} result",
+      "resultats_other": "{{count}} results",
       "colonnes": { "heure": "Time: ", "auteur": "Author: ", "action": "Action: " },
       "filtres": {
         "titre": "Filter the log",
@@ -745,7 +747,8 @@
         "paie": "Staff and payroll",
         "utilisateur": "Users and groups",
         "sauvegarde": "Backups",
-        "parametre": "Settings"
+        "parametre": "Settings",
+        "autre": "Other"
       }
     },
     "tableauDeBord": {
