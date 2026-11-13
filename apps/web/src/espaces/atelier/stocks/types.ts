@@ -111,6 +111,10 @@ export type InstantaneStocks = {
   /** Plus anciens d'abord. */
   inventaires: Inventaire[];
   controles: Controle[];
+  /** Matières que le contrôle du jour fait compter (les clés en semaine, toutes le dimanche) ; absent : toutes. */
+  matieresACompter?: Matiere[];
+  /** Contrôle du jour encore à faire, sur le vrai serveur. */
+  controleDuJourId?: string;
 };
 
 export type NouveauMouvement = {

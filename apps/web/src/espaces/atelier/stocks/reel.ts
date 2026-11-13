@@ -1,5 +1,11 @@
 import {
+  controlesStockList,
   mouvementsStockEtatList,
+  receptionsPlanifieesList,
+  semainesList,
+  type ControleStock,
+  type ReceptionPlanifiee as ReceptionServeur,
+  type Semaine,
   mouvementsStockList,
   toutesLesPages,
   type LigneEtat,
@@ -10,8 +16,11 @@ import type { Creneau } from '@/utils';
 
 import {
   MATIERES,
+  type Controle,
   type FicheMatiere,
   type InstantaneStocks,
+  type Inventaire,
+  type StatutInventaire,
   type Matiere,
   type Mouvement,
   type OrigineMouvement,
@@ -123,26 +132,107 @@ export function versReception(ligne: LigneEtat): ReceptionPlanifiee | undefined 
   };
 }
 
+/** Matières que compte un contrôle de semaine (R16) : les clés en semaine, toutes le dimanche. */
+export const MATIERES_CLES: readonly Matiere[] = ['farine', 'levure', 'ameliorant'];
+
+const estUnDimanche = (jour: string) => new Date(`${jour}T12:00:00Z`).getUTCDay() === 0;
+
+/** Un contrôle de la semaine, avec le gérant et le responsable de production de sa semaine. */
+export function versControle(controle: ControleStock, semaines: readonly Semaine[]): Controle {
+  const semaine = semaines.find((s) => s.id === controle.semaine);
+  return {
+    semaine: semaine?.numero ?? controle.semaine,
+    jour: controle.jour,
+    moment: estUnDimanche(controle.jour) ? 'dimanche' : 'mercredi',
+    gerant: semaine?.gerant?.nom ?? '',
+    responsableProduction: semaine?.production?.nom ?? '',
+  };
+}
+
+/** Un contrôle fait devient un inventaire : à valider si un écart dépasse la tolérance (R9). */
+export function versInventaire(controle: ControleStock): Inventaire | undefined {
+  if (!controle.fait_le) return undefined;
+  const lignes = controle.lignes.filter((l) => estMatiere(l.matiere));
+  const statuts = lignes.map((l) => l.statut);
+  let statut: StatutInventaire = 'valide';
+  if (statuts.includes('soumise')) statut = 'a-valider';
+  else if (statuts.length > 0 && statuts.every((s) => s === 'refusee')) statut = 'refuse';
+  return {
+    id: String(controle.id),
+    numero: controle.id,
+    jour: jourDeYaounde(controle.fait_le),
+    heure: heureDeYaounde(controle.fait_le),
+    // Le serveur ne dit pas qui a compté.
+    par: '',
+    statut,
+    validePar: '',
+    lignes: lignes.map((l) => ({
+      matiere: l.matiere as Matiere,
+      theorique: Number(l.theorique),
+      compte: Number(l.compte),
+    })),
+  };
+}
+
+/** Réception planifiée encore attendue, la plus proche d'abord. */
+export function versReceptions(receptions: readonly ReceptionServeur[]): ReceptionPlanifiee[] {
+  return receptions
+    .filter((r) => r.statut === 'planifiee' && estMatiere(r.matiere))
+    .sort((a, b) => a.prevue_le.localeCompare(b.prevue_le))
+    .map((r) => ({
+      matiere: r.matiere as Matiere,
+      jour: r.prevue_le,
+      quantite: Number(r.quantite),
+    }));
+}
+
 /** Compose l'instantané de l'écran des stocks à partir des routes du serveur. */
 export async function lireStocksReels(): Promise<InstantaneStocks> {
-  const [etat, mouvements] = await Promise.all([
+  const [etat, mouvements, controles, semaines, planifiees] = await Promise.all([
     // L'état du stock est une liste simple (une ligne par matière), sans pagination.
     mouvementsStockEtatList().then((r) => r.data as unknown as LigneEtat[]),
     toutesLesPages<MouvementStock>(
       (page) => mouvementsStockList({ page }) as Promise<Page<MouvementStock>>,
     ),
+    toutesLesPages<ControleStock>(
+      (page) => controlesStockList({ page }) as Promise<Page<ControleStock>>,
+    ).catch(() => [] as ControleStock[]),
+    toutesLesPages<Semaine>((page) => semainesList({ page }) as Promise<Page<Semaine>>).catch(
+      () => [] as Semaine[],
+    ),
+    toutesLesPages<ReceptionServeur>(
+      (page) => receptionsPlanifieesList({ page }) as Promise<Page<ReceptionServeur>>,
+    ).catch(() => [] as ReceptionServeur[]),
   ]);
+  const aujourdhui = jourDeYaounde(new Date().toISOString());
+  const duJour = controles.find((c) => c.jour === aujourdhui && !c.fait_le);
   return {
-    aujourdhui: jourDeYaounde(new Date().toISOString()),
+    aujourdhui,
     // Le serveur ne dit pas sur combien de sacs il calcule le besoin : l'écran n'affiche pas ce chiffre.
     matieres: etat.map(versFiche).filter((f): f is FicheMatiere => f !== undefined),
-    receptions: etat.map(versReception).filter((r): r is ReceptionPlanifiee => r !== undefined),
+    // Les réceptions planifiées ; à défaut, la prochaine annoncée par l'état du stock.
+    receptions: planifiees.length
+      ? versReceptions(planifiees)
+      : etat.map(versReception).filter((r): r is ReceptionPlanifiee => r !== undefined),
     mouvements: mouvements
       .map(versMouvement)
       .filter((m): m is Mouvement => m !== undefined)
       .sort((a, b) => Number(b.id) - Number(a.id)),
-    // Inventaires et contrôles : étape #279.
-    inventaires: [],
-    controles: [],
+    inventaires: controles
+      .map(versInventaire)
+      .filter((i): i is Inventaire => i !== undefined)
+      .sort((a, b) => a.numero - b.numero),
+    controles: controles
+      .map((c) => versControle(c, semaines))
+      .sort((a, b) => a.jour.localeCompare(b.jour)),
+    ...(duJour
+      ? {
+          controleDuJourId: String(duJour.id),
+          matieresACompter:
+            duJour.portee === 'cles'
+              ? MATIERES_CLES.slice()
+              : (MATIERES as readonly Matiere[]).slice(),
+        }
+      : {}),
   };
 }
