@@ -5,7 +5,7 @@ Document vivant. Il consigne, au fil de l'intégration de `apps/web` avec les vr
 Règles :
 
 - Chaque manque ou écart **à remonter** devient un ticket `backend` avec le **contrat attendu** (route, corps, réponse, erreurs, droits). Le suivi ordonné est le ticket [#260](https://github.com/Konwoo-tech/optiboul/issues/260).
-- Le front ne modifie **jamais** `apps/api`. Un manque ou un écart côté API est consigné ici, puis remonté à l'équipe API par le ticket de suivi.
+- Le front ne modifie **jamais** `apps/api`. Un manque ou un écart côté API est consigné ici, puis remonté à l'équipe API : **un ticket `backend` par demande, avec le contrat attendu** (route, corps, réponse, erreurs, droits, journal), classés par priorité dans le ticket de suivi [#260](https://github.com/Konwoo-tech/optiboul/issues/260).
 - Un écart **absorbé par le front** (adaptateur, conversion de noms) est consigné pour mémoire, sans demande à l'équipe API.
 - Aucune décision de produit n'est prise ici : la colonne « Proposition » est une suggestion, validée par l'équipe avant d'agir.
 
