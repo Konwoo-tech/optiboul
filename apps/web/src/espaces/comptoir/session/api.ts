@@ -1,5 +1,6 @@
 import {
   commandesCreate,
+  encaissementsCreate,
   demandesAccorderCreate,
   demandesRefuserCreate,
   getLivraisonsBonRetrieveUrl,
@@ -122,6 +123,11 @@ const envois = new Map<string, ReturnType<typeof setTimeout>>();
 
 const indisponible = () =>
   Promise.reject(new Error("Cette action n'est pas encore branchée sur le serveur"));
+
+export type NouvelEncaissement = Pick<
+  NouvelleLivraison,
+  'clientId' | 'mode' | 'recu' | 'reference' | 'cle'
+>;
 
 /** Motif de la demande d'accord envoyée au gérant (le serveur l'exige). */
 const MOTIF_DEPASSEMENT = 'Dépassement du plafond de dette du client';
@@ -260,6 +266,21 @@ export function actionsSession(
               ...(await relire()),
               livraison: versLivraison(reponse.data as never),
             })),
+      ),
+    /** Paiement d'une dette sans pain livré (vrai serveur seulement : le prototype n'en a pas). */
+    encaisser: (paiement: NouvelEncaissement) =>
+      ranger(
+        SIMULATION
+          ? indisponible()
+          : encaissementsCreate(
+              {
+                client: Number(paiement.clientId),
+                mode: paiement.mode,
+                montant: paiement.recu,
+                reference: paiement.reference,
+              },
+              { headers: { 'Idempotency-Key': paiement.cle ?? crypto.randomUUID() } },
+            ).then(relire),
       ),
     /**
      * Au-delà du plafond, la livraison part « en attente » avec une demande d'accord (R6) : elle se

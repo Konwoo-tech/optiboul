@@ -6,7 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router';
 
 import { dateCourte, nomDeSession } from './affichage.ts';
 import { codeErreur, ECRITURES, useActionsSession, useSessionComptoir } from './api.ts';
-import { lireEntier } from './calculs.ts';
+import { formaterNombre, lireEntier } from './calculs.ts';
 import { Cloture } from './Cloture.tsx';
 import { Commandes } from './Commandes.tsx';
 import { Livraisons } from './Livraisons.tsx';
@@ -84,6 +84,13 @@ export default function SessionComptoir() {
         t('comptoir.session.livraisons.toasts.enregistree', {
           nom: enregistree.nom,
           numero: enregistree.numero,
+        }),
+      ),
+    surEncaissee: ({ nom, montant }) =>
+      afficher(
+        t('comptoir.session.livraisons.toasts.encaissee', {
+          nom,
+          montant: formaterNombre(montant),
         }),
       ),
     surErreur,

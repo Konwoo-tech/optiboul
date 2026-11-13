@@ -395,9 +395,11 @@ export function Livraisons({
               aria-describedby={raisonDuRefus}
               onClick={() => void lv.valider()}
             >
-              {calcul.depasse && !calcul.bloquee
-                ? t('comptoir.session.livraisons.validerAutorisee')
-                : t('comptoir.session.livraisons.valider')}
+              {calcul.paiementDeDette
+                ? t('comptoir.session.livraisons.encaisserPaiement')
+                : calcul.depasse && !calcul.bloquee
+                  ? t('comptoir.session.livraisons.validerAutorisee')
+                  : t('comptoir.session.livraisons.valider')}
             </button>
           </div>
         )}

@@ -555,6 +555,7 @@
         "autorise": "Over-limit authorised by {{par}} at {{heure}}. The authorisation is logged.",
         "valider": "Confirm delivery",
         "validerAutorisee": "Confirm delivery (authorised)",
+        "encaisserPaiement": "Record the payment",
         "bon": "Delivery slip",
         "dernieres": "Latest deliveries",
         "aucuneLivraison": "No deliveries yet: select a customer to start.",
@@ -573,6 +574,7 @@
         "toasts": {
           "enregistree": "Delivery saved · {{nom}} · slip #{{numero}}",
           "depassementAutorise": "Over-limit authorised and logged",
+          "encaissee": "Payment recorded · {{nom}} · {{montant}} FCFA",
           "demandeEnvoyee": "Request sent: the delivery will go out once an approver agrees."
         }
       },

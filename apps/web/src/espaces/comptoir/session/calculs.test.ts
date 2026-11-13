@@ -362,3 +362,47 @@ describe('recherche de client', () => {
     expect(filtrerClients(liste, '  ')).toHaveLength(3);
   });
 });
+
+describe('paiement d’une dette sans livraison', () => {
+  const vides = { BAG: '', KO: '', GC: '' };
+  const paiement = (champs: Partial<EntreeLivraison>, solde = -1140) =>
+    calculerLivraison(
+      entree({ client: client({ solde }), saisies: vides, paiementSeul: true, ...champs }),
+    );
+
+  it('un montant reçu sans pain rembourse la dette : valide', () => {
+    const calcul = paiement({ recu: '500' });
+    expect(calcul.paiementDeDette).toBe(true);
+    expect(calcul.valide).toBe(true);
+    expect(calcul.soldeApres).toBe(-640);
+  });
+
+  it('peut rembourser toute la dette, pas davantage', () => {
+    expect(paiement({ recu: '1140' }).valide).toBe(true);
+    expect(paiement({ recu: '1141' }).valide).toBe(false);
+  });
+
+  it('un client déjà au-delà du plafond peut quand même rembourser', () => {
+    const calcul = paiement({ recu: '500' }, -2600);
+    expect(calcul.depasse).toBe(true);
+    expect(calcul.bloquee).toBe(false);
+    expect(calcul.valide).toBe(true);
+  });
+
+  it('sans dette ou sans montant, rien à encaisser', () => {
+    expect(paiement({ recu: '500' }, 0).valide).toBe(false);
+    expect(paiement({ recu: '' }).valide).toBe(false);
+  });
+
+  it('exige la référence d’un paiement mobile', () => {
+    expect(paiement({ recu: '500', mode: 'mtn', reference: '' }).valide).toBe(false);
+    expect(paiement({ recu: '500', mode: 'mtn', reference: 'MP1' }).valide).toBe(true);
+  });
+
+  it('refusé hors du vrai serveur (prototype) et dès qu’un pain est livré', () => {
+    expect(paiement({ recu: '500', paiementSeul: false }).valide).toBe(false);
+    const avecPain = paiement({ recu: '500', saisies: { BAG: '5', KO: '', GC: '' } });
+    expect(avecPain.paiementDeDette).toBe(false);
+    expect(avecPain.valide).toBe(true);
+  });
+});

@@ -72,6 +72,8 @@ export type EntreeLivraison = {
   soldeAutorise: number | null;
   /** La personne connectée peut saisir (caissier ou gérant, session ouverte). */
   peutSaisir: boolean;
+  /** Un paiement sans pain livré est permis pour rembourser une dette (vrai serveur). */
+  paiementSeul?: boolean;
 };
 
 export type CalculLivraison = {
@@ -88,7 +90,9 @@ export type CalculLivraison = {
   /** Complément à encaisser pour revenir sous le plafond. */
   manque: number;
   referenceManquante: boolean;
-  /** La livraison peut être validée. */
+  /** Aucun pain, un montant reçu : le client rembourse sa dette sans livraison. */
+  paiementDeDette: boolean;
+  /** La livraison (ou le paiement) peut être validée. */
   valide: boolean;
 };
 
@@ -106,7 +110,16 @@ export function calculerLivraison(entree: EntreeLivraison): CalculLivraison {
   const depasse = Boolean(client) && soldeApres < -plafond;
   // Une autorisation couvre le solde demandé, pas un solde plus bas.
   const autorise = entree.soldeAutorise !== null && soldeApres >= entree.soldeAutorise;
-  const bloquee = depasse && !autorise;
+  // Un paiement seul ne dépasse pas la dette : au-delà, ce serait une avance, que l'écran ne prévoit pas.
+  const paiementDeDette =
+    Boolean(entree.paiementSeul) &&
+    Boolean(client) &&
+    du === 0 &&
+    recu > 0 &&
+    (client?.solde ?? 0) < 0 &&
+    recu <= -(client?.solde ?? 0);
+  // Rembourser une dette ne peut pas dépasser le plafond : le solde remonte.
+  const bloquee = !paiementDeDette && depasse && !autorise;
   const referenceManquante = entree.mode !== 'especes' && entree.reference.trim() === '';
   return {
     lignes,
@@ -118,7 +131,13 @@ export function calculerLivraison(entree: EntreeLivraison): CalculLivraison {
     bloquee,
     manque: Math.max(0, -plafond - soldeApres),
     referenceManquante,
-    valide: Boolean(client) && du > 0 && !bloquee && !referenceManquante && entree.peutSaisir,
+    paiementDeDette,
+    valide:
+      Boolean(client) &&
+      (du > 0 || paiementDeDette) &&
+      !bloquee &&
+      !referenceManquante &&
+      entree.peutSaisir,
   };
 }
 

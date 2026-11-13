@@ -555,6 +555,7 @@
         "autorise": "Dépassement autorisé par {{par}} à {{heure}}. L’autorisation est tracée.",
         "valider": "Valider la livraison",
         "validerAutorisee": "Valider la livraison (autorisée)",
+        "encaisserPaiement": "Encaisser le paiement",
         "bon": "Bon de livraison",
         "dernieres": "Dernières livraisons",
         "aucuneLivraison": "Aucune livraison : sélectionnez un client pour commencer.",
@@ -573,6 +574,7 @@
         "toasts": {
           "enregistree": "Livraison enregistrée · {{nom}} · bon n° {{numero}}",
           "depassementAutorise": "Dépassement autorisé et tracé",
+          "encaissee": "Paiement enregistré · {{nom}} · {{montant}} FCFA",
           "demandeEnvoyee": "Demande envoyée : la livraison partira dès l’accord d’un valideur."
         }
       },

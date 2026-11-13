@@ -655,3 +655,47 @@ describe('demande d’un gérant', () => {
     expect(reponse.demande).toBeUndefined();
   });
 });
+
+describe('paiement d’une dette sans livraison sur le vrai serveur', () => {
+  it('envoie le montant, le mode et la référence avec une clé d’idempotence, puis relit la session', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Davy'), {
+      session: { type: 'jour', date: '2026-11-13', statut: 'ouverte' },
+      commandes: {},
+      demandes: [],
+    } as unknown as InstantaneSession);
+    serveurSession();
+    let corps: unknown;
+    let cle: string | null = null;
+    serveur.use(
+      http.post('*/api/v1/encaissements/', async ({ request }) => {
+        corps = await request.json();
+        cle = request.headers.get('Idempotency-Key');
+        return HttpResponse.json(
+          {
+            id: 3,
+            caisse: 2,
+            client: { id: 1, nom: 'Alain' },
+            livraison: null,
+            mode: 'mtn',
+            montant: 500,
+            reference: 'MP1',
+            cree_par: 'Davy Caisse',
+            cree_le: '2026-11-13T10:00:00+01:00',
+          },
+          { status: 201 },
+        );
+      }),
+    );
+    const reponse = await actionsSession(client, 'Davy').encaisser({
+      clientId: '1',
+      mode: 'mtn',
+      recu: 500,
+      reference: 'MP1',
+      cle: 'cle-paiement',
+    });
+    expect(corps).toEqual({ client: 1, mode: 'mtn', montant: 500, reference: 'MP1' });
+    expect(cle).toBe('cle-paiement');
+    expect(reponse.instantane.clients.map((c) => c.nom)).toContain('Alain');
+  });
+});
