@@ -30,6 +30,8 @@ export type Alerte = {
   | { type: 'manque-de-caisse'; jour: string; creneau: Creneau; caissiere: string; ecart: number }
   | { type: 'demandes-en-attente'; nombre: number }
   | { type: 'ecart-matiere'; par: string; motif: MotifEcart }
+  /** Alerte du vrai serveur : le titre et le détail sont déjà rédigés. */
+  | { type: 'serveur'; titre: string; detail: string; nombre: number }
 );
 
 export type TypeAlerte = Alerte['type'];
