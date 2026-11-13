@@ -30,7 +30,7 @@ const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
     ? lazy(() => import('./gestion/semaines/EcranSemaines.tsx'))
     : null,
   'atelier/stocks': EN_SIMULATION ? lazy(() => import('./atelier/stocks/EcranStocks.tsx')) : null,
-  'comptoir/caisses': EN_SIMULATION ? lazy(() => import('./comptoir/caisses/Ecran.tsx')) : null,
+  'comptoir/caisses': lazy(() => import('./comptoir/caisses/Ecran.tsx')),
   // Branché sur le vrai serveur (#268) : sans garde.
   'comptoir/clients': lazy(() => import('./clients/EcranClients.tsx')),
   'comptoir/demandes': EN_SIMULATION ? lazy(() => import('./comptoir/demandes/Ecran.tsx')) : null,
