@@ -734,6 +734,14 @@
     "refuseePar": "Refusée par {{nom}} · {{heure}}",
     "toastAccorde": "Accordé · {{titre}}",
     "toastRefuse": "Refusé · {{titre}}",
+    "refus": {
+      "titre": "Refuser la demande",
+      "motif": "Motif du refus",
+      "note": "Le motif est tracé et communiqué à la personne qui a émis la demande.",
+      "obligatoire": "Motif obligatoire : précisez pourquoi la demande est refusée.",
+      "confirmer": "Refuser la demande",
+      "annuler": "Annuler"
+    },
     "toastErreur": "La décision n’a pas pu être enregistrée : réessayez.",
     "toastDejaDecidee": "Cette demande a déjà reçu une réponse."
   },

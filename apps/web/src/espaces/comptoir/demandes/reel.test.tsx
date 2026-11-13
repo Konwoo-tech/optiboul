@@ -208,11 +208,12 @@ describe('décision sur le vrai serveur', () => {
     const { result } = renderHook(() => useDecider('Willy'), { wrapper });
     await act(async () => {
       await result.current.mutateAsync({ id: '3', accord: true });
-      await result.current.mutateAsync({ id: '4', accord: false });
+      await result.current.mutateAsync({ id: '4', accord: false, motif: 'Trop cher' });
     });
     expect(recus[0]).toEqual({ chemin: '3/accorder', corps: {} });
     expect(recus[1]?.chemin).toBe('4/refuser');
-    expect(recus[1]?.corps).toMatchObject({ motif: expect.any(String) });
+    // Le motif saisi par la personne qui refuse part tel quel.
+    expect(recus[1]?.corps).toEqual({ motif: 'Trop cher' });
   });
 
   it('un refus du serveur remonte son code (droit insuffisant, déjà décidée)', async () => {

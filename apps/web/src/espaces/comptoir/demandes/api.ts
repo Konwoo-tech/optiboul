@@ -38,12 +38,21 @@ const MOTIF_DE_REFUS = 'Refusée depuis l’écran des demandes';
 export function useDecider(utilisateur: string | undefined) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, accord }: { id: string; accord: boolean }): Promise<unknown> => {
+    mutationFn: async ({
+      id,
+      accord,
+      motif,
+    }: {
+      id: string;
+      accord: boolean;
+      /** Motif d'un refus (vrai serveur) ; à défaut, un motif par défaut. */
+      motif?: string;
+    }): Promise<unknown> => {
       if (!SIMULATION) {
         // La personne connectée décide : le serveur vérifie qu'elle est valideur de cette demande.
         return accord
           ? demandesAccorderCreate(Number(id), {})
-          : demandesRefuserCreate(Number(id), { motif: MOTIF_DE_REFUS });
+          : demandesRefuserCreate(Number(id), { motif: motif ?? MOTIF_DE_REFUS });
       }
       return (
         await optiboulFetch<Reponse<ReponseDecision>>(`${RACINE}${id}/decider/`, {
