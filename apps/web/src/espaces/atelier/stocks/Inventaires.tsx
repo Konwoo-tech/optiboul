@@ -1,3 +1,4 @@
+import { SIMULATION } from '@/simulation';
 import { useTranslation } from '@/i18n';
 import { useRef } from 'react';
 
@@ -22,7 +23,7 @@ import {
   ligneHorsTolerance,
 } from './regles.ts';
 import styles from './Stocks.module.css';
-import { MATIERES, type InstantaneStocks, type Matiere, type NouvelInventaire } from './types.ts';
+import { type InstantaneStocks, type Matiere, type NouvelInventaire } from './types.ts';
 
 /** Comptages saisis, par matière (texte tel que tapé) ; `null` : aucun inventaire en cours. */
 export type BrouillonInventaire = Partial<Record<Matiere, string>> | null;
@@ -54,13 +55,18 @@ export function Inventaires({
   const { t, i18n } = useTranslation();
   const langue = i18n.language;
   const champs = useRef<Partial<Record<Matiere, HTMLInputElement | null>>>({});
-  const { aujourdhui, controles, inventaires, matieres } = instantane;
+  const { aujourdhui, controles, inventaires } = instantane;
+  // Sur le vrai serveur, le contrôle ne fait compter que certaines matières, à l'aveugle (O13).
+  const matieres = instantane.matieresACompter
+    ? instantane.matieres.filter((m) => instantane.matieresACompter?.includes(m.cle))
+    : instantane.matieres;
+  const aLAveugle = !SIMULATION;
   const aFaire = controleDuJour(controles, inventaires, aujourdhui);
 
   const soumettre = () => {
     if (!brouillon) return;
     const comptages: NouvelInventaire['comptages'] = {};
-    for (const cle of MATIERES) {
+    for (const { cle } of matieres) {
       const valeur = comptageSaisi(brouillon[cle] ?? '');
       if (valeur === null) {
         // Le focus va à la première matière non comptée.
@@ -167,9 +173,9 @@ export function Inventaires({
             return (
               <div className={styles.comptageLigne} key={m.cle}>
                 <span className={styles.comptageMatiere}>{nomMatiere(t, m.cle)}</span>
-                <span
-                  className={styles.comptageTheorique}
-                >{`${quantite(m.stock, langue)} ${unite}`}</span>
+                <span className={styles.comptageTheorique}>
+                  {aLAveugle ? '—' : `${quantite(m.stock, langue)} ${unite}`}
+                </span>
                 <span className={styles.comptageSaisie}>
                   <input
                     className={styles.comptage}
@@ -192,7 +198,7 @@ export function Inventaires({
                   className={styles.comptageEcart}
                   style={{ color: `var(--ob-${niveau}-texte)` }}
                 >
-                  {compte === null
+                  {compte === null || aLAveugle
                     ? '—'
                     : `${ecart > 0 ? '+' : ecart < 0 ? '−' : ''}${quantite(Math.abs(ecart), langue)} ${unite} · ${
                         pourcent > 0 ? '+' : ''

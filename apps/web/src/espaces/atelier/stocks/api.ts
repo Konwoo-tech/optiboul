@@ -1,4 +1,10 @@
-import { ErreurApi, mouvementsStockSaisirCreate, optiboulFetch } from '@/api';
+import {
+  controlesStockCommencerCreate,
+  controlesStockValiderCreate,
+  ErreurApi,
+  mouvementsStockSaisirCreate,
+  optiboulFetch,
+} from '@/api';
 import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -80,8 +86,28 @@ export type InventaireEnregistre = {
 export function useEnregistrerInventaire(utilisateur: string | undefined) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (inventaire: NouvelInventaire) =>
-      publier<InventaireEnregistre>('inventaires/', inventaire),
+    mutationFn: async (inventaire: NouvelInventaire): Promise<InventaireEnregistre> => {
+      if (SIMULATION) return publier<InventaireEnregistre>('inventaires/', inventaire);
+      // Le contrôle du jour : on le commence (liste à compter), puis on valide les quantités comptées.
+      const avant = client.getQueryData<InstantaneStocks>(cleStocks(utilisateur));
+      const id = avant?.controleDuJourId;
+      if (!id) {
+        throw new ErreurApi(409, { code: 'aucun_controle', detail: 'Aucun contrôle à faire' });
+      }
+      await controlesStockCommencerCreate(Number(id));
+      const comptes = Object.fromEntries(
+        Object.entries(inventaire.comptages).map(([matiere, valeur]) => [matiere, String(valeur)]),
+      );
+      const reponse = await controlesStockValiderCreate(Number(id), { comptes });
+      const instantane = await lireStocksReels();
+      const fait = instantane.inventaires.find((i) => i.id === id) as Inventaire;
+      const demande = (reponse.data as { demande?: string | null }).demande;
+      return {
+        instantane,
+        inventaire: fait,
+        ...(demande ? { demande: { numero: Number(demande.replace(/\D/g, '')) } } : {}),
+      };
+    },
     onSuccess: (reponse) => {
       client.setQueryData(cleStocks(utilisateur), reponse.instantane);
       void client.invalidateQueries({ queryKey: ['simulation', 'demandes'] });
