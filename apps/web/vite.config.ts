@@ -19,9 +19,9 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
-    // Django sert aussi la connexion allauth, l'admin et ses fichiers statiques.
+    // Django sert aussi la connexion allauth, l'admin, ses fichiers statiques et les justificatifs (/media).
     proxy: Object.fromEntries(
-      ['/api', '/accounts', '/admin', '/static'].map((prefixe) => [
+      ['/api', '/accounts', '/admin', '/static', '/media'].map((prefixe) => [
         prefixe,
         {
           target: API,

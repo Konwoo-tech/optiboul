@@ -136,4 +136,6 @@ export type NouvelleDepense = {
   quantite?: number;
   /** Identifiant du fournisseur ; absent : achat au marché. */
   fournisseur?: string;
+  /** Photo du justificatif (vrai serveur) ; en simulation, `photo` seul tient lieu de justificatif. */
+  justificatif?: File;
 };

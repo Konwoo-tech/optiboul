@@ -85,7 +85,9 @@ export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
     <>
       <EnTeteEcran ecran={ecran} />
       <div className={styles.page}>
-        <Budget lignes={instantane.budget} mois={instantane.mois} />
+        {instantane.budget.length > 0 && (
+          <Budget lignes={instantane.budget} mois={instantane.mois} />
+        )}
         <div className={styles.bas}>
           {droits.saisir && (
             <Formulaire
