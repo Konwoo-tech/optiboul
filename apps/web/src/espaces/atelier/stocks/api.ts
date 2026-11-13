@@ -59,13 +59,17 @@ export function useEnregistrerMouvement(utilisateur: string | undefined) {
     mutationFn: async (mouvement: NouveauMouvement): Promise<MouvementEnregistre> => {
       if (SIMULATION) return publier<MouvementEnregistre>('mouvements/', mouvement);
       // Une perte sort du stock ; une entrée à la main est une correction positive (motif obligatoire).
-      await mouvementsStockSaisirCreate({
-        matiere: mouvement.matiere,
-        quantite: String(mouvement.quantite),
-        genre: (mouvement.type === 'perte' ? 'perte' : 'correction') as never,
-        sens: (mouvement.type === 'perte' ? -1 : 1) as never,
-        motif: mouvement.motif,
-      });
+      await mouvementsStockSaisirCreate(
+        {
+          matiere: mouvement.matiere,
+          quantite: String(mouvement.quantite),
+          genre: (mouvement.type === 'perte' ? 'perte' : 'correction') as never,
+          sens: (mouvement.type === 'perte' ? -1 : 1) as never,
+          motif: mouvement.motif,
+        },
+        // Le serveur exige une clé d'idempotence sur cette écriture (non déclarée dans le schéma).
+        { headers: { 'Idempotency-Key': crypto.randomUUID() } },
+      );
       const instantane = await lireStocksReels();
       return { instantane, mouvement: instantane.mouvements[0] as Mouvement };
     },
