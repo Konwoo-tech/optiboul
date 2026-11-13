@@ -61,6 +61,8 @@ export function texteAlerte(t: TFunction, alerte: Alerte, langue: string): strin
         caissiere: alerte.caissiere,
         ecart: formaterNombre(alerte.ecart),
       });
+    case 'serveur':
+      return alerte.detail ? `${alerte.titre} · ${alerte.detail}` : alerte.titre;
     case 'demandes-en-attente':
       return t(cle, { count: alerte.nombre });
     case 'ecart-matiere':
