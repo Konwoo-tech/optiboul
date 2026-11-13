@@ -306,6 +306,7 @@
         "explication": "Il y a {{attendu}} FCFA attendus en caisse, au-delà du plafond de {{plafond}} FCFA. Remettez des espèces au coffre pour limiter l’argent exposé.",
         "montant": "Montant remis au coffre (FCFA)",
         "receveur": "Remis à",
+        "leCoffre": "Le coffre",
         "invalide": "Le montant doit être positif et ne pas dépasser les espèces en caisse.",
         "reste": "Reste attendu en caisse : {{montant}} FCFA",
         "trace": "La remise est tracée avec le receveur et l’heure ({{heure}}).",

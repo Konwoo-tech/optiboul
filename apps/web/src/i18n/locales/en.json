@@ -306,6 +306,7 @@
         "explication": "The drawer should hold {{attendu}} FCFA, above the limit of {{plafond}} FCFA. Hand cash over to the safe to limit the money at risk.",
         "montant": "Amount handed to the safe (FCFA)",
         "receveur": "Handed to",
+        "leCoffre": "The safe",
         "invalide": "The amount must be positive and not exceed the cash in the drawer.",
         "reste": "Expected cash left in the drawer: {{montant}} FCFA",
         "trace": "The handover is logged with the receiver and the time ({{heure}}).",

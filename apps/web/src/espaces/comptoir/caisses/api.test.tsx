@@ -1,12 +1,21 @@
 import { configurerApi } from '@/api';
 import { creerServeurApi } from '@/test';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import type { ReactNode } from 'react';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { lireCaisses, useCaisses, versSessionDeCaisse } from './api.ts';
+import {
+  COFFRE,
+  lireCaisses,
+  useCaisses,
+  useFermerCaisse,
+  useOuvrirCaisse,
+  useRemettreAuCoffre,
+  useRouvrirCaisse,
+  versSessionDeCaisse,
+} from './api.ts';
 
 const serveur = creerServeurApi();
 
@@ -86,6 +95,24 @@ function serveurCaisses(options: { especesRefusees?: boolean } = {}) {
         caisse_en_cours: OUVERTE,
       }),
     ),
+    http.get('*/api/v1/semaines/', () =>
+      HttpResponse.json({
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: 1,
+            numero: 46,
+            du: '2026-11-09',
+            au: '2026-11-15',
+            statut: 'ouverte',
+            gerant: { id: 3, nom: 'Willy Gérant' },
+            production: null,
+          },
+        ],
+      }),
+    ),
     http.get('*/api/v1/caisses/2/especes/', () =>
       options.especesRefusees
         ? HttpResponse.json({ detail: 'non' }, { status: 403 })
@@ -111,6 +138,7 @@ describe('lecture des caisses sur le vrai serveur', () => {
     });
     expect(reponse.sessions[1]).toMatchObject({ enCours: true, fermeture: null, attendu: 21600 });
     expect(reponse.caisseOuverte).toEqual({
+      id: '2',
       jour: '2026-11-13',
       type: 'jour',
       caissiere: { id: '4', nom: 'Davy Caisse' },
@@ -129,6 +157,11 @@ describe('lecture des caisses sur le vrai serveur', () => {
     expect(reponse.recapitulatif).toEqual({ '4': { ouvertures: 2, recette: 5600, ecart: -600 } });
     expect(reponse.rouvrable).toBe(false);
     expect(reponse.moi).toBe('4');
+    // Le gérant de la semaine, puis le coffre.
+    expect(reponse.receveurs).toEqual([
+      { id: '3', nom: 'Willy Gérant' },
+      { id: COFFRE, nom: '' },
+    ]);
   });
 
   it('garde la liste quand le détail des espèces est refusé', async () => {
@@ -165,5 +198,98 @@ describe('lecture des caisses sur le vrai serveur', () => {
     const { result } = renderHook(() => useCaisses('Davy'), { wrapper });
     await waitFor(() => expect(result.current.data).toBeDefined());
     expect(result.current.data?.moi).toBe('4');
+  });
+});
+
+describe('actions de caisse sur le vrai serveur', () => {
+  const enveloppe = () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+  };
+
+  it('ouvre une caisse avec le fonds compté', async () => {
+    let corps: unknown;
+    serveur.use(
+      http.post('*/api/v1/caisses/ouvrir/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json(OUVERTE, { status: 201 });
+      }),
+    );
+    const { result } = renderHook(() => useOuvrirCaisse('Davy'), { wrapper: enveloppe() });
+    await act(async () => {
+      await result.current.mutateAsync({ fonds: 20000 });
+    });
+    expect(corps).toEqual({ fonds: 20000 });
+  });
+
+  it('ferme la caisse ouverte avec le comptage, et remonte un refus du serveur', async () => {
+    let corps: unknown;
+    serveur.use(
+      http.post('*/api/v1/caisses/2/fermer/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json({ caisse: FERMEE, resultat: 'manque' });
+      }),
+      http.post('*/api/v1/caisses/9/fermer/', () =>
+        HttpResponse.json({ detail: 'Déjà fermée', code: 'caisse_fermee' }, { status: 409 }),
+      ),
+    );
+    const bonne = renderHook(() => useFermerCaisse('Davy', '2'), { wrapper: enveloppe() });
+    await act(async () => {
+      await bonne.result.current.mutateAsync({ compte: 21000 });
+    });
+    expect(corps).toEqual({ compte: 21000 });
+    const refusee = renderHook(() => useFermerCaisse('Davy', '9'), { wrapper: enveloppe() });
+    await expect(refusee.result.current.mutateAsync({ compte: 1 })).rejects.toMatchObject({
+      status: 409,
+      code: 'caisse_fermee',
+    });
+  });
+
+  it('refuse de fermer sans caisse choisie, sans appeler le serveur', async () => {
+    const { result } = renderHook(() => useFermerCaisse('Davy', undefined), {
+      wrapper: enveloppe(),
+    });
+    await expect(result.current.mutateAsync({ compte: 1 })).rejects.toThrow('Aucune caisse');
+  });
+
+  it('rouvre la dernière caisse fermée avec son motif', async () => {
+    let corps: unknown;
+    serveur.use(
+      http.post('*/api/v1/caisses/1/rouvrir/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json({ ...FERMEE, statut: 'rouverte', en_cours: true });
+      }),
+    );
+    const { result } = renderHook(() => useRouvrirCaisse('Willy', '1'), { wrapper: enveloppe() });
+    await act(async () => {
+      await result.current.mutateAsync({ motif: 'Erreur de comptage' });
+    });
+    expect(corps).toEqual({ motif: 'Erreur de comptage' });
+  });
+
+  it('remet au coffre (receveur vide) ou à un gérant, avec une clé d’idempotence à chaque envoi', async () => {
+    const recus: { corps: unknown; cle: string | null }[] = [];
+    serveur.use(
+      http.post('*/api/v1/caisses/2/remettre/', async ({ request }) => {
+        recus.push({ corps: await request.json(), cle: request.headers.get('Idempotency-Key') });
+        return HttpResponse.json({ ...ESPECES, remises: 5000, attendu: 16600 }, { status: 201 });
+      }),
+    );
+    const { result } = renderHook(() => useRemettreAuCoffre('Davy', '2'), {
+      wrapper: enveloppe(),
+    });
+    let resultat;
+    await act(async () => {
+      resultat = await result.current.mutateAsync({ montant: 5000, receveur: COFFRE });
+      await result.current.mutateAsync({ montant: 1000, receveur: '3' });
+    });
+    expect(recus[0]?.corps).toEqual({ montant: 5000, receveur: null });
+    expect(recus[1]?.corps).toEqual({ montant: 1000, receveur: 3 });
+    expect(recus[0]?.cle).toBeTruthy();
+    expect(recus[1]?.cle).toBeTruthy();
+    expect(recus[0]?.cle).not.toBe(recus[1]?.cle);
+    expect(resultat).toMatchObject({ attendu: 16600 });
   });
 });

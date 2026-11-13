@@ -1,12 +1,17 @@
 import {
   caissesEspecesRetrieve,
+  caissesFermerCreate,
   caissesList,
+  caissesOuvrirCreate,
   caissesProchaineRetrieve,
   caissesRecapitulatifList,
+  caissesRemettreCreate,
+  caissesRouvrirCreate,
   optiboulFetch,
   toutesLesPages,
   type Caisse,
   type Recapitulatif,
+  type Semaine,
 } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
 import { SIMULATION } from '@/simulation';
@@ -24,11 +29,8 @@ import type {
   SessionCaisse,
 } from './types.ts';
 
-/**
- * Ouvrir, fermer, rouvrir et remettre au coffre : branchés aux étapes « caisses : actions » (#271).
- * D'ici là, ces boutons ne sont proposés qu'en simulation.
- */
-export const ACTIONS_DE_CAISSE_DISPONIBLES = SIMULATION;
+/** Receveur « le coffre » d'une remise : le serveur le reconnaît à l'absence de receveur. */
+export const COFFRE = 'coffre';
 
 // En simulation, l'écran lit l'API simulée ; sur le vrai serveur, `lireCaisses` compose les routes.
 const RACINE = '/api/v1/simulation/caisses/';
@@ -82,7 +84,7 @@ export function versSessionDeCaisse(caisse: Caisse, especes: DetailEspeces | nul
  * une remise : les caissières viennent des caisses, les receveurs seront branchés avec la remise (#271).
  */
 export async function lireCaisses(moi: string): Promise<ReponseCaisses> {
-  const [caisses, recapitulatif, prochaine] = await Promise.all([
+  const [caisses, recapitulatif, prochaine, semaines] = await Promise.all([
     toutesLesPages<Caisse>(
       (page) =>
         caissesList({ page }) as Promise<{ data: { results?: Caisse[]; next?: string | null } }>,
@@ -91,7 +93,11 @@ export async function lireCaisses(moi: string): Promise<ReponseCaisses> {
       .then((r) => r.data as Recapitulatif[])
       .catch(() => [] as Recapitulatif[]),
     caissesProchaineRetrieve(),
+    optiboulFetch<{ data: { results?: Semaine[] } }>('/api/v1/semaines/?statut=ouverte').catch(
+      () => null,
+    ),
   ]);
+  const gerant = semaines?.data.results?.[0]?.gerant;
   const ouverte = caisses.find((c) => c.en_cours);
   // Le détail des espèces n'est donné qu'aux personnes qui peuvent voir la caisse ouverte.
   const especes = ouverte
@@ -127,7 +133,13 @@ export async function lireCaisses(moi: string): Promise<ReponseCaisses> {
     caisseOuverte: ouverte
       ? (() => {
           const s = triees.find((x) => x.id === String(ouverte.id)) as SessionCaisse;
-          return { jour: s.jour, type: s.type, caissiere: s.caissiere, ouverture: s.ouverture };
+          return {
+            id: s.id,
+            jour: s.jour,
+            type: s.type,
+            caissiere: s.caissiere,
+            ouverture: s.ouverture,
+          };
         })()
       : null,
     detail,
@@ -138,7 +150,11 @@ export async function lireCaisses(moi: string): Promise<ReponseCaisses> {
     },
     rouvrable: Boolean(derniere && !derniere.enCours),
     plafond: especes?.plafond ?? PLAFOND_CAISSE,
-    receveurs: [],
+    // Le serveur ne liste pas les receveurs possibles : le gérant de la semaine, ou le coffre.
+    receveurs: [
+      ...(gerant ? [{ id: String(gerant.id), nom: gerant.nom }] : []),
+      { id: COFFRE, nom: '' },
+    ],
     recapitulatif: Object.fromEntries(
       recapitulatif.map((r) => [
         String(r.caissiere.id),
@@ -171,27 +187,59 @@ export function useCaisses(utilisateur: string | undefined) {
 function useActionCaisse<Demande extends object, Resultat = undefined>(
   utilisateur: string | undefined,
   chemin: string,
+  /** Même action sur le vrai serveur (en simulation, on appelle la route simulée). */
+  surLeServeur: (demande: Demande) => Promise<Resultat>,
 ) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (demande: Demande) => (await poster<Resultat>(chemin, demande)).data,
+    mutationFn: async (demande: Demande): Promise<Resultat> =>
+      SIMULATION ? (await poster<Resultat>(chemin, demande)).data : surLeServeur(demande),
     // La pastille « Session … » de l'en-tête dérive du contexte : on le relit aussi.
     onSuccess: () =>
       Promise.all([
         client.invalidateQueries({ queryKey: cleCaisses(utilisateur) }),
         client.invalidateQueries({ queryKey: ['simulation', 'contexte'] }),
+        client.invalidateQueries({ queryKey: ['coque', 'contexte'] }),
       ]),
   });
 }
 
+const sansCaisse = () => Promise.reject(new Error('Aucune caisse choisie'));
+
 export const useOuvrirCaisse = (utilisateur: string | undefined) =>
-  useActionCaisse<OuvertureDemandee>(utilisateur, 'ouvrir/');
+  useActionCaisse<OuvertureDemandee>(utilisateur, 'ouvrir/', async ({ fonds }) => {
+    await caissesOuvrirCreate({ fonds });
+  });
 
-export const useFermerCaisse = (utilisateur: string | undefined) =>
-  useActionCaisse<FermetureDemandee>(utilisateur, 'fermer/');
+/** Ferme la caisse ouverte (`idCaisse`) avec le comptage des espèces. */
+export const useFermerCaisse = (utilisateur: string | undefined, idCaisse?: string) =>
+  useActionCaisse<FermetureDemandee>(utilisateur, 'fermer/', async ({ compte }) => {
+    if (!idCaisse) return sansCaisse();
+    await caissesFermerCreate(Number(idCaisse), { compte });
+  });
 
-export const useRouvrirCaisse = (utilisateur: string | undefined) =>
-  useActionCaisse<ReouvertureDemandee>(utilisateur, 'rouvrir/');
+/** Rouvre la dernière caisse fermée (`idCaisse`), avec son motif. */
+export const useRouvrirCaisse = (utilisateur: string | undefined, idCaisse?: string) =>
+  useActionCaisse<ReouvertureDemandee>(utilisateur, 'rouvrir/', async ({ motif }) => {
+    if (!idCaisse) return sansCaisse();
+    await caissesRouvrirCreate(Number(idCaisse), { motif });
+  });
 
-export const useRemettreAuCoffre = (utilisateur: string | undefined) =>
-  useActionCaisse<RemiseDemandee, RemiseEnregistree>(utilisateur, 'remettre/');
+/**
+ * Remet des espèces au coffre ou à un gérant. La clé d'idempotence est tirée à chaque envoi : un
+ * double clic ne remet pas deux fois la même somme.
+ */
+export const useRemettreAuCoffre = (utilisateur: string | undefined, idCaisse?: string) =>
+  useActionCaisse<RemiseDemandee, RemiseEnregistree>(
+    utilisateur,
+    'remettre/',
+    async ({ montant, receveur }) => {
+      if (!idCaisse) return sansCaisse();
+      const reponse = await caissesRemettreCreate(
+        Number(idCaisse),
+        { montant, receveur: receveur === COFFRE ? null : Number(receveur) },
+        { headers: { 'Idempotency-Key': crypto.randomUUID() } },
+      );
+      return { attendu: (reponse.data as { attendu: number }).attendu, receveur, heure: '' };
+    },
+  );

@@ -8,7 +8,7 @@ import { useState } from 'react';
 
 import { cleTitre, type Ecran } from '../../../navigation.ts';
 import {
-  ACTIONS_DE_CAISSE_DISPONIBLES,
+  COFFRE,
   useCaisses,
   useFermerCaisse,
   useOuvrirCaisse,
@@ -71,10 +71,12 @@ export default function EcranCaisses({ ecran }: { ecran: Ecran }) {
   const { utilisateur } = useUtilisateurCourant();
   const { data: contexte } = useContexte();
   const requete = useCaisses(utilisateur?.name);
+  const caisseOuverteId = requete.data?.caisseOuverte?.id;
+  const derniereCaisse = requete.data?.sessions.at(-1);
   const ouvrir = useOuvrirCaisse(utilisateur?.name);
-  const fermer = useFermerCaisse(utilisateur?.name);
-  const rouvrir = useRouvrirCaisse(utilisateur?.name);
-  const remettre = useRemettreAuCoffre(utilisateur?.name);
+  const fermer = useFermerCaisse(utilisateur?.name, caisseOuverteId);
+  const rouvrir = useRouvrirCaisse(utilisateur?.name, derniereCaisse?.id);
+  const remettre = useRemettreAuCoffre(utilisateur?.name, caisseOuverteId);
   const [filtre, setFiltre] = useState('all');
   const [fenetre, setFenetre] = useState<Fenetre>(null);
 
@@ -121,18 +123,7 @@ export default function EcranCaisses({ ecran }: { ecran: Ecran }) {
   }
 
   const { caisseOuverte, detail, prochaine, plafond } = reponse;
-  const droitsServeur = droitsCaisse(
-    utilisateur?.profil,
-    caisseOuverte?.caissiere.id === reponse.moi,
-  );
-  // Sur le vrai serveur, les actions arrivent à l'étape #271 : l'écran ne les propose pas d'ici là.
-  const droits = {
-    ...droitsServeur,
-    ouvrir: droitsServeur.ouvrir && ACTIONS_DE_CAISSE_DISPONIBLES,
-    fermer: droitsServeur.fermer && ACTIONS_DE_CAISSE_DISPONIBLES,
-    rouvrir: droitsServeur.rouvrir && ACTIONS_DE_CAISSE_DISPONIBLES,
-    remettreAuCoffre: droitsServeur.remettreAuCoffre && ACTIONS_DE_CAISSE_DISPONIBLES,
-  };
+  const droits = droitsCaisse(utilisateur?.profil, caisseOuverte?.caissiere.id === reponse.moi);
   const filtreActif = droits.voitToutes ? filtre : 'all';
   const lignes = lignesDuTableau(reponse.sessions, filtreActif);
   const cartes = cartesVisibles(reponse.caissieres, droits, reponse.moi).map((c) => {
@@ -165,6 +156,11 @@ export default function EcranCaisses({ ecran }: { ecran: Ecran }) {
     setFenetre(null);
     afficherToast(message);
   };
+
+  const nomDuReceveur = (id: string, nomRendu?: string) =>
+    id === COFFRE
+      ? t('comptoir.caisses.coffre.leCoffre')
+      : (reponse.receveurs.find((r) => r.id === id)?.nom ?? nomRendu ?? '');
 
   const libelleStatut = (s: SessionCaisse) =>
     t(`comptoir.caisses.statuts.${statutDeSession(s).cle}`);
@@ -421,7 +417,7 @@ export default function EcranCaisses({ ecran }: { ecran: Ecran }) {
                   termine(
                     t('comptoir.caisses.coffre.fait', {
                       montant: formaterNombre(montant),
-                      nom: resultat?.receveur ?? '',
+                      nom: nomDuReceveur(receveur, resultat?.receveur),
                     }),
                   ),
               },

@@ -3,6 +3,7 @@ import { FenetreModale, useHorloge } from '@/ui';
 import { formaterHeure, formaterNombre } from '@/utils';
 import { useState, type SubmitEvent } from 'react';
 
+import { COFFRE } from './api.ts';
 import { montantProposeAuCoffre, nombreSaisi } from './regles.ts';
 import type { DetailEspeces, Personne } from './types.ts';
 import styles from './Fenetres.module.css';
@@ -69,7 +70,7 @@ export function FenetreCoffre({
           >
             {receveurs.map((r) => (
               <option key={r.id} value={r.id}>
-                {r.nom}
+                {r.id === COFFRE ? t('comptoir.caisses.coffre.leCoffre') : r.nom}
               </option>
             ))}
           </select>
