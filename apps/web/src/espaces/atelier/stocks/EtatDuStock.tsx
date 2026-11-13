@@ -19,10 +19,14 @@ export function EtatDuStock({ instantane }: { instantane: InstantaneStocks }) {
     <section className={styles.defilement} aria-label={t('atelier.stocks.etat.titre')}>
       <div className={styles.tableauEtat}>
         <div className={styles.total}>
-          {t('atelier.stocks.etat.total', {
-            valeur: formaterNombre(valeurDuStock(matieres)),
-            sacs: sacsParSession,
-          })}
+          {sacsParSession === undefined
+            ? t('atelier.stocks.etat.totalSansSacs', {
+                valeur: formaterNombre(valeurDuStock(matieres)),
+              })
+            : t('atelier.stocks.etat.total', {
+                valeur: formaterNombre(valeurDuStock(matieres)),
+                sacs: sacsParSession,
+              })}
         </div>
         <table className={styles.tableau}>
           <thead>

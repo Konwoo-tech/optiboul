@@ -102,8 +102,8 @@ export type Controle = {
 export type InstantaneStocks = {
   /** Jour courant, « AAAA-MM-JJ ». */
   aujourdhui: string;
-  /** Sacs de farine par session sur lesquels le besoin est calculé. */
-  sacsParSession: number;
+  /** Sacs de farine par session sur lesquels le besoin est calculé ; absent : le serveur ne le dit pas. */
+  sacsParSession?: number;
   matieres: FicheMatiere[];
   receptions: ReceptionPlanifiee[];
   /** Plus récents d'abord. */

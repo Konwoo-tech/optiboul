@@ -1533,6 +1533,7 @@
       "etat": {
         "titre": "État du stock par matière",
         "total": "Valeur du stock : {{valeur}} FCFA · besoin calculé sur {{sacs}} sacs par session",
+        "totalSansSacs": "Valeur du stock : {{valeur}} FCFA",
         "colonnes": {
           "matiere": "Matière",
           "enStock": "En stock",

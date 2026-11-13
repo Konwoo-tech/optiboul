@@ -1,6 +1,8 @@
-import { ErreurApi, optiboulFetch } from '@/api';
+import { ErreurApi, mouvementsStockSaisirCreate, optiboulFetch } from '@/api';
+import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { lireStocksReels } from './reel.ts';
 import type {
   InstantaneStocks,
   Inventaire,
@@ -9,7 +11,8 @@ import type {
   NouvelInventaire,
 } from './types.ts';
 
-// Le backend n'a pas encore ces routes : l'écran lit le faux serveur (`simulation/stocks.ts`).
+// En simulation, l'écran lit le faux serveur (`simulation/stocks.ts`) ; sur le vrai serveur,
+// `reel.ts` compose l'instantané à partir des routes.
 const RACINE = '/api/v1/simulation/atelier/stocks/';
 
 type Reponse<T> = { data: T };
@@ -21,7 +24,10 @@ export const cleStocks = (utilisateur: string | undefined) =>
 export function useStocks(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleStocks(utilisateur),
-    queryFn: async () => (await optiboulFetch<Reponse<InstantaneStocks>>(RACINE)).data,
+    queryFn: async () =>
+      SIMULATION
+        ? (await optiboulFetch<Reponse<InstantaneStocks>>(RACINE)).data
+        : lireStocksReels(),
     enabled: Boolean(utilisateur),
     // Le stock bouge depuis d'autres écrans (dépenses, demandes) : on relit à chaque ouverture.
     staleTime: 0,
@@ -44,8 +50,19 @@ export type MouvementEnregistre = { instantane: InstantaneStocks; mouvement: Mou
 export function useEnregistrerMouvement(utilisateur: string | undefined) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (mouvement: NouveauMouvement) =>
-      publier<MouvementEnregistre>('mouvements/', mouvement),
+    mutationFn: async (mouvement: NouveauMouvement): Promise<MouvementEnregistre> => {
+      if (SIMULATION) return publier<MouvementEnregistre>('mouvements/', mouvement);
+      // Une perte sort du stock ; une entrée à la main est une correction positive (motif obligatoire).
+      await mouvementsStockSaisirCreate({
+        matiere: mouvement.matiere,
+        quantite: String(mouvement.quantite),
+        genre: (mouvement.type === 'perte' ? 'perte' : 'correction') as never,
+        sens: (mouvement.type === 'perte' ? -1 : 1) as never,
+        motif: mouvement.motif,
+      });
+      const instantane = await lireStocksReels();
+      return { instantane, mouvement: instantane.mouvements[0] as Mouvement };
+    },
     onSuccess: (reponse) => client.setQueryData(cleStocks(utilisateur), reponse.instantane),
   });
 }

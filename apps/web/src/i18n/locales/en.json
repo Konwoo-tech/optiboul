@@ -1533,6 +1533,7 @@
       "etat": {
         "titre": "Stock status by material",
         "total": "Stock value: {{valeur}} FCFA · need based on {{sacs}} sacks per session",
+        "totalSansSacs": "Stock value: {{valeur}} FCFA",
         "colonnes": {
           "matiere": "Material",
           "enStock": "In stock",
