@@ -213,6 +213,7 @@
     "toastRelanceGroupee_other": "{{count}} relances WhatsApp envoyées",
     "toastPdf": "Relevé PDF de {{nom}} prêt",
     "toastReleve": "Relevé envoyé par WhatsApp à {{nom}}",
+    "toastReleveErreur": "Le relevé de {{nom}} n'a pas pu être envoyé (numéro manquant ?).",
     "erreur": "Impossible de charger les clients.",
     "chargement": "Chargement des clients…"
   },
