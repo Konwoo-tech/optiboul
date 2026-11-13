@@ -161,9 +161,18 @@ describe('contexte de la coque sur le vrai serveur', () => {
     serveur.events.on('response:mocked', () => {
       lectures += 1;
     });
-    await lire();
+    const client = await lire();
     await waitFor(() => expect(lectures).toBeGreaterThanOrEqual(4));
     expect(contexteAffiche()).toBeNull();
+    // Ce n'est pas une erreur de la requête (TanStack refuse une réponse `undefined`).
+    await waitFor(() => {
+      const etats = client
+        .getQueryCache()
+        .findAll({ queryKey: ['coque', 'contexte'] })
+        .map((requete) => requete.state.status);
+      expect(etats).toContain('success');
+      expect(etats).not.toContain('error');
+    });
   });
 
   it('avant la connexion, rien n’est demandé au serveur', async () => {
