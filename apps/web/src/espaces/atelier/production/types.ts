@@ -127,6 +127,8 @@ export type InstantaneProduction = {
   demandeEnAttente: DemandeProduction | null;
   /** Plus anciennes d'abord. */
   historique: LigneHistorique[];
+  /** Identifiant de la production ouverte sur le vrai serveur (la simulation n'en a pas besoin). */
+  productionId?: string;
 };
 
 export type SortieDeStock = { matiere: Matiere; quantite: number };
