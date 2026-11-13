@@ -149,6 +149,8 @@ export type Recette = {
 export type FicheProduit = {
   /** Identifiant d'adresse : `?fiche=gc135`. */
   id: string;
+  /** Identifiant du produit sur le vrai serveur (la simulation n'en a pas besoin). */
+  idServeur?: number;
   /** Code affiché sur la pastille : « GC 135 ». */
   code: string;
   nom: string;

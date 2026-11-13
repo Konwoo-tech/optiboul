@@ -13,6 +13,7 @@ import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
+import { lireFichesReelles, modifierFicheSurLeServeur } from './fiches.ts';
 import { CODE_SERVEUR, lireProductionReelle } from './reel.ts';
 import type {
   Consommation,
@@ -245,8 +246,11 @@ export function useActionsProduction(utilisateur: string | undefined): ActionsPr
 export function useFiches(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleFiches(utilisateur),
-    queryFn: async () => (await optiboulFetch<Reponse<InstantaneFiches>>(`${RACINE}fiches/`)).data,
-    enabled: SIMULATION && Boolean(utilisateur),
+    queryFn: async () =>
+      SIMULATION
+        ? (await optiboulFetch<Reponse<InstantaneFiches>>(`${RACINE}fiches/`)).data
+        : lireFichesReelles(),
+    enabled: Boolean(utilisateur),
     // Les prix suivent les achats en stock.
     staleTime: 0,
     refetchOnMount: 'always',
@@ -256,14 +260,30 @@ export function useFiches(utilisateur: string | undefined) {
 export function useModifierFiche(utilisateur: string | undefined) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, recette }: { id: string; recette: ModificationFiche }) =>
-      (
-        await optiboulFetch<Reponse<InstantaneFiches>>(`${RACINE}fiches/${id}/`, {
-          method: 'PUT',
-          headers: ENTETES,
-          body: JSON.stringify(recette),
-        })
-      ).data,
+    mutationFn: async ({
+      id,
+      recette,
+    }: {
+      id: string;
+      recette: ModificationFiche;
+    }): Promise<InstantaneFiches> => {
+      if (SIMULATION) {
+        return (
+          await optiboulFetch<Reponse<InstantaneFiches>>(`${RACINE}fiches/${id}/`, {
+            method: 'PUT',
+            headers: ENTETES,
+            body: JSON.stringify(recette),
+          })
+        ).data;
+      }
+      // Sur le vrai serveur, une modification crée une nouvelle version de la fiche du produit.
+      const lues = client.getQueryData<InstantaneFiches>(cleFiches(utilisateur));
+      const fiche = lues?.fiches.find((f) => f.id === id);
+      if (!fiche?.idServeur || !lues) {
+        throw new ErreurApi(409, { code: 'produit_inconnu', detail: 'Produit introuvable' });
+      }
+      return modifierFicheSurLeServeur(fiche.idServeur, recette, lues.prix);
+    },
     onSuccess: (fiches) => client.setQueryData(cleFiches(utilisateur), fiches),
   });
 }
