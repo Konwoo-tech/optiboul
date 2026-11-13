@@ -4,13 +4,14 @@ import { QueryClient } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { actionsSession, cleSession } from './api.ts';
+import { actionsSession, cleSession, envoyerBonParWhatsapp } from './api.ts';
 import {
   lireSessionReelle,
   rangerCommandes,
   versClient,
   versLivraison,
   versMouvement,
+  versDemandePlafond,
   versQuantites,
   versSaisies,
 } from './reel.ts';
@@ -82,6 +83,35 @@ const LIVRAISON = {
   envoi_whatsapp: null,
   cree_par: 'Davy Caisse',
   cree_le: '2026-11-13T08:22:32+01:00',
+};
+const DEMANDE = {
+  id: 12,
+  numero: 12,
+  code: 'DEM-012',
+  type: 'plafond',
+  type_libelle: 'Livraison au-delà du plafond',
+  objet_type: 'livraison',
+  objet_id: 7,
+  objet: 'Alain · bon n° 7 · 3000 FCFA',
+  details: {
+    client: 1,
+    client_nom: 'Alain',
+    numero: 7,
+    montant_du: 3000,
+    solde_avant: -1140,
+    solde_apres: -3000,
+    plafond: 2000,
+  },
+  motif: 'Dépassement du plafond de dette du client',
+  emetteur: { id: 4, nom: 'Davy Caisse' },
+  emetteur_profil: 'caissier',
+  valideurs: ['gerant', 'proprietaire'],
+  statut: 'en_attente',
+  cree_le: '2026-11-13T09:15:00+01:00',
+  echeance: '2026-11-13T09:25:00+01:00',
+  escaladee_le: null,
+  decide_par_nom: '',
+  decide_le: null,
 };
 const page = <T,>(results: T[]) => ({ count: results.length, next: null, previous: null, results });
 
@@ -156,6 +186,12 @@ function serveurSession() {
       ]),
     ),
     http.get('*/api/v1/livraisons/', () => HttpResponse.json(page([LIVRAISON]))),
+    http.get('*/api/v1/demandes/', ({ request }) => {
+      const url = new URL(request.url);
+      expect(url.searchParams.get('statut')).toBe('en_attente');
+      expect(url.searchParams.get('type')).toBe('plafond');
+      return HttpResponse.json(page([DEMANDE, { ...DEMANDE, id: 13, type: 'depense' }]));
+    }),
     http.get('*/api/v1/mouvements-internes/', () =>
       HttpResponse.json(
         page([
@@ -237,6 +273,21 @@ describe('lecture de la session sur le vrai serveur', () => {
         motif: 'Invendus',
         par: 'Davy Caisse',
         heure: '09:00',
+      },
+    ]);
+    // Seules les demandes de plafond en attente sont reprises.
+    expect(instantane.demandes).toEqual([
+      {
+        id: '12',
+        numero: 12,
+        clientId: '1',
+        clientNom: 'Alain',
+        soldeApres: -3000,
+        plafond: 2000,
+        par: 'Davy Caisse',
+        jour: '2026-11-13',
+        heure: '09:15',
+        statut: 'en-attente',
       },
     ]);
     expect(instantane.depensesCaisse).toBe(500);
@@ -389,5 +440,218 @@ describe('écritures des commandes sur le vrai serveur', () => {
     const actions = actionsSession(client, 'Davy');
     await expect(actions.cloturer()).rejects.toThrow('pas encore branchée');
     await expect(actions.ajouterMouvement({} as never)).rejects.toThrow('pas encore branchée');
+  });
+});
+
+describe('livraisons et accords de plafond sur le vrai serveur', () => {
+  const instantaneDe = (): InstantaneSession =>
+    ({
+      session: { type: 'jour', date: '2026-11-13', statut: 'ouverte' },
+      commandes: {},
+      demandes: [
+        {
+          id: '12',
+          numero: 12,
+          clientId: '1',
+          clientNom: 'Alain',
+          soldeApres: -3000,
+          plafond: 2000,
+          par: 'Davy Caisse',
+          jour: '2026-11-13',
+          heure: '09:15',
+          statut: 'en-attente',
+        },
+      ],
+    }) as unknown as InstantaneSession;
+  const livraison = {
+    clientId: '1',
+    quantites: { BAG: 10, KO: 0, GC: 2 },
+    mode: 'mtn' as const,
+    recu: 1000,
+    reference: 'MP123',
+    cle: 'cle-fixe',
+  };
+
+  it('livre : produits en codes serveur, paiement, clé d’idempotence ; renvoie le bon relu', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Davy'), instantaneDe());
+    serveurSession();
+    let corps: unknown;
+    let cle: string | null = null;
+    serveur.use(
+      http.post('*/api/v1/livraisons/', async ({ request }) => {
+        corps = await request.json();
+        cle = request.headers.get('Idempotency-Key');
+        return HttpResponse.json(LIVRAISON, { status: 201 });
+      }),
+    );
+    const reponse = await actionsSession(client, 'Davy').livrer(livraison);
+    expect(corps).toEqual({
+      client: 1,
+      lignes: { BAG: 10, KO: 0, GC135: 2 },
+      paiement: { mode: 'mtn', montant: 1000, reference: 'MP123' },
+    });
+    expect(cle).toBe('cle-fixe');
+    expect(reponse.livraison).toMatchObject({ id: '6', numero: 6, nom: 'Alain', du: 1430 });
+  });
+
+  it('sans montant reçu, la livraison part sans paiement ; un refus du serveur remonte son code', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Davy'), instantaneDe());
+    serveurSession();
+    const recus: { paiement?: unknown }[] = [];
+    serveur.use(
+      http.post('*/api/v1/livraisons/', async ({ request }) => {
+        recus.push((await request.json()) as { paiement?: unknown });
+        return recus.length === 1
+          ? HttpResponse.json(LIVRAISON, { status: 201 })
+          : HttpResponse.json(
+              { detail: 'Plafond de dette dépassé', code: 'plafond_depasse', manque: 8000 },
+              { status: 409 },
+            );
+      }),
+    );
+    const actions = actionsSession(client, 'Davy');
+    await actions.livrer({ ...livraison, recu: 0, reference: '' });
+    expect(recus[0]?.paiement).toBeNull();
+    await expect(actions.livrer(livraison)).rejects.toMatchObject({
+      status: 409,
+      code: 'plafond_depasse',
+    });
+  });
+
+  it('demande l’accord : la livraison entière part avec un motif, la demande en attente revient', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Davy'), instantaneDe());
+    serveurSession();
+    let corps: { demander_autorisation?: string } | undefined;
+    serveur.use(
+      http.post('*/api/v1/livraisons/', async ({ request }) => {
+        corps = (await request.json()) as typeof corps;
+        return HttpResponse.json({ ...LIVRAISON, statut: 'en_attente' }, { status: 202 });
+      }),
+    );
+    const reponse = await actionsSession(client, 'Davy').demanderAutorisation(
+      '1',
+      -3000,
+      livraison,
+    );
+    expect(corps?.demander_autorisation).toBeTruthy();
+    expect(reponse.autorise).toBe(false);
+    expect(reponse.demande).toMatchObject({ id: '12', clientId: '1', statut: 'en-attente' });
+  });
+
+  it('le gérant qui émet la demande est livré d’emblée (201) : aucune demande à valider', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Willy'), instantaneDe());
+    serveurSession();
+    serveur.use(
+      http.post('*/api/v1/livraisons/', () => HttpResponse.json(LIVRAISON, { status: 201 })),
+    );
+    const reponse = await actionsSession(client, 'Willy').demanderAutorisation(
+      '1',
+      -3000,
+      livraison,
+    );
+    expect(reponse.autorise).toBe(true);
+    expect(reponse.demande).toBeUndefined();
+  });
+
+  it('accorde ou refuse avec le code du gérant de la semaine (caissière connectée)', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Davy'), instantaneDe());
+    serveurSession();
+    const recus: { chemin: string; corps: unknown }[] = [];
+    serveur.use(
+      http.post('*/api/v1/demandes/:id/:decision/', async ({ request, params }) => {
+        recus.push({ chemin: String(params.decision), corps: await request.json() });
+        return HttpResponse.json(DEMANDE);
+      }),
+    );
+    const actions = actionsSession(client, 'Davy', { id: '4', profil: 'caissier' });
+    const accord = await actions.deciderAutorisation('12', '3333', true);
+    await actions.deciderAutorisation('12', '3333', false);
+    expect(recus[0]).toEqual({
+      chemin: 'accorder',
+      corps: { code_gerant: { utilisateur: 3, code: '3333' } },
+    });
+    expect(recus[1]?.chemin).toBe('refuser');
+    expect(recus[1]?.corps).toMatchObject({ code_gerant: { utilisateur: 3, code: '3333' } });
+    expect(recus[1]?.corps).toMatchObject({ motif: expect.any(String) });
+    expect(accord.demande).toMatchObject({ id: '12', statut: 'acceptee' });
+  });
+
+  it('le gérant connecté décide avec son propre code ; un code faux remonte « code_incorrect »', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Willy'), instantaneDe());
+    serveurSession();
+    let corps: unknown;
+    serveur.use(
+      http.post('*/api/v1/demandes/12/accorder/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json(
+          { detail: 'Code incorrect', code: 'code_incorrect', essaisRestants: 2 },
+          { status: 400 },
+        );
+      }),
+    );
+    const actions = actionsSession(client, 'Willy', { id: '3', profil: 'gerant' });
+    await expect(actions.deciderAutorisation('12', '0000', true)).rejects.toMatchObject({
+      code: 'code_incorrect',
+    });
+    expect(corps).toEqual({ code_gerant: { utilisateur: 3, code: '0000' } });
+  });
+
+  it('envoie le bon par WhatsApp : 202 ; sans numéro, le refus remonte', async () => {
+    serveur.use(
+      http.post('*/api/v1/livraisons/6/envoyer-whatsapp/', () =>
+        HttpResponse.json({ id: 1 }, { status: 202 }),
+      ),
+      http.post('*/api/v1/livraisons/7/envoyer-whatsapp/', () =>
+        HttpResponse.json({ detail: 'Pas de numéro', code: 'sans_telephone' }, { status: 409 }),
+      ),
+    );
+    await expect(envoyerBonParWhatsapp('6')).resolves.toBeUndefined();
+    await expect(envoyerBonParWhatsapp('7')).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('une demande d’un autre type n’est pas une demande de plafond', () => {
+    expect(versDemandePlafond({ ...DEMANDE, type: 'depense' } as never)).toBeUndefined();
+  });
+});
+
+describe('demande d’un gérant', () => {
+  it('attend un autre valideur : aucune fenêtre de code, aucune tentative de valider soi-même', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Willy'), {
+      session: { type: 'jour', date: '2026-11-13', statut: 'ouverte' },
+      commandes: {},
+      demandes: [],
+    } as unknown as InstantaneSession);
+    serveurSession();
+    let accorde = false;
+    serveur.use(
+      http.post('*/api/v1/livraisons/', () =>
+        HttpResponse.json({ ...LIVRAISON, statut: 'en_attente' }, { status: 202 }),
+      ),
+      http.post('*/api/v1/demandes/:id/accorder/', () => {
+        accorde = true;
+        return HttpResponse.json(DEMANDE);
+      }),
+    );
+    const reponse = await actionsSession(client, 'Willy', {
+      id: '3',
+      profil: 'gerant',
+    }).demanderAutorisation('1', -3000, {
+      clientId: '1',
+      quantites: { BAG: 10, KO: 0, GC: 0 },
+      mode: 'especes',
+      recu: 0,
+      reference: '',
+      cle: 'k',
+    });
+    expect(accorde).toBe(false);
+    expect(reponse.autorise).toBe(false);
+    expect(reponse.demande).toBeUndefined();
   });
 });

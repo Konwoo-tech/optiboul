@@ -1,3 +1,4 @@
+import { SIMULATION } from '@/simulation';
 import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
 
 import type { ActionsSession } from './api.ts';
@@ -81,6 +82,9 @@ export function useFormulaireLivraison({
   const [recherche, setRecherche] = useState('');
   const [formulaire, setFormulaire] = useState<Formulaire>(VIDE);
   const enCours = useRef(false);
+  // Une clé par envoi : la même si l'on renvoie la même saisie (réseau coupé), nouvelle dès qu'elle change.
+  const cle = useRef<string | null>(null);
+  const cleDeLEnvoi = () => (cle.current ??= crypto.randomUUID());
 
   const clients = instantane?.clients;
   const client = clients?.find((c) => c.id === formulaire.clientId);
@@ -111,6 +115,7 @@ export function useFormulaireLivraison({
 
   const selectionner = useCallback(
     (clientId: string) => {
+      cle.current = null;
       setFormulaire({ ...VIDE, clientId });
       focaliser(champs.quantites.BAG);
     },
@@ -119,15 +124,22 @@ export function useFormulaireLivraison({
 
   /** Recommence : plus de client, champs vides, la recherche reprend le focus (F2, Échap). */
   const reinitialiser = useCallback(() => {
+    cle.current = null;
     setFormulaire(VIDE);
     setRecherche('');
     focaliser(champs.recherche);
   }, [champs]);
 
-  const saisirQuantite = (cle: CleProduit, valeur: string) =>
-    setFormulaire((avant) => ({
+  /** Toute modification de la saisie change l'envoi : il faut une nouvelle clé. */
+  const modifier = (changement: (avant: Formulaire) => Formulaire) => {
+    cle.current = null;
+    setFormulaire(changement);
+  };
+
+  const saisirQuantite = (produit: CleProduit, valeur: string) =>
+    modifier((avant) => ({
       ...avant,
-      saisies: { ...avant.saisies, [cle]: chiffres(valeur) },
+      saisies: { ...avant.saisies, [produit]: chiffres(valeur) },
     }));
 
   /** Entrée dans un champ de quantité : BAG → KO → GC → Reçu. */
@@ -151,7 +163,9 @@ export function useFormulaireLivraison({
         mode: formulaire.mode,
         recu: calcul.recu,
         reference: formulaire.reference.trim(),
+        cle: cleDeLEnvoi(),
       });
+      cle.current = null;
       setFormulaire(VIDE);
       setRecherche('');
       focaliser(champs.recherche);
@@ -166,12 +180,36 @@ export function useFormulaireLivraison({
   const demanderAutorisation = useCallback(async () => {
     if (!client) return;
     try {
-      const reponse = await actions.demanderAutorisation(client.id, calcul.soldeApres);
+      const reponse = await actions.demanderAutorisation(client.id, calcul.soldeApres, {
+        clientId: client.id,
+        quantites: {
+          BAG: lireEntier(formulaire.saisies.BAG),
+          KO: lireEntier(formulaire.saisies.KO),
+          GC: lireEntier(formulaire.saisies.GC),
+        },
+        mode: formulaire.mode,
+        recu: calcul.recu,
+        reference: formulaire.reference.trim(),
+        cle: cleDeLEnvoi(),
+      });
+      cle.current = null;
+      // Sur le vrai serveur, la livraison est déjà posée en attente : la saisie repart à zéro, pour
+      // qu'on ne la renvoie pas une seconde fois une fois l'accord donné.
+      if (!SIMULATION) reinitialiser();
       surAutorisation(reponse);
     } catch (erreur) {
       surErreur(erreur);
     }
-  }, [actions, calcul.soldeApres, client, surAutorisation, surErreur]);
+  }, [
+    actions,
+    calcul.recu,
+    calcul.soldeApres,
+    client,
+    formulaire,
+    reinitialiser,
+    surAutorisation,
+    surErreur,
+  ]);
 
   return {
     recherche,
@@ -186,15 +224,14 @@ export function useFormulaireLivraison({
     reinitialiser,
     saisirQuantite,
     passerAuSuivant,
-    definirMode: (mode: ModePaiement) => setFormulaire((avant) => ({ ...avant, mode })),
-    saisirRecu: (valeur: string) =>
-      setFormulaire((avant) => ({ ...avant, recu: chiffres(valeur) })),
-    saisirReference: (reference: string) => setFormulaire((avant) => ({ ...avant, reference })),
+    definirMode: (mode: ModePaiement) => modifier((avant) => ({ ...avant, mode })),
+    saisirRecu: (valeur: string) => modifier((avant) => ({ ...avant, recu: chiffres(valeur) })),
+    saisirReference: (reference: string) => modifier((avant) => ({ ...avant, reference })),
     /** « Exact » : le client paie juste ce qu'il doit. */
-    recuExact: () => setFormulaire((avant) => ({ ...avant, recu: String(calcul.du) })),
+    recuExact: () => modifier((avant) => ({ ...avant, recu: String(calcul.du) })),
     /** « Encaisser … de plus » : le complément qui ramène le solde sous le plafond. */
     recuComplement: () =>
-      setFormulaire((avant) => ({ ...avant, recu: String(calcul.recu + calcul.manque) })),
+      modifier((avant) => ({ ...avant, recu: String(calcul.recu + calcul.manque) })),
     valider,
     demanderAutorisation,
   };

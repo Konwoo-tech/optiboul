@@ -1,15 +1,21 @@
 import {
   commandesCreate,
+  demandesAccorderCreate,
+  demandesRefuserCreate,
+  getLivraisonsBonRetrieveUrl,
+  livraisonsCreate,
+  livraisonsEnvoyerWhatsappCreate,
   commandesRelancerHabituelsCreate,
   commandesReprendreHabituelleCreate,
   ErreurApi,
   optiboulFetch,
 } from '@/api';
+import { useUtilisateurCourant } from '@/auth';
 import { SIMULATION } from '@/simulation';
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import { lireSessionReelle } from './reel.ts';
+import { lireSessionReelle, versLivraison } from './reel.ts';
 import type {
   CleProduit,
   DemandePlafond,
@@ -34,7 +40,7 @@ import type {
  */
 export const ECRITURES = {
   commandes: true,
-  livraisons: SIMULATION,
+  livraisons: true,
   mouvements: SIMULATION,
   cloture: SIMULATION,
 } as const;
@@ -84,6 +90,8 @@ export type NouvelleLivraison = {
   mode: ModePaiement;
   recu: number;
   reference: string;
+  /** Clé d'idempotence de l'envoi (vrai serveur) : la même tant que la saisie ne change pas. */
+  cle?: string;
 };
 
 export type NouveauMouvement = {
@@ -115,8 +123,42 @@ const envois = new Map<string, ReturnType<typeof setTimeout>>();
 const indisponible = () =>
   Promise.reject(new Error("Cette action n'est pas encore branchée sur le serveur"));
 
+/** Motif de la demande d'accord envoyée au gérant (le serveur l'exige). */
+const MOTIF_DEPASSEMENT = 'Dépassement du plafond de dette du client';
+
+/** Corps de `POST /livraisons/` : pains par code serveur, paiement seulement s'il y a un montant reçu. */
+function corpsDeLivraison(livraison: NouvelleLivraison) {
+  return {
+    client: Number(livraison.clientId),
+    lignes: lignesDeSaisie({
+      BAG: String(livraison.quantites.BAG),
+      KO: String(livraison.quantites.KO),
+      GC: String(livraison.quantites.GC),
+    }),
+    paiement:
+      livraison.recu > 0
+        ? { mode: livraison.mode, montant: livraison.recu, reference: livraison.reference }
+        : null,
+  };
+}
+
+/** Personne connectée, pour décider d'une demande : son identifiant et son profil. */
+export type PersonneConnectee = { id: string; profil: string | null | undefined };
+
+/** Gérant de la semaine ouverte : celui dont le code valide une demande sur le poste de la caissière. */
+async function gerantDeLaSemaine(): Promise<number | undefined> {
+  const reponse = await optiboulFetch<{ data: { results?: { gerant?: { id: number } | null }[] } }>(
+    '/api/v1/semaines/?statut=ouverte',
+  ).catch(() => null);
+  return reponse?.data.results?.[0]?.gerant?.id;
+}
+
 /** Actions de l'écran. Chacune met à jour le cache avec l'état renvoyé par le serveur. */
-export function actionsSession(client: QueryClient, utilisateur: string | undefined) {
+export function actionsSession(
+  client: QueryClient,
+  utilisateur: string | undefined,
+  moi?: PersonneConnectee,
+) {
   const cle = cleSession(utilisateur);
   const ranger = async <T extends { instantane: InstantaneSession }>(demande: Promise<T>) => {
     const reponse = await demande;
@@ -212,9 +254,18 @@ export function actionsSession(client: QueryClient, utilisateur: string | undefi
               'livraisons/',
               livraison,
             )
-          : indisponible(),
+          : livraisonsCreate(corpsDeLivraison(livraison), {
+              headers: { 'Idempotency-Key': livraison.cle ?? crypto.randomUUID() },
+            }).then(async (reponse) => ({
+              ...(await relire()),
+              livraison: versLivraison(reponse.data as never),
+            })),
       ),
-    demanderAutorisation: (clientId: string, soldeApres: number) =>
+    /**
+     * Au-delà du plafond, la livraison part « en attente » avec une demande d'accord (R6) : elle se
+     * fait quand le gérant accorde. Sur le vrai serveur, la demande porte donc la livraison entière.
+     */
+    demanderAutorisation: (clientId: string, soldeApres: number, livraison?: NouvelleLivraison) =>
       ranger(
         SIMULATION
           ? envoyer<{
@@ -222,8 +273,29 @@ export function actionsSession(client: QueryClient, utilisateur: string | undefi
               autorise?: boolean;
               demande?: DemandePlafond;
             }>('POST', 'autorisations/', { clientId, soldeApres })
-          : indisponible(),
+          : (async () => {
+              if (!livraison) return indisponible();
+              const reponse = await livraisonsCreate(
+                { ...corpsDeLivraison(livraison), demander_autorisation: MOTIF_DEPASSEMENT },
+                { headers: { 'Idempotency-Key': livraison.cle ?? crypto.randomUUID() } },
+              );
+              const lue = await relire();
+              // 201 : livrée d'emblée ; 202 : en attente de l'accord d'un valideur.
+              const livree = reponse.status === 201;
+              const direction = moi?.profil === 'gerant' || moi?.profil === 'proprietaire';
+              // Le serveur refuse qu'on valide sa propre demande : celle d'un gérant attend le propriétaire,
+              // sans fenêtre de code à ouvrir sur ce poste (voir E29).
+              const demande =
+                livree || direction
+                  ? undefined
+                  : lue.instantane.demandes.find((d) => d.clientId === clientId);
+              return { ...lue, autorise: livree, demande };
+            })(),
       ),
+    /**
+     * Le gérant (ou le propriétaire) décide sur le poste de la caissière avec son code. Connecté en
+     * gérant ou propriétaire, c'est sa propre personne ; sinon, le gérant de la semaine.
+     */
     deciderAutorisation: (demandeId: string, code: string, accord: boolean) =>
       ranger(
         SIMULATION
@@ -232,7 +304,29 @@ export function actionsSession(client: QueryClient, utilisateur: string | undefi
               'autorisations/decider/',
               { demandeId, code, accord },
             )
-          : indisponible(),
+          : (async () => {
+              const avant = client
+                .getQueryData<InstantaneSession>(cle)
+                ?.demandes.find((d) => d.id === demandeId);
+              const direction = moi?.profil === 'gerant' || moi?.profil === 'proprietaire';
+              const decideur = direction ? Number(moi?.id) : await gerantDeLaSemaine();
+              if (!avant || !decideur) return indisponible();
+              const code_gerant = { utilisateur: decideur, code };
+              await (accord
+                ? demandesAccorderCreate(Number(demandeId), { code_gerant })
+                : demandesRefuserCreate(Number(demandeId), {
+                    code_gerant,
+                    motif: 'Refusé au comptoir',
+                  }));
+              const lue = await relire();
+              return {
+                ...lue,
+                demande: {
+                  ...avant,
+                  statut: accord ? ('acceptee' as const) : ('refusee' as const),
+                },
+              };
+            })(),
       ),
     ajouterMouvement: (mouvement: NouveauMouvement) =>
       ranger(
@@ -265,6 +359,23 @@ export type ActionsSession = ReturnType<typeof actionsSession>;
 
 export function useActionsSession(utilisateur: string | undefined): ActionsSession {
   const client = useQueryClient();
+  const { utilisateur: connecte } = useUtilisateurCourant();
+  const idConnecte = connecte?.url?.split('/').filter(Boolean).at(-1) ?? '';
+  const profil = connecte?.profil;
   // Référence stable : les écouteurs clavier ne se réinstallent pas à chaque rendu.
-  return useMemo(() => actionsSession(client, utilisateur), [client, utilisateur]);
+  return useMemo(
+    () => actionsSession(client, utilisateur, { id: idConnecte, profil }),
+    [client, utilisateur, idConnecte, profil],
+  );
+}
+
+/** Envoie le bon par WhatsApp (file d'envoi) ; en simulation, rien ne part. */
+export async function envoyerBonParWhatsapp(idLivraison: string): Promise<void> {
+  if (!SIMULATION) await livraisonsEnvoyerWhatsappCreate(Number(idLivraison));
+}
+
+/** Ouvre le bon en PDF dans un nouvel onglet : le navigateur porte la session. */
+export function ouvrirBonPdf(idLivraison: string) {
+  if (SIMULATION) return;
+  window.open(getLivraisonsBonRetrieveUrl(Number(idLivraison)), '_blank', 'noopener');
 }
