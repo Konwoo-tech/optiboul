@@ -2,7 +2,8 @@ import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { useToast } from '@/ui';
 import { formaterDateCourte, formaterNombre } from '@/utils';
-import { useRef, type ReactNode, type RefObject } from 'react';
+import { SIMULATION } from '@/simulation';
+import { useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Link } from 'react-router';
 
 import { cheminEcran, ECRANS, type Ecran } from '../../../navigation.ts';
@@ -11,6 +12,7 @@ import { EnTeteEcran } from '../../EnTeteEcran.tsx';
 import { formaterMois } from '../../gestion/personnel/affichage.ts';
 import { codeErreur } from '../session/api.ts';
 import { useDecider, useDemandes } from './api.ts';
+import { FenetreRefus } from './FenetreRefus.tsx';
 import styles from './Demandes.module.css';
 import { codeDemande, destinationDe, peutDecider, repartir, validateurDe } from './regles.ts';
 import type { Demande, ObjetLie } from './types.ts';
@@ -216,6 +218,8 @@ export default function EcranDemandes({ ecran }: { ecran: Ecran }) {
   const requete = useDemandes(utilisateur?.name);
   const decider = useDecider(utilisateur?.name);
   const titreEnAttente = useRef<HTMLHeadingElement>(null);
+  // Sur le vrai serveur, un refus demande un motif : la demande à refuser attend dans cette fenêtre.
+  const [refus, setRefus] = useState<Demande | null>(null);
   const profil = utilisateur?.profil;
 
   let contenu;
@@ -232,11 +236,12 @@ export default function EcranDemandes({ ecran }: { ecran: Ecran }) {
     const contexte = { gerant, proprietaire };
     const { enAttente, decisions } = repartir(demandes);
 
-    const trancher = (demande: Demande, accord: boolean) =>
+    const trancher = (demande: Demande, accord: boolean, motif?: string) =>
       decider.mutate(
-        { id: demande.id, accord },
+        { id: demande.id, accord, motif },
         {
           onSuccess: () => {
+            setRefus(null);
             const titre = demande.titre;
             afficherToast(t(accord ? 'demandes.toastAccorde' : 'demandes.toastRefuse', { titre }));
             // La ligne quitte la liste : le focus revient au titre, il ne se perd pas dans la page.
@@ -263,7 +268,7 @@ export default function EcranDemandes({ ecran }: { ecran: Ecran }) {
         occupe={decider.isPending}
         onDecider={
           demande.statut === 'en-attente' && peutDecider(demande, profil)
-            ? (accord) => trancher(demande, accord)
+            ? (accord) => (!accord && !SIMULATION ? setRefus(demande) : trancher(demande, accord))
             : undefined
         }
       />
@@ -287,6 +292,14 @@ export default function EcranDemandes({ ecran }: { ecran: Ecran }) {
           demandes={decisions}
           ligne={ligne}
         />
+        {refus && (
+          <FenetreRefus
+            demande={`${codeDemande(refus.numero)} · ${refus.titre}`}
+            envoiEnCours={decider.isPending}
+            onFermer={() => setRefus(null)}
+            onConfirmer={(motif) => trancher(refus, false, motif)}
+          />
+        )}
       </div>
     );
   }

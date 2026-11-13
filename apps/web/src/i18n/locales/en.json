@@ -734,6 +734,14 @@
     "refuseePar": "Refused by {{nom}} · {{heure}}",
     "toastAccorde": "Approved · {{titre}}",
     "toastRefuse": "Refused · {{titre}}",
+    "refus": {
+      "titre": "Refuse the request",
+      "motif": "Reason for refusal",
+      "note": "The reason is recorded and shared with the person who sent the request.",
+      "obligatoire": "Reason required: say why the request is refused.",
+      "confirmer": "Refuse the request",
+      "annuler": "Cancel"
+    },
     "toastErreur": "The decision could not be saved: try again.",
     "toastDejaDecidee": "This request has already been answered."
   },
