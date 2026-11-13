@@ -33,11 +33,11 @@ const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
   'comptoir/caisses': lazy(() => import('./comptoir/caisses/Ecran.tsx')),
   // Branché sur le vrai serveur (#268) : sans garde.
   'comptoir/clients': lazy(() => import('./clients/EcranClients.tsx')),
-  'comptoir/demandes': EN_SIMULATION ? lazy(() => import('./comptoir/demandes/Ecran.tsx')) : null,
+  'comptoir/demandes': lazy(() => import('./comptoir/demandes/Ecran.tsx')),
   'comptoir/depenses': lazy(() => import('./comptoir/depenses/EcranDepenses.tsx')),
   'comptoir/session': lazy(() => import('./comptoir/session/SessionComptoir.tsx')),
   'gestion/clients': lazy(() => import('./clients/EcranClients.tsx')),
-  'gestion/demandes': EN_SIMULATION ? lazy(() => import('./comptoir/demandes/Ecran.tsx')) : null,
+  'gestion/demandes': lazy(() => import('./comptoir/demandes/Ecran.tsx')),
   'gestion/depenses': lazy(() => import('./comptoir/depenses/EcranDepenses.tsx')),
   'gestion/journal': EN_SIMULATION
     ? lazy(() => import('./gestion/journal/EcranJournal.tsx'))

@@ -126,7 +126,13 @@ function LigneDemande({ demande, contexte, profil, espaceOuvert, onDecider, occu
         {enAttente ? (
           <span className={styles.meta}>
             {t('demandes.aValiderPar', {
-              qui: t(`demandes.validateur.${validateurDe(demande)}`, contexte),
+              qui: t(
+                // Le serveur ne nomme pas le propriétaire : sans nom, pas de parenthèses vides.
+                validateurDe(demande) === 'proprietaire' && !contexte.proprietaire
+                  ? 'demandes.validateur.proprietaireSansNom'
+                  : `demandes.validateur.${validateurDe(demande)}`,
+                contexte,
+              ),
             })}
           </span>
         ) : (
@@ -239,7 +245,7 @@ export default function EcranDemandes({ ecran }: { ecran: Ecran }) {
           onError: (erreur) =>
             afficherToast(
               t(
-                codeErreur(erreur) === 'deja_decidee'
+                ['deja_decidee', 'demande_deja_decidee'].includes(codeErreur(erreur) ?? '')
                   ? 'demandes.toastDejaDecidee'
                   : 'demandes.toastErreur',
               ),
