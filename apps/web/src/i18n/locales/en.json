@@ -330,12 +330,30 @@
       "refSession": "{{type}} of {{date}}",
       "budget": {
         "titre": "{{mois}} budget by category",
+        "fixer": "Set the budget",
+        "fixerTitre": "{{mois}} budget",
+        "fixerExplication": "Monthly amount per category, in FCFA. 0 removes the line from tracking.",
+        "fixeToast": "Monthly budget saved",
         "ligne": "{{realise}} / {{budget}} FCFA · {{pourcent}} %",
         "niveaux": {
           "ok": "OK",
           "surveiller": "Watch",
           "bloquant": "Over"
         }
+      },
+      "preAutorisations": {
+        "titre": "Pre-approved routine purchases this week",
+        "fixer": "Set the limits",
+        "fixerTitre": "This week's limits",
+        "fixerExplication": "Limit per routine purchase, in FCFA, for the open week. Within it, an expense does not trigger an approval request. 0 removes the limit.",
+        "fixeToast": "This week's limits saved",
+        "aucune": "No routine purchase is pre-approved this week.",
+        "detail": "{{engage}} committed of {{plafond}}"
+      },
+      "reglages": {
+        "enregistrer": "Save",
+        "annuler": "Cancel",
+        "echec": "Saving failed: check the amounts and try again."
       },
       "categories": {
         "matieres": "Raw materials",

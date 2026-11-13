@@ -27,6 +27,18 @@ export type TypeRattachement = (typeof TYPES_RATTACHEMENT)[number];
 export const STATUTS_DEPENSE = ['validee', 'en-attente', 'refusee'] as const;
 export type StatutDepense = (typeof STATUTS_DEPENSE)[number];
 
+/** Achats courants dont la semaine peut pré-autoriser un plafond (O7). */
+export const ACHATS_COURANTS = ['bois', 'levure', 'glace', 'sel', 'huile'] as const;
+export type AchatCourant = (typeof ACHATS_COURANTS)[number];
+
+/** Plafond d'un achat courant pour la semaine, ce qui est déjà engagé et ce qui reste. */
+export type PreAutorisation = {
+  achat: AchatCourant;
+  plafond: number;
+  engage: number;
+  reste: number;
+};
+
 /** Matières que l'on peut faire entrer en stock par une dépense. */
 export const MATIERES = [
   'farine',
@@ -121,6 +133,8 @@ export type InstantaneDepenses = {
   depenses: Depense[];
   demandes: DemandeDepense[];
   fournisseurs: Fournisseur[];
+  /** Achats courants pré-autorisés de la semaine ; absent en simulation (le prototype n'en a pas). */
+  preAutorisations?: PreAutorisation[];
 };
 
 /** Ce que la caissière ou le gérant envoie pour créer une dépense. */
