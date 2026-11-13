@@ -9,6 +9,9 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+// Ces tests jouent l'écran sur le faux serveur ; la lecture du vrai serveur est dans reel.test.ts.
+vi.hoisted(() => vi.stubEnv('MODE', 'simulation'));
+
 import SessionComptoir from './SessionComptoir.tsx';
 
 let retablir: () => void;

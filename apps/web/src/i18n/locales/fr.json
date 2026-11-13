@@ -528,6 +528,7 @@
         "dette": "Dette",
         "plafondDepasseCourt": "Plafond dépassé",
         "verrouillee": "La session est clôturée : la saisie est verrouillée.",
+        "bientot": "La saisie des livraisons sur le serveur arrive bientôt : les livraisons de la session s’affichent en lecture seule.",
         "lectureSeule": "Lecture seule : votre profil consulte la session sans saisir.",
         "aucuneTitre": "Aucune livraison en cours",
         "aucuneSous": "Sélectionnez un client à gauche ou tapez les premières lettres de son nom pour commencer.",

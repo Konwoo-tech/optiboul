@@ -528,6 +528,7 @@
         "dette": "Debt",
         "plafondDepasseCourt": "Limit exceeded",
         "verrouillee": "The session is closed: entry is locked.",
+        "bientot": "Recording deliveries on the server is coming soon: the session’s deliveries are shown read-only.",
         "lectureSeule": "Read-only: your profile can view the session but not enter data.",
         "aucuneTitre": "No delivery in progress",
         "aucuneSous": "Select a customer on the left or type the first letters of their name to start.",

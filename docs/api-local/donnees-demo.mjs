@@ -15,6 +15,7 @@
 // dettes (le solde d'un client est la somme de ses mouvements, il ne s'écrit pas).
 // Vague 4 (Caisses) : la caisse du créneau est fermée avec un manque de 600 FCFA, la suivante ouverte,
 // pour que le tableau montre une ligne fermée et une ligne ouverte.
+// Vague 5 (Session › Commandes) : trois commandes saisies par la caissière pour la session ouverte.
 // Les vagues suivantes ajoutent leurs données ici (stocks, fournisseurs, …), une étape à la fois.
 
 import { execFileSync } from "node:child_process";
@@ -402,6 +403,47 @@ if (listeCaisses.count >= 2) {
   if (ouverture.statut !== 201)
     throw new Error("caisse non ouverte : " + JSON.stringify(ouverture));
   console.log(`  caisse ouverte (${suivante.creneau} du ${suivante.jour})`);
+}
+
+// ---------------------------------------------------------------------------------------------
+// Vague 5 — Session › Commandes : trois commandes pour la session de la caisse ouverte.
+console.log("Session — commandes");
+const caisseOuverte = (
+  await caissiere.appeler("GET", "/api/v1/caisses/prochaine/")
+).donnees.caisse_en_cours;
+if (!caisseOuverte) {
+  console.log("  aucune caisse ouverte : commandes ignorées");
+} else {
+  const requete = `jour=${caisseOuverte.jour}&creneau=${caisseOuverte.creneau}`;
+  const deja = (await caissiere.appeler("GET", `/api/v1/commandes/?${requete}`))
+    .donnees;
+  if (deja.length > 0) {
+    console.log(`  ${deja.length} commande(s) déjà saisie(s)`);
+  } else {
+    const tous = (await caissiere.appeler("GET", "/api/v1/clients/?actif=true"))
+      .donnees.results;
+    const voulues = [
+      ["Ebène", { BAG: 40, KO: 10 }],
+      ["Junior", { BAG: 25, GC135: 8 }],
+      ["Restaurant Le Palmier", { BAG: 60 }],
+    ];
+    for (const [nom, lignes] of voulues) {
+      const client = tous.find((c) => c.nom === nom);
+      if (!client) throw new Error("client introuvable : " + nom);
+      const commande = await caissiere.appeler("POST", "/api/v1/commandes/", {
+        client: client.id,
+        jour: caisseOuverte.jour,
+        creneau: caisseOuverte.creneau,
+        lignes,
+      });
+      if (![200, 201].includes(commande.statut)) {
+        throw new Error(
+          `commande de ${nom} refusée : ` + JSON.stringify(commande),
+        );
+      }
+      console.log(`  commande de ${nom} : ${JSON.stringify(lignes)}`);
+    }
+  }
 }
 
 console.log("Terminé.");

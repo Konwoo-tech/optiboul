@@ -5,7 +5,7 @@ import { useCallback, useState, type KeyboardEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import { dateCourte, nomDeSession } from './affichage.ts';
-import { codeErreur, useActionsSession, useSessionComptoir } from './api.ts';
+import { codeErreur, ECRITURES, useActionsSession, useSessionComptoir } from './api.ts';
 import { lireEntier } from './calculs.ts';
 import { Cloture } from './Cloture.tsx';
 import { Commandes } from './Commandes.tsx';
@@ -59,6 +59,10 @@ export default function SessionComptoir() {
   const peutSaisir = ouverte && (profil === 'caissier' || profil === 'gerant');
   // Le propriétaire consulte : il ne saisit, ne relance et ne clôture pas (cahier des charges §3.3).
   const peutRelancer = peutSaisir;
+  // Zone par zone : sur le vrai serveur, certaines écritures arrivent aux étapes suivantes.
+  const peutLivrer = peutSaisir && ECRITURES.livraisons;
+  const peutMouvementer = peutSaisir && ECRITURES.mouvements;
+  const peutCloturer = peutSaisir && ECRITURES.cloture;
 
   const surErreur = useCallback(
     (erreur: unknown) => {
@@ -73,7 +77,7 @@ export default function SessionComptoir() {
   const livraison = useFormulaireLivraison({
     champs,
     instantane,
-    peutSaisir: Boolean(peutSaisir),
+    peutSaisir: Boolean(peutLivrer),
     actions,
     surEnregistree: (enregistree) =>
       afficher(
@@ -91,7 +95,7 @@ export default function SessionComptoir() {
 
   useRaccourcis({
     'nouvelle-livraison': () => {
-      if (!peutSaisir || fenetre) return;
+      if (!peutLivrer || fenetre) return;
       setFenetre(null);
       choisirOnglet('livraisons');
       livraison.reinitialiser();
@@ -155,8 +159,9 @@ export default function SessionComptoir() {
           heure: session.rouverteA,
         })
       : null;
-  const peutRouvrir = !ouverte && direction;
-  const peutOuvrirLaSuivante = !ouverte && (profil === 'caissier' || profil === 'gerant');
+  const peutRouvrir = !ouverte && direction && ECRITURES.cloture;
+  const peutOuvrirLaSuivante =
+    !ouverte && (profil === 'caissier' || profil === 'gerant') && ECRITURES.cloture;
 
   const agir = (action: () => Promise<unknown>) => action().catch(surErreur);
 
@@ -279,7 +284,7 @@ export default function SessionComptoir() {
               instantane={instantane}
               formulaire={livraison}
               champs={champs}
-              peutSaisir={Boolean(peutSaisir)}
+              peutSaisir={Boolean(peutLivrer)}
               peutAutoriser={direction}
               langue={langue}
               onOuvrirBon={(livraisonId) => setFenetre({ type: 'bon', livraisonId })}
@@ -292,15 +297,15 @@ export default function SessionComptoir() {
               brouillon={brouillon}
               onChange={setBrouillon}
               onAjouter={() => void ajouterMouvement()}
-              peutSaisir={Boolean(peutSaisir)}
+              peutSaisir={Boolean(peutMouvementer)}
             />
           )}
           {onglet === 'cloture' && (
             <Cloture
               instantane={instantane}
               actions={actions}
-              verrouille={!peutSaisir}
-              peutCloturer={Boolean(peutSaisir)}
+              verrouille={!peutCloturer}
+              peutCloturer={Boolean(peutCloturer)}
               onDemanderCloture={() => setFenetre({ type: 'cloture' })}
             />
           )}

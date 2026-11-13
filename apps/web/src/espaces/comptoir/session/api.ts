@@ -1,7 +1,15 @@
-import { ErreurApi, optiboulFetch } from '@/api';
+import {
+  commandesCreate,
+  commandesRelancerHabituelsCreate,
+  commandesReprendreHabituelleCreate,
+  ErreurApi,
+  optiboulFetch,
+} from '@/api';
+import { SIMULATION } from '@/simulation';
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
+import { lireSessionReelle } from './reel.ts';
 import type {
   CleProduit,
   DemandePlafond,
@@ -13,10 +21,23 @@ import type {
 } from './types.ts';
 
 /*
- * Accès aux données de « Comptoir › Session en cours ». En attendant le backend, elles viennent du
- * faux serveur (`/api/v1/simulation/comptoir/session/…`, voir `simulation/comptoir.ts`). Chaque
- * action renvoie l'état complet de la session, que l'on range dans le cache de TanStack Query.
+ * Accès aux données de « Comptoir › Session en cours ». En simulation, elles viennent du faux serveur
+ * (`/api/v1/simulation/comptoir/session/…`, voir `simulation/comptoir.ts`) ; sur le vrai serveur,
+ * `reel.ts` compose l'instantané. Chaque action renvoie l'état complet de la session, que l'on range
+ * dans le cache de TanStack Query.
  */
+
+/**
+ * Ce que l'écran peut écrire sur le vrai serveur, zone par zone : les commandes (#272) ; les
+ * livraisons (#273), les mouvements et la clôture (#274) sont encore en lecture seule. En
+ * simulation, tout s'écrit.
+ */
+export const ECRITURES = {
+  commandes: true,
+  livraisons: SIMULATION,
+  mouvements: SIMULATION,
+  cloture: SIMULATION,
+} as const;
 
 const RACINE = '/api/v1/simulation/comptoir/session/';
 const ENTETES = { 'Content-Type': 'application/json' };
@@ -28,6 +49,7 @@ export const cleSession = (utilisateur: string | undefined) =>
 type Reponse<T> = { data: T };
 
 async function lire(): Promise<InstantaneSession> {
+  if (!SIMULATION) return lireSessionReelle();
   return (await optiboulFetch<Reponse<InstantaneSession>>(RACINE)).data;
 }
 
@@ -49,7 +71,10 @@ export function useSessionComptoir(utilisateur: string | undefined) {
     queryKey: cleSession(utilisateur),
     queryFn: lire,
     enabled: Boolean(utilisateur),
-    staleTime: Infinity,
+    // En simulation, chaque action renvoie l'état complet ; sur le vrai serveur, d'autres personnes
+    // saisissent aussi : on relit régulièrement.
+    staleTime: SIMULATION ? Infinity : 0,
+    refetchInterval: SIMULATION ? false : () => (envois.size > 0 ? false : 15_000),
   });
 }
 
@@ -73,6 +98,23 @@ export function codeErreur(erreur: unknown): string | undefined {
   return erreur instanceof ErreurApi ? erreur.code : undefined;
 }
 
+/** Un champ de commande : la quantité saisie, ou rien. */
+const entier = (valeur: string | undefined) => Number.parseInt(valeur ?? '', 10) || 0;
+
+/** Les trois produits de l'écran, avec les codes du serveur (`GC` est `GC135`, voir E17). */
+const lignesDeSaisie = (saisies: Record<CleProduit, string>) => ({
+  BAG: entier(saisies.BAG),
+  KO: entier(saisies.KO),
+  GC135: entier(saisies.GC),
+});
+
+/** Envoi différé de la saisie d'une commande : un envoi par client, quand la frappe s'arrête. */
+const DELAI_SAISIE_MS = 600;
+const envois = new Map<string, ReturnType<typeof setTimeout>>();
+
+const indisponible = () =>
+  Promise.reject(new Error("Cette action n'est pas encore branchée sur le serveur"));
+
 /** Actions de l'écran. Chacune met à jour le cache avec l'état renvoyé par le serveur. */
 export function actionsSession(client: QueryClient, utilisateur: string | undefined) {
   const cle = cleSession(utilisateur);
@@ -81,8 +123,12 @@ export function actionsSession(client: QueryClient, utilisateur: string | undefi
     client.setQueryData(cle, reponse.instantane);
     // Les notifications suivent la session (commandes manquantes) : on les relit.
     void client.invalidateQueries({ queryKey: ['simulation', 'notifications'] });
+    void client.invalidateQueries({ queryKey: ['coque', 'notifications'] });
     return reponse;
   };
+  /** Après une écriture sur le vrai serveur : on relit l'instantané complet. */
+  const relire = async () => ({ instantane: await lireSessionReelle() });
+  const session = () => client.getQueryData<InstantaneSession>(cle)?.session;
   return {
     /**
      * Saisie d'une commande : le champ réagit tout de suite (mise à jour du cache) et le serveur
@@ -100,54 +146,118 @@ export function actionsSession(client: QueryClient, utilisateur: string | undefi
             }
           : avant,
       );
-      void envoyer('PUT', 'commandes/', { clientId, produit, valeur }).catch(() =>
-        client.invalidateQueries({ queryKey: cle }),
+      if (SIMULATION) {
+        void envoyer('PUT', 'commandes/', { clientId, produit, valeur }).catch(() =>
+          client.invalidateQueries({ queryKey: cle }),
+        );
+        return;
+      }
+      const cleEnvoi = `${utilisateur}/${clientId}`;
+      clearTimeout(envois.get(cleEnvoi));
+      envois.set(
+        cleEnvoi,
+        setTimeout(() => {
+          envois.delete(cleEnvoi);
+          const lue = client.getQueryData<InstantaneSession>(cle);
+          const saisies = lue?.commandes[clientId];
+          if (!lue || !saisies) return;
+          void commandesCreate({
+            client: Number(clientId),
+            jour: lue.session.date,
+            creneau: lue.session.type,
+            lignes: lignesDeSaisie(saisies),
+          })
+            .then(() => client.invalidateQueries({ queryKey: cle }))
+            .catch(() => client.invalidateQueries({ queryKey: cle }));
+        }, DELAI_SAISIE_MS),
       );
     },
     saisirComptage(especes: string) {
       client.setQueryData<InstantaneSession>(cle, (avant) =>
         avant ? { ...avant, session: { ...avant.session, especesComptees: especes } } : avant,
       );
+      // Le comptage n'est qu'un brouillon de l'écran : le serveur le reçoit à la fermeture.
+      if (!SIMULATION) return;
       void envoyer('PUT', 'comptage/', { especes }).catch(() =>
         client.invalidateQueries({ queryKey: cle }),
       );
     },
     relancer: (clientIds: string[]) =>
-      ranger(envoyer<{ instantane: InstantaneSession }>('POST', 'relances/', { clientIds })),
+      ranger(
+        SIMULATION
+          ? envoyer<{ instantane: InstantaneSession }>('POST', 'relances/', { clientIds })
+          : commandesRelancerHabituelsCreate({
+              jour: session()?.date,
+              creneau: session()?.type,
+              clients: clientIds.map(Number),
+            }).then(relire),
+      ),
     reprendreHabituelle: (clientId: string) =>
       ranger(
-        envoyer<{ instantane: InstantaneSession }>('POST', 'commandes/habituelle/', { clientId }),
+        SIMULATION
+          ? envoyer<{ instantane: InstantaneSession }>('POST', 'commandes/habituelle/', {
+              clientId,
+            })
+          : commandesReprendreHabituelleCreate({
+              client: Number(clientId),
+              jour: session()?.date,
+              creneau: session()?.type,
+            }).then(relire),
       ),
     livrer: (livraison: NouvelleLivraison) =>
       ranger(
-        envoyer<{ instantane: InstantaneSession; livraison: Livraison }>(
-          'POST',
-          'livraisons/',
-          livraison,
-        ),
+        SIMULATION
+          ? envoyer<{ instantane: InstantaneSession; livraison: Livraison }>(
+              'POST',
+              'livraisons/',
+              livraison,
+            )
+          : indisponible(),
       ),
     demanderAutorisation: (clientId: string, soldeApres: number) =>
       ranger(
-        envoyer<{
-          instantane: InstantaneSession;
-          autorise?: boolean;
-          demande?: DemandePlafond;
-        }>('POST', 'autorisations/', { clientId, soldeApres }),
+        SIMULATION
+          ? envoyer<{
+              instantane: InstantaneSession;
+              autorise?: boolean;
+              demande?: DemandePlafond;
+            }>('POST', 'autorisations/', { clientId, soldeApres })
+          : indisponible(),
       ),
     deciderAutorisation: (demandeId: string, code: string, accord: boolean) =>
       ranger(
-        envoyer<{ instantane: InstantaneSession; demande: DemandePlafond }>(
-          'POST',
-          'autorisations/decider/',
-          { demandeId, code, accord },
-        ),
+        SIMULATION
+          ? envoyer<{ instantane: InstantaneSession; demande: DemandePlafond }>(
+              'POST',
+              'autorisations/decider/',
+              { demandeId, code, accord },
+            )
+          : indisponible(),
       ),
     ajouterMouvement: (mouvement: NouveauMouvement) =>
-      ranger(envoyer<{ instantane: InstantaneSession }>('POST', 'mouvements/', mouvement)),
-    cloturer: () => ranger(envoyer<{ instantane: InstantaneSession }>('POST', 'cloturer/')),
-    rouvrir: () => ranger(envoyer<{ instantane: InstantaneSession }>('POST', 'rouvrir/')),
+      ranger(
+        SIMULATION
+          ? envoyer<{ instantane: InstantaneSession }>('POST', 'mouvements/', mouvement)
+          : indisponible(),
+      ),
+    cloturer: () =>
+      ranger(
+        SIMULATION
+          ? envoyer<{ instantane: InstantaneSession }>('POST', 'cloturer/')
+          : indisponible(),
+      ),
+    rouvrir: () =>
+      ranger(
+        SIMULATION
+          ? envoyer<{ instantane: InstantaneSession }>('POST', 'rouvrir/')
+          : indisponible(),
+      ),
     ouvrirSuivante: () =>
-      ranger(envoyer<{ instantane: InstantaneSession }>('POST', 'ouvrir-suivante/')),
+      ranger(
+        SIMULATION
+          ? envoyer<{ instantane: InstantaneSession }>('POST', 'ouvrir-suivante/')
+          : indisponible(),
+      ),
   };
 }
 

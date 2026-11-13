@@ -20,11 +20,55 @@ beforeAll(() => {
 afterEach(() => serveur.resetHandlers());
 afterAll(() => serveur.close());
 
+const page = <T,>(results: T[]) => ({ count: results.length, next: null, previous: null, results });
+const CAISSE = {
+  id: 2,
+  semaine: 1,
+  jour: '2026-11-13',
+  creneau: 'jour',
+  caissiere: { id: 4, nom: 'Davy Caisse' },
+  planifiee: null,
+  hors_planning: false,
+  fonds: 20000,
+  attendu: null,
+  compte: null,
+  ecart: null,
+  statut: 'ouverte',
+  en_cours: true,
+  ouverte_le: '2026-11-13T08:00:00+01:00',
+  fermee_le: null,
+};
+
 function connecte(profil: string | null) {
   serveur.use(
     http.get('*/api/v1/users/me/', () =>
       HttpResponse.json({ url: 'http://localhost/api/v1/users/1/', name: 'Davy', profil }),
     ),
+    // La coque et l'écran Session lisent le serveur : une caisse ouverte, rien d'autre.
+    http.get('*/api/v1/connexion/session/', () =>
+      HttpResponse.json({ detail: 'x' }, { status: 403 }),
+    ),
+    http.get('*/api/v1/postes/actuel/', () => HttpResponse.json({ detail: 'x' }, { status: 403 })),
+    http.get('*/api/v1/semaines/', () => HttpResponse.json(page([]))),
+    http.get('*/api/v1/caisses/', () => HttpResponse.json(page([CAISSE]))),
+    http.get('*/api/v1/caisses/recapitulatif/', () => HttpResponse.json([])),
+    http.get('*/api/v1/caisses/prochaine/', () =>
+      HttpResponse.json({
+        jour: '2026-11-13',
+        creneau: 'nuit',
+        planifiee: null,
+        fonds_propose: 20000,
+        caisse_en_cours: CAISSE,
+      }),
+    ),
+    http.get('*/api/v1/caisses/2/especes/', () =>
+      HttpResponse.json({ detail: 'x' }, { status: 403 }),
+    ),
+    http.get('*/api/v1/clients/', () => HttpResponse.json(page([]))),
+    http.get('*/api/v1/commandes/', () => HttpResponse.json([])),
+    http.get('*/api/v1/commandes/habituels-sans-commande/', () => HttpResponse.json([])),
+    http.get('*/api/v1/livraisons/', () => HttpResponse.json(page([]))),
+    http.get('*/api/v1/mouvements-internes/', () => HttpResponse.json(page([]))),
   );
 }
 
