@@ -800,6 +800,8 @@
       "dettesClients": "Customer debts",
       "dettesClientsDetail": "{{clients}} customers · {{plafond}} over the limit",
       "dettesFournisseurs": "Supplier debts",
+      "marge": "Estimated margin",
+      "margeDetail": "Materials {{matieres}} · expenses {{charges}} FCFA",
       "dettesFournisseursDetail_one": "{{count}} overdue invoice",
       "dettesFournisseursDetail_other": "{{count}} overdue invoices",
       "production": "Production: {{nom}}",

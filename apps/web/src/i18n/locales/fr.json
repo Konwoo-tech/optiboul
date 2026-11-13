@@ -800,6 +800,8 @@
       "dettesClients": "Dettes clients",
       "dettesClientsDetail": "{{clients}} clients · {{plafond}} au-delà du plafond",
       "dettesFournisseurs": "Dettes fournisseurs",
+      "marge": "Marge estimée",
+      "margeDetail": "Matières {{matieres}} · charges {{charges}} FCFA",
       "dettesFournisseursDetail_one": "{{count}} facture en retard",
       "dettesFournisseursDetail_other": "{{count}} factures en retard",
       "production": "Production : {{nom}}",

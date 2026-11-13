@@ -35,7 +35,10 @@ const TABLEAU = {
       { produit: 'GC135', pains: 940 },
       { code: 'BAG', total: 3000 },
     ],
-    budget_par_categorie: [],
+    budget_par_categorie: [
+      { categorie: 'matieres', budget: 900000, depense: 160000 },
+      { categorie: 'petit_materiel', budget: 75000, depense: 0 },
+    ],
   },
 };
 const ALERTES = [
@@ -105,6 +108,12 @@ describe('tableau de bord sur le vrai serveur', () => {
     expect(i.production).toEqual([
       { produit: 'GC 135', pains: 940 },
       { produit: 'BAG', pains: 3000 },
+    ]);
+    // La marge estimée et le budget du mois, que le serveur donne en plus du prototype.
+    expect(i.marge).toEqual({ matieres: 0, charges: 60000, marge: 56200 });
+    expect(i.budget).toEqual([
+      { categorie: 'matieres', budget: 900000, realise: 160000 },
+      { categorie: 'petit-materiel', budget: 75000, realise: 0 },
     ]);
     expect(i.alertes.map((a) => [a.niveau, a.type])).toEqual([
       ['bloquant', 'serveur'],
