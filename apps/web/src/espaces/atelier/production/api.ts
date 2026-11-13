@@ -14,6 +14,11 @@ import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tansta
 import { useMemo } from 'react';
 
 import { lireFichesReelles, modifierFicheSurLeServeur } from './fiches.ts';
+import {
+  justificationEnvoyee,
+  retenirJustification,
+  texteDeJustification,
+} from './justifications.ts';
 import { CODE_SERVEUR, lireProductionReelle } from './reel.ts';
 import type {
   Consommation,
@@ -114,6 +119,17 @@ export function actionsDe(client: QueryClient, utilisateur: string | undefined) 
         await productionsFourneeCreate(id, { produit: CODE_SERVEUR[produit], pains: delta });
     }
   };
+  /** La justification déjà envoyée pour cette production, redite pour chaque matière saisie. */
+  const justificationsDeLaProduction = (id: string, consommation: Consommation) => {
+    const deja = justificationEnvoyee(id);
+    if (!deja) return {};
+    const texte = texteDeJustification(deja);
+    return {
+      justifications: Object.fromEntries(
+        Object.keys(quantitesServeur(consommation)).map((m) => [m, texte]),
+      ),
+    };
+  };
   const quantitesServeur = (consommation: Consommation) =>
     Object.fromEntries(
       Object.entries(consommation)
@@ -159,6 +175,7 @@ export function actionsDe(client: QueryClient, utilisateur: string | undefined) 
               if (!id) return sansProduction();
               await productionsConsommationUpdate(Number(id), {
                 quantites: quantitesServeur(consommation),
+                ...justificationsDeLaProduction(id, consommation),
               });
               return relire();
             })(),
@@ -172,11 +189,12 @@ export function actionsDe(client: QueryClient, utilisateur: string | undefined) 
               if (!id) return sansProduction();
               const quantites = quantitesServeur(justification.consommation);
               // Le serveur garde une justification par matière (R10) : le motif et le texte, pour chacune.
-              const texte = `${justification.motif} : ${justification.texte}`;
+              const texte = texteDeJustification(justification);
               await productionsConsommationUpdate(Number(id), {
                 quantites,
                 justifications: Object.fromEntries(Object.keys(quantites).map((m) => [m, texte])),
               });
+              retenirJustification(id, { motif: justification.motif, texte: justification.texte });
               return relire();
             })(),
       ),
@@ -190,6 +208,7 @@ export function actionsDe(client: QueryClient, utilisateur: string | undefined) 
               await fournees(Number(id), valeurs.realise);
               await productionsConsommationUpdate(Number(id), {
                 quantites: quantitesServeur(valeurs.consommation),
+                ...justificationsDeLaProduction(id, valeurs.consommation),
               });
               await productionsCloturerCreate(Number(id));
               const apres = await relire();
