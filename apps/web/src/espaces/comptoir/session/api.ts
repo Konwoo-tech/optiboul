@@ -6,6 +6,11 @@ import {
   getLivraisonsBonRetrieveUrl,
   livraisonsCreate,
   livraisonsEnvoyerWhatsappCreate,
+  caissesFermerCreate,
+  caissesOuvrirCreate,
+  caissesProchaineRetrieve,
+  caissesRouvrirCreate,
+  mouvementsInternesCreate,
   commandesRelancerHabituelsCreate,
   commandesReprendreHabituelleCreate,
   ErreurApi,
@@ -42,8 +47,8 @@ import type {
 export const ECRITURES = {
   commandes: true,
   livraisons: true,
-  mouvements: SIMULATION,
-  cloture: SIMULATION,
+  mouvements: true,
+  cloture: true,
 } as const;
 
 const RACINE = '/api/v1/simulation/comptoir/session/';
@@ -106,6 +111,14 @@ export type NouveauMouvement = {
 export function codeErreur(erreur: unknown): string | undefined {
   return erreur instanceof ErreurApi ? erreur.code : undefined;
 }
+
+/** Genre de mouvement du serveur pour chaque type de l'écran. */
+const GENRE_DU_TYPE: Record<TypeMouvement, string> = {
+  'vente-guichet': 'vente_guichet',
+  retours: 'retours',
+  'reste-en-salle': 'reste_en_salle',
+  ration: 'ration',
+};
 
 /** Un champ de commande : la quantité saisie, ou rien. */
 const entier = (valeur: string | undefined) => Number.parseInt(valeur ?? '', 10) || 0;
@@ -177,6 +190,12 @@ export function actionsSession(
   /** Après une écriture sur le vrai serveur : on relit l'instantané complet. */
   const relire = async () => ({ instantane: await lireSessionReelle() });
   const session = () => client.getQueryData<InstantaneSession>(cle)?.session;
+  /** Une caisse ouverte ou fermée change la pastille de la coque et l'écran Caisses. */
+  const invaliderCaisses = () =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: ['comptoir', 'caisses'] }),
+      client.invalidateQueries({ queryKey: ['coque', 'contexte'] }),
+    ]);
   return {
     /**
      * Saisie d'une commande : le champ réagit tout de suite (mise à jour du cache) et le serveur
@@ -353,25 +372,53 @@ export function actionsSession(
       ranger(
         SIMULATION
           ? envoyer<{ instantane: InstantaneSession }>('POST', 'mouvements/', mouvement)
-          : indisponible(),
+          : mouvementsInternesCreate({
+              genre: GENRE_DU_TYPE[mouvement.type] as never,
+              produit: mouvement.produit === 'GC' ? 'GC135' : mouvement.produit,
+              quantite: mouvement.quantite,
+              motif: mouvement.motif,
+            }).then(relire),
       ),
+    /** Ferme la caisse de la session avec le comptage saisi dans l'onglet Clôture. */
     cloturer: () =>
       ranger(
         SIMULATION
           ? envoyer<{ instantane: InstantaneSession }>('POST', 'cloturer/')
-          : indisponible(),
+          : (async () => {
+              const lue = session();
+              const compte = Number.parseInt(lue?.especesComptees ?? '', 10);
+              if (!lue?.caisseId) return indisponible();
+              if (Number.isNaN(compte))
+                throw new ErreurApi(409, { code: 'comptage_requis', detail: 'Comptage requis' });
+              await caissesFermerCreate(Number(lue.caisseId), { compte });
+              await invaliderCaisses();
+              return relire();
+            })(),
       ),
-    rouvrir: () =>
+    /** Rouvre la caisse fermée ; le serveur exige un motif (gérant ou propriétaire). */
+    rouvrir: (motif?: string) =>
       ranger(
         SIMULATION
           ? envoyer<{ instantane: InstantaneSession }>('POST', 'rouvrir/')
-          : indisponible(),
+          : (async () => {
+              const lue = session();
+              if (!lue?.caisseId) return indisponible();
+              await caissesRouvrirCreate(Number(lue.caisseId), { motif: motif ?? '' });
+              await invaliderCaisses();
+              return relire();
+            })(),
       ),
+    /** Ouvre la caisse suivante avec le fonds que le serveur propose. */
     ouvrirSuivante: () =>
       ranger(
         SIMULATION
           ? envoyer<{ instantane: InstantaneSession }>('POST', 'ouvrir-suivante/')
-          : indisponible(),
+          : (async () => {
+              const prochaine = await caissesProchaineRetrieve();
+              await caissesOuvrirCreate({ fonds: prochaine.data.fonds_propose });
+              await invaliderCaisses();
+              return relire();
+            })(),
       ),
   };
 }

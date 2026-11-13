@@ -81,6 +81,8 @@ export type DemandePlafond = {
 };
 
 export type SessionCaisse = {
+  /** Identifiant de la caisse sur le vrai serveur (la simulation n'en a pas besoin). */
+  caisseId?: string;
   type: Creneau;
   /** Jour de la session, ISO « 2026-10-14 ». */
   date: string;
@@ -119,4 +121,9 @@ export type InstantaneSession = {
   numeroProchainBon: number;
   /** Jour avant lequel les dettes doivent être réglées (bon de livraison), ISO. */
   echeanceDettes: string;
+  /**
+   * Espèces attendues en caisse, telles que le serveur les compte (fonds + espèces encaissées,
+   * livraisons et paiements − dépenses − remises). Absent : l'écran les calcule avec les livraisons.
+   */
+  especesAttendues?: number;
 };

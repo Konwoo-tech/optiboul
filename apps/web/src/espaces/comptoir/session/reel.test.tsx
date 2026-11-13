@@ -435,11 +435,11 @@ describe('écritures des commandes sur le vrai serveur', () => {
     expect(client.getQueryData<InstantaneSession>(cleSession('Davy'))?.livraisons).toHaveLength(1);
   });
 
-  it('refuse les écritures pas encore branchées (livraison, mouvement, clôture)', async () => {
+  it('refuse de fermer ou de rouvrir sans caisse identifiée, sans appeler le serveur', async () => {
     const client = new QueryClient();
     const actions = actionsSession(client, 'Davy');
     await expect(actions.cloturer()).rejects.toThrow('pas encore branchée');
-    await expect(actions.ajouterMouvement({} as never)).rejects.toThrow('pas encore branchée');
+    await expect(actions.rouvrir('motif')).rejects.toThrow('pas encore branchée');
   });
 });
 
@@ -697,5 +697,104 @@ describe('paiement d’une dette sans livraison sur le vrai serveur', () => {
     expect(corps).toEqual({ client: 1, mode: 'mtn', montant: 500, reference: 'MP1' });
     expect(cle).toBe('cle-paiement');
     expect(reponse.instantane.clients.map((c) => c.nom)).toContain('Alain');
+  });
+});
+
+describe('mouvements et clôture sur le vrai serveur', () => {
+  const instantaneDe = (especesComptees: string): InstantaneSession =>
+    ({
+      session: {
+        caisseId: '2',
+        type: 'jour',
+        date: '2026-11-13',
+        statut: 'ouverte',
+        especesComptees,
+      },
+      commandes: {},
+      demandes: [],
+    }) as unknown as InstantaneSession;
+
+  it('ajoute un mouvement : genre et produit en codes serveur', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Davy'), instantaneDe(''));
+    serveurSession();
+    const recus: unknown[] = [];
+    serveur.use(
+      http.post('*/api/v1/mouvements-internes/', async ({ request }) => {
+        recus.push(await request.json());
+        return HttpResponse.json({ id: 9 }, { status: 201 });
+      }),
+    );
+    const actions = actionsSession(client, 'Davy');
+    await actions.ajouterMouvement({
+      type: 'reste-en-salle',
+      produit: 'GC',
+      quantite: 3,
+      motif: 'Invendus',
+    });
+    await actions.ajouterMouvement({
+      type: 'ration',
+      produit: 'BAG',
+      quantite: 1,
+      motif: 'Équipe',
+    });
+    expect(recus).toEqual([
+      { genre: 'reste_en_salle', produit: 'GC135', quantite: 3, motif: 'Invendus' },
+      { genre: 'ration', produit: 'BAG', quantite: 1, motif: 'Équipe' },
+    ]);
+  });
+
+  it('clôture avec le comptage saisi et relit la session', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Davy'), instantaneDe('21000'));
+    serveurSession();
+    let corps: unknown;
+    serveur.use(
+      http.post('*/api/v1/caisses/2/fermer/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json({ caisse: CAISSE, resultat: 'manque' });
+      }),
+    );
+    const reponse = await actionsSession(client, 'Davy').cloturer();
+    expect(corps).toEqual({ compte: 21000 });
+    expect(reponse.instantane.session.caisseId).toBe('2');
+  });
+
+  it('refuse de clôturer sans comptage, sans appeler le serveur', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Davy'), instantaneDe(''));
+    await expect(actionsSession(client, 'Davy').cloturer()).rejects.toMatchObject({
+      code: 'comptage_requis',
+    });
+  });
+
+  it('rouvre avec un motif ; ouvre la suivante avec le fonds proposé', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Willy'), instantaneDe(''));
+    serveurSession();
+    let motif: unknown;
+    let fonds: unknown;
+    serveur.use(
+      http.post('*/api/v1/caisses/2/rouvrir/', async ({ request }) => {
+        motif = await request.json();
+        return HttpResponse.json(CAISSE);
+      }),
+      http.post('*/api/v1/caisses/ouvrir/', async ({ request }) => {
+        fonds = await request.json();
+        return HttpResponse.json(CAISSE, { status: 201 });
+      }),
+    );
+    const actions = actionsSession(client, 'Willy');
+    await actions.rouvrir('Erreur de comptage');
+    await actions.ouvrirSuivante();
+    expect(motif).toEqual({ motif: 'Erreur de comptage' });
+    expect(fonds).toEqual({ fonds: 20000 });
+  });
+
+  it('les espèces attendues viennent du serveur (paiements et remises compris)', async () => {
+    serveurSession();
+    const instantane = await lireSessionReelle();
+    expect(instantane.especesAttendues).toBe(20500);
+    expect(instantane.session.caisseId).toBe('2');
   });
 });

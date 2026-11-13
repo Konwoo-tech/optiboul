@@ -46,6 +46,7 @@ export function lignesDuRecapitulatif(
 
 /** Espèces attendues dans le tiroir-caisse à la clôture. */
 export function especesAttenduesDeLaSession(instantane: InstantaneSession): number {
+  if (instantane.especesAttendues !== undefined) return instantane.especesAttendues;
   const { especes } = totauxDesLivraisons(instantane.livraisons);
   return especesAttendues(instantane.session.fonds, especes, instantane.depensesCaisse);
 }

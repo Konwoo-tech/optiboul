@@ -5,8 +5,10 @@ import { useCallback, useState, type KeyboardEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import { dateCourte, nomDeSession } from './affichage.ts';
+import { SIMULATION } from '@/simulation';
 import { codeErreur, ECRITURES, useActionsSession, useSessionComptoir } from './api.ts';
 import { formaterNombre, lireEntier } from './calculs.ts';
+import { FenetreReouverture } from '../caisses/FenetreReouverture.tsx';
 import { Cloture } from './Cloture.tsx';
 import { Commandes } from './Commandes.tsx';
 import { Livraisons } from './Livraisons.tsx';
@@ -26,7 +28,8 @@ const ONGLET_PAR_DEFAUT: Onglet = 'livraisons';
 type Fenetre =
   | { type: 'autorisation'; demandeId: string }
   | { type: 'bon'; livraisonId: string }
-  | { type: 'cloture' };
+  | { type: 'cloture' }
+  | { type: 'reouverture' };
 
 /**
  * Comptoir › Session en cours (US-050 à US-057) : les commandes, les livraisons et leur
@@ -53,6 +56,8 @@ export default function SessionComptoir() {
 
   const [brouillon, setBrouillon] = useState<BrouillonMouvement>(BROUILLON_VIDE);
   const [fenetre, setFenetre] = useState<Fenetre | null>(null);
+  const [erreurReouverture, setErreurReouverture] = useState<string | null>(null);
+  const [reouvertureEnCours, setReouvertureEnCours] = useState(false);
 
   const ouverte = instantane?.session.statut === 'ouverte';
   const direction = profil === 'gerant' || profil === 'proprietaire';
@@ -224,7 +229,11 @@ export default function SessionComptoir() {
                 <button
                   type="button"
                   className={styles.rouvrir}
-                  onClick={() => void agir(() => actions.rouvrir())}
+                  onClick={() =>
+                    SIMULATION
+                      ? void agir(() => actions.rouvrir())
+                      : setFenetre({ type: 'reouverture' })
+                  }
                 >
                   {t('comptoir.session.bandeau.rouvrir')}
                 </button>
@@ -344,6 +353,30 @@ export default function SessionComptoir() {
           session={session}
           echeanceDettes={instantane.echeanceDettes}
           onFermer={() => setFenetre(null)}
+        />
+      )}
+      {fenetre?.type === 'reouverture' && (
+        <FenetreReouverture
+          caisse={t('comptoir.caisses.reouverture.caisse', { session: nomSession, jour: date })}
+          erreur={erreurReouverture}
+          envoiEnCours={reouvertureEnCours}
+          onFermer={() => setFenetre(null)}
+          onConfirmer={(motif) => {
+            setReouvertureEnCours(true);
+            setErreurReouverture(null);
+            actions
+              .rouvrir(motif)
+              .then(() => {
+                setFenetre(null);
+                afficher(t('comptoir.caisses.reouverture.fait'));
+              })
+              .catch((erreur: unknown) =>
+                setErreurReouverture(
+                  erreur instanceof Error ? erreur.message : t('comptoir.session.erreurs.defaut'),
+                ),
+              )
+              .finally(() => setReouvertureEnCours(false));
+          }}
         />
       )}
       {fenetre?.type === 'cloture' && (
