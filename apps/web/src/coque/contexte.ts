@@ -25,7 +25,8 @@ type ProchaineLue = { creneau?: string; caisse_en_cours?: CaisseEnCours } | null
  * `GET /caisses/prochaine/` et `GET /postes/actuel/`. Une lecture refusée (droits du profil, poste
  * non reconnu) est simplement absente. Sans semaine ouverte, il n'y a pas de contexte à montrer.
  */
-async function lireContexte(): Promise<ContexteSimule | undefined> {
+// `null` et non `undefined` : une requête ne peut pas rendre `undefined`.
+async function lireContexte(): Promise<ContexteSimule | null> {
   const [semaines, prochaine, poste] = await Promise.all([
     optiboulFetch<{ data: { results?: Semaine[] } }>('/api/v1/semaines/?statut=ouverte').catch(
       () => null,
@@ -34,7 +35,7 @@ async function lireContexte(): Promise<ContexteSimule | undefined> {
     postesActuelRetrieve().catch(() => null),
   ]);
   const semaine = semaines?.data.results?.[0];
-  if (!semaine) return undefined;
+  if (!semaine) return null;
   const lue = (prochaine?.data ?? null) as ProchaineLue;
   const caisse = lue?.caisse_en_cours ?? null;
   const creneau = lue?.creneau === 'jour' || lue?.creneau === 'nuit' ? lue.creneau : undefined;
@@ -65,5 +66,5 @@ export function useContexte() {
     staleTime: ACTUALISATION_MS / 2,
     refetchInterval: ACTUALISATION_MS,
   });
-  return SIMULATION ? simule : reel;
+  return { data: SIMULATION ? simule.data : (reel.data ?? undefined) };
 }
