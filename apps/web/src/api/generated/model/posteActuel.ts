@@ -5,8 +5,11 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
+import type { ContexteDuPoste } from './contexteDuPoste.ts';
 import type { Poste } from './poste.ts';
 
 export interface PosteActuel {
   poste: Poste | null;
+  /** Sur un poste de confiance seulement (CdC §4.2, #307) ; sinon null. */
+  contexte: ContexteDuPoste | null;
 }

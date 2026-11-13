@@ -74,6 +74,9 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # Your stuff...
 # ------------------------------------------------------------------------------
 # SMS et WhatsApp écrits dans les journaux du conteneur (pas de fournisseur en local).
+# Connexion Google sans compte Google réel (#306) : jeton « test:<gmail> ».
+OPTIBOUL_GOOGLE_JETONS_DE_TEST = True
+
 OPTIBOUL_PASSERELLES = {
     "email": "optiboul.notifications.infrastructure.envois.PasserelleEmail",
     "sms": "optiboul.notifications.infrastructure.envois.PasserelleJournalisation",

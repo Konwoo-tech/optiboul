@@ -466,6 +466,8 @@ OPTIBOUL_PASSERELLES: dict[str, str | None] = {
 
 # Connexion avec Google (US-013) : identifiant OAuth du client web ; vide, désactivée.
 OPTIBOUL_GOOGLE_CLIENT_ID = env("OPTIBOUL_GOOGLE_CLIENT_ID", default="")
+# Jetons « test:<gmail> » acceptés sans Google : jamais hors de DEBUG (#306).
+OPTIBOUL_GOOGLE_JETONS_DE_TEST = False
 
 # Adresse de l'application web, pour les liens envoyés (invitation, US-020).
 OPTIBOUL_URL_APPLICATION = env(

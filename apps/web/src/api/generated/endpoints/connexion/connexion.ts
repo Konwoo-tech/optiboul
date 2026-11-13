@@ -26,6 +26,7 @@ import type {
 
 import type {
   CodeEnvoye,
+  ConfigurationGoogle,
   ConnexionCode,
   ConnexionEmail,
   ConnexionGoogle,
@@ -633,7 +634,116 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getConnexionGoogleCreateMutationOptions(options), queryClient);
     }
-    export type connexionInvitationCreateResponse204 = {
+    export type connexionGoogleConfigurationRetrieveResponse200 = {
+  data: ConfigurationGoogle
+  status: 200
+}
+
+export type connexionGoogleConfigurationRetrieveResponseSuccess = (connexionGoogleConfigurationRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type connexionGoogleConfigurationRetrieveResponse = (connexionGoogleConfigurationRetrieveResponseSuccess)
+
+export const getConnexionGoogleConfigurationRetrieveUrl = () => {
+
+
+
+
+  return `/api/v1/connexion/google/configuration/`
+}
+
+/**
+ * Ce que le bouton « Continuer avec Google » doit savoir (#306).
+ */
+export const connexionGoogleConfigurationRetrieve = async ( options?: Parameters<typeof optiboulFetch>[1]): Promise<connexionGoogleConfigurationRetrieveResponse> => {
+
+  return optiboulFetch<connexionGoogleConfigurationRetrieveResponse>(getConnexionGoogleConfigurationRetrieveUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getConnexionGoogleConfigurationRetrieveQueryKey = () => {
+    return [
+    `/api/v1/connexion/google/configuration/`
+    ] as const;
+    }
+
+
+export const getConnexionGoogleConfigurationRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getConnexionGoogleConfigurationRetrieveQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>> = ({ signal }) => connexionGoogleConfigurationRetrieve({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ConnexionGoogleConfigurationRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>>
+export type ConnexionGoogleConfigurationRetrieveQueryError = unknown
+
+
+export function useConnexionGoogleConfigurationRetrieve<TData = Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useConnexionGoogleConfigurationRetrieve<TData = Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useConnexionGoogleConfigurationRetrieve<TData = Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useConnexionGoogleConfigurationRetrieve<TData = Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof connexionGoogleConfigurationRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getConnexionGoogleConfigurationRetrieveQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type connexionInvitationCreateResponse204 = {
   data: void
   status: 204
 }

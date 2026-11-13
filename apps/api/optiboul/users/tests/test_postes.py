@@ -42,15 +42,15 @@ def test_l_administrateur_enregistre_ce_navigateur(administrateur):
 
 def test_jeton_falsifie_ou_inconnu_ignore():
     client = APIClient()
-    assert client.get(ACTUEL).json() == {"poste": None}
+    assert client.get(ACTUEL).json() == {"poste": None, "contexte": None}
     client.cookies[postes.COOKIE] = "faux:jeton"
-    assert client.get(ACTUEL).json() == {"poste": None}
+    assert client.get(ACTUEL).json() == {"poste": None, "contexte": None}
     client.cookies[postes.COOKIE] = signing.Signer(
         salt="optiboul.poste-de-confiance",
     ).sign(
         "inconnu",
     )
-    assert client.get(ACTUEL).json() == {"poste": None}
+    assert client.get(ACTUEL).json() == {"poste": None, "contexte": None}
 
 
 def test_poste_revoque_n_est_plus_reconnu(administrateur):
@@ -66,7 +66,7 @@ def test_poste_revoque_n_est_plus_reconnu(administrateur):
 
     comptoir = APIClient()
     comptoir.cookies[postes.COOKIE] = cookie
-    assert comptoir.get(ACTUEL).json() == {"poste": None}
+    assert comptoir.get(ACTUEL).json() == {"poste": None, "contexte": None}
 
 
 def test_cookie_ignore_depuis_l_entree_distante(administrateur):
@@ -75,7 +75,7 @@ def test_cookie_ignore_depuis_l_entree_distante(administrateur):
     cookie = _enregistrer(admin).cookies[postes.COOKIE].value
     distant = APIClient(HTTP_X_OPTIBOUL_ENTREE="distante")
     distant.cookies[postes.COOKIE] = cookie
-    assert distant.get(ACTUEL).json() == {"poste": None}
+    assert distant.get(ACTUEL).json() == {"poste": None, "contexte": None}
 
 
 def test_pas_d_enregistrement_a_distance(administrateur):

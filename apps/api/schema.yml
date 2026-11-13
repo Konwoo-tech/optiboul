@@ -1319,6 +1319,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/connexion/google/configuration/:
+    get:
+      operationId: connexion_google_configuration_retrieve
+      description: Ce que le bouton « Continuer avec Google » doit savoir (#306).
+      tags:
+      - connexion
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfigurationGoogle'
+          description: ''
   /api/v1/connexion/invitation/:
     post:
       operationId: connexion_invitation_create
@@ -5655,6 +5671,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/Compte'
           description: ''
+    patch:
+      operationId: utilisateurs_partial_update
+      description: Nom, téléphone, canal ; désactiver coupe aussi la session ouverte
+        (#302).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) utilisateur.
+        required: true
+      tags:
+      - utilisateurs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedModificationCompte'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedModificationCompte'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedModificationCompte'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compte'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/utilisateurs/{id}/code/:
     post:
       operationId: utilisateurs_code_create
@@ -6504,6 +6559,18 @@ components:
           type: integer
       required:
       - non_lues
+    ConfigurationGoogle:
+      type: object
+      properties:
+        client_id:
+          type: string
+          description: 'Identifiant OAuth public du client web ; vide : bouton masqué.'
+        jetons_de_test:
+          type: boolean
+          description: 'En local : un jeton « test:<gmail> » est accepté.'
+      required:
+      - client_id
+      - jetons_de_test
     ConflitPlanning:
       type: object
       properties:
@@ -6575,6 +6642,20 @@ components:
           description: Code de la matière → justification de l'écart (R10).
       required:
       - quantites
+    ContexteDuPoste:
+      type: object
+      properties:
+        semaine:
+          allOf:
+          - $ref: '#/components/schemas/SemaineDuPoste'
+          nullable: true
+        session:
+          allOf:
+          - $ref: '#/components/schemas/SessionDuPoste'
+          nullable: true
+      required:
+      - semaine
+      - session
     Controle:
       type: object
       properties:
@@ -9988,6 +10069,20 @@ components:
         membres:
           type: integer
           readOnly: true
+    PatchedModificationCompte:
+      type: object
+      description: Tous les champs sont facultatifs (#302).
+      properties:
+        is_active:
+          type: boolean
+        name:
+          type: string
+          maxLength: 255
+        telephone:
+          type: string
+          maxLength: 30
+        canal:
+          $ref: '#/components/schemas/CanalEnum'
     PatchedModificationDepense:
       type: object
       description: Les champs envoyés remplacent ceux de la dépense en attente (#300).
@@ -10351,7 +10446,14 @@ components:
           allOf:
           - $ref: '#/components/schemas/Poste'
           nullable: true
+        contexte:
+          allOf:
+          - $ref: '#/components/schemas/ContexteDuPoste'
+          nullable: true
+          description: 'Sur un poste de confiance seulement (CdC §4.2, #307) ; sinon
+            null.'
       required:
+      - contexte
       - poste
     PreAutorisation:
       type: object
@@ -11376,6 +11478,29 @@ components:
       required:
       - conflits
       - semaine
+    SemaineDuPoste:
+      type: object
+      properties:
+        numero:
+          type: integer
+        du:
+          type: string
+          format: date
+        au:
+          type: string
+          format: date
+        gerant:
+          type: string
+          nullable: true
+        production:
+          type: string
+          nullable: true
+      required:
+      - au
+      - du
+      - gerant
+      - numero
+      - production
     SensEnum:
       enum:
       - -1
@@ -11395,6 +11520,20 @@ components:
       required:
       - inactiviteMinutes
       - via
+    SessionDuPoste:
+      type: object
+      properties:
+        creneau:
+          type: string
+        ouverte_le:
+          type: string
+          format: date-time
+        caissiere:
+          type: string
+      required:
+      - caissiere
+      - creneau
+      - ouverte_le
     SessionProduction:
       type: object
       description: 'Sans jour ni créneau : la session dont les commandes sont closes.'

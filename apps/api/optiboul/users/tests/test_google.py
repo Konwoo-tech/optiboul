@@ -93,3 +93,33 @@ def test_desactivee_sans_identifiant_client(settings, mireille):
     assert _connexion(_google_repond(mireille.email)).json()["code"] == (
         "google_indisponible"
     )
+
+
+def test_configuration_publique(client_de, settings):
+    settings.OPTIBOUL_GOOGLE_CLIENT_ID = "abc.apps.googleusercontent.com"
+    reponse = APIClient().get(reverse("api:connexion-google-configuration"))
+    assert reponse.json() == {
+        "client_id": "abc.apps.googleusercontent.com",
+        "jetons_de_test": False,
+    }
+
+
+def test_jeton_de_test_en_local_seulement(settings, mireille):
+    settings.OPTIBOUL_GOOGLE_JETONS_DE_TEST = True
+    settings.DEBUG = False
+    refuse = APIClient().post(
+        GOOGLE,
+        {"jeton": f"test:{mireille.email}"},
+        format="json",
+    )
+    assert refuse.status_code != 200
+    settings.DEBUG = True
+    with mock.patch("optiboul.users.google.requests.get") as google:
+        reponse = APIClient().post(
+            GOOGLE,
+            {"jeton": f"test:{mireille.email}"},
+            format="json",
+        )
+    google.assert_not_called()
+    assert reponse.status_code == 200
+    assert reponse.json()["deuxFacteurs"] is True
