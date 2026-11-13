@@ -2,12 +2,14 @@ import {
   clientsList,
   commandesHabituelsSansCommandeList,
   commandesList,
+  demandesList,
   livraisonsList,
   mouvementsInternesList,
   optiboulFetch,
   toutesLesPages,
   type Client as ClientServeur,
   type Commande,
+  type Demande,
   type Habituel,
   type Livraison as LivraisonServeur,
   type MouvementInterne,
@@ -18,6 +20,7 @@ import { heureDeYaounde, lireCaisses } from '../caisses/api.ts';
 import type {
   Client,
   CleProduit,
+  DemandePlafond,
   InstantaneSession,
   Livraison,
   ModePaiement,
@@ -101,6 +104,27 @@ export function versLivraison(livraison: LivraisonServeur): Livraison {
   };
 }
 
+/** Une demande d'accord de plafond en attente ; `undefined` pour les autres types de demande. */
+export function versDemandePlafond(demande: Demande): DemandePlafond | undefined {
+  if (demande.type !== 'plafond') return undefined;
+  const details = (demande.details ?? {}) as Record<string, unknown>;
+  const emetteur = (demande.emetteur ?? {}) as { nom?: string };
+  return {
+    id: String(demande.id),
+    numero: demande.numero,
+    clientId: String(details.client ?? ''),
+    clientNom: String(details.client_nom ?? ''),
+    soldeApres: Number(details.solde_apres ?? 0),
+    plafond: Number(details.plafond ?? 0),
+    par: emetteur.nom ?? '',
+    jour: new Intl.DateTimeFormat('fr-CA', { timeZone: 'Africa/Douala' }).format(
+      new Date(demande.cree_le),
+    ),
+    heure: heureDeYaounde(demande.cree_le),
+    statut: 'en-attente',
+  };
+}
+
 const TYPE_DE_MOUVEMENT: Record<string, TypeMouvement> = {
   vente_guichet: 'vente-guichet',
   retours: 'retours',
@@ -180,25 +204,31 @@ export async function lireSessionReelle(): Promise<InstantaneSession> {
   const derniere = caisses.sessions.at(-1);
   if (!derniere) throw new Error('Aucune caisse enregistrée');
   const idCaisse = Number(derniere.id);
-  const [clients, commandes, habituels, livraisons, mouvements, semaines] = await Promise.all([
-    toutesLesPages<ClientServeur>(
-      (page) => clientsList({ actif: true, page }) as Promise<Page<ClientServeur>>,
-    ),
-    commandesList({ jour: derniere.jour, creneau: derniere.type }),
-    commandesHabituelsSansCommandeList({ jour: derniere.jour, creneau: derniere.type }).catch(
-      () => null,
-    ),
-    toutesLesPages<LivraisonServeur>(
-      (page) => livraisonsList({ caisse: idCaisse, page }) as Promise<Page<LivraisonServeur>>,
-    ),
-    toutesLesPages<MouvementInterne>(
-      (page) =>
-        mouvementsInternesList({ caisse: idCaisse, page }) as Promise<Page<MouvementInterne>>,
-    ),
-    optiboulFetch<{ data: { results?: Semaine[] } }>('/api/v1/semaines/?statut=ouverte').catch(
-      () => null,
-    ),
-  ]);
+  const [clients, commandes, habituels, livraisons, mouvements, semaines, enAttente] =
+    await Promise.all([
+      toutesLesPages<ClientServeur>(
+        (page) => clientsList({ actif: true, page }) as Promise<Page<ClientServeur>>,
+      ),
+      commandesList({ jour: derniere.jour, creneau: derniere.type }),
+      commandesHabituelsSansCommandeList({ jour: derniere.jour, creneau: derniere.type }).catch(
+        () => null,
+      ),
+      toutesLesPages<LivraisonServeur>(
+        (page) => livraisonsList({ caisse: idCaisse, page }) as Promise<Page<LivraisonServeur>>,
+      ),
+      toutesLesPages<MouvementInterne>(
+        (page) =>
+          mouvementsInternesList({ caisse: idCaisse, page }) as Promise<Page<MouvementInterne>>,
+      ),
+      optiboulFetch<{ data: { results?: Semaine[] } }>('/api/v1/semaines/?statut=ouverte').catch(
+        () => null,
+      ),
+      // `demandes/en-attente/` ne renvoie pas à l'émetteur ses propres demandes : on lit la liste (E28).
+      toutesLesPages<Demande>(
+        (page) =>
+          demandesList({ statut: 'en_attente', type: 'plafond', page }) as Promise<Page<Demande>>,
+      ).catch(() => null),
+    ]);
   const lus = clients.map(versClient);
   const rangees = rangerCommandes(
     lus,
@@ -219,9 +249,11 @@ export async function lireSessionReelle(): Promise<InstantaneSession> {
       .map(versMouvement)
       .filter((m): m is Mouvement => m !== undefined)
       .sort((a, b) => Number(b.id) - Number(a.id)),
-    // Les demandes d'autorisation de plafond arrivent avec les livraisons (#273).
+    // Après un accord, la livraison part d'elle-même : il n'y a plus d'autorisation à rejouer.
     autorisations: {},
-    demandes: [],
+    demandes: (enAttente ?? [])
+      .map(versDemandePlafond)
+      .filter((d): d is DemandePlafond => d !== undefined),
     depensesCaisse: caisses.detail?.depenses ?? 0,
     dernierBon: livrees[0]?.id ?? null,
     // Le serveur ne donne pas le numéro du prochain bon : le suivant du plus grand connu.

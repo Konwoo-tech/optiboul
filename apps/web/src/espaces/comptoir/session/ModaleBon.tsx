@@ -1,6 +1,8 @@
 import { useTranslation } from '@/i18n';
 import { FenetreModale, useToast } from '@/ui';
 
+import { envoyerBonParWhatsapp, ouvrirBonPdf } from './api.ts';
+
 import { dateCourte, dateSansAnnee, libelleDuMode, nomDeSession } from './affichage.ts';
 import { formaterNombre, formaterSigne, PRODUITS } from './calculs.ts';
 import styles from './Fenetres.module.css';
@@ -101,7 +103,11 @@ export function ModaleBon({ livraison, session, echeanceDettes, onFermer }: Prop
           type="button"
           className={styles.annuler}
           onClick={() =>
-            afficher(t('comptoir.session.modales.bon.toastWhatsapp', { nom: livraison.nom }))
+            void envoyerBonParWhatsapp(livraison.id).then(
+              () =>
+                afficher(t('comptoir.session.modales.bon.toastWhatsapp', { nom: livraison.nom })),
+              () => afficher(t('comptoir.session.modales.bon.toastWhatsappErreur')),
+            )
           }
         >
           {t('comptoir.session.modales.bon.whatsapp')}
@@ -109,9 +115,10 @@ export function ModaleBon({ livraison, session, echeanceDettes, onFermer }: Prop
         <button
           type="button"
           className={styles.confirmer}
-          onClick={() =>
-            afficher(t('comptoir.session.modales.bon.toastPdf', { numero: livraison.numero }))
-          }
+          onClick={() => {
+            ouvrirBonPdf(livraison.id);
+            afficher(t('comptoir.session.modales.bon.toastPdf', { numero: livraison.numero }));
+          }}
         >
           {t('comptoir.session.modales.bon.pdf')}
         </button>

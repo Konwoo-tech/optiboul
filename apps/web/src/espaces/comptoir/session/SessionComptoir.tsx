@@ -90,6 +90,7 @@ export default function SessionComptoir() {
     surAutorisation: ({ autorise, demande: nouvelle }) => {
       if (autorise) afficher(t('comptoir.session.livraisons.toasts.depassementAutorise'));
       else if (nouvelle) setFenetre({ type: 'autorisation', demandeId: nouvelle.id });
+      else afficher(t('comptoir.session.livraisons.toasts.demandeEnvoyee'));
     },
   });
 

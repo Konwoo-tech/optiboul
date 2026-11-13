@@ -572,7 +572,8 @@
         },
         "toasts": {
           "enregistree": "Livraison enregistrée · {{nom}} · bon n° {{numero}}",
-          "depassementAutorise": "Dépassement autorisé et tracé"
+          "depassementAutorise": "Dépassement autorisé et tracé",
+          "demandeEnvoyee": "Demande envoyée : la livraison partira dès l’accord d’un valideur."
         }
       },
       "mouvements": {
@@ -651,7 +652,8 @@
           "pdf": "Télécharger le PDF",
           "whatsapp": "Envoyer par WhatsApp",
           "toastPdf": "PDF du bon n° {{numero}} prêt",
-          "toastWhatsapp": "Bon envoyé par WhatsApp à {{nom}}"
+          "toastWhatsapp": "Bon envoyé par WhatsApp à {{nom}}",
+          "toastWhatsappErreur": "Le bon n’a pas pu être envoyé par WhatsApp (numéro manquant ?)."
         },
         "cloture": {
           "titre": "Confirmer la clôture",

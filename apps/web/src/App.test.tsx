@@ -68,6 +68,7 @@ function connecte(profil: string | null) {
     http.get('*/api/v1/commandes/', () => HttpResponse.json([])),
     http.get('*/api/v1/commandes/habituels-sans-commande/', () => HttpResponse.json([])),
     http.get('*/api/v1/livraisons/', () => HttpResponse.json(page([]))),
+    http.get('*/api/v1/demandes/', () => HttpResponse.json(page([]))),
     http.get('*/api/v1/mouvements-internes/', () => HttpResponse.json(page([]))),
   );
 }

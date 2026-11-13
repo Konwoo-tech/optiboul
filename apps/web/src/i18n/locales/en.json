@@ -572,7 +572,8 @@
         },
         "toasts": {
           "enregistree": "Delivery saved · {{nom}} · slip #{{numero}}",
-          "depassementAutorise": "Over-limit authorised and logged"
+          "depassementAutorise": "Over-limit authorised and logged",
+          "demandeEnvoyee": "Request sent: the delivery will go out once an approver agrees."
         }
       },
       "mouvements": {
@@ -651,7 +652,8 @@
           "pdf": "Download PDF",
           "whatsapp": "Send via WhatsApp",
           "toastPdf": "PDF for slip #{{numero}} ready",
-          "toastWhatsapp": "Slip sent via WhatsApp to {{nom}}"
+          "toastWhatsapp": "Slip sent via WhatsApp to {{nom}}",
+          "toastWhatsappErreur": "The slip could not be sent via WhatsApp (missing number?)."
         },
         "cloture": {
           "titre": "Confirm closing",
