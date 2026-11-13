@@ -1,8 +1,19 @@
-import { ErreurApi, optiboulFetch } from '@/api';
+import {
+  ErreurApi,
+  optiboulFetch,
+  productionsCloturerCreate,
+  productionsConsommationUpdate,
+  productionsFourneeCreate,
+  productionsOuvrirCreate,
+  productionsProposerCreate,
+  productionsSupplementCreate,
+  productionsValiderCreate,
+} from '@/api';
 import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
+import { CODE_SERVEUR, lireProductionReelle } from './reel.ts';
 import type {
   Consommation,
   InstantaneFiches,
@@ -16,9 +27,10 @@ import type {
 } from './types.ts';
 
 /*
- * Accès aux données de « Atelier › Production ». En attendant le backend, elles viennent du faux
- * serveur (`/api/v1/simulation/atelier/production/…`, voir `simulation/production.ts`). Chaque
- * action renvoie l'état complet de la production, que l'on range dans le cache de TanStack Query.
+ * Accès aux données de « Atelier › Production ». En simulation, elles viennent du faux serveur
+ * (`/api/v1/simulation/atelier/production/…`, voir `simulation/production.ts`) ; sur le vrai serveur,
+ * `reel.ts` compose l'instantané. Chaque action renvoie l'état complet de la production, que l'on
+ * range dans le cache de TanStack Query.
  */
 
 const RACINE = '/api/v1/simulation/atelier/production/';
@@ -48,8 +60,11 @@ async function envoyer<T>(methode: 'POST' | 'PUT', chemin: string, corps?: objec
 export function useProduction(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleProduction(utilisateur),
-    queryFn: async () => (await optiboulFetch<Reponse<InstantaneProduction>>(RACINE)).data,
-    enabled: SIMULATION && Boolean(utilisateur),
+    queryFn: async () =>
+      SIMULATION
+        ? (await optiboulFetch<Reponse<InstantaneProduction>>(RACINE)).data
+        : lireProductionReelle(),
+    enabled: Boolean(utilisateur),
     // Les commandes, le stock et les demandes bougent depuis d'autres écrans.
     staleTime: 0,
     refetchOnMount: 'always',
@@ -66,7 +81,7 @@ export function codeErreur(erreur: unknown): string | undefined {
   return erreur instanceof ErreurApi ? erreur.code : undefined;
 }
 
-function actionsDe(client: QueryClient, utilisateur: string | undefined) {
+export function actionsDe(client: QueryClient, utilisateur: string | undefined) {
   const cle = cleProduction(utilisateur);
   const ranger = async <T extends AvecInstantane>(demande: Promise<T>) => {
     const reponse = await demande;
@@ -76,29 +91,146 @@ function actionsDe(client: QueryClient, utilisateur: string | undefined) {
     void client.invalidateQueries({ queryKey: ['simulation', 'demandes'] });
     return reponse;
   };
+  /** Session visée sur le vrai serveur : celle que le plan a désignée. */
+  const session = () => {
+    const lue = client.getQueryData<InstantaneProduction>(cle);
+    return lue ? { jour: lue.session.date, creneau: lue.session.type as never } : {};
+  };
+  const lue = () => client.getQueryData<InstantaneProduction>(cle);
+  /** Après une écriture sur le vrai serveur : on relit l'instantané complet. */
+  const relire = async () => ({ instantane: await lireProductionReelle() });
+  const sansProduction = () =>
+    Promise.reject(
+      new ErreurApi(409, { code: 'production_inconnue', detail: 'Production non ouverte' }),
+    );
+  /** Les fournées à ajouter pour passer du réalisé du serveur au réalisé saisi (le serveur les cumule). */
+  const fournees = async (id: number, realise: Realise) => {
+    const avant = lue()?.realise;
+    for (const produit of Object.keys(CODE_SERVEUR) as (keyof Realise)[]) {
+      const voulu = realise[produit] ?? 0;
+      const delta = voulu - (avant?.[produit] ?? 0);
+      if (delta > 0)
+        await productionsFourneeCreate(id, { produit: CODE_SERVEUR[produit], pains: delta });
+    }
+  };
+  const quantitesServeur = (consommation: Consommation) =>
+    Object.fromEntries(
+      Object.entries(consommation)
+        .filter(([, valeur]) => valeur !== null)
+        .map(([matiere, valeur]) => [matiere, String(valeur)]),
+    );
   return {
-    proposerLePlan: () => ranger(envoyer<AvecInstantane>('POST', 'plan/proposer/')),
-    validerLePlan: () => ranger(envoyer<AvecInstantane>('POST', 'plan/valider/')),
-    ouvrir: () => ranger(envoyer<AvecInstantane>('POST', 'ouvrir/')),
+    proposerLePlan: () =>
+      ranger(
+        SIMULATION
+          ? envoyer<AvecInstantane>('POST', 'plan/proposer/')
+          : productionsProposerCreate(session()).then(relire),
+      ),
+    validerLePlan: () =>
+      ranger(
+        SIMULATION
+          ? envoyer<AvecInstantane>('POST', 'plan/valider/')
+          : productionsValiderCreate(session()).then(relire),
+      ),
+    ouvrir: () =>
+      ranger(
+        SIMULATION
+          ? envoyer<AvecInstantane>('POST', 'ouvrir/')
+          : productionsOuvrirCreate(session()).then(relire),
+      ),
     enregistrerLeRealise: (realise: Realise) =>
-      ranger(envoyer<AvecInstantane>('PUT', 'realise/', realise)),
+      ranger(
+        SIMULATION
+          ? envoyer<AvecInstantane>('PUT', 'realise/', realise)
+          : (async () => {
+              const id = lue()?.productionId;
+              if (!id) return sansProduction();
+              await fournees(Number(id), realise);
+              return relire();
+            })(),
+      ),
     enregistrerLaConsommation: (consommation: Consommation) =>
-      ranger(envoyer<AvecInstantane>('PUT', 'consommation/', consommation)),
+      ranger(
+        SIMULATION
+          ? envoyer<AvecInstantane>('PUT', 'consommation/', consommation)
+          : (async () => {
+              const id = lue()?.productionId;
+              if (!id) return sansProduction();
+              await productionsConsommationUpdate(Number(id), {
+                quantites: quantitesServeur(consommation),
+              });
+              return relire();
+            })(),
+      ),
     justifier: (justification: { motif: MotifEcart; texte: string; consommation: Consommation }) =>
-      ranger(envoyer<AvecInstantane>('POST', 'justification/', justification)),
+      ranger(
+        SIMULATION
+          ? envoyer<AvecInstantane>('POST', 'justification/', justification)
+          : (async () => {
+              const id = lue()?.productionId;
+              if (!id) return sansProduction();
+              const quantites = quantitesServeur(justification.consommation);
+              // Le serveur garde une justification par matière (R10) : le motif et le texte, pour chacune.
+              const texte = `${justification.motif} : ${justification.texte}`;
+              await productionsConsommationUpdate(Number(id), {
+                quantites,
+                justifications: Object.fromEntries(Object.keys(quantites).map((m) => [m, texte])),
+              });
+              return relire();
+            })(),
+      ),
     cloturer: async (valeurs: { realise: Realise; consommation: Consommation }) => {
-      const reponse = await ranger(envoyer<ReponseCloture>('POST', 'cloturer/', valeurs));
+      const reponse = await ranger(
+        SIMULATION
+          ? envoyer<ReponseCloture>('POST', 'cloturer/', valeurs)
+          : (async () => {
+              const id = lue()?.productionId;
+              if (!id) return sansProduction();
+              await fournees(Number(id), valeurs.realise);
+              await productionsConsommationUpdate(Number(id), {
+                quantites: quantitesServeur(valeurs.consommation),
+              });
+              await productionsCloturerCreate(Number(id));
+              const apres = await relire();
+              // La clôture sort de stock ce qui a été consommé.
+              const sorties = Object.entries(valeurs.consommation)
+                .filter(([, v]) => v !== null && v > 0)
+                .map(([matiere, quantite]) => ({ matiere, quantite: quantite as number }));
+              return { ...apres, sorties } as ReponseCloture;
+            })(),
+      );
       // La clôture crée les sorties de stock : l'écran Stocks les relit à l'ouverture.
       void client.invalidateQueries({ queryKey: ['simulation', 'atelier', 'stocks'] });
       return reponse;
     },
     ajouterUnSupplement: (supplement: NouveauSupplement) =>
       ranger(
-        envoyer<AvecInstantane & { demande?: { id: string; numero: number } }>(
-          'POST',
-          'supplement/',
-          supplement,
-        ),
+        SIMULATION
+          ? envoyer<AvecInstantane & { demande?: { id: string; numero: number } }>(
+              'POST',
+              'supplement/',
+              supplement,
+            )
+          : (async () => {
+              const reponse = await productionsSupplementCreate({
+                ...session(),
+                supplement: Object.fromEntries(
+                  (Object.keys(CODE_SERVEUR) as (keyof Quantites)[]).map((p) => [
+                    CODE_SERVEUR[p],
+                    supplement.sacs[p],
+                  ]),
+                ),
+                motif: supplement.motif as never,
+              });
+              const apres = await relire();
+              const demande = (reponse.data as { demande?: string | null }).demande;
+              return {
+                ...apres,
+                ...(demande
+                  ? { demande: { id: demande, numero: Number(demande.replace(/\D/g, '')) } }
+                  : {}),
+              };
+            })(),
       ),
   };
 }

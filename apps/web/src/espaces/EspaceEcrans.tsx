@@ -23,9 +23,7 @@ const EN_SIMULATION = import.meta.env.MODE === 'simulation';
  * différer d'un espace à l'autre. Ajouter un écran = ajouter une ligne.
  */
 const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
-  'atelier/production': EN_SIMULATION
-    ? lazy(() => import('./atelier/production/EcranProduction.tsx'))
-    : null,
+  'atelier/production': lazy(() => import('./atelier/production/EcranProduction.tsx')),
   'atelier/semaines': EN_SIMULATION
     ? lazy(() => import('./gestion/semaines/EcranSemaines.tsx'))
     : null,
