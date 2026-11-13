@@ -169,6 +169,8 @@ describe('saisie d’un mouvement sur le vrai serveur', () => {
     const recus: unknown[] = [];
     serveur.use(
       http.post('*/api/v1/mouvements-stock/saisir/', async ({ request }) => {
+        // Le serveur exige la clé d'idempotence : sans elle, 400 `cle_idempotence_absente`.
+        expect(request.headers.get('Idempotency-Key')).toBeTruthy();
         recus.push(await request.json());
         return HttpResponse.json(mouvement({}), { status: 201 });
       }),
