@@ -16,6 +16,8 @@
 // Vague 4 (Caisses) : la caisse du créneau est fermée avec un manque de 600 FCFA, la suivante ouverte,
 // pour que le tableau montre une ligne fermée et une ligne ouverte.
 // Vague 5 (Session › Commandes) : trois commandes saisies par la caissière pour la session ouverte.
+// Vague 6 (Dépenses) : trois fournisseurs, le budget du mois par catégorie, deux dépenses (une en
+// dessous, une au-dessus du seuil de validation).
 // Les vagues suivantes ajoutent leurs données ici (stocks, fournisseurs, …), une étape à la fois.
 
 import { execFileSync } from "node:child_process";
@@ -445,5 +447,65 @@ if (!caisseOuverte) {
     }
   }
 }
+
+// ---------------------------------------------------------------------------------------------
+// Vague 6 — Dépenses : fournisseurs, budget du mois, deux dépenses.
+console.log("Dépenses — fournisseurs, budget, dépenses");
+const fournisseursLus = (
+  await proprietaire.appeler("GET", "/api/v1/fournisseurs/")
+).donnees.results;
+for (const voulu of [
+  {
+    nom: "Moulin du Centre",
+    telephone: "677001201",
+    conditions: "Paiement à 30 jours",
+    matieres: ["farine", "sel"],
+  },
+  {
+    nom: "Marché d'Etoudi",
+    telephone: "677001202",
+    conditions: "Comptant",
+    matieres: ["levure", "bois", "glace"],
+  },
+  {
+    nom: "Huilerie Ngoa",
+    telephone: "677001203",
+    conditions: "Comptant",
+    matieres: ["huile"],
+  },
+]) {
+  if (fournisseursLus.some((x) => x.nom === voulu.nom)) {
+    console.log(`  fournisseur ${voulu.nom} : déjà là`);
+    continue;
+  }
+  const creation = await proprietaire.appeler("POST", "/api/v1/fournisseurs/", {
+    ...voulu,
+    actif: true,
+  });
+  if (![200, 201].includes(creation.statut)) {
+    throw new Error(
+      `fournisseur ${voulu.nom} refusé : ` + JSON.stringify(creation),
+    );
+  }
+  console.log(`  fournisseur ${voulu.nom} créé`);
+}
+const moisCourant = new Date().toISOString().slice(0, 7);
+const budget = await proprietaire.appeler("PUT", "/api/v1/budgets/fixer/", {
+  mois: moisCourant,
+  montants: {
+    matieres: 900000,
+    salaires: 1200000,
+    electricite: 150000,
+    eau: 60000,
+    administration: 80000,
+    technique: 100000,
+    petit_materiel: 50000,
+    lait: 120000,
+    extra: 40000,
+  },
+});
+if (budget.statut !== 200)
+  throw new Error("budget refusé : " + JSON.stringify(budget));
+console.log(`  budget de ${moisCourant} fixé`);
 
 console.log("Terminé.");

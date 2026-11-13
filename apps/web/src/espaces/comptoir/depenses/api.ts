@@ -1,9 +1,12 @@
-import { ErreurApi, optiboulFetch } from '@/api';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { depensesCreate, ErreurApi, optiboulFetch } from '@/api';
+import { SIMULATION } from '@/simulation';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 
+import { lireDepensesReelles, versCodeCategorie } from './reel.ts';
 import type { DemandeDepense, Depense, InstantaneDepenses, NouvelleDepense } from './types.ts';
 
-// Le backend n'a pas encore ces routes : l'écran lit le faux serveur (`simulation/depenses.ts`).
+// En simulation, l'écran lit le faux serveur (`simulation/depenses.ts`) ; sur le vrai serveur,
+// `reel.ts` compose l'instantané à partir des routes.
 const RACINE = '/api/v1/simulation/comptoir/depenses/';
 
 type Reponse<T> = { data: T };
@@ -15,7 +18,10 @@ export const cleDepenses = (utilisateur: string | undefined) =>
 export function useDepenses(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleDepenses(utilisateur),
-    queryFn: async () => (await optiboulFetch<Reponse<InstantaneDepenses>>(RACINE)).data,
+    queryFn: async () =>
+      SIMULATION
+        ? (await optiboulFetch<Reponse<InstantaneDepenses>>(RACINE)).data
+        : lireDepensesReelles(),
     enabled: Boolean(utilisateur),
     // Les dépenses bougent depuis d'autres écrans (demandes) : on relit à chaque ouverture.
     staleTime: 0,
@@ -29,17 +35,60 @@ export type DepenseEnregistree = {
   demande?: DemandeDepense;
 };
 
+/**
+ * `POST /depenses/` (multipart, avec le justificatif) puis relecture : le serveur numérote (DEP-xxxx),
+ * rattache à la session ou à la semaine, et émet une demande au-dessus du seuil.
+ */
+export async function enregistrerSurLeServeur(
+  client: QueryClient,
+  utilisateur: string | undefined,
+  depense: NouvelleDepense,
+): Promise<DepenseEnregistree> {
+  const avant = client.getQueryData<InstantaneDepenses>(cleDepenses(utilisateur));
+  // L'écran choisit un fournisseur par identifiant, le serveur attend son nom.
+  const nomDuFournisseur = avant?.fournisseurs.find((f) => f.id === depense.fournisseur)?.nom;
+  const reponse = await depensesCreate(
+    {
+      categorie: versCodeCategorie(depense.categorie) as never,
+      libelle: depense.libelle,
+      montant: depense.montant,
+      paye_par: depense.mode as never,
+      rattachement: depense.rattachement,
+      ...(depense.rattachement === 'stock'
+        ? {
+            matiere: depense.matiere,
+            quantite: depense.quantite === undefined ? undefined : String(depense.quantite),
+            // Sans fournisseur, le serveur veut « Marché » : un achat au marché.
+            fournisseur: nomDuFournisseur ?? 'Marché',
+          }
+        : {}),
+      ...(depense.justificatif ? { justificatif: depense.justificatif as never } : {}),
+    },
+    { headers: { 'Idempotency-Key': crypto.randomUUID() } },
+  );
+  const enregistree = reponse.data as { id: number; demande?: string | null };
+  const instantane = await lireDepensesReelles();
+  const creee = instantane.depenses.find((d) => d.id === String(enregistree.id));
+  if (!creee) throw new Error('Dépense introuvable après enregistrement');
+  const demande = enregistree.demande
+    ? instantane.demandes.find((d) => d.depenseId === creee.id)
+    : undefined;
+  return { instantane, depense: creee, ...(demande ? { demande } : {}) };
+}
+
 export function useEnregistrerDepense(utilisateur: string | undefined) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (depense: NouvelleDepense) =>
-      (
+    mutationFn: async (depense: NouvelleDepense): Promise<DepenseEnregistree> => {
+      if (!SIMULATION) return enregistrerSurLeServeur(client, utilisateur, depense);
+      return (
         await optiboulFetch<Reponse<DepenseEnregistree>>(RACINE, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(depense),
         })
-      ).data,
+      ).data;
+    },
     onSuccess: (reponse) => {
       client.setQueryData(cleDepenses(utilisateur), reponse.instantane);
       // Une dépense payée en caisse change les espèces attendues de la caisse et de la clôture.

@@ -1,3 +1,4 @@
+import { SIMULATION } from '@/simulation';
 import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
 import { useId, useRef, useState } from 'react';
@@ -58,6 +59,8 @@ export function Formulaire({
   const [fournisseur, setFournisseur] = useState('');
   const [mode, setMode] = useState<ModeDepense>('caisse');
   const [photo, setPhoto] = useState(false);
+  const [justificatif, setJustificatif] = useState<File | undefined>();
+  const champFichier = useRef<HTMLInputElement>(null);
   const [erreur, setErreur] = useState<ErreurSaisie | null>(null);
   const champLibelle = useRef<HTMLInputElement>(null);
   const champMontant = useRef<HTMLInputElement>(null);
@@ -98,6 +101,7 @@ export function Formulaire({
       montant: entierSaisi(montant),
       mode,
       photo,
+      ...(justificatif ? { justificatif } : {}),
       rattachement,
       ...(rattachement === 'stock'
         ? {
@@ -112,6 +116,7 @@ export function Formulaire({
       setMontant('');
       setQuantite('');
       setPhoto(false);
+      setJustificatif(undefined);
     }
   };
 
@@ -295,14 +300,37 @@ export function Formulaire({
         className={`${styles.photo} ${photo ? styles.photoJointe : ''}`}
         aria-pressed={photo}
         onClick={() => {
-          setPhoto(!photo);
           effacer();
+          // Sur le vrai serveur, la photo est un fichier : on ouvre l'appareil ou la galerie.
+          if (SIMULATION || photo) {
+            setPhoto(!photo);
+            setJustificatif(undefined);
+          } else {
+            champFichier.current?.click();
+          }
         }}
       >
         {t(
           photo ? 'comptoir.depenses.formulaire.photoJointe' : 'comptoir.depenses.formulaire.photo',
         )}
       </button>
+
+      <input
+        ref={champFichier}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        data-testid="justificatif"
+        onChange={(e) => {
+          const fichier = e.target.files?.[0];
+          if (fichier) {
+            setJustificatif(fichier);
+            setPhoto(true);
+          }
+          e.target.value = '';
+        }}
+      />
 
       <div className={styles.note}>
         {t('comptoir.depenses.formulaire.note', { seuil: formaterNombre(seuil) })}
