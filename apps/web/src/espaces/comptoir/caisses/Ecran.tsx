@@ -8,6 +8,7 @@ import { useState } from 'react';
 
 import { cleTitre, type Ecran } from '../../../navigation.ts';
 import {
+  ACTIONS_DE_CAISSE_DISPONIBLES,
   useCaisses,
   useFermerCaisse,
   useOuvrirCaisse,
@@ -120,12 +121,25 @@ export default function EcranCaisses({ ecran }: { ecran: Ecran }) {
   }
 
   const { caisseOuverte, detail, prochaine, plafond } = reponse;
-  const droits = droitsCaisse(utilisateur?.profil, caisseOuverte?.caissiere.id === reponse.moi);
+  const droitsServeur = droitsCaisse(
+    utilisateur?.profil,
+    caisseOuverte?.caissiere.id === reponse.moi,
+  );
+  // Sur le vrai serveur, les actions arrivent à l'étape #271 : l'écran ne les propose pas d'ici là.
+  const droits = {
+    ...droitsServeur,
+    ouvrir: droitsServeur.ouvrir && ACTIONS_DE_CAISSE_DISPONIBLES,
+    fermer: droitsServeur.fermer && ACTIONS_DE_CAISSE_DISPONIBLES,
+    rouvrir: droitsServeur.rouvrir && ACTIONS_DE_CAISSE_DISPONIBLES,
+    remettreAuCoffre: droitsServeur.remettreAuCoffre && ACTIONS_DE_CAISSE_DISPONIBLES,
+  };
   const filtreActif = droits.voitToutes ? filtre : 'all';
   const lignes = lignesDuTableau(reponse.sessions, filtreActif);
-  const cartes = cartesVisibles(reponse.caissieres, droits, reponse.moi).map((c) =>
-    syntheseCaissiere(c, reponse.sessions),
-  );
+  const cartes = cartesVisibles(reponse.caissieres, droits, reponse.moi).map((c) => {
+    const synthese = syntheseCaissiere(c, reponse.sessions);
+    const chiffres = reponse.recapitulatif?.[c.id];
+    return chiffres ? { ...synthese, ...chiffres } : synthese;
+  });
   const proposerCoffre = Boolean(
     detail && droits.remettreAuCoffre && depassePlafond(detail.attendu, plafond),
   );

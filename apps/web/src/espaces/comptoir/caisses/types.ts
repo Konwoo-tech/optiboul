@@ -64,6 +64,11 @@ export type ReponseCaisses = {
   rouvrable: boolean;
   /** Plafond d'espèces en caisse au-delà duquel on propose une remise au coffre. */
   plafond: number;
+  /**
+   * Chiffres par caissière (ouvertures, recette, écart cumulé), quand le serveur les donne : la
+   * recette d'une caisse seule n'existe pas, seulement le total par caissière.
+   */
+  recapitulatif?: Record<string, { ouvertures: number; recette: number; ecart: number }>;
   /** Personnes qui peuvent recevoir une remise au coffre (gérants et propriétaire). */
   receveurs: Personne[];
 };
