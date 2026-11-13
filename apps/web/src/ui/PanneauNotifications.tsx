@@ -1,29 +1,23 @@
 import { useUtilisateurCourant } from '@/auth';
+import { useNotifications, type NotificationAffichee } from '@/coque/notifications.ts';
 import { useTranslation } from '@/i18n';
-import {
-  marquerNotificationsLues,
-  useNotificationsSimulees,
-  type NotificationVue,
-} from '@/simulation';
-import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 
-import { cheminEcran } from '../navigation.ts';
 import styles from './PanneauNotifications.module.css';
 
 type Props = { ouvert: boolean; onFermer: () => void };
 
 /**
  * Tiroir des notifications de la personne connectée, repris de la maquette. Chaque fonction
- * (commandes, production, stocks…) y ajoutera les siennes ; en attendant, elles sont simulées.
+ * (commandes, production, stocks…) y ajoute les siennes : celles du vrai serveur, ou en simulation
+ * celles du faux serveur.
  */
 export function PanneauNotifications({ ouvert, onFermer }: Props) {
-  const { t, i18n } = useTranslation();
-  const client = useQueryClient();
+  const { t } = useTranslation();
   const naviguer = useNavigate();
   const { utilisateur } = useUtilisateurCourant();
-  const { data: notifications = [] } = useNotificationsSimulees(utilisateur?.name);
+  const { notifications, marquerLues, toutMarquerLu } = useNotifications(ouvert);
   const boutonFermer = useRef<HTMLButtonElement>(null);
   const panneau = useRef<HTMLDialogElement>(null);
   // Le parent recrée `onFermer` à chaque rendu : on le lit par une référence pour que l'effet
@@ -68,17 +62,12 @@ export function PanneauNotifications({ ouvert, onFermer }: Props) {
 
   const profil = utilisateur?.profil;
   const nonLues = notifications.filter((n) => !n.lue);
-  const marquer = async (ids: string[]) => {
-    await marquerNotificationsLues(ids);
-    await client.invalidateQueries({ queryKey: ['simulation', 'notifications'] });
-  };
-  const ouvrirEcran = async (notification: NotificationVue) => {
-    if (!notification.destination) return;
-    await marquer([notification.id]);
+  const ouvrirEcran = async (notification: NotificationAffichee) => {
+    if (!notification.chemin) return;
+    await marquerLues([notification.id]);
     onFermer();
-    void naviguer(cheminEcran(notification.destination));
+    void naviguer(notification.chemin);
   };
-  const langue = i18n.language === 'en' ? 'en' : 'fr';
 
   return (
     <>
@@ -104,11 +93,7 @@ export function PanneauNotifications({ ouvert, onFermer }: Props) {
           </div>
           <div className={styles.actions}>
             {nonLues.length > 0 && (
-              <button
-                type="button"
-                className={styles.fermer}
-                onClick={() => void marquer(notifications.map((n) => n.id))}
-              >
+              <button type="button" className={styles.fermer} onClick={() => void toutMarquerLu()}>
                 {t('coque.toutMarquerLu')}
               </button>
             )}
@@ -119,7 +104,6 @@ export function PanneauNotifications({ ouvert, onFermer }: Props) {
         </div>
         <div className={styles.liste}>
           {notifications.map((notification) => {
-            const texte = notification[langue];
             return (
               <div
                 key={notification.id}
@@ -135,13 +119,13 @@ export function PanneauNotifications({ ouvert, onFermer }: Props) {
                     <span
                       className={`${styles.type} ${notification.enDirect ? styles.typeEnDirect : ''}`}
                     >
-                      {texte.type}
+                      {notification.type}
                     </span>
-                    <span className={styles.heure}>{texte.heure}</span>
+                    <span className={styles.heure}>{notification.heure}</span>
                   </div>
-                  <div className={styles.titreCarte}>{texte.titre}</div>
-                  <div className={styles.detail}>{texte.detail}</div>
-                  {notification.destination && (
+                  <div className={styles.titreCarte}>{notification.titre}</div>
+                  <div className={styles.detail}>{notification.detail}</div>
+                  {notification.chemin && (
                     <button
                       type="button"
                       className={styles.ouvrir}

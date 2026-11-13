@@ -1,8 +1,7 @@
 import { useNetwork } from '@mantine/hooks';
-import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { useContexte } from '@/coque/contexte.ts';
-import { useNotificationsSimulees } from '@/simulation';
+import { useNombreNonLues } from '@/coque/notifications.ts';
 import type { Creneau } from '@/utils';
 import { useState } from 'react';
 
@@ -44,9 +43,7 @@ export function EnTetePage({
   const creneau = useCreneau();
   const { data: contexte } = useContexte();
   const [notificationsOuvertes, setNotificationsOuvertes] = useState(false);
-  const { utilisateur } = useUtilisateurCourant();
-  const { data: notifications = [] } = useNotificationsSimulees(utilisateur?.name);
-  const nonLues = notifications.filter((notification) => !notification.lue).length;
+  const nonLues = useNombreNonLues();
 
   // « Session de nuit » / « Session de jour » (la connexion, elle, dit « Nuit » / « Jour »).
   const type = t(`creneau.${session?.creneau ?? contexte?.sessionType ?? creneau}`);
