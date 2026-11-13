@@ -60,6 +60,8 @@ type Parametres = {
   actions: ActionsSession;
   /** Livraison enregistrée par le serveur. */
   surEnregistree: (livraison: Livraison) => void;
+  /** Paiement de dette enregistré par le serveur (sans livraison). */
+  surEncaissee: (paiement: { nom: string; montant: number }) => void;
   surErreur: (erreur: unknown) => void;
   /** Dépassement du plafond autorisé d'emblée (gérant) ou demande envoyée (caissier). */
   surAutorisation: (resultat: { autorise?: boolean; demande?: DemandePlafond }) => void;
@@ -76,6 +78,7 @@ export function useFormulaireLivraison({
   peutSaisir,
   actions,
   surEnregistree,
+  surEncaissee,
   surErreur,
   surAutorisation,
 }: Parametres) {
@@ -101,6 +104,7 @@ export function useFormulaireLivraison({
         recu: formulaire.recu,
         mode: formulaire.mode,
         reference: formulaire.reference,
+        paiementSeul: !SIMULATION,
         plafond: instantane?.plafond ?? 0,
         soldeAutorise: autorisation ? autorisation.soldeApres : null,
         peutSaisir,
@@ -153,6 +157,21 @@ export function useFormulaireLivraison({
     if (!calcul.valide || !client || enCours.current) return;
     enCours.current = true;
     try {
+      if (calcul.paiementDeDette) {
+        await actions.encaisser({
+          clientId: client.id,
+          mode: formulaire.mode,
+          recu: calcul.recu,
+          reference: formulaire.reference.trim(),
+          cle: cleDeLEnvoi(),
+        });
+        cle.current = null;
+        setFormulaire(VIDE);
+        setRecherche('');
+        focaliser(champs.recherche);
+        surEncaissee({ nom: client.nom, montant: calcul.recu });
+        return;
+      }
       const reponse = await actions.livrer({
         clientId: client.id,
         quantites: {
@@ -175,7 +194,18 @@ export function useFormulaireLivraison({
     } finally {
       enCours.current = false;
     }
-  }, [actions, calcul.recu, calcul.valide, champs, client, formulaire, surEnregistree, surErreur]);
+  }, [
+    actions,
+    calcul.paiementDeDette,
+    calcul.recu,
+    calcul.valide,
+    champs,
+    client,
+    formulaire,
+    surEncaissee,
+    surEnregistree,
+    surErreur,
+  ]);
 
   const demanderAutorisation = useCallback(async () => {
     if (!client) return;
