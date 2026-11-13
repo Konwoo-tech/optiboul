@@ -191,7 +191,8 @@
     "types": {
       "livreur": "Delivery customer",
       "restaurant": "Restaurant",
-      "hotel": "Hotel"
+      "hotel": "Hotel",
+      "particulier": "Private customer"
     },
     "vide": "No customers in this list.",
     "detailVide": "Select a customer to see their history and statement.",
@@ -202,6 +203,7 @@
     "historique": "History",
     "livraison": "Delivery slip #{{bon}}",
     "nuit": "night",
+    "jour": "day",
     "du": "Due",
     "paye": "Paid",
     "relevePdf": "PDF statement",

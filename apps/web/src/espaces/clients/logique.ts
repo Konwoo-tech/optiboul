@@ -37,9 +37,13 @@ export function statutDeSolde(solde: number, plafond: number): StatutClient {
 /** Clients qui doivent de l'argent. */
 export const enDette = (clients: readonly ClientSimule[]) => clients.filter((c) => c.solde < 0);
 
-/** Clients dont la dette dépasse le plafond. */
+/** Le plafond de ce client : le sien s'il en a un, sinon celui de la liste. */
+export const plafondDe = (client: Pick<ClientSimule, 'plafond'>, parDefaut: number): number =>
+  client.plafond ?? parDefaut;
+
+/** Clients dont la dette dépasse leur plafond. */
 export const auDelaDuPlafond = (clients: readonly ClientSimule[], plafond: number) =>
-  clients.filter((c) => c.solde < -plafond);
+  clients.filter((c) => c.solde < -plafondDe(c, plafond));
 
 /** Total des dettes, négatif (somme des soldes négatifs). */
 export const totalDesDettes = (clients: readonly ClientSimule[]): number =>

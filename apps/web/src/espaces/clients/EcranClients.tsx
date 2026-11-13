@@ -1,7 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import {
-  useClientsSimules,
   useRelancerClientsSimules,
   type ClientSimule,
   type ListeClientsSimulee,
@@ -13,6 +12,7 @@ import { useSearchParams } from 'react-router';
 
 import type { Ecran } from '../../navigation.ts';
 import { EnTeteEcran } from '../EnTeteEcran.tsx';
+import { RELANCES_ET_RELEVE_DISPONIBLES, useClients } from './api.ts';
 import { DetailClient } from './DetailClient.tsx';
 import styles from './EcranClients.module.css';
 import {
@@ -24,6 +24,7 @@ import {
   LIBELLE_DU_STATUT,
   NIVEAU_DU_STATUT,
   peutRelancer,
+  plafondDe,
   remplissageJauge,
   statutDeSolde,
   totalDesDettes,
@@ -47,7 +48,8 @@ type LigneProps = {
 
 function LigneClient({ client, plafond, choisi, relancable, onChoisir, onRelancer }: LigneProps) {
   const { t } = useTranslation();
-  const statut = statutDeSolde(client.solde, plafond);
+  const plafondDuClient = plafondDe(client, plafond);
+  const statut = statutDeSolde(client.solde, plafondDuClient);
   const niveau = NIVEAU_DU_STATUT[statut];
   const couleur = `var(--ob-${niveau}-texte)`;
   const libelleRelance = client.relance ? t('clients.relance') : t('clients.relancer');
@@ -75,14 +77,17 @@ function LigneClient({ client, plafond, choisi, relancable, onChoisir, onRelance
         <div className={styles.jauge} aria-hidden>
           <div
             className={styles.jaugeRemplie}
-            style={{ width: `${remplissageJauge(client.solde, plafond)}%`, background: couleur }}
+            style={{
+              width: `${remplissageJauge(client.solde, plafondDuClient)}%`,
+              background: couleur,
+            }}
           />
         </div>
         <div className={styles.jaugeTexte}>
           {client.solde < 0
             ? t('clients.jaugeTexte', {
                 dette: formaterNombre(-client.solde),
-                plafond: formaterNombre(plafond),
+                plafond: formaterNombre(plafondDuClient),
               })
             : t('clients.aucuneDette')}
         </div>
@@ -157,12 +162,12 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
   const { t } = useTranslation();
   const afficherToast = useToast();
   const { utilisateur } = useUtilisateurCourant();
-  const { data, isPending, isError } = useClientsSimules();
+  const { data, isPending, isError } = useClients();
   const relancer = useRelancerClientsSimules();
   const [parametres, definirParametres] = useSearchParams();
   const [focusDetail, setFocusDetail] = useState(false);
 
-  const relancable = peutRelancer(utilisateur?.profil);
+  const relancable = RELANCES_ET_RELEVE_DISPONIBLES && peutRelancer(utilisateur?.profil);
   const filtreDemande = parametres.get('filtre');
   const filtre = FILTRES.find((f) => f === filtreDemande) ?? 'tous';
   const choisi = data?.clients.find((c) => c.id === parametres.get('client'));
@@ -187,7 +192,7 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
         {t('clients.erreur')}
       </div>
     );
-  } else if (isPending) {
+  } else if (isPending || !data) {
     contenu = <output className={styles.message}>{t('clients.chargement')}</output>;
   } else {
     const { clients, plafond, echeance } = data;

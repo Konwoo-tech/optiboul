@@ -11,6 +11,10 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import type { Ecran } from '../../navigation.ts';
 import EcranClients from './EcranClients.tsx';
 
+// L'écran lit le faux serveur en mode simulation : ces tests parcourent ce mode (le vrai serveur est
+// couvert par api.test.tsx).
+vi.hoisted(() => vi.stubEnv('MODE', 'simulation'));
+
 const ECRAN: Ecran = { cle: 'clients', espace: 'comptoir', profils: ['caissier'] };
 const espace = (texte: string) => texte.replace(/ /g, ' ');
 

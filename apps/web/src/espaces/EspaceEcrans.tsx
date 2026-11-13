@@ -9,9 +9,10 @@ import { EcranPrevu } from './EcranPrevu.tsx';
 type EcranLivre = ComponentType<{ ecran: Ecran }>;
 
 /**
- * Les écrans construits lisent l'API simulée : hors simulation, la page d'attente s'affiche.
- * ATTENTION : chaque entrée de `ECRANS_LIVRES` doit être gardée par `EN_SIMULATION`. Un
- * `lazy(import(...))` sans garde embarquerait l'écran dans le paquet de production. (Une fonction
+ * Les écrans construits lisent l'API simulée : hors simulation, la page d'attente s'affiche,
+ * sauf pour les écrans déjà branchés sur le vrai serveur (intégration par étapes, ticket #292).
+ * ATTENTION : chaque entrée de `ECRANS_LIVRES` qui lit encore l'API simulée doit être gardée par
+ * `EN_SIMULATION`. Un `lazy(import(...))` sans garde embarquerait l'écran dans le paquet de production. (Une fonction
  * `enSimulation(() => import(...))` ne suffit pas : le compilateur ne retire pas l'import.)
  * `pnpm verifier:fuite`, à lancer après `pnpm build`, détecte une fuite.
  */
@@ -30,7 +31,8 @@ const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
     : null,
   'atelier/stocks': EN_SIMULATION ? lazy(() => import('./atelier/stocks/EcranStocks.tsx')) : null,
   'comptoir/caisses': EN_SIMULATION ? lazy(() => import('./comptoir/caisses/Ecran.tsx')) : null,
-  'comptoir/clients': EN_SIMULATION ? lazy(() => import('./clients/EcranClients.tsx')) : null,
+  // Branché sur le vrai serveur (#268) : sans garde.
+  'comptoir/clients': lazy(() => import('./clients/EcranClients.tsx')),
   'comptoir/demandes': EN_SIMULATION ? lazy(() => import('./comptoir/demandes/Ecran.tsx')) : null,
   'comptoir/depenses': EN_SIMULATION
     ? lazy(() => import('./comptoir/depenses/EcranDepenses.tsx'))
@@ -38,7 +40,7 @@ const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
   'comptoir/session': EN_SIMULATION
     ? lazy(() => import('./comptoir/session/SessionComptoir.tsx'))
     : null,
-  'gestion/clients': EN_SIMULATION ? lazy(() => import('./clients/EcranClients.tsx')) : null,
+  'gestion/clients': lazy(() => import('./clients/EcranClients.tsx')),
   'gestion/demandes': EN_SIMULATION ? lazy(() => import('./comptoir/demandes/Ecran.tsx')) : null,
   'gestion/depenses': EN_SIMULATION
     ? lazy(() => import('./comptoir/depenses/EcranDepenses.tsx'))

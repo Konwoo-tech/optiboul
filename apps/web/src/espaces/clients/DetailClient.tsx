@@ -1,16 +1,13 @@
 import { useTranslation } from '@/i18n';
-import {
-  useHistoriqueClientSimule,
-  type ClientSimule,
-  type LigneHistoriqueClient,
-} from '@/simulation';
+import { type ClientSimule, type LigneHistoriqueClient } from '@/simulation';
 import { useToast } from '@/ui';
 import { formaterNombre } from '@/utils';
 import { useEffect, useRef } from 'react';
 
 import styles from './EcranClients.module.css';
+import { RELANCES_ET_RELEVE_DISPONIBLES, useHistoriqueClient } from './api.ts';
 import { formaterJourCourt, formaterJourLong } from './formats.ts';
-import { LIBELLE_DU_STATUT, NIVEAU_DU_STATUT, statutDeSolde } from './logique.ts';
+import { LIBELLE_DU_STATUT, NIVEAU_DU_STATUT, plafondDe, statutDeSolde } from './logique.ts';
 
 type Props = {
   client: ClientSimule;
@@ -22,10 +19,20 @@ type Props = {
   onFermer: () => void;
 };
 
-/** « 14 oct. · 21:41 » pour la session du jour, « 13 oct. · nuit » pour les sessions passées. */
-function quand(ligne: LigneHistoriqueClient, langue: string, nuit: string): string {
+/** « 14 oct. · 21:41 » pour la session du jour, « 13 oct. · nuit » ou « · jour » pour les sessions passées. */
+function quand(
+  ligne: LigneHistoriqueClient,
+  langue: string,
+  creneaux: { nuit: string; jour: string },
+): string {
   const jour = formaterJourCourt(ligne.date, langue);
-  return `${jour} · ${ligne.moment === 'nuit' ? nuit : ligne.moment}`;
+  const moment =
+    ligne.moment === 'nuit'
+      ? creneaux.nuit
+      : ligne.moment === 'jour'
+        ? creneaux.jour
+        : ligne.moment;
+  return `${jour} · ${moment}`;
 }
 
 /**
@@ -36,14 +43,14 @@ function quand(ligne: LigneHistoriqueClient, langue: string, nuit: string): stri
 export function DetailClient({ client, plafond, echeance, prendreFocus, onFermer }: Props) {
   const { t, i18n } = useTranslation();
   const afficherToast = useToast();
-  const { data: historique = [] } = useHistoriqueClientSimule(client.id);
+  const { data: historique = [] } = useHistoriqueClient(client.id);
   const titre = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     if (prendreFocus) titre.current?.focus({ preventScroll: true });
   }, [client.id, prendreFocus]);
 
-  const statut = statutDeSolde(client.solde, plafond);
+  const statut = statutDeSolde(client.solde, plafondDe(client, plafond));
   const niveau = NIVEAU_DU_STATUT[statut];
   const couleur = `var(--ob-${niveau}-texte)`;
   const libelleStatut = t(LIBELLE_DU_STATUT[statut]);
@@ -90,7 +97,7 @@ export function DetailClient({ client, plafond, echeance, prendreFocus, onFermer
                 {t('clients.livraison', { bon: ligne.bon })}
               </div>
               <div className={styles.historiqueDate}>
-                {quand(ligne, i18n.language, t('clients.nuit'))}
+                {quand(ligne, i18n.language, { nuit: t('clients.nuit'), jour: t('clients.jour') })}
               </div>
             </div>
             <div className={styles.historiqueMontants}>
@@ -106,22 +113,24 @@ export function DetailClient({ client, plafond, echeance, prendreFocus, onFermer
           </li>
         ))}
       </ul>
-      <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.pdf}
-          onClick={() => afficherToast(t('clients.toastPdf', { nom: client.nom }))}
-        >
-          {t('clients.relevePdf')}
-        </button>
-        <button
-          type="button"
-          className={styles.whatsapp}
-          onClick={() => afficherToast(t('clients.toastReleve', { nom: client.nom }))}
-        >
-          {t('clients.envoyerReleve')}
-        </button>
-      </div>
+      {RELANCES_ET_RELEVE_DISPONIBLES && (
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={styles.pdf}
+            onClick={() => afficherToast(t('clients.toastPdf', { nom: client.nom }))}
+          >
+            {t('clients.relevePdf')}
+          </button>
+          <button
+            type="button"
+            className={styles.whatsapp}
+            onClick={() => afficherToast(t('clients.toastReleve', { nom: client.nom }))}
+          >
+            {t('clients.envoyerReleve')}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

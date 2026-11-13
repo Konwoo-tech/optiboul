@@ -191,7 +191,8 @@
     "types": {
       "livreur": "Client livreur",
       "restaurant": "Restaurant",
-      "hotel": "Hôtel"
+      "hotel": "Hôtel",
+      "particulier": "Particulier"
     },
     "vide": "Aucun client dans cette liste.",
     "detailVide": "Sélectionnez un client pour voir son historique et son relevé.",
@@ -202,6 +203,7 @@
     "historique": "Historique",
     "livraison": "Livraison bon n° {{bon}}",
     "nuit": "nuit",
+    "jour": "jour",
     "du": "Dû",
     "paye": "Payé",
     "relevePdf": "Relevé PDF",

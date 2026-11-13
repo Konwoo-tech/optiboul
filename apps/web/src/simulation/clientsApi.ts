@@ -1,6 +1,7 @@
 import { optiboulFetch } from '@/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { SIMULATION } from './actif.ts';
 import type { LigneHistoriqueClient, ListeClientsSimulee } from './clients.ts';
 
 type Reponse<T> = { data: T };
@@ -16,6 +17,7 @@ export function useClientsSimules() {
     queryKey: CLE,
     queryFn: async () =>
       (await optiboulFetch<Reponse<ListeClientsSimulee>>('/api/v1/simulation/clients/')).data,
+    enabled: SIMULATION,
   });
 }
 
@@ -29,7 +31,7 @@ export function useHistoriqueClientSimule(id: string | null) {
           `/api/v1/simulation/clients/${id}/historique/`,
         )
       ).data,
-    enabled: id !== null,
+    enabled: SIMULATION && id !== null,
   });
 }
 
