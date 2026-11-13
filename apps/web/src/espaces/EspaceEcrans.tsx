@@ -37,9 +37,7 @@ const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
   'comptoir/depenses': EN_SIMULATION
     ? lazy(() => import('./comptoir/depenses/EcranDepenses.tsx'))
     : null,
-  'comptoir/session': EN_SIMULATION
-    ? lazy(() => import('./comptoir/session/SessionComptoir.tsx'))
-    : null,
+  'comptoir/session': lazy(() => import('./comptoir/session/SessionComptoir.tsx')),
   'gestion/clients': lazy(() => import('./clients/EcranClients.tsx')),
   'gestion/demandes': EN_SIMULATION ? lazy(() => import('./comptoir/demandes/Ecran.tsx')) : null,
   'gestion/depenses': EN_SIMULATION

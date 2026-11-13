@@ -49,7 +49,7 @@ const poster = <T = undefined>(chemin: string, corps: object) =>
 export const cleCaisses = (utilisateur: string | undefined) =>
   ['comptoir', 'caisses', utilisateur] as const;
 
-const heureDeYaounde = (iso: string) =>
+export const heureDeYaounde = (iso: string) =>
   new Intl.DateTimeFormat('fr-FR', {
     hour: '2-digit',
     minute: '2-digit',
