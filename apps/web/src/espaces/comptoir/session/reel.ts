@@ -263,5 +263,6 @@ export async function lireSessionReelle(): Promise<InstantaneSession> {
     echeanceDettes: semaines?.data.results?.[0]?.au ?? '',
     // Les espèces attendues du serveur comptent aussi les paiements sans livraison et les remises.
     especesAttendues: derniere.enCours ? caisses.detail?.attendu : (derniere.attendu ?? undefined),
+    prochaine: { jour: caisses.prochaine.jour, type: caisses.prochaine.type },
   };
 }

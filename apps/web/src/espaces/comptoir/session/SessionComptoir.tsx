@@ -147,13 +147,19 @@ export default function SessionComptoir() {
   const langue = i18n.language;
   const date = dateCourte(session.date, langue);
   const nomSession = nomDeSession(t, session.type);
-  const suivante = session.type === 'nuit' ? 'jour' : 'nuit';
+  const suivante = instantane.prochaine?.type ?? (session.type === 'nuit' ? 'jour' : 'nuit');
   const dateSuivante = dateCourte(
-    session.type === 'nuit'
-      ? new Date(Date.parse(`${session.date}T12:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
-      : session.date,
+    instantane.prochaine?.jour ??
+      (session.type === 'nuit'
+        ? new Date(Date.parse(`${session.date}T12:00:00Z`) + 86_400_000).toISOString().slice(0, 10)
+        : session.date),
     langue,
   );
+  // Le serveur n'ouvre pas encore la session d'après : celle qu'on vient de fermer reste la prochaine.
+  const suivanteDejaFermee =
+    instantane.prochaine !== undefined &&
+    instantane.prochaine.jour === session.date &&
+    instantane.prochaine.type === session.type;
 
   const kicker = ouverte
     ? t('coque.kickerSession', { heure: session.ouverteA, nom: session.ouvertePar })
@@ -174,7 +180,10 @@ export default function SessionComptoir() {
       : null;
   const peutRouvrir = !ouverte && direction && ECRITURES.cloture;
   const peutOuvrirLaSuivante =
-    !ouverte && (profil === 'caissier' || profil === 'gerant') && ECRITURES.cloture;
+    !ouverte &&
+    !suivanteDejaFermee &&
+    (profil === 'caissier' || profil === 'gerant') &&
+    ECRITURES.cloture;
 
   const agir = (action: () => Promise<unknown>) => action().catch(surErreur);
 
