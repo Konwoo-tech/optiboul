@@ -174,6 +174,7 @@ export function versSessionDeCaisse(
   caisse: Awaited<ReturnType<typeof lireCaisses>>['sessions'][number],
 ): SessionCaisse {
   return {
+    caisseId: caisse.id,
     type: caisse.type,
     date: caisse.jour,
     statut: caisse.enCours ? 'ouverte' : 'cloturee',
@@ -260,5 +261,7 @@ export async function lireSessionReelle(): Promise<InstantaneSession> {
     numeroProchainBon: (livrees[0]?.numero ?? 0) + 1,
     // Les dettes se règlent avant la fin de la semaine ouverte.
     echeanceDettes: semaines?.data.results?.[0]?.au ?? '',
+    // Les espèces attendues du serveur comptent aussi les paiements sans livraison et les remises.
+    especesAttendues: derniere.enCours ? caisses.detail?.attendu : (derniere.attendu ?? undefined),
   };
 }
