@@ -8,6 +8,7 @@
 
 export interface GroupeNotifications {
   genre: string;
+  readonly genre_libelle: string;
   heure: string;
   /** Titre de la plus récente. */
   titre: string;

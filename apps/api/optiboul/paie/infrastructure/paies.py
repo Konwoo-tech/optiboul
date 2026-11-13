@@ -202,7 +202,7 @@ TYPE_PAIE = TypeDemande(
     sur_accord=lambda demande, qui: _conclure(demande, accord=True),
     sur_refus=lambda demande, qui: _conclure(demande, accord=False),
     echeance=_echeance,
-    lien="/gestion/paie",
+    lien="/gestion/personnel",
 )
 
 

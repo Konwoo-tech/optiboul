@@ -29,6 +29,7 @@ import type {
   ConnexionCode,
   ConnexionEmail,
   ConnexionGoogle,
+  Deconnexion,
   EnvoiCode,
   Invitation,
   MotDePasseOublie,
@@ -331,12 +332,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   status: 204
 }
 
+export type connexionDeconnexionCreateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
 export type connexionDeconnexionCreateResponseSuccess = (connexionDeconnexionCreateResponse204) & {
   headers: Headers;
 };
-;
+export type connexionDeconnexionCreateResponseError = (connexionDeconnexionCreateResponse400) & {
+  headers: Headers;
+};
 
-export type connexionDeconnexionCreateResponse = (connexionDeconnexionCreateResponseSuccess)
+export type connexionDeconnexionCreateResponse = (connexionDeconnexionCreateResponseSuccess | connexionDeconnexionCreateResponseError)
 
 export const getConnexionDeconnexionCreateUrl = () => {
 
@@ -346,14 +354,28 @@ export const getConnexionDeconnexionCreateUrl = () => {
   return `/api/v1/connexion/deconnexion/`
 }
 
-export const connexionDeconnexionCreate = async ( options?: Parameters<typeof optiboulFetch>[1]): Promise<connexionDeconnexionCreateResponse> => {
+export const connexionDeconnexionCreate = async (deconnexion?: Deconnexion, options?: Parameters<typeof optiboulFetch>[1]): Promise<connexionDeconnexionCreateResponse> => {
 
-  return optiboulFetch<connexionDeconnexionCreateResponse>(getConnexionDeconnexionCreateUrl(),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<connexionDeconnexionCreateResponse>(getConnexionDeconnexionCreateUrl(),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(deconnexion)
   }
 );}
 
@@ -363,9 +385,9 @@ export const connexionDeconnexionCreate = async ( options?: Parameters<typeof op
 
 export const getConnexionDeconnexionCreateMutationKey = () => ['connexionDeconnexionCreate'] as const;
 
-export const getConnexionDeconnexionCreateMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionDeconnexionCreate>>, TError,void, TContext>, request?: SecondParameter<typeof optiboulFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof connexionDeconnexionCreate>>, TError,void, TContext> => {
+export const getConnexionDeconnexionCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionDeconnexionCreate>>, TError,ConnexionDeconnexionCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof connexionDeconnexionCreate>>, TError,ConnexionDeconnexionCreateMutationVariables, TContext> => {
 
 const mutationKey = getConnexionDeconnexionCreateMutationKey();
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -377,10 +399,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof connexionDeconnexionCreate>>, void> = () => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof connexionDeconnexionCreate>>, ConnexionDeconnexionCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
 
-
-          return  connexionDeconnexionCreate(requestOptions)
+          return  connexionDeconnexionCreate(data,requestOptions)
         }
 
 
@@ -391,16 +413,16 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type ConnexionDeconnexionCreateMutationResult = NonNullable<Awaited<ReturnType<typeof connexionDeconnexionCreate>>>
+    export type ConnexionDeconnexionCreateMutationBody = Deconnexion | undefined
+    export type ConnexionDeconnexionCreateMutationError = Probleme
+    export type ConnexionDeconnexionCreateMutationVariables = {data?: Deconnexion}
 
-    export type ConnexionDeconnexionCreateMutationError = unknown
-
-
-    export const useConnexionDeconnexionCreate = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionDeconnexionCreate>>, TError,void, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+    export const useConnexionDeconnexionCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof connexionDeconnexionCreate>>, TError,ConnexionDeconnexionCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof connexionDeconnexionCreate>>,
         TError,
-        void,
+        ConnexionDeconnexionCreateMutationVariables,
         TContext
       > => {
       return useMutation(getConnexionDeconnexionCreateMutationOptions(options), queryClient);

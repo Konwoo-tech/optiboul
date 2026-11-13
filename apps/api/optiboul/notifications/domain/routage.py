@@ -78,3 +78,25 @@ REGLES_DE_DEPART: tuple[Regle, ...] = (
 )
 
 PAR_GENRE = {regle.genre: regle for regle in REGLES_DE_DEPART}
+
+# Notifications adressées à des personnes précises, hors table de routage.
+LIBELLES_DIRECTS = {
+    "caisse.hors_planning": "Caisse ouverte hors planning",
+    "caisse.rouverte": "Caisse rouverte",
+    "demande.emise": "Demande à valider",
+    "demande.accordee": "Demande accordée",
+    "demande.refusee": "Demande refusée",
+    "demande.escaladee": "Demande remontée au propriétaire",
+    "semaine.cloture_forcee": "Clôture forcée de la semaine",
+    "semaine.ouverture_impossible": "Ouverture de la semaine impossible",
+    "semaine.passation": "Rapport de passation",
+    "semaine.rappel_cloture": "Rappel de clôture de la semaine",
+    "sauvegarde.cloud_en_retard": "Sauvegarde cloud en retard",
+}
+
+
+def libelle_du_genre(genre: str) -> str:
+    """Le libellé lisible d'un type ; un type inconnu est rendu tel quel (#297)."""
+    if genre in PAR_GENRE:
+        return PAR_GENRE[genre].libelle
+    return LIBELLES_DIRECTS.get(genre, genre)

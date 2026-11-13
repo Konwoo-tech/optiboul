@@ -12,6 +12,7 @@ from optiboul.demandes.application import demandes as circuit
 from optiboul.demandes.application.demandes import ObjetLie
 from optiboul.demandes.application.demandes import TypeDemande
 from optiboul.notifications.infrastructure.envois import notificateur
+from optiboul.stocks.application.controles import LIEN
 from optiboul.stocks.application.controles import OUVERTS
 from optiboul.stocks.application.controles import Depots
 from optiboul.stocks.application.controles import EtatControle
@@ -177,7 +178,7 @@ TYPE_INVENTAIRE = TypeDemande(
     sur_accord=lambda demande, qui: _conclure(demande, qui, accord=True),
     sur_refus=lambda demande, qui: _conclure(demande, qui, accord=False),
     echeance=_echeance,
-    lien="/atelier/stocks/controles",
+    lien=LIEN,
 )
 
 

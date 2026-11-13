@@ -34,6 +34,7 @@ SESSION_VIA = "optiboul_connexion_via"
 REFUS: dict[str, tuple[str, int]] = {
     "utilisateur_inconnu": ("Utilisateur inconnu.", 400),
     "code_incorrect": ("Code incorrect.", 400),
+    "raison_invalide": ("Raison attendue : volontaire ou inactivite.", 400),
     "compte_bloque": ("Trop d'échecs : compte bloqué 15 minutes.", 403),
     "code_interdit_a_distance": (
         "À distance, connectez-vous par e-mail ou Google.",

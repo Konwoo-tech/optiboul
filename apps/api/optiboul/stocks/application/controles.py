@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 CONTROLENT = frozenset({"gerant", "production"})
 OUVERTS = (StatutControle.PREVU, StatutControle.A_FAIRE)
 GENRE = "stock.controle"
-LIEN = "/atelier/stocks/controles"
+LIEN = "/atelier/stocks?onglet=inventaires"
 
 
 @dataclass(frozen=True)
