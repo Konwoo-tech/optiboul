@@ -36,6 +36,7 @@
     "gerant": "Gérant de la semaine",
     "production": "Chef de production",
     "proprietaire": "Propriétaire",
+    "proprietaireSansNom": "Propriétaire",
     "administrateur": "Administrateur"
   },
   "apparence": {

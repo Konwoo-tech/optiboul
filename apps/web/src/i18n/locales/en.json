@@ -36,6 +36,7 @@
     "gerant": "Manager of the week",
     "production": "Head baker",
     "proprietaire": "Owner",
+    "proprietaireSansNom": "Owner",
     "administrateur": "Administrator"
   },
   "apparence": {
