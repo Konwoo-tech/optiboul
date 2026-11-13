@@ -1,6 +1,10 @@
 import {
   clientsDettesRetrieve,
+  clientsEnvoyerReleveCreate,
   clientsList,
+  clientsRelancerCreate,
+  clientsRelancerGroupeCreate,
+  getClientsRelevePdfRetrieveUrl,
   livraisonsList,
   type Client,
   type Livraison,
@@ -11,22 +15,17 @@ import {
   SIMULATION,
   useClientsSimules,
   useHistoriqueClientSimule,
+  useRelancerClientsSimules,
   type ClientSimule,
   type LigneHistoriqueClient,
   type ListeClientsSimulee,
 } from '@/simulation';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 const FUSEAU = 'Africa/Douala';
 /** Plafond de dette par défaut (R6) si le serveur ne dit rien : paramètre `plafond_dette_client`. */
 const PLAFOND_PAR_DEFAUT = 2000;
-
-/**
- * Relances WhatsApp et envoi du relevé : branchés à l'étape « relances et relevé » (#269). D'ici là,
- * l'écran ne les propose pas sur le vrai serveur (pas de faux « envoyé »).
- */
-export const RELANCES_ET_RELEVE_DISPONIBLES = SIMULATION;
 
 type Page<T> = { data: { results?: T[]; next?: string | null } };
 
@@ -169,4 +168,45 @@ export function useHistoriqueClient(id: string | null) {
     enabled: !SIMULATION && id !== null,
   });
   return SIMULATION ? simule : reel;
+}
+
+/** Résultat d'une relance : messages mis en file, clients ignorés (sans téléphone ou sans dette). */
+export type ResultatRelances = { relances: number; ignores: number };
+
+/**
+ * Relance WhatsApp d'un ou de plusieurs clients (gérant, propriétaire). Sur le vrai serveur, le
+ * message part par la file d'envoi : un client sans numéro ou sans dette est ignoré, pas relancé.
+ */
+export function useRelancerClients() {
+  const client = useQueryClient();
+  const simule = useRelancerClientsSimules();
+  const reel = useMutation({
+    mutationFn: async (ids: string[]): Promise<ResultatRelances> => {
+      const nombres = ids.map(Number);
+      const reponse =
+        nombres.length === 1
+          ? await clientsRelancerCreate(nombres[0] as number)
+          : await clientsRelancerGroupeCreate({ clients: nombres });
+      const corps = reponse.data as { relances?: unknown[]; ignores?: unknown[] };
+      return { relances: corps.relances?.length ?? 0, ignores: corps.ignores?.length ?? 0 };
+    },
+    onSuccess: () => client.invalidateQueries({ queryKey: ['clients', 'liste'] }),
+  });
+  return SIMULATION ? simule : reel;
+}
+
+/** Envoie le relevé du client par WhatsApp (file d'envoi) ; le serveur répond 409 sans numéro. */
+export function useEnvoyerReleve() {
+  return useMutation({
+    // En simulation, rien ne part : l'écran confirme seulement.
+    mutationFn: async (id: string) => {
+      if (!SIMULATION) await clientsEnvoyerReleveCreate(Number(id), {});
+    },
+  });
+}
+
+/** Ouvre le relevé PDF (30 derniers jours) dans un nouvel onglet : le navigateur porte la session. */
+export function ouvrirRelevePdf(id: string) {
+  if (SIMULATION) return;
+  window.open(getClientsRelevePdfRetrieveUrl(Number(id)), '_blank', 'noopener');
 }

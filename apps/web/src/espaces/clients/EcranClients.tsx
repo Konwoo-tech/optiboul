@@ -1,10 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import {
-  useRelancerClientsSimules,
-  type ClientSimule,
-  type ListeClientsSimulee,
-} from '@/simulation';
+import { type ClientSimule, type ListeClientsSimulee } from '@/simulation';
 import { useToast } from '@/ui';
 import { formaterNombre } from '@/utils';
 import { useState } from 'react';
@@ -12,7 +8,7 @@ import { useSearchParams } from 'react-router';
 
 import type { Ecran } from '../../navigation.ts';
 import { EnTeteEcran } from '../EnTeteEcran.tsx';
-import { RELANCES_ET_RELEVE_DISPONIBLES, useClients } from './api.ts';
+import { useClients, useRelancerClients } from './api.ts';
 import { DetailClient } from './DetailClient.tsx';
 import styles from './EcranClients.module.css';
 import {
@@ -163,11 +159,11 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
   const afficherToast = useToast();
   const { utilisateur } = useUtilisateurCourant();
   const { data, isPending, isError } = useClients();
-  const relancer = useRelancerClientsSimules();
+  const relancer = useRelancerClients();
   const [parametres, definirParametres] = useSearchParams();
   const [focusDetail, setFocusDetail] = useState(false);
 
-  const relancable = RELANCES_ET_RELEVE_DISPONIBLES && peutRelancer(utilisateur?.profil);
+  const relancable = peutRelancer(utilisateur?.profil);
   const filtreDemande = parametres.get('filtre');
   const filtre = FILTRES.find((f) => f === filtreDemande) ?? 'tous';
   const choisi = data?.clients.find((c) => c.id === parametres.get('client'));
@@ -204,18 +200,25 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
     const surErreur = () => afficherToast(t('clients.toastRelanceErreur'));
     const relancerUn = (client: ClientSimule) =>
       relancer.mutate([client.id], {
-        onSuccess: () =>
-          afficherToast(
-            t('clients.toastRelance', { nom: client.nom, montant: formaterNombre(-client.solde) }),
-          ),
+        onSuccess: ({ relances }) =>
+          relances === 0
+            ? surErreur()
+            : afficherToast(
+                t('clients.toastRelance', {
+                  nom: client.nom,
+                  montant: formaterNombre(-client.solde),
+                }),
+              ),
         onError: surErreur,
       });
     const relancerTous = () =>
       relancer.mutate(
         dettes.map((c) => c.id),
         {
-          onSuccess: () =>
-            afficherToast(t('clients.toastRelanceGroupee', { count: dettes.length })),
+          onSuccess: ({ relances }) =>
+            relances === 0
+              ? surErreur()
+              : afficherToast(t('clients.toastRelanceGroupee', { count: relances })),
           onError: surErreur,
         },
       );

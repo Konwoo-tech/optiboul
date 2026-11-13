@@ -5,7 +5,7 @@ import { formaterNombre } from '@/utils';
 import { useEffect, useRef } from 'react';
 
 import styles from './EcranClients.module.css';
-import { RELANCES_ET_RELEVE_DISPONIBLES, useHistoriqueClient } from './api.ts';
+import { ouvrirRelevePdf, useEnvoyerReleve, useHistoriqueClient } from './api.ts';
 import { formaterJourCourt, formaterJourLong } from './formats.ts';
 import { LIBELLE_DU_STATUT, NIVEAU_DU_STATUT, plafondDe, statutDeSolde } from './logique.ts';
 
@@ -43,6 +43,7 @@ function quand(
 export function DetailClient({ client, plafond, echeance, prendreFocus, onFermer }: Props) {
   const { t, i18n } = useTranslation();
   const afficherToast = useToast();
+  const envoyerReleve = useEnvoyerReleve();
   const { data: historique = [] } = useHistoriqueClient(client.id);
   const titre = useRef<HTMLHeadingElement>(null);
 
@@ -113,24 +114,31 @@ export function DetailClient({ client, plafond, echeance, prendreFocus, onFermer
           </li>
         ))}
       </ul>
-      {RELANCES_ET_RELEVE_DISPONIBLES && (
-        <div className={styles.actions}>
-          <button
-            type="button"
-            className={styles.pdf}
-            onClick={() => afficherToast(t('clients.toastPdf', { nom: client.nom }))}
-          >
-            {t('clients.relevePdf')}
-          </button>
-          <button
-            type="button"
-            className={styles.whatsapp}
-            onClick={() => afficherToast(t('clients.toastReleve', { nom: client.nom }))}
-          >
-            {t('clients.envoyerReleve')}
-          </button>
-        </div>
-      )}
+      <div className={styles.actions}>
+        <button
+          type="button"
+          className={styles.pdf}
+          onClick={() => {
+            ouvrirRelevePdf(client.id);
+            afficherToast(t('clients.toastPdf', { nom: client.nom }));
+          }}
+        >
+          {t('clients.relevePdf')}
+        </button>
+        <button
+          type="button"
+          className={styles.whatsapp}
+          disabled={envoyerReleve.isPending}
+          onClick={() =>
+            envoyerReleve.mutate(client.id, {
+              onSuccess: () => afficherToast(t('clients.toastReleve', { nom: client.nom })),
+              onError: () => afficherToast(t('clients.toastReleveErreur', { nom: client.nom })),
+            })
+          }
+        >
+          {t('clients.envoyerReleve')}
+        </button>
+      </div>
     </section>
   );
 }

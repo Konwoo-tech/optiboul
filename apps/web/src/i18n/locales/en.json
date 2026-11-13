@@ -213,6 +213,7 @@
     "toastRelanceGroupee_other": "Sent {{count}} WhatsApp reminders",
     "toastPdf": "PDF statement for {{nom}} ready",
     "toastReleve": "Statement sent via WhatsApp to {{nom}}",
+    "toastReleveErreur": "The statement for {{nom}} could not be sent (missing number?).",
     "erreur": "Unable to load customers.",
     "chargement": "Loading customers…"
   },

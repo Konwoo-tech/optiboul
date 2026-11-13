@@ -1,13 +1,15 @@
 import { configurerApi } from '@/api';
 import { creerServeurApi } from '@/test';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import {
   dimancheDeLaSemaine,
   momentDeLivraison,
+  useEnvoyerReleve,
+  useRelancerClients,
   plafondCourant,
   useClients,
   useHistoriqueClient,
@@ -314,5 +316,66 @@ describe('fonctions de lecture', () => {
     expect(
       momentDeLivraison({ cree_le: '2026-11-11T09:10:00+01:00', creneau: 'jour' }, maintenant),
     ).toBe('jour');
+  });
+});
+
+describe('relances et relevé sur le vrai serveur', () => {
+  const enveloppe = () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+  };
+  const relance = { id: 9, motif: 'dette', montant: 1140, envoi: { statut: 'en_attente' } };
+
+  it('relance un client : une seule route, compte les messages mis en file', async () => {
+    serveur.use(
+      http.post('*/api/v1/clients/1/relancer/', () =>
+        HttpResponse.json({ relances: [relance], ignores: [] }),
+      ),
+    );
+    const { result } = renderHook(() => useRelancerClients(), { wrapper: enveloppe() });
+    let resultat;
+    await act(async () => {
+      resultat = await result.current.mutateAsync(['1']);
+    });
+    expect(resultat).toEqual({ relances: 1, ignores: 0 });
+  });
+
+  it('relance en groupe : envoie les identifiants numériques, signale les ignorés', async () => {
+    let corps: unknown;
+    serveur.use(
+      http.post('*/api/v1/clients/relancer-groupe/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json({
+          relances: [relance],
+          ignores: [{ client: 3, nom: 'White', raison: 'sans_telephone' }],
+        });
+      }),
+    );
+    const { result } = renderHook(() => useRelancerClients(), { wrapper: enveloppe() });
+    let resultat;
+    await act(async () => {
+      resultat = await result.current.mutateAsync(['1', '3']);
+    });
+    expect(corps).toEqual({ clients: [1, 3] });
+    expect(resultat).toEqual({ relances: 1, ignores: 1 });
+  });
+
+  it('envoie le relevé (204) et remonte le refus 409', async () => {
+    serveur.use(
+      http.post(
+        '*/api/v1/clients/1/envoyer-releve/',
+        () => new HttpResponse(null, { status: 204 }),
+      ),
+      http.post('*/api/v1/clients/2/envoyer-releve/', () =>
+        HttpResponse.json({ detail: 'Pas de numéro', code: 'sans_telephone' }, { status: 409 }),
+      ),
+    );
+    const { result } = renderHook(() => useEnvoyerReleve(), { wrapper: enveloppe() });
+    await act(async () => {
+      await result.current.mutateAsync('1');
+    });
+    await expect(result.current.mutateAsync('2')).rejects.toMatchObject({ status: 409 });
   });
 });
