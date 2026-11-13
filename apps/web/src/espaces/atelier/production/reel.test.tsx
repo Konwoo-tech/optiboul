@@ -335,6 +335,33 @@ describe('écritures de la production sur le vrai serveur', () => {
     expect(reponse.demande).toEqual({ id: 'DEM-004', numero: 4 });
   });
 
+  it('une justification envoyée est retenue : relue avec la production et redite à chaque saisie', async () => {
+    serveurProduction();
+    const client = new QueryClient();
+    client.setQueryData(cleProduction('Serge'), instantane());
+    const corps: { justifications?: Record<string, string> }[] = [];
+    serveur.use(
+      http.put('*/api/v1/productions/9/consommation/', async ({ request }) => {
+        corps.push((await request.json()) as never);
+        return HttpResponse.json(EN_COURS);
+      }),
+    );
+    const actions = actionsDe(client, 'Serge');
+    const consommation = { farine: 258, sel: 3100 } as never;
+    await actions.justifier({ motif: 'perte', texte: 'Sac éventré', consommation });
+    // Le serveur ne renvoie pas la justification : l'écran la relit de sa mémoire.
+    expect((await lireProductionReelle()).justification).toEqual({
+      motif: 'perte',
+      texte: 'Sac éventré',
+    });
+    // Une saisie ultérieure (consommation ou clôture) redit la justification : pas de refus R10.
+    await actions.enregistrerLaConsommation(consommation);
+    expect(corps[1]?.justifications).toEqual({
+      farine: 'perte : Sac éventré',
+      sel: 'perte : Sac éventré',
+    });
+  });
+
   it('sans production ouverte, réalisé et clôture sont refusés sans appeler le serveur', async () => {
     const client = new QueryClient();
     client.setQueryData(cleProduction('Serge'), instantane({ productionId: undefined }));

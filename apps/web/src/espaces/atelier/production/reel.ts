@@ -13,6 +13,7 @@ import {
 } from '@/api';
 import type { Creneau } from '@/utils';
 
+import { justificationEnvoyee } from './justifications.ts';
 import {
   CLES_PRODUIT,
   type CleProduit,
@@ -243,7 +244,7 @@ export async function lireProductionReelle(): Promise<InstantaneProduction> {
     demande,
     realise: versRealise(produits),
     consommation: versConsommation(enCours?.consommation ?? []),
-    justification: null,
+    justification: justificationEnvoyee(enCours ? String(enCours.id) : undefined),
     // La tolérance d'écart se règle dans les paramètres (réservés au propriétaire) : valeur par défaut.
     seuilEcartKg: 0.5,
     stock: Object.fromEntries(
