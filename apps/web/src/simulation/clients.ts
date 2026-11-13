@@ -10,7 +10,7 @@ import { lireUtilisateurConnecte } from './session.ts';
  * Données littérales, sans appel de fonction : le paquet de production n'en embarque aucune.
  */
 
-export type TypeClient = 'livreur' | 'restaurant' | 'hotel';
+export type TypeClient = 'livreur' | 'restaurant' | 'hotel' | 'particulier';
 
 export type TarifsClient = { BAG: number; KO: number; GC: number };
 
@@ -27,6 +27,8 @@ export type ClientSimule = {
   solde: number;
   /** Une relance WhatsApp a déjà été envoyée à ce client. */
   relance: boolean;
+  /** Plafond propre à ce client ; absent : celui de la liste. */
+  plafond?: number;
 };
 
 export type ListeClientsSimulee = {

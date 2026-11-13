@@ -8,9 +8,12 @@
 // Prérequis : l'API tourne (demarrer-api.ps1) et les comptes existent (seed_dev.py).
 // Le deuxième facteur n'étant pas envoyé en local, le script lit le code dans la base.
 //
-// Vague 2 : la semaine 46 de 2026 ouverte (gérant Willy, production Serge), puis la caisse du
-// créneau en cours ouverte par la caissière avec le fonds proposé. Les vagues suivantes ajoutent
-// leurs données ici (clients, produits, stocks, fournisseurs, …), une étape à la fois.
+// Vague 2 : la semaine en cours ouverte (gérant Willy, production Serge), puis la caisse du
+// créneau en cours ouverte par la caissière avec le fonds proposé.
+// Vague 3 (Clients et dettes) : onze clients avec leurs tarifs, créés par le propriétaire, puis des
+// livraisons à crédit faites par la caissière sur la caisse ouverte : ce sont elles qui posent les
+// dettes (le solde d'un client est la somme de ses mouvements, il ne s'écrit pas).
+// Les vagues suivantes ajoutent leurs données ici (stocks, fournisseurs, …), une étape à la fois.
 
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -54,7 +57,8 @@ function dernierCode() {
 class Client {
   cookies = new Map([['optiboul_poste', POSTE]]);
 
-  async appeler(methode, chemin, corps) {
+  /** `cle` : en-tête `Idempotency-Key`, exigé par les opérations d'argent (livraisons, …). */
+  async appeler(methode, chemin, corps, cle) {
     const entetes = {
       Accept: 'application/json',
       Origin: API,
@@ -64,6 +68,7 @@ class Client {
       entetes['Content-Type'] = 'application/json';
       const csrf = this.cookies.get('csrftoken');
       if (csrf) entetes['X-CSRFToken'] = csrf;
+      if (cle) entetes['Idempotency-Key'] = cle;
     }
     const reponse = await fetch(API + chemin, {
       method: methode,
@@ -152,4 +157,81 @@ if (prochaine.caisse_en_cours) {
   if (ouverture.statut !== 201) throw new Error('caisse non ouverte : ' + JSON.stringify(ouverture));
   console.log(`  caisse ouverte (${prochaine.creneau}, fonds ${prochaine.fonds_propose})`);
 }
+
+// ---------------------------------------------------------------------------------------------
+// Vague 3 — Clients et dettes
+// ---------------------------------------------------------------------------------------------
+// Codes de produits de l'API : BAG, KO, GC135, GC170, PL, C2, PSL. Le tarif A est le prix de base
+// (rien à poser) ; le tarif B est posé par `PUT /clients/{id}/tarifs/`.
+const TARIF_A = { BAG: 100, KO: 70, GC135: 160 };
+const TARIF_B = { BAG: 110, KO: 75, GC135: 165 };
+
+// Dette voulue = ce que le client doit après la livraison à crédit ; `livraison` = pains livrés,
+// `paye` = espèces reçues sur le moment (0 : tout à crédit). Aucun montant n'est écrit en base :
+// l'API calcule le dû avec le tarif du client.
+const CLIENTS = [
+  { nom: 'Alain', type: 'livreur', lieu: 'Marché Etoudi', telephone: '677211045', tarifs: TARIF_B, livraison: { BAG: 10, KO: 2 }, paye: 0 }, // doit 1 250
+  { nom: 'Alex', type: 'livreur', lieu: 'Carrefour Emana', telephone: '699083341', tarifs: TARIF_A },
+  { nom: 'Ebène', type: 'livreur', lieu: 'Lycée d’Etoudi', telephone: '655721908', tarifs: TARIF_A, livraison: { BAG: 20 }, paye: 0 }, // doit 2 000 (le plafond)
+  { nom: 'White', type: 'livreur', lieu: 'Olembé', telephone: '678401266', tarifs: TARIF_B, livraison: { BAG: 10 }, paye: 600 }, // doit 500
+  { nom: 'Mama Ngono', type: 'livreur', lieu: 'Marché Etoudi', telephone: '694157022', tarifs: TARIF_A },
+  { nom: 'Junior', type: 'livreur', lieu: 'Messassi', telephone: '670660193', tarifs: TARIF_A, livraison: { BAG: 12, KO: 10 }, paye: 0 }, // doit 1 900
+  { nom: 'Brice', type: 'livreur', lieu: 'Nkolondom', telephone: '677338821', tarifs: TARIF_B },
+  { nom: 'Restaurant Le Palmier', type: 'restaurant', lieu: 'Bastos', telephone: '699120455', tarifs: TARIF_B, livraison: { BAG: 8, GC135: 2 }, paye: 1000 }, // doit 210
+  { nom: 'Hôtel Mont Fébé', type: 'hotel', lieu: 'Mont Fébé', telephone: '677001145', tarifs: TARIF_B },
+  { nom: 'Mme Atangana', type: 'particulier', lieu: 'Etoudi', telephone: '677550123', tarifs: TARIF_A },
+  { nom: 'Chez Bertrand', type: 'restaurant', lieu: 'Essos', telephone: '655009812', tarifs: TARIF_A },
+];
+
+console.log('Clients et dettes — propriétaire');
+const existants = (await proprietaire.appeler('GET', '/api/v1/clients/')).donnees.results;
+for (const client of CLIENTS) {
+  if (existants.some((e) => e.nom === client.nom)) continue;
+  const creation = await proprietaire.appeler('POST', '/api/v1/clients/', {
+    nom: client.nom,
+    type: client.type,
+    lieu: client.lieu,
+    telephone: client.telephone,
+    tarifs: client.tarifs,
+  });
+  if (creation.statut !== 201) throw new Error(`client ${client.nom} non créé : ` + JSON.stringify(creation));
+  console.log('  client créé :', client.nom);
+}
+let clients = (await proprietaire.appeler('GET', '/api/v1/clients/')).donnees.results;
+for (const voulu of CLIENTS.filter((c) => c.tarifs === TARIF_B)) {
+  const client = clients.find((c) => c.nom === voulu.nom);
+  if (!client || Object.keys(client.tarifs).length > 0) continue;
+  const pose = await proprietaire.appeler('PUT', `/api/v1/clients/${client.id}/tarifs/`, {
+    tarifs: TARIF_B,
+  });
+  if (pose.statut !== 200) throw new Error(`tarifs de ${voulu.nom} refusés : ` + JSON.stringify(pose));
+  console.log('  tarifs posés :', voulu.nom);
+}
+clients = (await proprietaire.appeler('GET', '/api/v1/clients/')).donnees.results;
+
+console.log('Clients et dettes — livraisons à crédit par la caissière');
+for (const voulu of CLIENTS.filter((c) => c.livraison)) {
+  const client = clients.find((c) => c.nom === voulu.nom);
+  if (!client) throw new Error('client introuvable : ' + voulu.nom);
+  if (client.solde !== 0) {
+    console.log(`  ${voulu.nom} : déjà ${client.solde} FCFA, rien à livrer`);
+    continue;
+  }
+  const livraison = await caissiere.appeler(
+    'POST',
+    '/api/v1/livraisons/',
+    {
+      client: client.id,
+      lignes: voulu.livraison,
+      ...(voulu.paye ? { paiement: { mode: 'especes', montant: voulu.paye } } : {}),
+    },
+    `demo-livraison-${client.id}`,
+  );
+  if (![201, 202].includes(livraison.statut)) {
+    throw new Error(`livraison à ${voulu.nom} refusée : ` + JSON.stringify(livraison));
+  }
+  console.log(`  livraison à ${voulu.nom} : dû ${livraison.donnees.montant_du}, reçu ${livraison.donnees.recu}, solde ${livraison.donnees.solde_apres}`);
+}
+const dettes = (await proprietaire.appeler('GET', '/api/v1/clients/dettes/')).donnees;
+console.log(`  dettes : ${dettes.nombre} client(s), ${dettes.total} FCFA au total`);
 console.log('Terminé.');
