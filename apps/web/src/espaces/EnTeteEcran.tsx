@@ -1,5 +1,5 @@
 import { useTranslation } from '@/i18n';
-import { useContexteSimule } from '@/simulation';
+import { useContexte } from '@/coque/contexte.ts';
 import { EnTetePage, useCreneau, useHorloge } from '@/ui';
 import { formaterDateCourte } from '@/utils';
 
@@ -18,7 +18,7 @@ export function EnTeteEcran({
   titre?: string;
 }) {
   const { t, i18n } = useTranslation();
-  const { data: contexte } = useContexteSimule();
+  const { data: contexte } = useContexte();
   const creneau = useCreneau();
   const maintenant = useHorloge();
 

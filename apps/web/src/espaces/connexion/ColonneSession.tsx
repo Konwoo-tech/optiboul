@@ -1,6 +1,6 @@
 import { useNetwork } from '@mantine/hooks';
 import { useTranslation } from '@/i18n';
-import { useContexteSimule } from '@/simulation';
+import { useContexte } from '@/coque/contexte.ts';
 import { BasculeApparence, useCreneau, useHorloge } from '@/ui';
 import { formaterDateLongue, formaterHeure } from '@/utils';
 
@@ -12,7 +12,7 @@ export function ColonneSession() {
   const maintenant = useHorloge();
   const creneau = useCreneau();
   const { online } = useNetwork();
-  const { data: contexte } = useContexteSimule();
+  const { data: contexte } = useContexte();
 
   const type = t(creneau === 'nuit' ? 'creneau.nuitCourt' : 'creneau.jourCourt');
 

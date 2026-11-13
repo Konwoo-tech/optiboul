@@ -1,7 +1,7 @@
 import { ErreurApi } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { useContexteSimule } from '@/simulation';
+import { useContexte } from '@/coque/contexte.ts';
 import { EcranErreur, EnTetePage, useToast } from '@/ui';
 import { formaterDateCourte, formaterNombre, formaterNombreSigne, initiales } from '@/utils';
 import { useState } from 'react';
@@ -68,7 +68,7 @@ export default function EcranCaisses({ ecran }: { ecran: Ecran }) {
   const langue = i18n.language === 'en' ? 'en' : 'fr';
   const afficherToast = useToast();
   const { utilisateur } = useUtilisateurCourant();
-  const { data: contexte } = useContexteSimule();
+  const { data: contexte } = useContexte();
   const requete = useCaisses(utilisateur?.name);
   const ouvrir = useOuvrirCaisse(utilisateur?.name);
   const fermer = useFermerCaisse(utilisateur?.name);
