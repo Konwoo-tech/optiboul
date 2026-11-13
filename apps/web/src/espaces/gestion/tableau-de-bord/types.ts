@@ -82,4 +82,8 @@ export type InstantaneTableauDeBord = {
   production: ProductionDuProduit[];
   /** Les plus urgentes d'abord, dans l'ordre de la maquette. */
   alertes: Alerte[];
+  /** Marge estimée du mois (vrai serveur) : recette − matières − charges. Absent en simulation. */
+  marge?: { matieres: number; charges: number; marge: number };
+  /** Budget du mois par catégorie (vrai serveur). Absent en simulation. */
+  budget?: { categorie: Categorie; budget: number; realise: number }[];
 };

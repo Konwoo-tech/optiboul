@@ -8,6 +8,7 @@ import {
 } from '@/api';
 
 import type { CleEcran } from '../../../navigation.ts';
+import { versCategorie } from '../../comptoir/depenses/reel.ts';
 import type { Espace } from '../../../profils.ts';
 import type {
   Alerte,
@@ -40,8 +41,10 @@ type TableauServeur = {
     ventes: number;
     dettes_clients: number;
     dettes_fournisseurs: number;
+    marge_estimee: { matieres: number; charges: number; marge: number };
   };
   graphiques: {
+    budget_par_categorie?: { categorie: string; budget: number; depense: number }[];
     recette_par_session: { jour: string; creneau: string; recette: number }[];
     production_par_produit: { produit?: string; code?: string; pains?: number; total?: number }[];
   };
@@ -128,5 +131,11 @@ export async function lireTableauDeBordReel(): Promise<InstantaneTableauDeBord> 
     production: versProduction(graphiques.production_par_produit),
     // Le serveur range ses alertes des plus urgentes aux moins urgentes.
     alertes: alertes.map(versAlerte),
+    marge: indicateurs.marge_estimee,
+    budget: (graphiques.budget_par_categorie ?? []).map((l) => ({
+      categorie: versCategorie(l.categorie),
+      budget: l.budget,
+      realise: l.depense,
+    })),
   };
 }

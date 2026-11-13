@@ -25,6 +25,8 @@ export function Indicateurs({ instantane }: { instantane: InstantaneTableauDeBor
   const { recette, dettesClients, dettesFournisseurs, semaine } = instantane;
   const jour = (iso: string) => formaterDateCourte(new Date(iso), i18n.language);
 
+  const { marge } = instantane;
+
   const indicateurs: Indicateur[] = [
     {
       cle: 'recette',
@@ -60,6 +62,22 @@ export function Indicateurs({ instantane }: { instantane: InstantaneTableauDeBor
       }),
       alerte: dettesFournisseurs.facturesEnRetard > 0,
     },
+    // La marge n'existe que sur le vrai serveur (le prototype ne la montre pas).
+    ...(marge
+      ? [
+          {
+            cle: 'marge',
+            libelle: t('gestion.tableauDeBord.marge'),
+            valeur: formaterNombre(marge.marge),
+            unite: 'FCFA',
+            detail: t('gestion.tableauDeBord.margeDetail', {
+              matieres: formaterNombre(marge.matieres),
+              charges: formaterNombre(marge.charges),
+            }),
+            alerte: marge.marge < 0,
+          },
+        ]
+      : []),
     {
       cle: 'semaine',
       libelle: t('coque.semaine', {

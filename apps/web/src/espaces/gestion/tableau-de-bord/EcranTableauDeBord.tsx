@@ -8,6 +8,7 @@ import { EnTeteEcran } from '../../EnTeteEcran.tsx';
 import { codeErreur, useTableauDeBord } from './api.ts';
 import { Alertes } from './Alertes.tsx';
 import { Indicateurs } from './Indicateurs.tsx';
+import { Budget } from '../../comptoir/depenses/Budget.tsx';
 import { ProductionParProduit } from './ProductionParProduit.tsx';
 import { RecetteParNuit } from './RecetteParNuit.tsx';
 import { peutVoirTableauDeBord } from './regles.ts';
@@ -70,6 +71,9 @@ export default function EcranTableauDeBord({ ecran }: { ecran: Ecran }) {
           <Alertes alertes={instantane.alertes} />
         </div>
         <ProductionParProduit instantane={instantane} />
+        {instantane.budget && instantane.budget.length > 0 && (
+          <Budget lignes={instantane.budget} mois={instantane.mois} onFixer={undefined} />
+        )}
       </div>
     </>
   );
