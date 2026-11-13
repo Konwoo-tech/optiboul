@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { useContexteSimule } from '@/simulation';
+import { useContexte } from '@/coque/contexte.ts';
 import { AvatarUtilisateur, BoutonDeconnexion } from '@/ui';
 import { formaterDateCourte } from '@/utils';
 import { useState } from 'react';
@@ -73,7 +73,7 @@ function Logo({ telephone = false }: { telephone?: boolean }) {
 export function BarreLaterale() {
   const { t, i18n } = useTranslation();
   const { utilisateur } = useUtilisateurCourant();
-  const { data: contexte } = useContexteSimule();
+  const { data: contexte } = useContexte();
   const profil = utilisateur?.profil;
 
   return (
