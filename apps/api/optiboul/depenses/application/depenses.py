@@ -92,6 +92,17 @@ class DepotDepenses(Protocol):
 
     def marquer(self, depense_id: int, statut: StatutDepense) -> None: ...
 
+    def modifier(
+        self,
+        depense_id: int,
+        depense: NouvelleDepense,
+        *,
+        session: Session | None,
+        justificatif: Any,
+    ) -> None:
+        """Remplace les champs modifiables ; un justificatif absent est gardé."""
+        ...
+
 
 @dataclass(frozen=True)
 class DepenseSoumise:
@@ -112,6 +123,17 @@ class Autorisations(Protocol):
         maintenant: datetime,
     ) -> str:
         """Émet la demande « dépense au-dessus du seuil » ; renvoie DEM-xxx."""
+        ...
+
+    def retirer(
+        self,
+        depense_id: int,
+        *,
+        motif: str,
+        auteur: Auteur,
+        maintenant: datetime,
+    ) -> str | None:
+        """Annule la demande en attente de la dépense ; renvoie son DEM-xxx."""
         ...
 
 
@@ -331,6 +353,129 @@ def conclure(
             objet_id=str(depense_id),
             avant={"statut": StatutDepense.EN_ATTENTE},
             apres={"statut": statut},
+        ),
+    )
+
+
+CORRIGENT_TOUTES = frozenset({"gerant", "proprietaire"})
+
+
+def _en_attente(depots: Depots, depense_id: int, auteur: Auteur) -> DepenseSoumise:
+    """Seule une dépense en attente se corrige, par son auteur ou la direction."""
+    soumise = depots.depenses.verrouiller_soumise(depense_id)
+    if soumise is None:
+        message = "Cette dépense est déjà décidée : elle ne se modifie plus."
+        raise RefusMetier("depense_deja_decidee", message)
+    if (
+        auteur.utilisateur_id != soumise.auteur
+        and auteur.profil not in CORRIGENT_TOUTES
+    ):
+        message = "Seuls son auteur et la direction corrigent cette dépense."
+        raise RefusMetier("droit_insuffisant", message)
+    return soumise
+
+
+def modifier(  # noqa: PLR0913
+    depots: Depots,
+    *,
+    depense_id: int,
+    depense: NouvelleDepense,
+    session_production: Session,
+    justificatif: Any,
+    seuil: int,
+    auteur: Auteur,
+    maintenant: datetime,
+) -> StatutDepense:
+    """Corrige une dépense en attente (#300). Passée sous le seuil, elle n'a plus
+    besoin d'accord : la demande est annulée, la caisse et le stock bougent."""
+    soumise = _en_attente(depots, depense_id, auteur)
+    if depense.paye_par is not soumise.depense.paye_par:
+        message = "Le moyen de paiement ne se modifie pas : annulez puis ressaisissez."
+        raise RefusMetier("paiement_non_modifiable", message)
+    verifier_depense(depense, depots.stock.suivies())
+    depots.depenses.modifier(
+        depense_id,
+        depense,
+        session=session_production
+        if depense.rattachement is not Rattachement.SEMAINE
+        else None,
+        justificatif=justificatif,
+    )
+    statut = StatutDepense.EN_ATTENTE
+    if depense.montant < seuil:
+        depots.autorisations.retirer(
+            depense_id,
+            motif="Montant ramené sous le seuil de validation",
+            auteur=auteur,
+            maintenant=maintenant,
+        )
+        _mouvementer(
+            depots,
+            depense=depense,
+            depense_id=depense_id,
+            numero=soumise.numero,
+            caisse=soumise.caisse,
+            semaine=soumise.semaine,
+            auteur=soumise.auteur,
+        )
+        statut = StatutDepense.VALIDEE
+        depots.depenses.marquer(depense_id, statut)
+    depots.journal.enregistrer(
+        Evenement(
+            action="depense.modifiee",
+            auteur=auteur,
+            objet_type="depense",
+            objet_id=str(depense_id),
+            avant={
+                "libelle": soumise.depense.libelle,
+                "montant": soumise.depense.montant,
+                "categorie": soumise.depense.categorie,
+                "rattachement": soumise.depense.rattachement,
+            },
+            apres={
+                "libelle": depense.libelle,
+                "montant": depense.montant,
+                "categorie": depense.categorie,
+                "rattachement": depense.rattachement,
+                "statut": statut,
+            },
+        ),
+    )
+    return statut
+
+
+def annuler(
+    depots: Depots,
+    *,
+    depense_id: int,
+    motif: str,
+    auteur: Auteur,
+    maintenant: datetime,
+) -> None:
+    """Retire une dépense en attente (#300). Rien n'a bougé avant l'accord : ni
+    caisse ni stock à défaire ; la demande liée est close."""
+    if not motif.strip():
+        raise RefusMetier("motif_obligatoire", "Le motif est obligatoire.")
+    _en_attente(depots, depense_id, auteur)
+    depots.depenses.marquer(depense_id, StatutDepense.ANNULEE)
+    demande = depots.autorisations.retirer(
+        depense_id,
+        motif=motif,
+        auteur=auteur,
+        maintenant=maintenant,
+    )
+    depots.journal.enregistrer(
+        Evenement(
+            action="depense.annulee",
+            auteur=auteur,
+            objet_type="depense",
+            objet_id=str(depense_id),
+            avant={"statut": StatutDepense.EN_ATTENTE},
+            apres={
+                "statut": StatutDepense.ANNULEE,
+                "motif": motif.strip(),
+                "demande": demande or "",
+            },
         ),
     )
 

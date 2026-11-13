@@ -145,6 +145,32 @@ class DepotDepensesDjango:
     def marquer(self, depense_id: int, statut: StatutDepense) -> None:
         Depense.objects.filter(pk=depense_id).update(statut=statut)
 
+    def modifier(
+        self,
+        depense_id: int,
+        depense: NouvelleDepense,
+        *,
+        session: Session | None,
+        justificatif: Any,
+    ) -> None:
+        trouvee = Depense.objects.get(pk=depense_id)
+        trouvee.categorie = depense.categorie
+        trouvee.libelle = depense.libelle.strip()
+        trouvee.montant = depense.montant
+        trouvee.rattachement = depense.rattachement
+        trouvee.production_jour = session.jour if session else None
+        trouvee.production_creneau = session.creneau if session else ""
+        trouvee.matiere = (
+            Matiere.objects.filter(code=depense.matiere).first()
+            if depense.matiere
+            else None
+        )
+        trouvee.quantite = depense.quantite
+        trouvee.fournisseur = depense.fournisseur.strip()
+        if justificatif is not None:
+            trouvee.justificatif = justificatif
+        trouvee.save()
+
 
 def engage(pre: PreAutorisation) -> int:
     """Dépenses non refusées rattachées à la pré-autorisation, en FCFA."""

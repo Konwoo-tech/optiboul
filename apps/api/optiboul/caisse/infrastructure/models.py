@@ -41,6 +41,14 @@ class Caisse(models.Model):
     en_cours = models.BooleanField(_("en cours"), default=True)
     ouverte_le = models.DateTimeField(_("ouverte le"), default=timezone.now)
     fermee_le = models.DateTimeField(_("fermée le"), null=True, blank=True)
+    fermee_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("fermée par"),
+    )
 
     class Meta:
         db_table = "caisse"

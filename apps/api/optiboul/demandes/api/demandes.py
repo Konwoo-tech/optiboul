@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework import status
 from rest_framework.decorators import action
@@ -28,6 +29,7 @@ from optiboul.core.api.permissions import profil_de
 from optiboul.core.application.journal import Auteur
 from optiboul.core.application.journal import Entree
 from optiboul.core.domain.erreurs import RefusMetier
+from optiboul.core.infrastructure.semaines import depot_semaines
 from optiboul.demandes.application import demandes as cas
 from optiboul.demandes.domain.demandes import StatutDemande
 from optiboul.demandes.domain.demandes import Via
@@ -36,6 +38,8 @@ from optiboul.demandes.infrastructure.demandes import depots
 from optiboul.demandes.infrastructure.models import Demande
 from optiboul.users.connexion import RefusConnexion
 from optiboul.users.connexion import verifier_code
+from optiboul.users.models import Profil
+from optiboul.users.models import User
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -47,10 +51,32 @@ class EmetteurSerializer(serializers.Serializer):
     nom = serializers.CharField()
 
 
+PROFILS_VALIDEURS = ("gerant", "proprietaire")
+
+
+class ValideurPossibleSerializer(serializers.Serializer):
+    profil = serializers.CharField()
+    nom = serializers.CharField()
+
+
+def valideur_par_profil(profil: str) -> User | None:
+    """Le gérant de la semaine ouverte, ou le propriétaire (premier compte actif)."""
+    if profil == "gerant":
+        semaine = depot_semaines.ouverte()
+        if semaine is None or semaine.gerant is None:
+            return None
+        return User.objects.filter(pk=semaine.gerant, is_active=True).first()
+    return next(
+        (u for u in User.objects.filter(is_active=True) if u.profil == profil),
+        None,
+    )
+
+
 class DemandeSerializer(serializers.ModelSerializer[Demande]):
     code = serializers.SerializerMethodField()
     type_libelle = serializers.SerializerMethodField()
     emetteur = serializers.SerializerMethodField()
+    valideurs_possibles = serializers.SerializerMethodField()
 
     class Meta:
         model = Demande
@@ -68,6 +94,7 @@ class DemandeSerializer(serializers.ModelSerializer[Demande]):
             "emetteur",
             "emetteur_profil",
             "valideurs",
+            "valideurs_possibles",
             "statut",
             "cree_le",
             "echeance",
@@ -91,12 +118,49 @@ class DemandeSerializer(serializers.ModelSerializer[Demande]):
     def get_emetteur(self, demande: Demande) -> dict[str, Any]:
         return {"id": demande.emetteur_id, "nom": demande.emetteur_nom}
 
+    @extend_schema_field(ValideurPossibleSerializer(many=True))
+    def get_valideurs_possibles(self, demande: Demande) -> list[dict[str, str]]:
+        """Qui peut décider par code sur ce poste, émetteur exclu (#316)."""
+        if demande.statut != StatutDemande.EN_ATTENTE:
+            return []
+        if not hasattr(self, "_valideurs"):
+            self._valideurs = {p: valideur_par_profil(p) for p in PROFILS_VALIDEURS}
+        profils = [
+            p
+            for p in PROFILS_VALIDEURS
+            if p == "proprietaire" or p in (demande.valideurs or [])
+        ]
+        return [
+            {"profil": profil, "nom": valideur.name or valideur.email}
+            for profil in profils
+            if (valideur := self._valideurs[profil]) is not None
+            and valideur.pk != demande.emetteur_id
+        ]
+
 
 class CodeGerantSerializer(serializers.Serializer):
-    """Le gérant décide sur le poste de la caissière, sans changer d'utilisateur."""
+    """Le gérant décide sur le poste de la caissière, sans changer d'utilisateur.
 
-    utilisateur = serializers.IntegerField()
+    Le valideur est désigné par son identifiant, ou par son profil (#316) : le
+    gérant de la semaine ouverte, ou le propriétaire.
+    """
+
+    utilisateur = serializers.IntegerField(required=False)
+    profil = serializers.ChoiceField(
+        choices=Profil.choices,
+        required=False,
+        help_text="gerant (de la semaine ouverte) ou proprietaire.",
+    )
     code = serializers.CharField(max_length=4, min_length=4)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if ("utilisateur" in attrs) == ("profil" in attrs):
+            message = "Indiquez soit l'utilisateur, soit le profil du valideur."
+            raise serializers.ValidationError(message)
+        if attrs.get("profil", "gerant") not in PROFILS_VALIDEURS:
+            message = "Le valideur est le gérant ou le propriétaire."
+            raise serializers.ValidationError({"profil": message})
+        return attrs
 
 
 class AccordSerializer(serializers.Serializer):
@@ -132,7 +196,15 @@ def decideur_de(
     if not code_gerant:
         via = Via.DISTANCE if entree_de(request) is Entree.DISTANTE else Via.POSTE
         return auteur, via
-    identifie = verifier_code(code_gerant["utilisateur"], code_gerant["code"], auteur)
+    utilisateur = code_gerant.get("utilisateur")
+    if utilisateur is None:
+        valideur = valideur_par_profil(code_gerant["profil"])
+        if valideur is None:
+            message = "Aucun valideur de ce profil n'est disponible."
+            refus = RefusMetier("valideur_introuvable", message)
+            raise refus
+        utilisateur = valideur.pk
+    identifie = verifier_code(utilisateur, code_gerant["code"], auteur)
     gerant = identifie.utilisateur
     signe = Auteur(
         utilisateur_id=gerant.pk,
@@ -242,7 +314,11 @@ class DemandesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     @extend_schema(responses=DemandeSerializer(many=True))
     @action(detail=False, url_path="en-attente", pagination_class=None)
     def en_attente(self, request: Request) -> Response:
-        """Demandes qui attendent ma réponse, les plus anciennes d'abord."""
+        """Demandes que mon profil peut trancher, les plus anciennes d'abord.
+
+        Les demandes que j'ai émises n'y sont pas : `GET /demandes/?statut=en_attente`
+        les liste (#316).
+        """
         demandes = Demande.objects.filter(
             statut=StatutDemande.EN_ATTENTE,
             valideurs__contains=[profil_de(request)],

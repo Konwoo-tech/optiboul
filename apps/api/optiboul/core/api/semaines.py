@@ -103,7 +103,10 @@ class SemaineSerializer(serializers.ModelSerializer[Semaine]):
 
 class SemaineConflitsSerializer(serializers.Serializer):
     semaine = SemaineSerializer()
-    conflits = serializers.ListField(child=serializers.CharField())
+    conflits = serializers.ListField(
+        child=serializers.CharField(),
+        help_text="Conflits du planning signalés à la planification (O9) ; vide sinon.",
+    )
 
 
 class PlanificationSerializer(serializers.Serializer):

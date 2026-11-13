@@ -27,4 +27,10 @@ export interface Caisse {
   readonly ouverte_le: string;
   /** @nullable */
   readonly fermee_le: string | null;
+  /** La personne connectée qui a ouvert : c'est toujours la caissière. */
+  ouverte_par: Caissiere;
+  /** Dernière fermeture ; null tant que la caisse est ouverte (#312). */
+  fermee_par: Caissiere | null;
+  /** Encaissements de la caisse, tous modes, en FCFA (comme le récapitulatif). */
+  readonly recette: number;
 }

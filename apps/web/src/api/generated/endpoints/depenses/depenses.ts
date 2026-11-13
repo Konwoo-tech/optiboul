@@ -25,11 +25,14 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  Annulation,
   Depense,
   DepensesListParams,
   NouvelleDepense,
   PaginatedDepenseList,
-  Probleme
+  PatchedModificationDepense,
+  Probleme,
+  Seuil
 } from '../../model';
 
 import { optiboulFetch } from '../../../http.ts';
@@ -378,6 +381,443 @@ export function useDepensesRetrieve<TData = Awaited<ReturnType<typeof depensesRe
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getDepensesRetrieveQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type depensesPartialUpdateResponse200 = {
+  data: Depense
+  status: 200
+}
+
+export type depensesPartialUpdateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type depensesPartialUpdateResponseSuccess = (depensesPartialUpdateResponse200) & {
+  headers: Headers;
+};
+export type depensesPartialUpdateResponseError = (depensesPartialUpdateResponse409) & {
+  headers: Headers;
+};
+
+export type depensesPartialUpdateResponse = (depensesPartialUpdateResponseSuccess | depensesPartialUpdateResponseError)
+
+export const getDepensesPartialUpdateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/depenses/${id}/`
+}
+
+/**
+ * Corriger une dépense en attente, par son auteur ou la direction (#300).
+ */
+export const depensesPartialUpdate = async (id: number,
+    patchedModificationDepense?: PatchedModificationDepense, options?: Parameters<typeof optiboulFetch>[1]): Promise<depensesPartialUpdateResponse> => {
+    const formData = new FormData();
+if(patchedModificationDepense?.categorie !== undefined) {
+ formData.append(`categorie`, patchedModificationDepense.categorie);
+ }
+if(patchedModificationDepense?.libelle !== undefined) {
+ formData.append(`libelle`, patchedModificationDepense.libelle);
+ }
+if(patchedModificationDepense?.montant !== undefined) {
+ formData.append(`montant`, patchedModificationDepense.montant.toString())
+ }
+if(patchedModificationDepense?.rattachement !== undefined) {
+ formData.append(`rattachement`, patchedModificationDepense.rattachement);
+ }
+if(patchedModificationDepense?.matiere !== undefined) {
+ formData.append(`matiere`, patchedModificationDepense.matiere);
+ }
+if(patchedModificationDepense?.quantite !== undefined && patchedModificationDepense.quantite !== null) {
+ formData.append(`quantite`, patchedModificationDepense.quantite);
+ }
+if(patchedModificationDepense?.fournisseur !== undefined) {
+ formData.append(`fournisseur`, patchedModificationDepense.fournisseur);
+ }
+if(patchedModificationDepense?.justificatif !== undefined && patchedModificationDepense.justificatif !== null) {
+ formData.append(`justificatif`, patchedModificationDepense.justificatif);
+ }
+
+  return optiboulFetch<depensesPartialUpdateResponse>(getDepensesPartialUpdateUrl(id),
+  {
+    ...options,
+    method: 'PATCH'
+    ,
+    body: formData
+  }
+);}
+
+
+
+
+
+export const getDepensesPartialUpdateMutationKey = () => ['depensesPartialUpdate'] as const;
+
+export const getDepensesPartialUpdateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof depensesPartialUpdate>>, TError,DepensesPartialUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof depensesPartialUpdate>>, TError,DepensesPartialUpdateMutationVariables, TContext> => {
+
+const mutationKey = getDepensesPartialUpdateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof depensesPartialUpdate>>, DepensesPartialUpdateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  depensesPartialUpdate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DepensesPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof depensesPartialUpdate>>>
+    export type DepensesPartialUpdateMutationBody = PatchedModificationDepense | undefined
+    export type DepensesPartialUpdateMutationError = Probleme
+    export type DepensesPartialUpdateMutationVariables = {id: number;data?: PatchedModificationDepense}
+
+    export const useDepensesPartialUpdate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof depensesPartialUpdate>>, TError,DepensesPartialUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof depensesPartialUpdate>>,
+        TError,
+        DepensesPartialUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDepensesPartialUpdateMutationOptions(options), queryClient);
+    }
+    export type depensesAnnulerCreateResponse200 = {
+  data: Depense
+  status: 200
+}
+
+export type depensesAnnulerCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type depensesAnnulerCreateResponseSuccess = (depensesAnnulerCreateResponse200) & {
+  headers: Headers;
+};
+export type depensesAnnulerCreateResponseError = (depensesAnnulerCreateResponse409) & {
+  headers: Headers;
+};
+
+export type depensesAnnulerCreateResponse = (depensesAnnulerCreateResponseSuccess | depensesAnnulerCreateResponseError)
+
+export const getDepensesAnnulerCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/depenses/${id}/annuler/`
+}
+
+/**
+ * Retirer une dépense en attente, motif obligatoire ; sa demande est close.
+ */
+export const depensesAnnulerCreate = async (id: number,
+    annulation: Annulation, options?: Parameters<typeof optiboulFetch>[1]): Promise<depensesAnnulerCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<depensesAnnulerCreateResponse>(getDepensesAnnulerCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(annulation)
+  }
+);}
+
+
+
+
+
+export const getDepensesAnnulerCreateMutationKey = () => ['depensesAnnulerCreate'] as const;
+
+export const getDepensesAnnulerCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof depensesAnnulerCreate>>, TError,DepensesAnnulerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof depensesAnnulerCreate>>, TError,DepensesAnnulerCreateMutationVariables, TContext> => {
+
+const mutationKey = getDepensesAnnulerCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof depensesAnnulerCreate>>, DepensesAnnulerCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  depensesAnnulerCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DepensesAnnulerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof depensesAnnulerCreate>>>
+    export type DepensesAnnulerCreateMutationBody = Annulation
+    export type DepensesAnnulerCreateMutationError = Probleme
+    export type DepensesAnnulerCreateMutationVariables = {id: number;data: Annulation}
+
+    export const useDepensesAnnulerCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof depensesAnnulerCreate>>, TError,DepensesAnnulerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof depensesAnnulerCreate>>,
+        TError,
+        DepensesAnnulerCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDepensesAnnulerCreateMutationOptions(options), queryClient);
+    }
+    export type depensesJustificatifRetrieveResponse200 = {
+  data: Blob
+  status: 200
+}
+
+export type depensesJustificatifRetrieveResponseSuccess = (depensesJustificatifRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type depensesJustificatifRetrieveResponse = (depensesJustificatifRetrieveResponseSuccess)
+
+export const getDepensesJustificatifRetrieveUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/depenses/${id}/justificatif/`
+}
+
+/**
+ * La photo ou le PDF, pour qui peut voir la dépense, en local comme sur S3.
+ */
+export const depensesJustificatifRetrieve = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<depensesJustificatifRetrieveResponse> => {
+
+  return optiboulFetch<depensesJustificatifRetrieveResponse>(getDepensesJustificatifRetrieveUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDepensesJustificatifRetrieveQueryKey = (id: number,) => {
+    return [
+    `/api/v1/depenses/${id}/justificatif/`
+    ] as const;
+    }
+
+
+export const getDepensesJustificatifRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof depensesJustificatifRetrieve>>, TError = unknown>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depensesJustificatifRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDepensesJustificatifRetrieveQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof depensesJustificatifRetrieve>>> = ({ signal }) => depensesJustificatifRetrieve(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof depensesJustificatifRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DepensesJustificatifRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof depensesJustificatifRetrieve>>>
+export type DepensesJustificatifRetrieveQueryError = unknown
+
+
+export function useDepensesJustificatifRetrieve<TData = Awaited<ReturnType<typeof depensesJustificatifRetrieve>>, TError = unknown>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof depensesJustificatifRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof depensesJustificatifRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof depensesJustificatifRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDepensesJustificatifRetrieve<TData = Awaited<ReturnType<typeof depensesJustificatifRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depensesJustificatifRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof depensesJustificatifRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof depensesJustificatifRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDepensesJustificatifRetrieve<TData = Awaited<ReturnType<typeof depensesJustificatifRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depensesJustificatifRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useDepensesJustificatifRetrieve<TData = Awaited<ReturnType<typeof depensesJustificatifRetrieve>>, TError = unknown>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depensesJustificatifRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDepensesJustificatifRetrieveQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type depensesSeuilRetrieveResponse200 = {
+  data: Seuil
+  status: 200
+}
+
+export type depensesSeuilRetrieveResponseSuccess = (depensesSeuilRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type depensesSeuilRetrieveResponse = (depensesSeuilRetrieveResponseSuccess)
+
+export const getDepensesSeuilRetrieveUrl = () => {
+
+
+
+
+  return `/api/v1/depenses/seuil/`
+}
+
+/**
+ * Le seuil de validation, lisible par ceux qui saisissent (#323).
+ */
+export const depensesSeuilRetrieve = async ( options?: Parameters<typeof optiboulFetch>[1]): Promise<depensesSeuilRetrieveResponse> => {
+
+  return optiboulFetch<depensesSeuilRetrieveResponse>(getDepensesSeuilRetrieveUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getDepensesSeuilRetrieveQueryKey = () => {
+    return [
+    `/api/v1/depenses/seuil/`
+    ] as const;
+    }
+
+
+export const getDepensesSeuilRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof depensesSeuilRetrieve>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depensesSeuilRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDepensesSeuilRetrieveQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof depensesSeuilRetrieve>>> = ({ signal }) => depensesSeuilRetrieve({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof depensesSeuilRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DepensesSeuilRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof depensesSeuilRetrieve>>>
+export type DepensesSeuilRetrieveQueryError = unknown
+
+
+export function useDepensesSeuilRetrieve<TData = Awaited<ReturnType<typeof depensesSeuilRetrieve>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof depensesSeuilRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof depensesSeuilRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof depensesSeuilRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDepensesSeuilRetrieve<TData = Awaited<ReturnType<typeof depensesSeuilRetrieve>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depensesSeuilRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof depensesSeuilRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof depensesSeuilRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDepensesSeuilRetrieve<TData = Awaited<ReturnType<typeof depensesSeuilRetrieve>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depensesSeuilRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useDepensesSeuilRetrieve<TData = Awaited<ReturnType<typeof depensesSeuilRetrieve>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof depensesSeuilRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDepensesSeuilRetrieveQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

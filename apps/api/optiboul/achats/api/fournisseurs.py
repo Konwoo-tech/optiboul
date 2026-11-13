@@ -121,6 +121,22 @@ def _valeurs(fournisseur: Fournisseur) -> dict[str, Any]:
     }
 
 
+class FournisseurChoixSerializer(serializers.ModelSerializer[Fournisseur]):
+    matieres = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Fournisseur
+        fields = ["id", "nom", "matieres"]
+        read_only_fields = fields
+
+    def get_matieres(self, fournisseur: Fournisseur) -> list[str]:
+        return sorted(matiere.code for matiere in fournisseur.matieres.all())
+
+
+# Ceux qui saisissent une dépense rattachée au stock (CdC §5.8, #323).
+CHOISISSENT_UN_FOURNISSEUR = ("caissier", "production", *DIRECTION)
+
+
 class FournisseursViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -135,9 +151,18 @@ class FournisseursViewSet(
     http_method_names = ["get", "post", "put", "patch"]
 
     def get_permissions(self):
+        if self.action == "choix":
+            return [ProfilParmi(*CHOISISSENT_UN_FOURNISSEUR)()]
         if self.action in {"list", "retrieve"}:
             return [ProfilParmi(*LISENT_LES_ACHATS)()]
         return [ProfilParmi(*DIRECTION)()]
+
+    @extend_schema(responses=FournisseurChoixSerializer(many=True))
+    @action(detail=False, pagination_class=None)
+    def choix(self, request: Request) -> Response:
+        """Liste réduite des fournisseurs actifs, pour choisir à la saisie (#323)."""
+        actifs = Fournisseur.objects.filter(actif=True).prefetch_related("matieres")
+        return Response(FournisseurChoixSerializer(actifs, many=True).data)
 
     def perform_create(self, serializer: serializers.BaseSerializer) -> None:
         fournisseur = serializer.save()

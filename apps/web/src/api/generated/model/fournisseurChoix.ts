@@ -6,7 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
-/**
- * Prix propres au client, produit par produit.
- */
-export type PatchedClientTarifs = {[key: string]: number};
+export interface FournisseurChoix {
+  readonly id: number;
+  readonly nom: string;
+  readonly matieres: readonly string[];
+}

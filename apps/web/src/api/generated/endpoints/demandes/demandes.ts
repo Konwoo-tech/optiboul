@@ -607,7 +607,10 @@ export const getDemandesEnAttenteListUrl = () => {
 }
 
 /**
- * Demandes qui attendent ma réponse, les plus anciennes d'abord.
+ * Demandes que mon profil peut trancher, les plus anciennes d'abord.
+ *
+ * Les demandes que j'ai émises n'y sont pas : `GET /demandes/?statut=en_attente`
+ * les liste (#316).
  */
 export const demandesEnAttenteList = async ( options?: Parameters<typeof optiboulFetch>[1]): Promise<demandesEnAttenteListResponse> => {
 

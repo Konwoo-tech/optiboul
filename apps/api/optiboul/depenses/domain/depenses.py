@@ -40,6 +40,7 @@ class StatutDepense(StrEnum):
     VALIDEE = "validee"
     EN_ATTENTE = "en_attente"  # au-dessus du seuil, hors pré-autorisation (R8)
     REFUSEE = "refusee"
+    ANNULEE = "annulee"  # retirée par son auteur ou la direction avant décision
 
 
 @dataclass(frozen=True)

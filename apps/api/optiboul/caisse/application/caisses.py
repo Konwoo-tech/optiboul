@@ -86,6 +86,8 @@ class DepotCaisses(Protocol):
         caisse_id: int,
         resultat: ResultatFermeture,
         le: datetime,
+        *,
+        par: int,
     ) -> None: ...
 
     def fermeture(self, caisse_id: int) -> dict[str, int | None]: ...
@@ -301,7 +303,8 @@ def fermer(
         detail.remises,
         compte,
     )
-    depots.caisses.fermer(caisse_id, resultat, maintenant)
+    assert auteur.utilisateur_id is not None
+    depots.caisses.fermer(caisse_id, resultat, maintenant, par=auteur.utilisateur_id)
     depots.journal.enregistrer(
         Evenement(
             action="caisse.fermee",

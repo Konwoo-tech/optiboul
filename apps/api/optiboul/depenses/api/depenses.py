@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import mimetypes
 from typing import TYPE_CHECKING
 from typing import Any
 
 from django.db import transaction
+from django.http import FileResponse
+from django.http import Http404
+from django.urls import reverse
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
@@ -59,6 +64,7 @@ TYPES_JUSTIFICATIF = ("image/", "application/pdf")
 
 class DepenseSerializer(serializers.ModelSerializer[Depense]):
     code = serializers.SerializerMethodField()
+    justificatif_url = serializers.SerializerMethodField()
     demande = serializers.SerializerMethodField()
     matiere = serializers.CharField(
         source="matiere.code",
@@ -86,6 +92,7 @@ class DepenseSerializer(serializers.ModelSerializer[Depense]):
             "quantite",
             "fournisseur",
             "justificatif",
+            "justificatif_url",
             "achat_courant",
             "pre_autorisation",
             "statut",
@@ -108,6 +115,12 @@ class DepenseSerializer(serializers.ModelSerializer[Depense]):
     def get_code(self, depense: Depense) -> str:
         """« DEP-0042 »."""
         return numero_affiche(depense.numero)
+
+    def get_justificatif_url(self, depense: Depense) -> str | None:
+        """Le fichier servi par l'API, avec les droits de la dépense (#323)."""
+        if not depense.justificatif:
+            return None
+        return reverse("api:depense-justificatif", kwargs={"pk": depense.pk})
 
 
 class NouvelleDepenseSerializer(serializers.Serializer):
@@ -163,6 +176,61 @@ class NouvelleDepenseSerializer(serializers.Serializer):
             fournisseur=donnees["fournisseur"],
             achat_courant=donnees["achat_courant"],
         )
+
+
+class ModificationDepenseSerializer(serializers.Serializer):
+    """Les champs envoyés remplacent ceux de la dépense en attente (#300)."""
+
+    categorie = serializers.ChoiceField(choices=CATEGORIES, required=False)
+    libelle = serializers.CharField(max_length=200, required=False)
+    montant = serializers.IntegerField(min_value=1, required=False)
+    rattachement = serializers.ChoiceField(
+        choices=[r.value for r in Rattachement],
+        required=False,
+    )
+    matiere = serializers.CharField(max_length=30, required=False, allow_blank=True)
+    quantite = serializers.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        required=False,
+        allow_null=True,
+    )
+    fournisseur = serializers.CharField(
+        max_length=150,
+        required=False,
+        allow_blank=True,
+    )
+    justificatif = serializers.FileField(required=False, allow_null=True)
+
+    def validate_justificatif(self, fichier: Any) -> Any:
+        return NouvelleDepenseSerializer().validate_justificatif(fichier)
+
+    def depense(self, actuelle: Depense) -> NouvelleDepense:
+        donnees = self.validated_data
+        matiere = actuelle.matiere.code if actuelle.matiere else ""
+        return NouvelleDepense(
+            categorie=Categorie(donnees.get("categorie", actuelle.categorie)),
+            libelle=donnees.get("libelle", actuelle.libelle),
+            montant=donnees.get("montant", actuelle.montant),
+            paye_par=PayePar(actuelle.paye_par),
+            rattachement=Rattachement(
+                donnees.get("rattachement", actuelle.rattachement),
+            ),
+            matiere=donnees.get("matiere", matiere),
+            quantite=donnees.get("quantite", actuelle.quantite),
+            fournisseur=donnees.get("fournisseur", actuelle.fournisseur),
+            achat_courant=actuelle.achat_courant,
+        )
+
+
+class AnnulationSerializer(serializers.Serializer):
+    motif = serializers.CharField(max_length=255, allow_blank=True)
+
+
+class SeuilSerializer(serializers.Serializer):
+    seuil = serializers.IntegerField(
+        help_text="À partir de ce montant en FCFA, hors pré-autorisation (R8).",
+    )
 
 
 class PreAutorisationSerializer(serializers.Serializer):
@@ -237,8 +305,10 @@ class DepensesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     queryset = Depense.objects.select_related("auteur", "matiere")
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
+    http_method_names = ["get", "post", "patch"]
+
     def get_permissions(self):
-        if self.action in {"list", "retrieve"}:
+        if self.action in {"list", "retrieve", "seuil", "fichier_justificatif"}:
             return [ProfilParmi("caissier", "production", *DIRECTION)()]
         return [ProfilParmi(*SAISISSENT)()]
 
@@ -288,3 +358,70 @@ class DepensesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
             DepenseSerializer(Depense.objects.get(pk=etat.id)).data,
             status=status.HTTP_201_CREATED,
         )
+
+    @extend_schema(
+        request={"multipart/form-data": ModificationDepenseSerializer},
+        responses={200: DepenseSerializer, 409: ProblemeSerializer},
+    )
+    def partial_update(self, request: Request, pk: str) -> Response:
+        """Corriger une dépense en attente, par son auteur ou la direction (#300)."""
+        depense = self.get_object()
+        corps = ModificationDepenseSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        try:
+            with transaction.atomic():
+                cas.modifier(
+                    depots,
+                    depense_id=depense.pk,
+                    depense=corps.depense(depense),
+                    session_production=session_de_production(timezone.now(), limites()),
+                    justificatif=corps.validated_data.get("justificatif"),
+                    seuil=parametre("seuil_validation_depenses"),
+                    auteur=auteur_de(request),
+                    maintenant=timezone.now(),
+                )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(DepenseSerializer(Depense.objects.get(pk=depense.pk)).data)
+
+    @extend_schema(
+        request=AnnulationSerializer,
+        responses={200: DepenseSerializer, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"])
+    def annuler(self, request: Request, pk: str) -> Response:
+        """Retirer une dépense en attente, motif obligatoire ; sa demande est close."""
+        depense = self.get_object()
+        corps = AnnulationSerializer(data=request.data)
+        corps.is_valid(raise_exception=True)
+        try:
+            with transaction.atomic():
+                cas.annuler(
+                    depots,
+                    depense_id=depense.pk,
+                    motif=corps.validated_data["motif"],
+                    auteur=auteur_de(request),
+                    maintenant=timezone.now(),
+                )
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(DepenseSerializer(Depense.objects.get(pk=depense.pk)).data)
+
+    @extend_schema(responses={(200, "application/octet-stream"): OpenApiTypes.BINARY})
+    @action(detail=True, url_path="justificatif", url_name="justificatif")
+    def fichier_justificatif(self, request: Request, pk: str) -> FileResponse:
+        """La photo ou le PDF, pour qui peut voir la dépense, en local comme sur S3."""
+        depense = self.get_object()
+        if not depense.justificatif:
+            raise Http404
+        type_contenu = (
+            mimetypes.guess_type(depense.justificatif.name)[0]
+            or "application/octet-stream"
+        )
+        return FileResponse(depense.justificatif.open("rb"), content_type=type_contenu)
+
+    @extend_schema(responses=SeuilSerializer)
+    @action(detail=False)
+    def seuil(self, request: Request) -> Response:
+        """Le seuil de validation, lisible par ceux qui saisissent (#323)."""
+        return Response({"seuil": parametre("seuil_validation_depenses")})

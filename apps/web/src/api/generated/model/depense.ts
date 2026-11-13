@@ -35,6 +35,11 @@ export interface Depense {
   readonly fournisseur: string;
   /** @nullable */
   readonly justificatif: string | null;
+  /**
+     * Le fichier servi par l'API, avec les droits de la dépense (#323).
+     * @nullable
+     */
+  readonly justificatif_url: string | null;
   readonly achat_courant: string;
   /** @nullable */
   readonly pre_autorisation: number | null;

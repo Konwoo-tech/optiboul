@@ -510,13 +510,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Client'
+              $ref: '#/components/schemas/ClientEcriture'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Client'
+              $ref: '#/components/schemas/ClientEcriture'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Client'
+              $ref: '#/components/schemas/ClientEcriture'
         required: true
       security:
       - cookieAuth: []
@@ -526,6 +526,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Client'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
           description: ''
   /api/v1/clients/{id}/:
     get:
@@ -565,13 +571,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Client'
+              $ref: '#/components/schemas/ClientEcriture'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Client'
+              $ref: '#/components/schemas/ClientEcriture'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Client'
+              $ref: '#/components/schemas/ClientEcriture'
         required: true
       security:
       - cookieAuth: []
@@ -581,6 +587,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Client'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
           description: ''
     patch:
       operationId: clients_partial_update
@@ -598,13 +610,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedClient'
+              $ref: '#/components/schemas/PatchedClientEcriture'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedClient'
+              $ref: '#/components/schemas/PatchedClientEcriture'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedClient'
+              $ref: '#/components/schemas/PatchedClientEcriture'
       security:
       - cookieAuth: []
       responses:
@@ -613,6 +625,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Client'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
           description: ''
   /api/v1/clients/{id}/envoyer-releve/:
     post:
@@ -1639,6 +1657,7 @@ paths:
           type: string
           enum:
           - accordee
+          - annulee
           - en_attente
           - refusee
       - in: query
@@ -1791,7 +1810,11 @@ paths:
   /api/v1/demandes/en-attente/:
     get:
       operationId: demandes_en_attente_list
-      description: Demandes qui attendent ma réponse, les plus anciennes d'abord.
+      description: |-
+        Demandes que mon profil peut trancher, les plus anciennes d'abord.
+
+        Les demandes que j'ai émises n'y sont pas : `GET /demandes/?statut=en_attente`
+        les liste (#316).
       tags:
       - demandes
       security:
@@ -1895,6 +1918,119 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Depense'
+          description: ''
+    patch:
+      operationId: depenses_partial_update
+      description: Corriger une dépense en attente, par son auteur ou la direction
+        (#300).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) dépense.
+        required: true
+      tags:
+      - depenses
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedModificationDepense'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Depense'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/depenses/{id}/annuler/:
+    post:
+      operationId: depenses_annuler_create
+      description: Retirer une dépense en attente, motif obligatoire ; sa demande
+        est close.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) dépense.
+        required: true
+      tags:
+      - depenses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Annulation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Annulation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Annulation'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Depense'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/depenses/{id}/justificatif/:
+    get:
+      operationId: depenses_justificatif_retrieve
+      description: La photo ou le PDF, pour qui peut voir la dépense, en local comme
+        sur S3.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) dépense.
+        required: true
+      tags:
+      - depenses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          description: ''
+  /api/v1/depenses/seuil/:
+    get:
+      operationId: depenses_seuil_retrieve
+      description: Le seuil de validation, lisible par ceux qui saisissent (#323).
+      tags:
+      - depenses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Seuil'
           description: ''
   /api/v1/employes/:
     get:
@@ -2438,6 +2574,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Fournisseur'
+          description: ''
+  /api/v1/fournisseurs/choix/:
+    get:
+      operationId: fournisseurs_choix_list
+      description: Liste réduite des fournisseurs actifs, pour choisir à la saisie
+        (#323).
+      tags:
+      - fournisseurs
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FournisseurChoix'
           description: ''
   /api/v1/groupes/:
     get:
@@ -5736,6 +5890,14 @@ components:
       description: |-
         * `bloquant` - bloquant
         * `surveiller` - surveiller
+    Annulation:
+      type: object
+      properties:
+        motif:
+          type: string
+          maxLength: 255
+      required:
+      - motif
     Apercu:
       type: object
       properties:
@@ -5855,6 +6017,19 @@ components:
           readOnly: true
           nullable: true
           title: Fermée le
+        ouverte_par:
+          allOf:
+          - $ref: '#/components/schemas/Caissiere'
+          description: 'La personne connectée qui a ouvert : c''est toujours la caissière.'
+        fermee_par:
+          allOf:
+          - $ref: '#/components/schemas/Caissiere'
+          nullable: true
+          description: Dernière fermeture ; null tant que la caisse est ouverte (#312).
+        recette:
+          type: integer
+          description: Encaissements de la caisse, tous modes, en FCFA (comme le récapitulatif).
+          readOnly: true
       required:
       - attendu
       - caissiere
@@ -5863,12 +6038,15 @@ components:
       - ecart
       - en_cours
       - fermee_le
+      - fermee_par
       - fonds
       - hors_planning
       - id
       - jour
       - ouverte_le
+      - ouverte_par
       - planifiee
+      - recette
       - semaine
       - statut
     Caissiere:
@@ -6007,6 +6185,64 @@ components:
           type: integer
       required:
       - client
+    ClientEcriture:
+      type: object
+      description: 'Corps de création et de modification : `tarifs` s''applique aussi
+        (#309).'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          maxLength: 150
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        telephone:
+          type: string
+          title: Téléphone
+          maxLength: 20
+        lieu:
+          type: string
+          maxLength: 150
+        plafond:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          title: Plafond propre (FCFA)
+        plafond_effectif:
+          type: integer
+          readOnly: true
+        solde:
+          type: integer
+          description: 'Somme des mouvements du compte, en FCFA ; négatif : dette
+            (R21).'
+          readOnly: true
+        actif:
+          type: boolean
+        tarifs:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+            nullable: true
+          writeOnly: true
+          description: Code du produit → prix en FCFA ; null retire le tarif propre.
+        prix:
+          type: object
+          additionalProperties:
+            type: integer
+            nullable: true
+          description: 'Prix appliqués à la livraison : le tarif du client, sinon
+            le prix de base.'
+          readOnly: true
+      required:
+      - id
+      - nom
+      - plafond_effectif
+      - prix
+      - solde
     ClientResume:
       type: object
       properties:
@@ -6051,17 +6287,31 @@ components:
       - telephoneMasque
     CodeGerant:
       type: object
-      description: Le gérant décide sur le poste de la caissière, sans changer d'utilisateur.
+      description: |-
+        Le gérant décide sur le poste de la caissière, sans changer d'utilisateur.
+
+        Le valideur est désigné par son identifiant, ou par son profil (#316) : le
+        gérant de la semaine ouverte, ou le propriétaire.
       properties:
         utilisateur:
           type: integer
+        profil:
+          allOf:
+          - $ref: '#/components/schemas/ProfilEnum'
+          description: |-
+            gerant (de la semaine ouverte) ou proprietaire.
+
+            * `caissier` - Caissier / caissière
+            * `gerant` - Gérant de la semaine
+            * `production` - Responsable de production
+            * `proprietaire` - Propriétaire
+            * `administrateur` - Administrateur
         code:
           type: string
           maxLength: 4
           minLength: 4
       required:
       - code
-      - utilisateur
     CodeTotp:
       type: object
       properties:
@@ -6494,6 +6744,11 @@ components:
         valideurs:
           readOnly: true
           title: Profils valideurs
+        valideurs_possibles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValideurPossible'
+          readOnly: true
         statut:
           type: string
           readOnly: true
@@ -6554,6 +6809,7 @@ components:
       - type
       - type_libelle
       - valideurs
+      - valideurs_possibles
       - via
     DemandeDePaie:
       type: object
@@ -6635,6 +6891,11 @@ components:
           format: uri
           nullable: true
           readOnly: true
+        justificatif_url:
+          type: string
+          nullable: true
+          description: Le fichier servi par l'API, avec les droits de la dépense (#323).
+          readOnly: true
         achat_courant:
           type: string
           readOnly: true
@@ -6674,6 +6935,7 @@ components:
       - fournisseur
       - id
       - justificatif
+      - justificatif_url
       - libelle
       - montant
       - numero
@@ -7345,6 +7607,24 @@ components:
       - matieres
       - nom
       - prochaine_reception
+    FournisseurChoix:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          type: string
+          readOnly: true
+        matieres:
+          type: array
+          items:
+            type: string
+          readOnly: true
+      required:
+      - id
+      - matieres
+      - nom
     Graphiques:
       type: object
       properties:
@@ -9580,8 +9860,10 @@ components:
       - unite
       - usage
       - valeur
-    PatchedClient:
+    PatchedClientEcriture:
       type: object
+      description: 'Corps de création et de modification : `tarifs` s''applique aussi
+        (#309).'
       properties:
         id:
           type: integer
@@ -9618,8 +9900,10 @@ components:
           type: object
           additionalProperties:
             type: integer
-          description: Prix propres au client, produit par produit.
-          readOnly: true
+            minimum: 0
+            nullable: true
+          writeOnly: true
+          description: Code du produit → prix en FCFA ; null retire le tarif propre.
         prix:
           type: object
           additionalProperties:
@@ -9704,6 +9988,35 @@ components:
         membres:
           type: integer
           readOnly: true
+    PatchedModificationDepense:
+      type: object
+      description: Les champs envoyés remplacent ceux de la dépense en attente (#300).
+      properties:
+        categorie:
+          $ref: '#/components/schemas/CategorieEnum'
+        libelle:
+          type: string
+          maxLength: 200
+        montant:
+          type: integer
+          minimum: 1
+        rattachement:
+          $ref: '#/components/schemas/RattachementEnum'
+        matiere:
+          type: string
+          maxLength: 30
+        quantite:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          nullable: true
+        fournisseur:
+          type: string
+          maxLength: 150
+        justificatif:
+          type: string
+          format: uri
+          nullable: true
     PatchedProduit:
       type: object
       properties:
@@ -11058,6 +11371,8 @@ components:
           type: array
           items:
             type: string
+          description: Conflits du planning signalés à la planification (O9) ; vide
+            sinon.
       required:
       - conflits
       - semaine
@@ -11099,6 +11414,14 @@ components:
           format: date
         creneau:
           $ref: '#/components/schemas/CreneauEnum'
+    Seuil:
+      type: object
+      properties:
+        seuil:
+          type: integer
+          description: À partir de ce montant en FCFA, hors pré-autorisation (R8).
+      required:
+      - seuil
     StatutEnvoiEnum:
       enum:
       - en_attente
@@ -11271,6 +11594,16 @@ components:
       - auteur
       - le
       - valeur
+    ValideurPossible:
+      type: object
+      properties:
+        profil:
+          type: string
+        nom:
+          type: string
+      required:
+      - nom
+      - profil
     Verification:
       type: object
       properties:

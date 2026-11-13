@@ -9,7 +9,9 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.db import transaction
 from django.db.models import Count
+from django.db.models import OuterRef
 from django.db.models import Q
+from django.db.models import Subquery
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
 from django.utils import timezone
@@ -53,10 +55,30 @@ class CaissiereSerializer(serializers.Serializer):
     nom = serializers.CharField(source="name")
 
 
+RECETTE = Coalesce(
+    Subquery(
+        Encaissement.objects.filter(caisse=OuterRef("pk"))
+        .values("caisse")
+        .annotate(total=Sum("montant"))
+        .values("total"),
+    ),
+    0,
+)
+
+
 class CaisseSerializer(serializers.ModelSerializer[Caisse]):
     caissiere = CaissiereSerializer()
     planifiee = CaissiereSerializer(allow_null=True)
     semaine = serializers.IntegerField(source="semaine_id")
+    ouverte_par = CaissiereSerializer(
+        source="caissiere",
+        help_text="La personne connectée qui a ouvert : c'est toujours la caissière.",
+    )
+    fermee_par = CaissiereSerializer(
+        allow_null=True,
+        help_text="Dernière fermeture ; null tant que la caisse est ouverte (#312).",
+    )
+    recette = serializers.SerializerMethodField()
 
     class Meta:
         model = Caisse
@@ -76,8 +98,19 @@ class CaisseSerializer(serializers.ModelSerializer[Caisse]):
             "en_cours",
             "ouverte_le",
             "fermee_le",
+            "ouverte_par",
+            "fermee_par",
+            "recette",
         ]
         read_only_fields = fields
+
+    def get_recette(self, caisse: Caisse) -> int:
+        """Encaissements de la caisse, tous modes, en FCFA (comme le récapitulatif)."""
+        recette = getattr(caisse, "recette", None)
+        if recette is not None:
+            return int(recette)
+        total = caisse.encaissements.aggregate(total=Sum("montant"))["total"]
+        return int(total or 0)
 
 
 class ProchaineSerializer(serializers.Serializer):
@@ -158,10 +191,17 @@ class ReouvertureSerializer(serializers.Serializer):
 class CaissesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     serializer_class = CaisseSerializer
     permission_classes = [ProfilParmi("caissier", *DIRECTION)]
-    queryset = Caisse.objects.select_related("caissiere", "planifiee")
+    queryset = Caisse.objects.select_related(
+        "caissiere",
+        "planifiee",
+        "fermee_par",
+    )
 
     def get_queryset(self) -> QuerySet[Caisse]:
         caisses = super().get_queryset()
+        if self.action != "recapitulatif":
+            # Sous-requête, pas jointure : les sommes du récapitulatif restent justes.
+            caisses = caisses.annotate(recette=RECETTE)
         if profil_de(self.request) == "caissier":
             # Une caissière ne voit que ses caisses (CdC §5.2).
             caisses = caisses.filter(caissiere_id=self.request.user.pk)

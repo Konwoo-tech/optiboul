@@ -5,14 +5,17 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
-import type { PatchedClientPrix } from './patchedClientPrix.ts';
-import type { PatchedClientTarifs } from './patchedClientTarifs.ts';
+import type { ClientEcriturePrix } from './clientEcriturePrix.ts';
+import type { ClientEcritureTarifs } from './clientEcritureTarifs.ts';
 import type { TypeEnum } from './typeEnum.ts';
 
-export interface PatchedClient {
-  readonly id?: number;
+/**
+ * Corps de création et de modification : `tarifs` s'applique aussi (#309).
+ */
+export interface ClientEcriture {
+  readonly id: number;
   /** @maxLength 150 */
-  nom?: string;
+  nom: string;
   type?: TypeEnum;
   /** @maxLength 20 */
   telephone?: string;
@@ -24,12 +27,12 @@ export interface PatchedClient {
      * @nullable
      */
   plafond?: number | null;
-  readonly plafond_effectif?: number;
+  readonly plafond_effectif: number;
   /** Somme des mouvements du compte, en FCFA ; négatif : dette (R21). */
-  readonly solde?: number;
+  readonly solde: number;
   actif?: boolean;
-  /** Prix propres au client, produit par produit. */
-  readonly tarifs?: PatchedClientTarifs;
+  /** Code du produit → prix en FCFA ; null retire le tarif propre. */
+  tarifs?: ClientEcritureTarifs;
   /** Prix appliqués à la livraison : le tarif du client, sinon le prix de base. */
-  readonly prix?: PatchedClientPrix;
+  readonly prix: ClientEcriturePrix;
 }
