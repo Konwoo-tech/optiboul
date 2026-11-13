@@ -1,8 +1,15 @@
-import { depensesCreate, ErreurApi, optiboulFetch } from '@/api';
+import {
+  budgetsFixerUpdate,
+  depensesCreate,
+  ErreurApi,
+  optiboulFetch,
+  preAutorisationsFixerUpdate,
+} from '@/api';
 import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 
 import { lireDepensesReelles, versCodeCategorie } from './reel.ts';
+import { ACHATS_COURANTS, type AchatCourant, type Categorie } from './types.ts';
 import type { DemandeDepense, Depense, InstantaneDepenses, NouvelleDepense } from './types.ts';
 
 // En simulation, l'écran lit le faux serveur (`simulation/depenses.ts`) ; sur le vrai serveur,
@@ -56,6 +63,10 @@ export async function enregistrerSurLeServeur(
       rattachement: depense.rattachement,
       ...(depense.rattachement === 'stock'
         ? {
+            // Bois, levure… : l'achat entre dans la pré-autorisation de la semaine (O7).
+            ...((ACHATS_COURANTS as readonly string[]).includes(depense.matiere ?? '')
+              ? { achat_courant: depense.matiere as never }
+              : {}),
             matiere: depense.matiere,
             quantite: depense.quantite === undefined ? undefined : String(depense.quantite),
             // Sans fournisseur, le serveur veut « Marché » : un achat au marché.
@@ -74,6 +85,34 @@ export async function enregistrerSurLeServeur(
     ? instantane.demandes.find((d) => d.depenseId === creee.id)
     : undefined;
   return { instantane, depense: creee, ...(demande ? { demande } : {}) };
+}
+
+/** Fixe le budget du mois par catégorie (le propriétaire) : `PUT /budgets/fixer/`, puis relecture. */
+export function useFixerBudget(utilisateur: string | undefined) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ mois, montants }: { mois: string; montants: Record<Categorie, number> }) =>
+      budgetsFixerUpdate({
+        mois,
+        montants: Object.fromEntries(
+          Object.entries(montants).map(([categorie, montant]) => [
+            versCodeCategorie(categorie as Categorie),
+            montant,
+          ]),
+        ),
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: cleDepenses(utilisateur) }),
+  });
+}
+
+/** Fixe le plafond de chaque achat courant de la semaine (gérant, propriétaire) ; 0 le retire. */
+export function useFixerPreAutorisations(utilisateur: string | undefined) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (plafonds: Record<AchatCourant, number>) =>
+      preAutorisationsFixerUpdate({ plafonds }),
+    onSuccess: () => client.invalidateQueries({ queryKey: cleDepenses(utilisateur) }),
+  });
 }
 
 export function useEnregistrerDepense(utilisateur: string | undefined) {

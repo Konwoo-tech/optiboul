@@ -367,3 +367,81 @@
   font-size: 14px;
   color: var(--ob-discret);
 }
+
+.reglage {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: normal;
+  cursor: pointer;
+}
+
+.reglage:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.achats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.achat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--ob-ligne);
+  border-radius: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.achatNom {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
+
+.achatValeur {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.achatDetail {
+  font-size: 12px;
+  color: var(--ob-discret);
+}
+
+.reglages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reglagesChamp {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-marque);
+}
+
+.reglagesActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}

@@ -4,6 +4,7 @@ import {
   demandesList,
   depensesList,
   fournisseursList,
+  preAutorisationsList,
   parametresList,
   semainesList,
   toutesLesPages,
@@ -12,12 +13,14 @@ import {
   type Depense as DepenseServeur,
   type Fournisseur as FournisseurServeur,
   type Parametre,
+  type PreAutorisation as PreAutorisationServeur,
   type Semaine as SemaineServeur,
 } from '@/api';
 import type { Creneau } from '@/utils';
 
 import type { Profil } from '../../../profils.ts';
 import {
+  ACHATS_COURANTS,
   CATEGORIES,
   MATIERES,
   type Categorie,
@@ -27,6 +30,7 @@ import {
   type InstantaneDepenses,
   type LigneBudget,
   type Matiere,
+  type PreAutorisation,
   type ModeDepense,
   type Semaine,
   type StatutDemande,
@@ -164,29 +168,48 @@ export function versBudget(budget: Budget): { mois: string; lignes: LigneBudget[
   };
 }
 
+export function versPreAutorisation(p: PreAutorisationServeur): PreAutorisation | undefined {
+  if (!(ACHATS_COURANTS as readonly string[]).includes(p.achat_courant)) return undefined;
+  return {
+    achat: p.achat_courant as PreAutorisation['achat'],
+    plafond: p.plafond,
+    engage: p.engage,
+    reste: p.reste,
+  };
+}
+
 /** Compose l'instantané de l'écran des dépenses à partir des routes du serveur. */
 export async function lireDepensesReelles(): Promise<InstantaneDepenses> {
-  const [depenses, budget, semaines, fournisseurs, demandes, parametres, prochaine] =
-    await Promise.all([
-      toutesLesPages<DepenseServeur>(
-        (page) => depensesList({ page }) as Promise<Page<DepenseServeur>>,
-      ),
-      // Le budget est réservé à la direction (403 pour la caisse et la production) : sans lui, l'écran
-      // n'affiche pas la section « budget ».
-      budgetsList().catch(() => null),
-      toutesLesPages<SemaineServeur>(
-        (page) => semainesList({ page }) as Promise<Page<SemaineServeur>>,
-      ),
-      toutesLesPages<FournisseurServeur>(
-        (page) => fournisseursList({ page }) as Promise<Page<FournisseurServeur>>,
-      ).catch(() => [] as FournisseurServeur[]),
-      toutesLesPages<Demande>(
-        (page) => demandesList({ type: 'depense', page }) as Promise<Page<Demande>>,
-      ).catch(() => [] as Demande[]),
-      // Le serveur réserve les paramètres à la direction : sans eux, le seuil par défaut s'applique.
-      parametresList().catch(() => null),
-      caissesProchaineRetrieve().catch(() => null),
-    ]);
+  const [
+    depenses,
+    budget,
+    semaines,
+    fournisseurs,
+    demandes,
+    parametres,
+    prochaine,
+    preAutorisations,
+  ] = await Promise.all([
+    toutesLesPages<DepenseServeur>(
+      (page) => depensesList({ page }) as Promise<Page<DepenseServeur>>,
+    ),
+    // Le budget est réservé à la direction (403 pour la caisse et la production) : sans lui, l'écran
+    // n'affiche pas la section « budget ».
+    budgetsList().catch(() => null),
+    toutesLesPages<SemaineServeur>(
+      (page) => semainesList({ page }) as Promise<Page<SemaineServeur>>,
+    ),
+    toutesLesPages<FournisseurServeur>(
+      (page) => fournisseursList({ page }) as Promise<Page<FournisseurServeur>>,
+    ).catch(() => [] as FournisseurServeur[]),
+    toutesLesPages<Demande>(
+      (page) => demandesList({ type: 'depense', page }) as Promise<Page<Demande>>,
+    ).catch(() => [] as Demande[]),
+    // Le serveur réserve les paramètres à la direction : sans eux, le seuil par défaut s'applique.
+    parametresList().catch(() => null),
+    caissesProchaineRetrieve().catch(() => null),
+    preAutorisationsList().catch(() => null),
+  ]);
   const codes = new Map(semaines.map((s) => [s.id, s.code]));
   const codeSemaine = (id: number) => codes.get(id) ?? `S${id}`;
   const ouverte = semaines.find((s) => s.statut === 'ouverte') ?? semaines.at(-1);
@@ -212,5 +235,8 @@ export async function lireDepensesReelles(): Promise<InstantaneDepenses> {
     depenses: depenses.map((d) => versDepense(d, codeSemaine)).sort((a, b) => b.numero - a.numero),
     demandes: demandes.map(versDemandeDepense).filter((d): d is DemandeDepense => d !== undefined),
     fournisseurs: fournisseurs.map(versFournisseur),
+    preAutorisations: ((preAutorisations?.data ?? []) as PreAutorisationServeur[])
+      .map(versPreAutorisation)
+      .filter((p): p is PreAutorisation => p !== undefined),
   };
 }

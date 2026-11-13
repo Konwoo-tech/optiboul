@@ -388,3 +388,84 @@ describe('enregistrement d’une dépense sur le vrai serveur', () => {
     ).rejects.toMatchObject({ status: 409, code: 'caisse_fermee' });
   });
 });
+
+describe('budget et pré-autorisations sur le vrai serveur', () => {
+  it('lit les plafonds de la semaine (achats courants connus seulement)', async () => {
+    serveurDepenses();
+    serveur.use(
+      http.get('*/api/v1/pre-autorisations/', () =>
+        HttpResponse.json([
+          { achat_courant: 'bois', plafond: 100000, engage: 8000, reste: 92000 },
+          { achat_courant: 'charbon', plafond: 5000, engage: 0, reste: 5000 },
+        ]),
+      ),
+    );
+    const i = await lireDepensesReelles();
+    expect(i.preAutorisations).toEqual([
+      { achat: 'bois', plafond: 100000, engage: 8000, reste: 92000 },
+    ]);
+  });
+
+  it('une entrée de stock de bois entre dans la pré-autorisation (achat_courant)', async () => {
+    serveurDepenses();
+    const client = new QueryClient();
+    let champs: Record<string, FormDataEntryValue> = {};
+    serveur.use(
+      http.post('*/api/v1/depenses/', async ({ request }) => {
+        champs = Object.fromEntries((await request.formData()).entries());
+        return HttpResponse.json(BOIS, { status: 201 });
+      }),
+    );
+    const stock = {
+      categorie: 'matieres' as const,
+      libelle: 'x',
+      montant: 8000,
+      mode: 'caisse' as const,
+      photo: false,
+      rattachement: 'stock' as const,
+      quantite: 2,
+    };
+    await enregistrerSurLeServeur(client, 'Davy', { ...stock, matiere: 'bois' });
+    expect(champs.achat_courant).toBe('bois');
+    await enregistrerSurLeServeur(client, 'Davy', { ...stock, matiere: 'farine' });
+    expect(champs.achat_courant).toBeUndefined();
+  });
+
+  it('fixe le budget avec les codes serveur, et les plafonds de la semaine', async () => {
+    const client = new QueryClient();
+    let budget: unknown;
+    let plafonds: unknown;
+    serveur.use(
+      http.put('*/api/v1/budgets/fixer/', async ({ request }) => {
+        budget = await request.json();
+        return HttpResponse.json(BUDGET);
+      }),
+      http.put('*/api/v1/pre-autorisations/fixer/', async ({ request }) => {
+        plafonds = await request.json();
+        return HttpResponse.json([]);
+      }),
+    );
+    const { renderHook, act } = await import('@testing-library/react');
+    const { QueryClientProvider } = await import('@tanstack/react-query');
+    const { createElement } = await import('react');
+    const { useFixerBudget, useFixerPreAutorisations } = await import('./api.ts');
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      createElement(QueryClientProvider, { client }, children);
+    const b = renderHook(() => useFixerBudget('Patron'), { wrapper });
+    await act(async () => {
+      await b.result.current.mutateAsync({
+        mois: '2026-11',
+        montants: { 'petit-materiel': 50000, matieres: 1000000 } as never,
+      });
+    });
+    expect(budget).toEqual({
+      mois: '2026-11',
+      montants: { petit_materiel: 50000, matieres: 1000000 },
+    });
+    const p = renderHook(() => useFixerPreAutorisations('Willy'), { wrapper });
+    await act(async () => {
+      await p.result.current.mutateAsync({ bois: 100000, levure: 0 } as never);
+    });
+    expect(plafonds).toEqual({ plafonds: { bois: 100000, levure: 0 } });
+  });
+});

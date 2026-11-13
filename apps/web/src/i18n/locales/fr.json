@@ -330,12 +330,30 @@
       "refSession": "{{type}} du {{date}}",
       "budget": {
         "titre": "Budget {{mois}} par catégorie",
+        "fixer": "Fixer le budget",
+        "fixerTitre": "Budget de {{mois}}",
+        "fixerExplication": "Montant mensuel par catégorie, en FCFA. 0 retire la ligne du suivi.",
+        "fixeToast": "Budget du mois enregistré",
         "ligne": "{{realise}} / {{budget}} FCFA · {{pourcent}} %",
         "niveaux": {
           "ok": "OK",
           "surveiller": "À surveiller",
           "bloquant": "Dépassé"
         }
+      },
+      "preAutorisations": {
+        "titre": "Achats courants pré-autorisés cette semaine",
+        "fixer": "Fixer les plafonds",
+        "fixerTitre": "Plafonds de la semaine",
+        "fixerExplication": "Plafond par achat courant, en FCFA, pour la semaine ouverte. Dans ce cadre, une dépense ne crée pas de demande de validation. 0 retire le plafond.",
+        "fixeToast": "Plafonds de la semaine enregistrés",
+        "aucune": "Aucun achat courant n’est pré-autorisé cette semaine.",
+        "detail": "{{engage}} engagés sur {{plafond}}"
+      },
+      "reglages": {
+        "enregistrer": "Enregistrer",
+        "annuler": "Annuler",
+        "echec": "L’enregistrement a échoué : vérifiez les montants et réessayez."
       },
       "categories": {
         "matieres": "Matières premières",

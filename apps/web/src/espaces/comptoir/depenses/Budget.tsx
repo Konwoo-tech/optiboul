@@ -7,7 +7,16 @@ import { niveauBudget, remplissage, totauxBudget } from './regles.ts';
 import type { LigneBudget } from './types.ts';
 
 /** Budget du mois par catégorie : OK, à surveiller (au-dessus de 85 %), dépassé (au-dessus de 100 %). */
-export function Budget({ lignes, mois }: { lignes: LigneBudget[]; mois: string }) {
+export function Budget({
+  lignes,
+  mois,
+  onFixer,
+}: {
+  lignes: LigneBudget[];
+  mois: string;
+  /** Présent pour le propriétaire : ouvre la fenêtre qui fixe le budget du mois. */
+  onFixer?: () => void;
+}) {
   const { t, i18n } = useTranslation();
   const total = totauxBudget(lignes);
 
@@ -24,6 +33,11 @@ export function Budget({ lignes, mois }: { lignes: LigneBudget[]; mois: string }
             pourcent: total.pourcent,
           })}
         </span>
+        {onFixer && (
+          <button type="button" className={styles.reglage} onClick={onFixer}>
+            {t('comptoir.depenses.budget.fixer')}
+          </button>
+        )}
       </div>
       <ul className={styles.categories}>
         {lignes.map((ligne) => {

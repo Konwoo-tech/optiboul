@@ -6,10 +6,19 @@ import { useSearchParams } from 'react-router';
 
 import type { Ecran } from '../../../navigation.ts';
 import { EnTeteEcran } from '../../EnTeteEcran.tsx';
-import { codeErreur, useDepenses, useEnregistrerDepense } from './api.ts';
+import { SIMULATION } from '@/simulation';
+import {
+  codeErreur,
+  useDepenses,
+  useEnregistrerDepense,
+  useFixerBudget,
+  useFixerPreAutorisations,
+} from './api.ts';
 import { Budget } from './Budget.tsx';
 import styles from './Depenses.module.css';
 import { Formulaire } from './Formulaire.tsx';
+import { FenetreReglages } from './FenetreReglages.tsx';
+import { PreAutorisations } from './PreAutorisations.tsx';
 import { Liste } from './Liste.tsx';
 import {
   droitsDepenses,
@@ -17,7 +26,7 @@ import {
   type FiltreRattachement,
   type FiltreSemaine,
 } from './regles.ts';
-import type { NouvelleDepense } from './types.ts';
+import { ACHATS_COURANTS, CATEGORIES, type NouvelleDepense } from './types.ts';
 
 /**
  * Comptoir › Dépenses (US-110, US-112, US-113) : budget du mois par catégorie, saisie d'une dépense
@@ -32,6 +41,9 @@ export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
   const profil = utilisateur?.profil;
   const requete = useDepenses(nom);
   const enregistrer = useEnregistrerDepense(nom);
+  const fixerBudget = useFixerBudget(nom);
+  const fixerPlafonds = useFixerPreAutorisations(nom);
+  const [reglage, setReglage] = useState<'budget' | 'plafonds' | null>(null);
   // La semaine peut venir de l'adresse : l'écran des semaines y renvoie (« Dépenses · 4 »).
   const [parametres] = useSearchParams();
   const [semaine, setSemaine] = useState<FiltreSemaine>(() =>
@@ -86,7 +98,31 @@ export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
       <EnTeteEcran ecran={ecran} />
       <div className={styles.page}>
         {instantane.budget.length > 0 && (
-          <Budget lignes={instantane.budget} mois={instantane.mois} />
+          <Budget
+            lignes={instantane.budget}
+            mois={instantane.mois}
+            onFixer={
+              !SIMULATION && profil === 'proprietaire'
+                ? () => {
+                    fixerBudget.reset();
+                    setReglage('budget');
+                  }
+                : undefined
+            }
+          />
+        )}
+        {instantane.preAutorisations && (
+          <PreAutorisations
+            lignes={instantane.preAutorisations}
+            onFixer={
+              profil === 'gerant' || profil === 'proprietaire'
+                ? () => {
+                    fixerPlafonds.reset();
+                    setReglage('plafonds');
+                  }
+                : undefined
+            }
+          />
         )}
         <div className={styles.bas}>
           {droits.saisir && (
@@ -110,6 +146,53 @@ export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
           />
         </div>
       </div>
+      {reglage === 'budget' && (
+        <FenetreReglages
+          titre={t('comptoir.depenses.budget.fixerTitre', { mois: instantane.mois })}
+          explication={t('comptoir.depenses.budget.fixerExplication')}
+          champs={CATEGORIES.map((categorie) => ({
+            cle: categorie,
+            libelle: t(`comptoir.depenses.categories.${categorie}`),
+            valeur: instantane.budget.find((l) => l.categorie === categorie)?.budget ?? 0,
+          }))}
+          erreur={fixerBudget.isError ? t('comptoir.depenses.reglages.echec') : null}
+          envoiEnCours={fixerBudget.isPending}
+          onFermer={() => setReglage(null)}
+          onEnregistrer={(montants) =>
+            fixerBudget.mutate(
+              { mois: instantane.mois, montants },
+              {
+                onSuccess: () => {
+                  setReglage(null);
+                  afficher(t('comptoir.depenses.budget.fixeToast'));
+                },
+              },
+            )
+          }
+        />
+      )}
+      {reglage === 'plafonds' && (
+        <FenetreReglages
+          titre={t('comptoir.depenses.preAutorisations.fixerTitre')}
+          explication={t('comptoir.depenses.preAutorisations.fixerExplication')}
+          champs={ACHATS_COURANTS.map((achat) => ({
+            cle: achat,
+            libelle: t(`comptoir.depenses.matieres.${achat}.nom`),
+            valeur: instantane.preAutorisations?.find((p) => p.achat === achat)?.plafond ?? 0,
+          }))}
+          erreur={fixerPlafonds.isError ? t('comptoir.depenses.reglages.echec') : null}
+          envoiEnCours={fixerPlafonds.isPending}
+          onFermer={() => setReglage(null)}
+          onEnregistrer={(plafonds) =>
+            fixerPlafonds.mutate(plafonds, {
+              onSuccess: () => {
+                setReglage(null);
+                afficher(t('comptoir.depenses.preAutorisations.fixeToast'));
+              },
+            })
+          }
+        />
+      )}
     </>
   );
 }
