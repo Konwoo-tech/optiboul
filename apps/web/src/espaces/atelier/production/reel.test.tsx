@@ -72,7 +72,7 @@ const EN_COURS = {
   id: 9,
   jour: '2026-11-13',
   creneau: 'jour',
-  statut: 'ouverte',
+  statut: 'en_cours',
   produits: [
     { code: 'BAG', sacs: 1, prevus: 315, realise: 200, reste: 115 },
     { code: 'KO', sacs: 1, prevus: 426, realise: 0, reste: 426 },
@@ -190,7 +190,7 @@ describe('lecture de la production sur le vrai serveur', () => {
     expect(etapeDe('propose', undefined)).toBe('plan-propose');
     expect(etapeDe('valide', undefined)).toBe('plan-valide');
     expect(etapeDe('provisoire', undefined)).toBe('plan-valide');
-    expect(etapeDe('valide', 'ouverte')).toBe('en-cours');
+    expect(etapeDe('valide', 'en_cours')).toBe('en-cours');
     expect(etapeDe('valide', 'cloturee')).toBe('cloturee');
     expect(etapeDe('valide', 'non_cloturee')).toBe('cloturee');
   });

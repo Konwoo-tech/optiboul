@@ -149,7 +149,7 @@ export function versPlan(lignes: readonly LignePlanServeur[]): {
 /** Le cycle de la session : commandes, plan proposé, plan validé, en cours, clôturée. */
 export function etapeDe(plan: string | null, production: string | undefined): Etape {
   if (production === 'cloturee' || production === 'non_cloturee') return 'cloturee';
-  if (production === 'ouverte') return 'en-cours';
+  if (production === 'en_cours') return 'en-cours';
   if (plan === 'valide' || plan === 'provisoire') return 'plan-valide';
   if (plan === 'propose') return 'plan-propose';
   return 'commandes';
