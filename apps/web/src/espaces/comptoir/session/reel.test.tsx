@@ -795,6 +795,8 @@ describe('mouvements et clôture sur le vrai serveur', () => {
     serveurSession();
     const instantane = await lireSessionReelle();
     expect(instantane.especesAttendues).toBe(20500);
+    // Le serveur dit quelle session s'ouvre ensuite (ici la nuit du même jour).
+    expect(instantane.prochaine).toEqual({ jour: '2026-11-13', type: 'nuit' });
     expect(instantane.session.caisseId).toBe('2');
   });
 });

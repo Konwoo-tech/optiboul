@@ -126,4 +126,9 @@ export type InstantaneSession = {
    * livraisons et paiements − dépenses − remises). Absent : l'écran les calcule avec les livraisons.
    */
   especesAttendues?: number;
+  /**
+   * Session que le serveur autorise à ouvrir ensuite (selon l'heure). Absent : l'écran déduit la
+   * suivante de la session en cours. Quand elle est celle qu'on vient de fermer, il n'y a rien à ouvrir.
+   */
+  prochaine?: { jour: string; type: 'jour' | 'nuit' };
 };
