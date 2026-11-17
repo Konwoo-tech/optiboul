@@ -28,6 +28,18 @@ export interface PatchedProduit {
      */
   ordre?: number;
   /**
+     * @minimum 0
+     * @maximum 32767
+     * @nullable
+     */
+  cuisson_minutes?: number | null;
+  /**
+     * Pains réalisés le mois civil précédent, toutes sessions.
+     *
+     * Calculés une fois pour toute la liste : le sérialiseur enfant est partagé.
+     */
+  readonly pains_produits_mois_precedent?: number;
+  /**
      * Version en cours de la fiche technique.
      * @nullable
      */

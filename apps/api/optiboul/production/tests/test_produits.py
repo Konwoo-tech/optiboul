@@ -94,6 +94,7 @@ class TestApi:
             "unite": "kg",
             "cle": True,
             "stockee": True,
+            "prix_unitaire": "390.50",
         }
 
     def test_qui_gere_les_produits(

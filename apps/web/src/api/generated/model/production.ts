@@ -18,4 +18,14 @@ export interface Production {
   prevus: number;
   realise: number;
   reste: number;
+  ouverte_par: string;
+  ouverte_le: string;
+  /** Vide tant que la production n'est pas clôturée. */
+  cloturee_par: string;
+  /** @nullable */
+  cloturee_le: string | null;
+  /** Écart matière toléré, en kg par sac (R10). */
+  tolerance_ecart_kg: number;
+  /** Écart toléré des intrants en grammes, en % de la recette (R10). */
+  tolerance_ecart_pourcent: number;
 }

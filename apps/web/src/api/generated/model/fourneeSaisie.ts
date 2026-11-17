@@ -7,6 +7,8 @@
  */
 
 export interface FourneeSaisie {
+  /** Rang dans la production, à partir de 1 ; la dernière s'annule. */
+  numero: number;
   produit: string;
   pains: number;
   saisie_le: string;

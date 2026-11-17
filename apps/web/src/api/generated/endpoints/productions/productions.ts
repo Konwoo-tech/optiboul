@@ -27,10 +27,12 @@ import type {
 import type {
   Consommation,
   Fournee,
+  PageDeProductions,
   Plan,
   Probleme,
   Production,
   ProductionsEnCoursRetrieveParams,
+  ProductionsListParams,
   ProductionsPlanRetrieveParams,
   ProductionsResteAProduireRetrieveParams,
   PropositionPlan,
@@ -60,6 +62,122 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export type productionsListResponse200 = {
+  data: PageDeProductions[]
+  status: 200
+}
+
+export type productionsListResponseSuccess = (productionsListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type productionsListResponse = (productionsListResponseSuccess)
+
+export const getProductionsListUrl = (params?: ProductionsListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/productions/?${stringifiedParams}` : `/api/v1/productions/`
+}
+
+/**
+ * Historique des productions, la plus récente d'abord (écran Production).
+ */
+export const productionsList = async (params?: ProductionsListParams, options?: Parameters<typeof optiboulFetch>[1]): Promise<productionsListResponse> => {
+
+  return optiboulFetch<productionsListResponse>(getProductionsListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getProductionsListQueryKey = (params?: ProductionsListParams,) => {
+    return [
+    `/api/v1/productions/`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getProductionsListQueryOptions = <TData = Awaited<ReturnType<typeof productionsList>>, TError = unknown>(params?: ProductionsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productionsList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getProductionsListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof productionsList>>> = ({ signal }) => productionsList(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof productionsList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ProductionsListQueryResult = NonNullable<Awaited<ReturnType<typeof productionsList>>>
+export type ProductionsListQueryError = unknown
+
+
+export function useProductionsList<TData = Awaited<ReturnType<typeof productionsList>>, TError = unknown>(
+ params: undefined |  ProductionsListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof productionsList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof productionsList>>,
+          TError,
+          Awaited<ReturnType<typeof productionsList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductionsList<TData = Awaited<ReturnType<typeof productionsList>>, TError = unknown>(
+ params?: ProductionsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productionsList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof productionsList>>,
+          TError,
+          Awaited<ReturnType<typeof productionsList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useProductionsList<TData = Awaited<ReturnType<typeof productionsList>>, TError = unknown>(
+ params?: ProductionsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productionsList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useProductionsList<TData = Awaited<ReturnType<typeof productionsList>>, TError = unknown>(
+ params?: ProductionsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof productionsList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getProductionsListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
 
 export type productionsCloturerCreateResponse200 = {
   data: Production
@@ -357,6 +475,103 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getProductionsFourneeCreateMutationOptions(options), queryClient);
+    }
+    export type productionsFourneeDestroyResponse200 = {
+  data: Production
+  status: 200
+}
+
+export type productionsFourneeDestroyResponse404 = {
+  data: Probleme
+  status: 404
+}
+
+export type productionsFourneeDestroyResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type productionsFourneeDestroyResponseSuccess = (productionsFourneeDestroyResponse200) & {
+  headers: Headers;
+};
+export type productionsFourneeDestroyResponseError = (productionsFourneeDestroyResponse404 | productionsFourneeDestroyResponse409) & {
+  headers: Headers;
+};
+
+export type productionsFourneeDestroyResponse = (productionsFourneeDestroyResponseSuccess | productionsFourneeDestroyResponseError)
+
+export const getProductionsFourneeDestroyUrl = (id: number,
+    numero: number,) => {
+
+
+
+
+  return `/api/v1/productions/${id}/fournee/${numero}/`
+}
+
+/**
+ * Corrige une fournée saisie par erreur : la dernière seulement, par le
+ * responsable, tant que la production est en cours. Elle reste au journal.
+ */
+export const productionsFourneeDestroy = async (id: number,
+    numero: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<productionsFourneeDestroyResponse> => {
+
+  return optiboulFetch<productionsFourneeDestroyResponse>(getProductionsFourneeDestroyUrl(id,numero),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getProductionsFourneeDestroyMutationKey = () => ['productionsFourneeDestroy'] as const;
+
+export const getProductionsFourneeDestroyMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof productionsFourneeDestroy>>, TError,ProductionsFourneeDestroyMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof productionsFourneeDestroy>>, TError,ProductionsFourneeDestroyMutationVariables, TContext> => {
+
+const mutationKey = getProductionsFourneeDestroyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof productionsFourneeDestroy>>, ProductionsFourneeDestroyMutationVariables> = (props) => {
+          const {id,numero} = props ?? {};
+
+          return  productionsFourneeDestroy(id,numero,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ProductionsFourneeDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof productionsFourneeDestroy>>>
+
+    export type ProductionsFourneeDestroyMutationError = Probleme
+    export type ProductionsFourneeDestroyMutationVariables = {id: number;numero: number}
+
+    export const useProductionsFourneeDestroy = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof productionsFourneeDestroy>>, TError,ProductionsFourneeDestroyMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof productionsFourneeDestroy>>,
+        TError,
+        ProductionsFourneeDestroyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getProductionsFourneeDestroyMutationOptions(options), queryClient);
     }
     export type productionsEnCoursRetrieveResponse200 = {
   data: Production

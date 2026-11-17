@@ -14,4 +14,9 @@ export interface Matiere {
   readonly unite: UniteEnum;
   readonly cle: boolean;
   readonly stockee: boolean;
+  /**
+     * @nullable
+     * @pattern ^-?\d{0,10}(?:\.\d{0,2})?$
+     */
+  readonly prix_unitaire: string | null;
 }
