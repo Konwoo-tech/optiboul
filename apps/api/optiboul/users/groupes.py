@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from django.contrib.auth.models import Group
 from django.db import transaction
 
+from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.core.infrastructure.journal import journaliser
 
 from .models import ProfilGroupe
@@ -67,6 +68,37 @@ def modifier_groupe(groupe: Group, auteur: Auteur, **champs: str) -> Group:
             apres=apres,
         )
     return groupe
+
+
+@transaction.atomic
+def supprimer_groupe(groupe: Group, auteur: Auteur) -> None:
+    """Un groupe vide créé par l'administrateur ; les groupes de départ restent."""
+    droits = groupe.profil_droits
+    if droits.protege:
+        message = "Un groupe de départ ne se supprime pas."
+        refus = RefusMetier("groupe_protege", message)
+        raise refus
+    membres = groupe.user_set.count()
+    if membres:
+        message = (
+            f"Le groupe compte {membres} membre(s) : changez-les de groupe d'abord."
+        )
+        refus = RefusMetier("groupe_non_vide", message, membres=membres)
+        raise refus
+    avant = {
+        "nom": groupe.name,
+        "profil": droits.profil,
+        "description": droits.description,
+    }
+    groupe_id = groupe.pk
+    groupe.delete()
+    journaliser(
+        "groupe.supprime",
+        auteur=auteur,
+        objet_type="groupe",
+        objet_id=groupe_id,
+        avant=avant,
+    )
 
 
 @transaction.atomic

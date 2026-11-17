@@ -156,3 +156,12 @@ def passation(semaine_id: int) -> int:
     from .passation import produire  # noqa: PLC0415 : WeasyPrint chargé au besoin
 
     return produire(semaine_id).pk
+
+
+@shared_task(name="core.restaurer")
+def restaurer(restauration_id: int) -> str | None:
+    """Restauration demandée depuis l'API (#304) : un seul travailleur à la fois."""
+    from .restaurations import executer  # noqa: PLC0415
+
+    etat = executer(restauration_id)
+    return etat["statut"] if etat else None

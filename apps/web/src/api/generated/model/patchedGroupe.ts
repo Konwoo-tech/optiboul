@@ -14,4 +14,6 @@ export interface PatchedGroupe {
   profil?: ProfilEnum;
   description?: string;
   readonly membres?: number;
+  /** Groupe de départ : il ne se supprime pas. */
+  readonly protege?: boolean;
 }
