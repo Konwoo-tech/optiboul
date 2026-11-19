@@ -1698,6 +1698,15 @@
         "fiche": "Fiche ›",
         "erreurChargement": "Impossible de charger les produits."
       },
+      "notifications": {
+        "titre": "Règles de notification",
+        "aide": "Pour chaque événement, qui est prévenu et par quels canaux. L’application est toujours active.",
+        "profils": "Profils prévenus · {{libelle}}",
+        "canaux": "Canaux · {{libelle}}",
+        "canal": { "sms": "SMS", "whatsapp": "WhatsApp" },
+        "enregistre": "Règle enregistrée · {{libelle}}",
+        "erreur": "La règle n’a pas pu être enregistrée."
+      },
       "autres": {
         "titre": "Tous les paramètres métier",
         "aide": "Chaque modification est enregistrée avec son auteur et tracée dans le journal."

@@ -1698,6 +1698,15 @@
         "fiche": "Sheet ›",
         "erreurChargement": "Could not load the products."
       },
+      "notifications": {
+        "titre": "Notification rules",
+        "aide": "For each event, who is notified and through which channels. The app is always on.",
+        "profils": "Profiles notified · {{libelle}}",
+        "canaux": "Channels · {{libelle}}",
+        "canal": { "sms": "SMS", "whatsapp": "WhatsApp" },
+        "enregistre": "Rule saved · {{libelle}}",
+        "erreur": "The rule could not be saved."
+      },
       "autres": {
         "titre": "All business settings",
         "aide": "Every change is saved with its author and recorded in the log."
