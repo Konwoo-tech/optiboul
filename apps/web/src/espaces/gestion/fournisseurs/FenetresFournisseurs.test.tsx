@@ -9,6 +9,9 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+// Ces tests jouent l'écran sur le faux serveur ; la lecture du vrai serveur est dans reel.test.tsx.
+vi.hoisted(() => vi.stubEnv('MODE', 'simulation'));
+
 import { ECRANS } from '../../../navigation.ts';
 import EcranFournisseurs from './EcranFournisseurs.tsx';
 

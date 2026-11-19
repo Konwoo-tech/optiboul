@@ -29,6 +29,14 @@ export function libelleFacture(
       { semaine: objet.semaine, sacs: quantite(objet.sacs, langue) },
     );
   }
+  if (objet.genre === 'serveur') {
+    return t(
+      objet.farine
+        ? 'gestion.fournisseurs.factures.objets.serveurFarine'
+        : 'gestion.fournisseurs.factures.objets.serveur',
+      { semaine: objet.semaine },
+    );
+  }
   const commun = {
     commande: objet.commande,
     matiere: nomMatiere(t, objet.matiere),

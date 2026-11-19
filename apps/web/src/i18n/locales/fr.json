@@ -1023,7 +1023,9 @@
           "farineEnCours": "Farine · semaine {{semaine}} ({{sacs}} sacs à ce jour)",
           "reception": "{{commande}} · {{matiere}}, {{quantite}} {{unite}}",
           "receptionPartielle": "{{commande}} · {{matiere}}, {{quantite}} {{unite}} reçus sur {{commandee}}",
-          "livraison": "{{matiere}} · {{quantite}} {{unite}} ({{commande}})"
+          "livraison": "{{matiere}} · {{quantite}} {{unite}} ({{commande}})",
+          "serveur": "Facture · semaine {{semaine}}",
+          "serveurFarine": "Farine · semaine {{semaine}}"
         },
         "vide": "Aucune facture.",
         "reference": " · réf. {{reference}}"
