@@ -37,6 +37,8 @@ export type EntreeJournal = {
   profil: Profil | null;
   type: TypeAction;
   texte: string;
+  /** Vrai serveur : code de l'action (« caisse.ouverte »), traduit à l'affichage. */
+  codeAction?: string;
   avant?: string;
   apres?: string;
 };

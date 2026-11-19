@@ -190,7 +190,11 @@ export default function EcranJournal({ ecran }: { ecran: Ecran }) {
                   <VisuallyHidden component="span">
                     {t('gestion.journal.colonnes.action')}
                   </VisuallyHidden>
-                  {entree.texte}
+                  {entree.codeAction
+                    ? t(`gestion.journal.actions.${entree.codeAction}`, {
+                        defaultValue: entree.codeAction,
+                      })
+                    : entree.texte}
                   {entree.avant !== undefined && entree.apres !== undefined ? (
                     <span className={styles.changement}>
                       {t('gestion.journal.changement', {

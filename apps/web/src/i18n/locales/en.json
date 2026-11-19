@@ -816,6 +816,181 @@
         "sauvegarde": "Backups",
         "parametre": "Settings",
         "autre": "Other"
+      },
+      "actions": {
+        "budget": {
+          "fixe": "Monthly budget set"
+        },
+        "caisse": {
+          "fermee": "Cash register closed",
+          "hors_planning": "Cash register opened off schedule",
+          "non_cloturee": "Cash register archived not closed",
+          "ouverte": "Cash register opened",
+          "remise": "Cash handover",
+          "rouverte": "Cash register reopened"
+        },
+        "client": {
+          "cree": "Customer created",
+          "modifie": "Customer updated",
+          "tarifs": "Customer prices updated"
+        },
+        "clients": {
+          "import": "Customers imported",
+          "relances": "Debt reminders sent",
+          "releve_envoye": "Customer statement sent"
+        },
+        "commande": {
+          "annulee": "Order cancelled",
+          "saisie": "Order entered"
+        },
+        "commandes": {
+          "rappel_habituels": "Usual orders reminder",
+          "reprises": "Orders resumed"
+        },
+        "compte": {
+          "debloque": "Account unlocked"
+        },
+        "connexion": {
+          "changement": "User switched",
+          "echec": "Sign-in failed",
+          "expiree": "Session expired",
+          "fermee": "Signed out",
+          "google_refusee": "Google sign-in refused",
+          "reussie": "Signed in",
+          "verrouillage": "Account locked after wrong codes"
+        },
+        "demande": {
+          "accordee": "Request approved",
+          "emise": "Request raised",
+          "escaladee": "Request escalated to the owner"
+        },
+        "depense": {
+          "saisie": "Expense entered"
+        },
+        "dettes": {
+          "reportees": "Debts carried over"
+        },
+        "employe": {
+          "cree": "Employee created",
+          "modifie": "Employee updated"
+        },
+        "encaissement": {
+          "enregistre": "Payment received"
+        },
+        "envoi": {
+          "relance": "Message resent"
+        },
+        "facture": {
+          "payee": "Supplier invoice paid"
+        },
+        "fiche": {
+          "nouvelle_version": "New version of a sheet"
+        },
+        "fournisseur": {
+          "cree": "Supplier created",
+          "modifie": "Supplier updated"
+        },
+        "groupe": {
+          "cree": "Group created",
+          "modifie": "Group updated"
+        },
+        "livraison": {
+          "autorisee": "Delivery authorised",
+          "bon_envoye": "Delivery note sent",
+          "en_attente": "Delivery awaiting authorisation",
+          "enregistree": "Delivery recorded"
+        },
+        "manquant": {
+          "relance": "Supplier shortfall chased",
+          "replanifie": "Supplier shortfall rescheduled"
+        },
+        "mfa": {
+          "codes_secours_generes": "Backup codes regenerated",
+          "totp_active": "Authenticator app enabled",
+          "totp_desactive": "Authenticator app disabled"
+        },
+        "mot_de_passe": {
+          "demande": "Password reset requested",
+          "reinitialise": "Password reset"
+        },
+        "mouvement_interne": {
+          "enregistre": "Internal movement recorded"
+        },
+        "notification": {
+          "regle_modifiee": "Notification rule updated"
+        },
+        "paie": {
+          "element_modifie": "Bonus or penalty updated",
+          "element_retire": "Bonus or penalty removed",
+          "ligne_modifiee": "Absences and advances updated",
+          "penalite_ajoute": "Bonus or penalty added",
+          "preparee": "Payroll prepared",
+          "salaire_paye": "Salary paid",
+          "soumise": "Payroll submitted"
+        },
+        "parametre": {
+          "modifie": "Setting updated"
+        },
+        "plan": {
+          "propose": "Production plan proposed",
+          "valide": "Production plan approved"
+        },
+        "planning": {
+          "creneau": "Cash slot scheduled"
+        },
+        "poste": {
+          "enregistre": "Trusted workstation registered",
+          "revoque": "Trusted workstation revoked"
+        },
+        "pre_autorisations": {
+          "fixees": "Pre-authorisation limits set"
+        },
+        "production": {
+          "cloturee": "Production closed",
+          "consommation": "Production consumption recorded",
+          "fournee": "Batch recorded",
+          "non_cloturee": "Production archived not closed",
+          "ouverte": "Production opened"
+        },
+        "produit": {
+          "cree": "Product created",
+          "modifie": "Product updated"
+        },
+        "rapports": {
+          "rapprochement": "Reports reconciliation"
+        },
+        "reception": {
+          "annulee": "Receipt cancelled",
+          "planifiee": "Receipt scheduled",
+          "recue": "Receipt recorded"
+        },
+        "sauvegarde": {
+          "demandee": "Backup requested",
+          "echec": "Backup failed",
+          "restauree": "Backup restored"
+        },
+        "semaine": {
+          "affectations": "Week assignments updated",
+          "cloturee": "Week closed",
+          "cloturee_forcee": "Week closed by force",
+          "ouverte": "Week opened",
+          "ouverture_impossible": "Week opening impossible",
+          "passation": "Handover report generated",
+          "planifiee": "Week scheduled"
+        },
+        "stock": {
+          "controle_fait": "Stock check done",
+          "perte": "Stock loss declared"
+        },
+        "supplement": {
+          "auto_accorde": "Production extra approved automatically"
+        },
+        "utilisateur": {
+          "code_defini": "Counter code set",
+          "cree": "User created",
+          "groupe_change": "User group changed",
+          "invitation_acceptee": "Invitation accepted"
+        }
       }
     },
     "tableauDeBord": {

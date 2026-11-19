@@ -816,6 +816,181 @@
         "sauvegarde": "Sauvegardes",
         "parametre": "Paramètres",
         "autre": "Autres"
+      },
+      "actions": {
+        "budget": {
+          "fixe": "Budget du mois fixé"
+        },
+        "caisse": {
+          "fermee": "Caisse fermée",
+          "hors_planning": "Caisse ouverte hors planning",
+          "non_cloturee": "Caisse archivée non clôturée",
+          "ouverte": "Caisse ouverte",
+          "remise": "Remise de caisse",
+          "rouverte": "Caisse rouverte"
+        },
+        "client": {
+          "cree": "Client créé",
+          "modifie": "Client modifié",
+          "tarifs": "Tarifs du client modifiés"
+        },
+        "clients": {
+          "import": "Clients importés",
+          "relances": "Relances de dettes envoyées",
+          "releve_envoye": "Relevé client envoyé"
+        },
+        "commande": {
+          "annulee": "Commande annulée",
+          "saisie": "Commande saisie"
+        },
+        "commandes": {
+          "rappel_habituels": "Rappel des commandes habituelles",
+          "reprises": "Commandes reprises"
+        },
+        "compte": {
+          "debloque": "Compte débloqué"
+        },
+        "connexion": {
+          "changement": "Changement d’utilisateur",
+          "echec": "Échec de connexion",
+          "expiree": "Session expirée",
+          "fermee": "Déconnexion",
+          "google_refusee": "Connexion Google refusée",
+          "reussie": "Connexion",
+          "verrouillage": "Compte verrouillé après des codes faux"
+        },
+        "demande": {
+          "accordee": "Demande accordée",
+          "emise": "Demande émise",
+          "escaladee": "Demande escaladée au propriétaire"
+        },
+        "depense": {
+          "saisie": "Dépense saisie"
+        },
+        "dettes": {
+          "reportees": "Dettes reportées"
+        },
+        "employe": {
+          "cree": "Employé créé",
+          "modifie": "Employé modifié"
+        },
+        "encaissement": {
+          "enregistre": "Encaissement enregistré"
+        },
+        "envoi": {
+          "relance": "Envoi relancé"
+        },
+        "facture": {
+          "payee": "Facture fournisseur payée"
+        },
+        "fiche": {
+          "nouvelle_version": "Nouvelle version d’une fiche"
+        },
+        "fournisseur": {
+          "cree": "Fournisseur créé",
+          "modifie": "Fournisseur modifié"
+        },
+        "groupe": {
+          "cree": "Groupe créé",
+          "modifie": "Groupe modifié"
+        },
+        "livraison": {
+          "autorisee": "Livraison autorisée",
+          "bon_envoye": "Bon de livraison envoyé",
+          "en_attente": "Livraison en attente d’autorisation",
+          "enregistree": "Livraison enregistrée"
+        },
+        "manquant": {
+          "relance": "Manquant fournisseur relancé",
+          "replanifie": "Manquant fournisseur replanifié"
+        },
+        "mfa": {
+          "codes_secours_generes": "Codes de secours régénérés",
+          "totp_active": "Application d’authentification activée",
+          "totp_desactive": "Application d’authentification désactivée"
+        },
+        "mot_de_passe": {
+          "demande": "Réinitialisation du mot de passe demandée",
+          "reinitialise": "Mot de passe réinitialisé"
+        },
+        "mouvement_interne": {
+          "enregistre": "Mouvement interne enregistré"
+        },
+        "notification": {
+          "regle_modifiee": "Règle de notification modifiée"
+        },
+        "paie": {
+          "element_modifie": "Gain ou pénalité modifié(e)",
+          "element_retire": "Gain ou pénalité retiré(e)",
+          "ligne_modifiee": "Absences et avances modifiées",
+          "penalite_ajoute": "Gain ou pénalité ajouté(e)",
+          "preparee": "État de paie préparé",
+          "salaire_paye": "Salaire payé",
+          "soumise": "État de paie soumis"
+        },
+        "parametre": {
+          "modifie": "Paramètre modifié"
+        },
+        "plan": {
+          "propose": "Plan de production proposé",
+          "valide": "Plan de production validé"
+        },
+        "planning": {
+          "creneau": "Créneau de caisse planifié"
+        },
+        "poste": {
+          "enregistre": "Poste de confiance enregistré",
+          "revoque": "Poste de confiance révoqué"
+        },
+        "pre_autorisations": {
+          "fixees": "Plafonds de pré-autorisation fixés"
+        },
+        "production": {
+          "cloturee": "Production clôturée",
+          "consommation": "Consommation de production enregistrée",
+          "fournee": "Fournée enregistrée",
+          "non_cloturee": "Production archivée non clôturée",
+          "ouverte": "Production ouverte"
+        },
+        "produit": {
+          "cree": "Produit créé",
+          "modifie": "Produit modifié"
+        },
+        "rapports": {
+          "rapprochement": "Rapprochement des rapports"
+        },
+        "reception": {
+          "annulee": "Réception annulée",
+          "planifiee": "Réception planifiée",
+          "recue": "Réception enregistrée"
+        },
+        "sauvegarde": {
+          "demandee": "Sauvegarde demandée",
+          "echec": "Échec d’une sauvegarde",
+          "restauree": "Sauvegarde restaurée"
+        },
+        "semaine": {
+          "affectations": "Affectations de la semaine modifiées",
+          "cloturee": "Semaine clôturée",
+          "cloturee_forcee": "Semaine clôturée de force",
+          "ouverte": "Semaine ouverte",
+          "ouverture_impossible": "Ouverture de semaine impossible",
+          "passation": "Rapport de passation généré",
+          "planifiee": "Semaine planifiée"
+        },
+        "stock": {
+          "controle_fait": "Contrôle de stock fait",
+          "perte": "Perte de stock déclarée"
+        },
+        "supplement": {
+          "auto_accorde": "Supplément de production accordé automatiquement"
+        },
+        "utilisateur": {
+          "code_defini": "Code du comptoir défini",
+          "cree": "Utilisateur créé",
+          "groupe_change": "Groupe d’un utilisateur changé",
+          "invitation_acceptee": "Invitation acceptée"
+        }
       }
     },
     "tableauDeBord": {
