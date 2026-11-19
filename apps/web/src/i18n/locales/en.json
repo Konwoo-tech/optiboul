@@ -19,6 +19,33 @@
     "enLigneCourt": "online",
     "horsLigneCourt": "offline"
   },
+  "securite": {
+    "bouton": "Account security",
+    "titre": "Account security",
+    "chargement": "Loading…",
+    "erreur": "The operation could not be completed. Please try again.",
+    "etatActif": "Authenticator app enabled · {{count}} backup code(s) left",
+    "etatInactif": "Authenticator app not enabled",
+    "aide": "Add a verification with an app (Google Authenticator, Microsoft Authenticator…) to protect remote sign-in.",
+    "activer": "Enable the authenticator app",
+    "etapeCle": "In the app, add an account with this key (manual entry), then enter the 6-digit code it shows.",
+    "cle": "Setup key",
+    "code": "6-digit code",
+    "confirmer": "Verify and enable",
+    "annuler": "Cancel",
+    "activee": "Authenticator app enabled",
+    "desactivee": "Authenticator app disabled",
+    "codesSecours": "Backup codes",
+    "codesUneFois": "Keep them somewhere safe: they will not be shown again.",
+    "regenerer": "Regenerate backup codes",
+    "desactiver": "Disable",
+    "fermer": "Close",
+    "erreurs": {
+      "format": "The code has 6 digits.",
+      "incorrect": "Incorrect code. Check your phone’s clock.",
+      "defaut": "Activation failed. Please try again."
+    }
+  },
   "commun": {
     "changerUtilisateur": "Switch user",
     "deconnexion": "Sign out",
