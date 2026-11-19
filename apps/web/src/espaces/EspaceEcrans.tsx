@@ -9,14 +9,12 @@ import { EcranPrevu } from './EcranPrevu.tsx';
 type EcranLivre = ComponentType<{ ecran: Ecran }>;
 
 /**
- * Les écrans construits lisent l'API simulée : hors simulation, la page d'attente s'affiche,
- * sauf pour les écrans déjà branchés sur le vrai serveur (intégration par étapes, ticket #292).
- * ATTENTION : chaque entrée de `ECRANS_LIVRES` qui lit encore l'API simulée doit être gardée par
- * `EN_SIMULATION`. Un `lazy(import(...))` sans garde embarquerait l'écran dans le paquet de production. (Une fonction
- * `enSimulation(() => import(...))` ne suffit pas : le compilateur ne retire pas l'import.)
- * `pnpm verifier:fuite`, à lancer après `pnpm build`, détecte une fuite.
+ * Tous les écrans construits sont branchés sur le vrai serveur (intégration par étapes, ticket #292).
+ * ATTENTION : un écran qui ne lirait que l'API simulée doit être gardé par
+ * `import.meta.env.MODE === 'simulation' ? lazy(() => import(...)) : null` : un `lazy(import(...))`
+ * sans garde l'embarquerait dans le paquet de production. `pnpm verifier:fuite`, à lancer après
+ * `pnpm build`, détecte une fuite.
  */
-const EN_SIMULATION = import.meta.env.MODE === 'simulation';
 
 /**
  * Écrans déjà construits, une entrée par ligne, triées. Clé `espace/écran` : un écran peut donc
@@ -24,9 +22,7 @@ const EN_SIMULATION = import.meta.env.MODE === 'simulation';
  */
 const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
   'atelier/production': lazy(() => import('./atelier/production/EcranProduction.tsx')),
-  'atelier/semaines': EN_SIMULATION
-    ? lazy(() => import('./gestion/semaines/EcranSemaines.tsx'))
-    : null,
+  'atelier/semaines': lazy(() => import('./gestion/semaines/EcranSemaines.tsx')),
   'atelier/stocks': lazy(() => import('./atelier/stocks/EcranStocks.tsx')),
   'comptoir/caisses': lazy(() => import('./comptoir/caisses/Ecran.tsx')),
   // Branché sur le vrai serveur (#268) : sans garde.
