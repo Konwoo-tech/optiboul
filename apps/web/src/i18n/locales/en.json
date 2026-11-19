@@ -852,6 +852,12 @@
       "decomptePasse_one": "{{jour}} · {{count}} day ago",
       "decomptePasse_other": "{{jour}} · {{count}} days ago",
       "soumettre": "Submit to the owner",
+      "preparer": "Prepare the payroll",
+      "retenues": {
+        "absences": "Days of absence (0.5 allowed)",
+        "avances": "Advances to deduct (FCFA)",
+        "enregistrer": "Save deductions"
+      },
       "valider": "Approve payroll",
       "refuser": "Refuse",
       "payerTout": "Pay all balances · {{montant}} FCFA",
@@ -889,6 +895,7 @@
         "meta": "{{type}} · {{date}} · by {{nom}}",
         "supprimer": "Delete line “{{libelle}}”",
         "verrou": "Lines are locked once the payroll is submitted.",
+        "bulletin": "Payslip (PDF)",
         "net": "Net pay",
         "paye": "Paid",
         "reste": "Left",
@@ -937,6 +944,8 @@
       },
       "toasts": {
         "soumis": "Payroll submitted to the owner",
+        "prepare": "Payroll prepared",
+        "retenues": "Absences and advances saved",
         "paiement": "Payment recorded · {{code}}",
         "payes_one": "{{count}} salary paid",
         "payes_other": "{{count}} salaries paid",

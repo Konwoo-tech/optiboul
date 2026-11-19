@@ -1,9 +1,12 @@
 import { useTranslation } from '@/i18n';
+import { SIMULATION } from '@/simulation';
 import { formaterNombre } from '@/utils';
 import { useId, useRef, useState } from 'react';
 
 import { jourMois } from '../semaines/affichage.ts';
 import { moisPrecedent } from './affichage.ts';
+import { ouvrirLeBulletin } from './api.ts';
+import { AbsencesAvances } from './AbsencesAvances.tsx';
 import { Mot } from './Mot.tsx';
 import styles from './Personnel.module.css';
 import {
@@ -42,6 +45,8 @@ type Props = {
   onMontantPaye: (montant: string) => void;
   onAjouter: (ligne: Omit<NouvelAjustement, 'employe'>) => Promise<boolean>;
   onRetirer: (id: string) => void;
+  /** Vrai serveur : enregistre les absences et les avances de la ligne. */
+  onRetenues: (absences: number, avances: number) => void;
   onPayer: () => void;
   onModifier: () => void;
 };
@@ -62,6 +67,7 @@ export function FicheEmploye({
   onMontantPaye,
   onAjouter,
   onRetirer,
+  onRetenues,
   onPayer,
   onModifier,
 }: Props) {
@@ -218,6 +224,14 @@ export function FicheEmploye({
       {employe.ajustements.length === 0 && (
         <p className={styles.sansAjustement}>{t('gestion.personnel.fiche.aucun')}</p>
       )}
+      {!SIMULATION && modifiable && (
+        <AbsencesAvances
+          key={`${employe.id}-${employe.absences}-${employe.avances}`}
+          employe={employe}
+          occupe={occupe}
+          onEnregistrer={onRetenues}
+        />
+      )}
       {modifiable && (
         <form
           className={styles.saisie}
@@ -317,6 +331,15 @@ export function FicheEmploye({
           </li>
         ))}
       </ul>
+      {!SIMULATION && !instantane.aPreparer && (
+        <button
+          type="button"
+          className={styles.secondaire}
+          onClick={() => ouvrirLeBulletin(employe.id)}
+        >
+          {t('gestion.personnel.fiche.bulletin')}
+        </button>
+      )}
       {peutPayer && (
         <div className={styles.paiementBloc}>
           <h3 className={styles.paiementTitre}>{t('gestion.personnel.paiement.titre')}</h3>
