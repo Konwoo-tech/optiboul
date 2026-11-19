@@ -1,5 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
+import { SIMULATION } from '@/simulation';
 import { EcranChargement, EcranErreur, useToast } from '@/ui';
 import { formaterHeure } from '@/utils';
 import { useNetwork } from '@mantine/hooks';
@@ -225,18 +226,20 @@ export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
                       : 'gestion.sauvegardes.copies.locale',
                   )}
                 </span>
-                <button
-                  type="button"
-                  className={styles.restaurer}
-                  aria-label={t('gestion.sauvegardes.copies.restaurerCopie', {
-                    date: date(copie.instant),
-                  })}
-                  onClick={() => {
-                    if (!occupe) setARestaurer(copie);
-                  }}
-                >
-                  {t('gestion.sauvegardes.copies.restaurer')}
-                </button>
+                {SIMULATION && (
+                  <button
+                    type="button"
+                    className={styles.restaurer}
+                    aria-label={t('gestion.sauvegardes.copies.restaurerCopie', {
+                      date: date(copie.instant),
+                    })}
+                    onClick={() => {
+                      if (!occupe) setARestaurer(copie);
+                    }}
+                  >
+                    {t('gestion.sauvegardes.copies.restaurer')}
+                  </button>
+                )}
               </li>
             ))}
           </ul>
