@@ -1176,11 +1176,23 @@
           "action": "Traiter"
         }
       },
+      "forcee": {
+        "bouton": "Forcer la clôture",
+        "titre": "Forcer la clôture de la semaine",
+        "libelleSemaine": "Semaine {{numero}}",
+        "motif": "Motif de la clôture forcée",
+        "note": "Les sessions restées ouvertes sont archivées « non clôturées » ; le motif est tracé dans le journal.",
+        "obligatoire": "Motif obligatoire : précisez pourquoi la clôture est forcée.",
+        "confirmer": "Forcer la clôture",
+        "annuler": "Annuler",
+        "toast": "Semaine {{numero}} clôturée de force · tracé dans le journal"
+      },
       "passation": {
         "titre": "Rapport de passation",
         "destinataire": "Destinataire : {{nom}}, gérant de la semaine {{numero}}",
         "pdf": "Exporter en PDF",
         "toastPdf": "Rapport de passation exporté en PDF",
+        "telecharger": "Télécharger le rapport de passation (PDF)",
         "caisses": "Caisses",
         "derniereCaisse": "Dernière caisse fermée",
         "derniereValeur": "{{jour}} · {{par}} · {{montant}} FCFA",

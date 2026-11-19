@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n';
 import { EcranChargement, EcranErreur, useToast } from '@/ui';
 import { formaterHeure } from '@/utils';
 import { useState } from 'react';
+import { SIMULATION } from '@/simulation';
 import { useSearchParams } from 'react-router';
 
 import type { Ecran } from '../../../navigation.ts';
@@ -13,6 +14,8 @@ import {
   useAffecter,
   useCloturerSemaine,
   useOuvrirSemaine,
+  ouvrirLaPassation,
+  useCloturerDeForce,
   usePlanifier,
   useSemaines,
 } from './api.ts';
@@ -21,13 +24,14 @@ import { Chiffres } from './Chiffres.tsx';
 import { Controles } from './Controles.tsx';
 import { Historique } from './Historique.tsx';
 import { ModaleCloture, ModaleOuverture } from './Modales.tsx';
+import { ModaleForcee } from './ModaleForcee.tsx';
 import { PlanningCaisses } from './PlanningCaisses.tsx';
 import { RapportPassation } from './RapportPassation.tsx';
 import { niveauDuStatut, peutPlanifier, semaineCourante } from './regles.ts';
 import styles from './Semaines.module.css';
 import type { Creneau, RoleAffecte } from './types.ts';
 
-type Fenetre = { type: 'ouvrir'; heure: string } | { type: 'cloturer' };
+type Fenetre = { type: 'ouvrir'; heure: string } | { type: 'cloturer' } | { type: 'forcee' };
 
 const PARAMETRE = 'semaine';
 
@@ -48,6 +52,7 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
   const planifier = usePlanifier(nom);
   const ouvrir = useOuvrirSemaine(nom);
   const cloturer = useCloturerSemaine(nom);
+  const cloturerDeForce = useCloturerDeForce(nom);
   const [parametres, setParametres] = useSearchParams();
   const [fenetre, setFenetre] = useState<Fenetre | null>(null);
 
@@ -223,6 +228,26 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
           </div>
         )}
 
+        {/* Sur le vrai serveur : le propriétaire force la clôture, et le rapport se télécharge une fois la semaine clôturée. */}
+        {!SIMULATION && choisie.statut === 'ouverte' && profil === 'proprietaire' && (
+          <button
+            type="button"
+            className={styles.forcer}
+            onClick={() => setFenetre({ type: 'forcee' })}
+          >
+            {t('gestion.semaines.forcee.bouton')}
+          </button>
+        )}
+        {!SIMULATION && choisie.statut === 'cloturee' && choisie.idServeur !== undefined && (
+          <button
+            type="button"
+            className={styles.forcer}
+            onClick={() => ouvrirLaPassation(choisie.idServeur as number)}
+          >
+            {t('gestion.semaines.passation.telecharger')}
+          </button>
+        )}
+
         <Historique semaines={semaines} choisie={choisie.id} onChoisir={choisir} />
       </div>
 
@@ -235,6 +260,28 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
           enCours={ouvrir.isPending}
           onFermer={() => setFenetre(null)}
           onConfirmer={confirmerOuverture}
+        />
+      )}
+      {fenetre?.type === 'forcee' && (
+        <ModaleForcee
+          semaine={`${t('gestion.semaines.forcee.libelleSemaine', { numero: choisie.numero })}`}
+          envoiEnCours={cloturerDeForce.isPending}
+          onFermer={() => setFenetre(null)}
+          onConfirmer={(motif) =>
+            cloturerDeForce.mutate(
+              { semaine: choisie.id, motif },
+              {
+                onSuccess: () => {
+                  setFenetre(null);
+                  afficher(t('gestion.semaines.forcee.toast', { numero: choisie.numero }));
+                },
+                onError: (erreur) => {
+                  setFenetre(null);
+                  signaler(erreur);
+                },
+              },
+            )
+          }
         />
       )}
       {fenetre?.type === 'cloturer' && (
