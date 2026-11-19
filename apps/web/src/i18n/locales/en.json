@@ -1176,11 +1176,23 @@
           "action": "Handle"
         }
       },
+      "forcee": {
+        "bouton": "Force closure",
+        "titre": "Force the closure of the week",
+        "libelleSemaine": "Week {{numero}}",
+        "motif": "Reason for the forced closure",
+        "note": "Sessions left open are archived as “not closed”; the reason is recorded in the journal.",
+        "obligatoire": "Reason required: state why the closure is forced.",
+        "confirmer": "Force closure",
+        "annuler": "Cancel",
+        "toast": "Week {{numero}} closed by force · recorded in the journal"
+      },
       "passation": {
         "titre": "Handover report",
         "destinataire": "Recipient: {{nom}}, manager of week {{numero}}",
         "pdf": "Export PDF",
         "toastPdf": "Handover report exported to PDF",
+        "telecharger": "Download the handover report (PDF)",
         "caisses": "Cash desks",
         "derniereCaisse": "Last closed cash desk",
         "derniereValeur": "{{jour}} · {{par}} · {{montant}} FCFA",

@@ -668,3 +668,22 @@
   white-space: nowrap;
   border: 0;
 }
+
+.forcer {
+  align-self: flex-start;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.forcer:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}

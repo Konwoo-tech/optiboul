@@ -1,7 +1,11 @@
 import {
   ErreurApi,
   optiboulFetch,
+  getSemainesPassationRetrieveUrl,
   semainesAffectationsCreate,
+  semainesCloturerCreate,
+  semainesCloturerForceeCreate,
+  semainesOuvrirCreate,
   semainesPlanningUpdate,
 } from '@/api';
 import { SIMULATION } from '@/simulation';
@@ -73,9 +77,6 @@ function useActionSemaines<Demande>(
   });
 }
 
-const ouvertureIndisponible = () =>
-  Promise.reject(new ErreurApi(409, { code: 'indisponible', detail: 'Pas encore branché' }));
-
 const idDe = (ids: Record<string, number>, semaine: string) => {
   const id = ids[semaine];
   if (id === undefined) {
@@ -115,9 +116,29 @@ export const usePlanifier = (utilisateur: string | undefined) =>
     },
   );
 export const useOuvrirSemaine = (utilisateur: string | undefined) =>
-  useActionSemaines<{ semaine: string }>(utilisateur, 'ouvrir/', () => ouvertureIndisponible());
+  useActionSemaines<{ semaine: string }>(utilisateur, 'ouvrir/', async ({ semaine }, ids) => {
+    await semainesOuvrirCreate(idDe(ids, semaine));
+  });
 export const useCloturerSemaine = (utilisateur: string | undefined) =>
-  useActionSemaines<{ semaine: string }>(utilisateur, 'cloturer/', () => ouvertureIndisponible());
+  useActionSemaines<{ semaine: string }>(utilisateur, 'cloturer/', async ({ semaine }, ids) => {
+    await semainesCloturerCreate(idDe(ids, semaine));
+  });
+
+/** Le propriétaire force la clôture malgré des contrôles bloquants, avec un motif (US-035, O8). */
+export const useCloturerDeForce = (utilisateur: string | undefined) =>
+  useActionSemaines<{ semaine: string; motif: string }>(
+    utilisateur,
+    'cloturer-forcee/',
+    async ({ semaine, motif }, ids) => {
+      await semainesCloturerForceeCreate(idDe(ids, semaine), { motif });
+    },
+  );
+
+/** Ouvre le rapport de passation (PDF) d'une semaine clôturée dans un nouvel onglet. */
+export function ouvrirLaPassation(idServeur: number) {
+  if (SIMULATION) return;
+  window.open(getSemainesPassationRetrieveUrl(idServeur), '_blank', 'noopener');
+}
 
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
 export function codeErreur(erreur: unknown): string | undefined {

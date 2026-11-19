@@ -6,7 +6,14 @@ import { http, HttpResponse } from 'msw';
 import { createElement, type ReactNode } from 'react';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import { cleSemaines, useAffecter, usePlanifier } from './api.ts';
+import {
+  cleSemaines,
+  useAffecter,
+  useCloturerDeForce,
+  useCloturerSemaine,
+  useOuvrirSemaine,
+  usePlanifier,
+} from './api.ts';
 import {
   indicateursDeLaSemaine,
   lireSemainesReelles,
@@ -278,6 +285,34 @@ describe('affectations et planning sur le vrai serveur', () => {
       { chemin: 'planning', corps: { jour: '2026-11-16', creneau: 'nuit', caissiere: 4 } },
       { chemin: 'planning', corps: { jour: '2026-11-16', creneau: 'jour', caissiere: null } },
     ]);
+  });
+
+  it('ouvre, clôture et force la clôture avec le motif', async () => {
+    serveurSemaines();
+    const client = new QueryClient();
+    client.setQueryData(cleSemaines('Patron Dev'), await lireSemainesReelles());
+    const recus: { chemin: string; corps: unknown }[] = [];
+    serveur.use(
+      http.post('*/api/v1/semaines/:id/:action/', async ({ params, request }) => {
+        const texte = await request.text();
+        recus.push({
+          chemin: [params.id, params.action].join('/'),
+          corps: texte ? JSON.parse(texte) : null,
+        });
+        return HttpResponse.json(SEMAINE);
+      }),
+    );
+    const w = wrapper(client);
+    const ouvrir = renderHook(() => useOuvrirSemaine('Patron Dev'), { wrapper: w });
+    const cloturer = renderHook(() => useCloturerSemaine('Patron Dev'), { wrapper: w });
+    const forcer = renderHook(() => useCloturerDeForce('Patron Dev'), { wrapper: w });
+    await act(async () => {
+      await ouvrir.result.current.mutateAsync({ semaine: 'S47' });
+      await cloturer.result.current.mutateAsync({ semaine: 'S46' });
+      await forcer.result.current.mutateAsync({ semaine: 'S46', motif: 'Panne de courant' });
+    });
+    expect(recus.map((r) => r.chemin)).toEqual(['2/ouvrir', '1/cloturer', '1/cloturer-forcee']);
+    expect(recus[2]?.corps).toEqual({ motif: 'Panne de courant' });
   });
 
   it('une semaine inconnue est refusée sans appeler le serveur', async () => {
