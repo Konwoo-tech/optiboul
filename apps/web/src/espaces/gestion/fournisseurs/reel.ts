@@ -1,5 +1,6 @@
 import {
   facturesList,
+  facturesPaiementsList,
   fournisseursList,
   manquantsList,
   receptionsPlanifieesList,
@@ -8,6 +9,7 @@ import {
   type Facture as FactureServeur,
   type Fournisseur as FournisseurServeur,
   type Manquant,
+  type PaiementFournisseur,
   type ReceptionPlanifiee,
 } from '@/api';
 
@@ -15,6 +17,7 @@ import { MATIERES, type Matiere } from '../../comptoir/depenses/types.ts';
 import { joursPlanifiables } from './regles.ts';
 import type {
   Commande,
+  ModePaiement,
   Conditions,
   Facture,
   Fournisseur,
@@ -119,23 +122,44 @@ const STATUTS_FACTURE: Record<string, StatutFacture> = {
   payee: 'payee',
 };
 
-export function versFacture(f: FactureServeur, semaines: ReadonlyMap<number, number>): Facture {
+export function versFacture(
+  f: FactureServeur,
+  semaines: ReadonlyMap<number, number>,
+  paiements: readonly PaiementFournisseur[] = [],
+): Facture {
+  const paye = paiements.reduce((somme, p) => somme + p.montant, 0);
+  const dernier = paiements.at(-1);
+  const statut = STATUTS_FACTURE[f.statut] ?? 'a-payer';
   return {
     numero: numeroDeFacture(f.numero),
     fournisseur: String(f.fournisseur),
     objet: { genre: 'serveur', farine: f.farine, semaine: semaines.get(f.semaine) ?? 0 },
-    montant: f.montant,
+    // Une facture payée en partie affiche ce qu'il reste à payer (E45).
+    montant: statut === 'payee' ? f.montant : f.montant - paye,
     echeance: f.echeance,
-    statut: STATUTS_FACTURE[f.statut] ?? 'a-payer',
+    statut,
     enRetard: f.en_retard,
     semaine: String(f.semaine),
     idServeur: f.id,
+    ...(statut === 'payee' && dernier
+      ? {
+          payeeLe: dernier.paye_le.slice(0, 10),
+          mode: dernier.mode as ModePaiement,
+          ...(dernier.reference ? { reference: dernier.reference } : {}),
+          depense: String(dernier.depense),
+          paiement: dernier.id,
+        }
+      : {}),
   };
 }
 
 /** Aujourd'hui à Yaoundé, « AAAA-MM-JJ ». */
 const aujourdhuiLocal = () =>
   new Intl.DateTimeFormat('fr-CA', { timeZone: 'Africa/Douala' }).format(new Date());
+
+/** La route rend une liste simple ou paginée selon la configuration : les deux sont lus. */
+const lesPaiements = (corps: unknown): PaiementFournisseur[] =>
+  Array.isArray(corps) ? corps : ((corps as { results?: PaiementFournisseur[] }).results ?? []);
 
 export async function lireFournisseursReels(): Promise<InstantaneFournisseurs> {
   const [fournisseurs, planifiees, manquants, factures, semaines] = await Promise.all([
@@ -151,6 +175,12 @@ export async function lireFournisseursReels(): Promise<InstantaneFournisseurs> {
     ),
     toutesLesPages((page) => semainesList({ page })),
   ]);
+  // Les paiements ne sont lus que pour les factures déjà entamées ou soldées.
+  const paiements = await Promise.all(
+    factures.map(async (f) =>
+      f.statut === 'a_payer' ? [] : lesPaiements((await facturesPaiementsList(f.id)).data),
+    ),
+  );
   const numeros = new Map(semaines.map((s) => [s.id, s.numero] as const));
   const aujourdhui = aujourdhuiLocal();
   return {
@@ -161,6 +191,6 @@ export async function lireFournisseursReels(): Promise<InstantaneFournisseurs> {
       planifiees,
       manquants.filter((m) => m.statut !== 'livre'),
     ).sort((a, b) => (a.idServeur ?? 0) - (b.idServeur ?? 0)),
-    factures: factures.map((f) => versFacture(f, numeros)),
+    factures: factures.map((f, rang) => versFacture(f, numeros, paiements[rang])),
   };
 }

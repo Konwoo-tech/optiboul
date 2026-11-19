@@ -1,5 +1,7 @@
 import {
   ErreurApi,
+  facturesPayerCreate,
+  getPaiementsFournisseursRecuRetrieveUrl,
   manquantsRelancerCreate,
   manquantsReplanifierCreate,
   optiboulFetch,
@@ -143,9 +145,28 @@ export const useReplanifier = (u: string | undefined) =>
     return { reliquat: { jour } as Commande };
   });
 
-// Le paiement des factures est branché par le ticket suivant (#286).
 export const usePayer = (u: string | undefined) =>
-  useAction<NouveauPaiement>(u, 'paiements/', () => Promise.reject(introuvable('indisponible')));
+  useAction<NouveauPaiement>(u, 'paiements/', async (saisie, { avant }) => {
+    const facture = avant?.factures.find((f) => f.numero === saisie.facture);
+    if (facture?.idServeur === undefined) throw introuvable('facture_inconnue');
+    const reponse = await facturesPayerCreate(
+      facture.idServeur,
+      {
+        // L'écran règle la facture en une fois : le montant est ce qu'il reste à payer.
+        montant: facture.montant,
+        mode: saisie.mode,
+        ...(saisie.reference ? { reference: saisie.reference } : {}),
+      },
+      { headers: { 'Idempotency-Key': crypto.randomUUID() } },
+    );
+    return { depense: String((reponse.data as { depense: number }).depense) };
+  });
+
+/** Ouvre le reçu PDF d'un paiement dans un nouvel onglet (sans effet en simulation). */
+export function ouvrirLeRecu(paiement: number) {
+  if (SIMULATION) return;
+  window.open(getPaiementsFournisseursRecuRetrieveUrl(paiement), '_blank', 'noopener');
+}
 
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
 export function codeErreur(erreur: unknown): string | undefined {

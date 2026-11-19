@@ -10,6 +10,7 @@ import { EnTeteEcran } from '../../EnTeteEcran.tsx';
 import { jourCourt } from './affichage.ts';
 import {
   codeErreur,
+  ouvrirLeRecu,
   useFournisseurs,
   usePayer,
   usePlanifier,
@@ -336,7 +337,10 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
               peutModifier={droits.modifier}
               enCours={enCours}
               onPayer={(f: Facture) => ouvrir({ genre: 'paiement', numero: f.numero })}
-              onRecu={() => afficher(t('gestion.fournisseurs.toasts.recuPret'))}
+              onRecu={(f) => {
+                if (f.paiement !== undefined) ouvrirLeRecu(f.paiement);
+                afficher(t('gestion.fournisseurs.toasts.recuPret'));
+              }}
             />
           )}
         </div>
