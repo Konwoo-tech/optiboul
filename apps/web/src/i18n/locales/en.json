@@ -1040,11 +1040,13 @@
         "ligne": "{{fournisseur}} · {{matiere}} · ordered: {{quantite}} {{unite}} · due {{date}}",
         "quantite": "Quantity actually delivered",
         "observation": "Note (optional)",
+        "prix": "Unit price (FCFA per {{unite}})",
         "aide": "If the quantity is below the order, the shortfall stays to be delivered and appears in the tracking.",
         "annuler": "Cancel",
         "valider": "Confirm delivery",
         "erreurs": {
           "quantite_trop_grande": "Quantity too high (maximum {{max}}).",
+          "prix_obligatoire": "Enter the unit price of this delivery.",
           "defaut": "The delivery could not be recorded. Please try again."
         }
       },
@@ -1070,7 +1072,8 @@
         "paye": "Payment recorded · {{numero}}",
         "recuPret": "PDF receipt ready",
         "erreur": "The action could not be saved. Please try again.",
-        "dejaFait": "This line has already been handled. The list is up to date."
+        "dejaFait": "This line has already been handled. The list is up to date.",
+        "semaineFermee": "No week is open: open one in Management › Weeks."
       }
     },
     "semaines": {

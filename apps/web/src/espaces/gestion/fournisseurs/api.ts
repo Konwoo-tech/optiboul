@@ -122,6 +122,7 @@ export const useReceptionner = (u: string | undefined) =>
     const reponse = await receptionsPlanifieesReceptionnerCreate(commande.idServeur, {
       quantite: decimal(saisie.quantite),
       ...(saisie.observation ? { observation: saisie.observation } : {}),
+      ...(saisie.prix ? { prix_unitaire: saisie.prix } : {}),
     });
     const ecart = Number((reponse.data as { ecart?: string }).ecart ?? 0);
     return { commande: { statut: ecart < 0 ? 'partielle' : 'recue' } as Commande };

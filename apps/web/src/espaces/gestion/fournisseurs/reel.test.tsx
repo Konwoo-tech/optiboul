@@ -340,6 +340,7 @@ describe('actions sur le vrai serveur', () => {
         commande: 'BC-007',
         quantite: 6,
         observation: 'Sacs abîmés',
+        prix: 1500,
       });
       await relancer.result.current.mutateAsync({ commande: 'BC-006' });
       await replanifier.result.current.mutateAsync({ commande: 'BC-006' });
@@ -351,7 +352,10 @@ describe('actions sur le vrai serveur', () => {
         chemin: 'planifier',
         corps: { fournisseur: 1, matiere: 'levure', quantite: '12.5', prevue_le: '2026-11-20' },
       },
-      { chemin: 'receptionner', corps: { quantite: '6', observation: 'Sacs abîmés' } },
+      {
+        chemin: 'receptionner',
+        corps: { quantite: '6', observation: 'Sacs abîmés', prix_unitaire: 1500 },
+      },
       { chemin: 'relancer', corps: null },
       { chemin: 'replanifier', corps: { prevue_le: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) } },
     ]);

@@ -107,6 +107,8 @@ export type NouvelleReception = {
   commande: string;
   quantite: number;
   observation?: string;
+  /** FCFA par unité de la matière (vrai serveur, hors farine). */
+  prix?: number;
 };
 
 export type NouveauPaiement = { facture: string; mode: ModePaiement; reference?: string };
