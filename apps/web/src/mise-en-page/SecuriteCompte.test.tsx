@@ -18,7 +18,12 @@ beforeAll(() => {
 afterEach(() => serveur.resetHandlers());
 afterAll(() => serveur.close());
 
-async function ouvrir() {
+async function ouvrir(profil = 'caissier') {
+  serveur.use(
+    http.get('*/api/v1/users/me/', () =>
+      HttpResponse.json({ url: 'http://localhost/api/v1/users/1/', name: 'Dev', profil }),
+    ),
+  );
   await initI18n('fr').changeLanguage('fr');
   render(
     <OptiboulProvider>
@@ -99,5 +104,84 @@ describe('sécurité du compte (MFA)', () => {
     expect(await screen.findByText('AAAA0000')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Désactiver' }));
     expect(await screen.findByText(/non activée/)).toBeTruthy();
+  });
+
+  it('un caissier ne voit pas les postes de confiance', async () => {
+    serveur.use(
+      http.get('*/api/v1/mfa/', () => HttpResponse.json({ totp: false, codesSecoursRestants: 0 })),
+    );
+    await ouvrir();
+    expect(await screen.findByText(/non activée/)).toBeTruthy();
+    expect(screen.queryByText('Postes de confiance')).toBeNull();
+  });
+
+  it('l’administrateur liste, enregistre et révoque un poste', async () => {
+    const poste = (id: number, nom: string, actif: boolean) => ({
+      id,
+      nom,
+      actif,
+      cree_le: '2026-11-01T08:00:00Z',
+      cree_par: 'Admin Dev',
+      revoque_le: actif ? null : '2026-11-10T08:00:00Z',
+      dernier_usage: actif ? '2026-11-19T07:00:00Z' : null,
+    });
+    let postes = [poste(1, 'PC du comptoir', true), poste(2, 'Ancien PC', false)];
+    const recus: unknown[] = [];
+    serveur.use(
+      http.get('*/api/v1/mfa/', () => HttpResponse.json({ totp: false, codesSecoursRestants: 0 })),
+      http.get('*/api/v1/postes/actuel/', () => HttpResponse.json({ poste: postes[0] })),
+      http.get('*/api/v1/postes/', () =>
+        HttpResponse.json({ count: postes.length, next: null, previous: null, results: postes }),
+      ),
+      http.post('*/api/v1/postes/', async ({ request }) => {
+        const corps = (await request.json()) as { nom: string };
+        recus.push(corps);
+        postes = [...postes, poste(3, corps.nom, true)];
+        return HttpResponse.json(postes[2], { status: 201 });
+      }),
+      http.post('*/api/v1/postes/1/revoquer/', () => {
+        postes = [poste(1, 'PC du comptoir', false), postes[1]!, ...postes.slice(2)];
+        return HttpResponse.json(postes[0]);
+      }),
+    );
+    await ouvrir('administrateur');
+    expect(await screen.findByText('PC du comptoir')).toBeTruthy();
+    expect(screen.getByText(/· ce navigateur/)).toBeTruthy();
+    expect(screen.getByText(/Révoqué le/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer ce navigateur' }));
+    expect(await screen.findByText('Indiquez un nom pour le poste.')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Nom du poste'), { target: { value: 'Tablette' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer ce navigateur' }));
+    expect(await screen.findByText('Tablette')).toBeTruthy();
+    expect(recus).toEqual([{ nom: 'Tablette' }]);
+    fireEvent.click(screen.getByRole('button', { name: 'Révoquer PC du comptoir' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Confirmer la révocation de PC du comptoir' }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Révoquer PC du comptoir' })).toBeNull(),
+    );
+  });
+
+  it('refuse l’enregistrement depuis l’accès distant', async () => {
+    serveur.use(
+      http.get('*/api/v1/mfa/', () => HttpResponse.json({ totp: false, codesSecoursRestants: 0 })),
+      http.get('*/api/v1/postes/actuel/', () => HttpResponse.json({ poste: null })),
+      http.get('*/api/v1/postes/', () =>
+        HttpResponse.json({ count: 0, next: null, previous: null, results: [] }),
+      ),
+      http.post('*/api/v1/postes/', () =>
+        HttpResponse.json(
+          { detail: 'Un poste de confiance s’enregistre depuis la boulangerie.' },
+          { status: 403 },
+        ),
+      ),
+    );
+    await ouvrir('administrateur');
+    fireEvent.change(await screen.findByLabelText('Nom du poste'), { target: { value: 'X' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer ce navigateur' }));
+    expect(
+      await screen.findByText('Un poste de confiance s’enregistre depuis la boulangerie.'),
+    ).toBeTruthy();
   });
 });

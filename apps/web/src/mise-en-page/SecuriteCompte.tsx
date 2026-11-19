@@ -8,13 +8,16 @@ import {
   type EtatMfa,
   type SecretTotp,
 } from '@/api';
+import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
+import { SIMULATION } from '@/simulation';
 import { FenetreModale, useToast } from '@/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type SubmitEvent } from 'react';
 
 import styles from '../espaces/comptoir/caisses/Fenetres.module.css';
 import menu from './MiseEnPage.module.css';
+import { PostesDeConfiance } from './PostesDeConfiance.tsx';
 
 const CLE = ['securite', 'mfa'] as const;
 
@@ -32,6 +35,7 @@ const groupesDe4 = (secret: string) =>
 function FenetreSecurite({ onFermer }: { onFermer: () => void }) {
   const { t } = useTranslation();
   const afficher = useToast();
+  const { utilisateur } = useUtilisateurCourant();
   const client = useQueryClient();
   const etat = useQuery({
     queryKey: CLE,
@@ -189,6 +193,7 @@ function FenetreSecurite({ onFermer }: { onFermer: () => void }) {
             </button>
           </div>
         )}
+        {!SIMULATION && utilisateur?.profil === 'administrateur' && <PostesDeConfiance />}
         <div className={styles.actions}>
           <button type="button" className={styles.confirmer} onClick={onFermer}>
             {t('securite.fermer')}

@@ -44,6 +44,27 @@
       "format": "Le code comporte 6 chiffres.",
       "incorrect": "Code incorrect. Vérifiez l’heure de votre téléphone.",
       "defaut": "L’activation a échoué. Réessayez."
+    },
+    "postes": {
+      "titre": "Postes de confiance",
+      "aide": "Navigateurs autorisés à la connexion par code, à la boulangerie. Enregistrer ajoute le navigateur utilisé en ce moment.",
+      "actif": "Actif",
+      "jamais": "jamais",
+      "ceNavigateur": "ce navigateur",
+      "revoqueLe": "Révoqué le {{date}}",
+      "enregistreLe": "Enregistré le {{date}} par {{par}}",
+      "dernierUsage": "Dernier usage : {{date}}",
+      "revoquer": "Révoquer {{nom}}",
+      "confirmerRevocation": "Confirmer la révocation de {{nom}}",
+      "nom": "Nom du poste",
+      "enregistrer": "Enregistrer ce navigateur",
+      "enregistre": "Poste de confiance enregistré",
+      "revoque": "Poste révoqué",
+      "erreurs": {
+        "nom": "Indiquez un nom pour le poste.",
+        "distant": "Un poste de confiance s’enregistre depuis la boulangerie.",
+        "defaut": "L’enregistrement a échoué. Réessayez."
+      }
     }
   },
   "commun": {
@@ -1703,7 +1724,10 @@
         "aide": "Pour chaque événement, qui est prévenu et par quels canaux. L’application est toujours active.",
         "profils": "Profils prévenus · {{libelle}}",
         "canaux": "Canaux · {{libelle}}",
-        "canal": { "sms": "SMS", "whatsapp": "WhatsApp" },
+        "canal": {
+          "sms": "SMS",
+          "whatsapp": "WhatsApp"
+        },
         "enregistre": "Règle enregistrée · {{libelle}}",
         "erreur": "La règle n’a pas pu être enregistrée."
       },
