@@ -853,6 +853,11 @@
       "decomptePasse_other": "{{jour}} · il y a {{count}} jours",
       "soumettre": "Soumettre au propriétaire",
       "preparer": "Préparer l’état de paie",
+      "retenues": {
+        "absences": "Jours d’absence (0,5 possible)",
+        "avances": "Avances à retenir (FCFA)",
+        "enregistrer": "Enregistrer les retenues"
+      },
       "valider": "Valider l’état de paie",
       "refuser": "Refuser",
       "payerTout": "Payer tous les restes · {{montant}} FCFA",
@@ -940,6 +945,7 @@
       "toasts": {
         "soumis": "État de paie soumis au propriétaire",
         "prepare": "État de paie préparé",
+        "retenues": "Absences et avances enregistrées",
         "paiement": "Paiement enregistré · {{code}}",
         "payes_one": "{{count}} salaire payé",
         "payes_other": "{{count}} salaires payés",

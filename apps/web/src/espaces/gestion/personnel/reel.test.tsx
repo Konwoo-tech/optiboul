@@ -9,6 +9,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
   clePersonnel,
   useAjouterLigne,
+  useModifierLigne,
   usePayer,
   usePayerLesRestes,
   usePreparer,
@@ -287,6 +288,24 @@ describe('actions sur le vrai serveur', () => {
     ]);
     expect(retourPaiement).toMatchObject({ depenses: ['44'] });
     expect((retourTout as { depenses: string[] }).depenses).toHaveLength(2);
+  });
+
+  it('enregistre les absences et les avances d’une ligne', async () => {
+    serveurPaie([ETAT('brouillon')]);
+    const client = new QueryClient();
+    client.setQueryData(clePersonnel('Willy'), await lirePersonnelReel());
+    let corps: unknown;
+    serveur.use(
+      http.put('*/api/v1/paies/lignes/5/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json(LIGNE);
+      }),
+    );
+    const { result } = renderHook(() => useModifierLigne('Willy'), { wrapper: wrapper(client) });
+    await act(async () => {
+      await result.current.mutateAsync({ employe: '5', absences: 1.5, avances: 10000 });
+    });
+    expect(corps).toEqual({ absences: '1.5', avances: 10000 });
   });
 
   it('sans état lu, l’action est refusée sans appeler le serveur', async () => {

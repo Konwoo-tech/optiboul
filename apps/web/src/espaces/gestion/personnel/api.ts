@@ -7,6 +7,7 @@ import {
   paiesElementsDestroy,
   paiesLignesElementsCreate,
   paiesLignesPayerCreate,
+  paiesLignesUpdate,
   paiesPayerToutCreate,
   paiesPreparerCreate,
   paiesSoumettreCreate,
@@ -145,6 +146,16 @@ export const usePlanifierLeMois = (utilisateur: string | undefined) =>
     utilisateur,
     (demande) => envoyer<InstantanePaie>('calendrier/', 'PUT', demande),
     () => Promise.reject(refus('indisponible')),
+  );
+/** Absences (jours) et avances d'une ligne, tant que l'état est en brouillon (réel seulement). */
+export const useModifierLigne = (utilisateur: string | undefined) =>
+  useActionPaie<{ employe: string; absences: number; avances: number }>(
+    utilisateur,
+    () => Promise.reject(refus('indisponible')),
+    async ({ employe, absences, avances }) => {
+      await paiesLignesUpdate(employe, { absences: absences.toFixed(1), avances });
+      return {};
+    },
   );
 /** Prépare le brouillon du mois : une ligne par employé actif (réel seulement). */
 export const usePreparer = (utilisateur: string | undefined) =>

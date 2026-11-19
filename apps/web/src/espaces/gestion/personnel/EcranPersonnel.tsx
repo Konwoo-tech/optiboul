@@ -10,6 +10,7 @@ import { formaterMois } from './affichage.ts';
 import {
   codeErreur,
   useAjouterLigne,
+  useModifierLigne,
   useChoisirLeJour,
   useDeciderLaPaie,
   usePayer,
@@ -45,6 +46,7 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
   const requete = usePersonnel(nom);
   const ajouter = useAjouterLigne(nom);
   const retirer = useRetirerLigne(nom);
+  const modifierLigne = useModifierLigne(nom);
   const choisirLeJour = useChoisirLeJour(nom);
   const planifier = usePlanifierLeMois(nom);
   const soumettre = useSoumettre(nom);
@@ -86,6 +88,7 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
   const occupe = [
     ajouter,
     retirer,
+    modifierLigne,
     choisirLeJour,
     planifier,
     soumettre,
@@ -259,6 +262,15 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
             onMontantPaye={setMontantPaye}
             onAjouter={surAjouter}
             onRetirer={(id) => retirer.mutate(id, { onError: signaler })}
+            onRetenues={(absences, avances) =>
+              modifierLigne.mutate(
+                { employe: choisi.id, absences, avances },
+                {
+                  onSuccess: () => afficher(t('gestion.personnel.toasts.retenues')),
+                  onError: signaler,
+                },
+              )
+            }
             onPayer={surPayer}
             onModifier={() => setErreurServeur(null)}
           />
