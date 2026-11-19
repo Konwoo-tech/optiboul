@@ -21,7 +21,7 @@ import type {
 
 // En simulation, l'écran lit le faux serveur (`simulation/utilisateurs.ts`) ; sur le vrai serveur,
 // `reel.ts` compose l'instantané à partir des routes.
-const RACINE = '/api/v1/simulation/gestion/utilisateurs/';
+const RACINE = SIMULATION ? '/api/v1/simulation/gestion/utilisateurs/' : '';
 
 type Reponse<T> = { data: T };
 
