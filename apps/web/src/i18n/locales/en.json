@@ -853,6 +853,22 @@
       "decomptePasse_other": "{{jour}} · {{count}} days ago",
       "soumettre": "Submit to the owner",
       "preparer": "Prepare the payroll",
+      "employe": {
+        "ajouter": "Add an employee",
+        "titre": "New employee",
+        "nom": "Full name",
+        "poste": "Position",
+        "telephone": "Phone",
+        "base": "Monthly base salary (FCFA)",
+        "note": "The employee joins the payroll the next time a month is prepared.",
+        "creer": "Create the employee",
+        "annuler": "Cancel",
+        "toast": "{{nom}} added to the staff",
+        "erreurs": {
+          "obligatoire": "Name and base salary are required.",
+          "defaut": "The employee could not be created. Please try again."
+        }
+      },
       "retenues": {
         "absences": "Days of absence (0.5 allowed)",
         "avances": "Advances to deduct (FCFA)",
