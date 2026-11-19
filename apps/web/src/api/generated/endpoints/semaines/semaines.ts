@@ -26,9 +26,11 @@ import type {
 
 import type {
   Affectations,
+  BilanSemaine,
   ClotureForcee,
   PaginatedControleList,
   PaginatedSemaineList,
+  PersonnesAffectables,
   Placement,
   Planification,
   Planning,
@@ -276,7 +278,123 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getSemainesCreateMutationOptions(options), queryClient);
     }
-    export type semainesRetrieveResponse200 = {
+    export type semainesBilanRetrieveResponse200 = {
+  data: BilanSemaine
+  status: 200
+}
+
+export type semainesBilanRetrieveResponse404 = {
+  data: Probleme
+  status: 404
+}
+
+export type semainesBilanRetrieveResponseSuccess = (semainesBilanRetrieveResponse200) & {
+  headers: Headers;
+};
+export type semainesBilanRetrieveResponseError = (semainesBilanRetrieveResponse404) & {
+  headers: Headers;
+};
+
+export type semainesBilanRetrieveResponse = (semainesBilanRetrieveResponseSuccess | semainesBilanRetrieveResponseError)
+
+export const getSemainesBilanRetrieveUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/semaines/${id}/bilan/`
+}
+
+/**
+ * Recette, dépenses, productions, écart de caisse, caisses et réceptions.
+ */
+export const semainesBilanRetrieve = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<semainesBilanRetrieveResponse> => {
+
+  return optiboulFetch<semainesBilanRetrieveResponse>(getSemainesBilanRetrieveUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSemainesBilanRetrieveQueryKey = (id: number,) => {
+    return [
+    `/api/v1/semaines/${id}/bilan/`
+    ] as const;
+    }
+
+
+export const getSemainesBilanRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof semainesBilanRetrieve>>, TError = Probleme>(id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesBilanRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSemainesBilanRetrieveQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof semainesBilanRetrieve>>> = ({ signal }) => semainesBilanRetrieve(id, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof semainesBilanRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SemainesBilanRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof semainesBilanRetrieve>>>
+export type SemainesBilanRetrieveQueryError = Probleme
+
+
+export function useSemainesBilanRetrieve<TData = Awaited<ReturnType<typeof semainesBilanRetrieve>>, TError = Probleme>(
+ id: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesBilanRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof semainesBilanRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof semainesBilanRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSemainesBilanRetrieve<TData = Awaited<ReturnType<typeof semainesBilanRetrieve>>, TError = Probleme>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesBilanRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof semainesBilanRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof semainesBilanRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSemainesBilanRetrieve<TData = Awaited<ReturnType<typeof semainesBilanRetrieve>>, TError = Probleme>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesBilanRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useSemainesBilanRetrieve<TData = Awaited<ReturnType<typeof semainesBilanRetrieve>>, TError = Probleme>(
+ id: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesBilanRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSemainesBilanRetrieveQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type semainesRetrieveResponse200 = {
   data: Semaine
   status: 200
 }
@@ -1297,7 +1415,118 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getSemainesPlanningUpdateMutationOptions(options), queryClient);
     }
-    export type semainesRotationRetrieveResponse200 = {
+    export type semainesPersonnesRetrieveResponse200 = {
+  data: PersonnesAffectables
+  status: 200
+}
+
+export type semainesPersonnesRetrieveResponseSuccess = (semainesPersonnesRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type semainesPersonnesRetrieveResponse = (semainesPersonnesRetrieveResponseSuccess)
+
+export const getSemainesPersonnesRetrieveUrl = () => {
+
+
+
+
+  return `/api/v1/semaines/personnes/`
+}
+
+/**
+ * Gérants, responsables de production et caissières à affecter (#344).
+ *
+ * Propriétaire et gérant : `utilisateurs/` reste réservé à l'administrateur.
+ */
+export const semainesPersonnesRetrieve = async ( options?: Parameters<typeof optiboulFetch>[1]): Promise<semainesPersonnesRetrieveResponse> => {
+
+  return optiboulFetch<semainesPersonnesRetrieveResponse>(getSemainesPersonnesRetrieveUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSemainesPersonnesRetrieveQueryKey = () => {
+    return [
+    `/api/v1/semaines/personnes/`
+    ] as const;
+    }
+
+
+export const getSemainesPersonnesRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof semainesPersonnesRetrieve>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPersonnesRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSemainesPersonnesRetrieveQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof semainesPersonnesRetrieve>>> = ({ signal }) => semainesPersonnesRetrieve({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof semainesPersonnesRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SemainesPersonnesRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof semainesPersonnesRetrieve>>>
+export type SemainesPersonnesRetrieveQueryError = unknown
+
+
+export function useSemainesPersonnesRetrieve<TData = Awaited<ReturnType<typeof semainesPersonnesRetrieve>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPersonnesRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof semainesPersonnesRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof semainesPersonnesRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSemainesPersonnesRetrieve<TData = Awaited<ReturnType<typeof semainesPersonnesRetrieve>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPersonnesRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof semainesPersonnesRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof semainesPersonnesRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSemainesPersonnesRetrieve<TData = Awaited<ReturnType<typeof semainesPersonnesRetrieve>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPersonnesRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useSemainesPersonnesRetrieve<TData = Awaited<ReturnType<typeof semainesPersonnesRetrieve>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof semainesPersonnesRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSemainesPersonnesRetrieveQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type semainesRotationRetrieveResponse200 = {
   data: Rotation
   status: 200
 }

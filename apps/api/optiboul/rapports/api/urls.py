@@ -2,6 +2,7 @@ from django.urls import path
 
 from .accueil import accueil
 from .alertes import alertes
+from .bilan import bilan_semaine
 from .exports import export_mois
 from .exports import export_semaine
 from .exports import export_session
@@ -16,4 +17,5 @@ urlpatterns = [
     path("rapports/semaine/", export_semaine, name="export-semaine"),
     path("rapports/mois/", export_mois, name="export-mois"),
     path("tableau-de-bord/", tableau_de_bord, name="tableau-de-bord"),
+    path("semaines/<int:id>/bilan/", bilan_semaine, name="semaine-bilan"),
 ]

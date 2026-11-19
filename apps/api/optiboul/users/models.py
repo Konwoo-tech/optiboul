@@ -33,6 +33,17 @@ class Profil(TextChoices):
     ADMINISTRATEUR = "administrateur", _("Administrateur")
 
 
+class Theme(TextChoices):
+    AUTO = "auto", _("Automatique (sombre la nuit)")
+    CLAIR = "clair", _("Clair")
+    SOMBRE = "sombre", _("Sombre")
+
+
+class Langue(TextChoices):
+    FR = "fr", _("Français")
+    EN = "en", _("English")
+
+
 class ProfilGroupe(Model):
     """Le groupe porte le profil de droits (cahier des charges §3.2)."""
 
@@ -87,6 +98,9 @@ class User(AbstractUser):
         null=True,
         blank=True,
     )
+    # Préférences suivies d'un poste à l'autre (US-004, #347) ; « auto » : O16.
+    theme = CharField(_("thème"), max_length=6, choices=Theme, default=Theme.AUTO)
+    langue = CharField(_("langue"), max_length=2, choices=Langue, default=Langue.FR)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

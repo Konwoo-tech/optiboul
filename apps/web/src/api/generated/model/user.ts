@@ -5,8 +5,10 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
+import type { LangueEnum } from './langueEnum.ts';
 import type { NullEnum } from './nullEnum.ts';
 import type { ProfilEnum } from './profilEnum.ts';
+import type { ThemeEnum } from './themeEnum.ts';
 
 export interface User {
   readonly id: number;
@@ -15,4 +17,6 @@ export interface User {
   readonly email: string;
   readonly url: string;
   readonly profil: ProfilEnum | NullEnum | null;
+  theme?: ThemeEnum;
+  langue?: LangueEnum;
 }

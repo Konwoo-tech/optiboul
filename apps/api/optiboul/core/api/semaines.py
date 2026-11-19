@@ -195,14 +195,72 @@ def _planning(semaine: cas.EtatSemaine) -> dict:
     }
 
 
+class FactureEnRetardSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    numero = serializers.CharField(help_text="FAC-41.")
+    libelle = serializers.CharField(help_text="Le fournisseur.")
+    montant = serializers.IntegerField()
+    echeance = serializers.DateField()
+
+
 class ControleSerializer(serializers.Serializer):
     cle = serializers.CharField()
     niveau = serializers.ChoiceField(choices=["ok", "surveiller", "bloquant"])
     detail = serializers.CharField(allow_blank=True)
+    factures = FactureEnRetardSerializer(
+        many=True,
+        required=False,
+        help_text="Contrôle factures_en_retard seulement.",
+    )
+    numeros = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        help_text="Contrôle demandes_en_attente seulement : numéros des demandes.",
+    )
 
 
 class ClotureForceeSerializer(serializers.Serializer):
     motif = serializers.CharField(max_length=500)
+
+
+class AffectableSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    nom = serializers.CharField()
+
+
+class PersonnesAffectablesSerializer(serializers.Serializer):
+    gerants = AffectableSerializer(many=True)
+    responsables = AffectableSerializer(
+        many=True,
+        help_text="Responsables de production.",
+    )
+    caissieres = AffectableSerializer(many=True)
+
+
+# Profil du groupe → liste de l'écran Semaines (#344).
+AFFECTABLES = {
+    "gerants": "gerant",
+    "responsables": "production",
+    "caissieres": "caissier",
+}
+
+
+def personnes_affectables() -> dict[str, list[dict[str, object]]]:
+    """Comptes actifs par profil, par nom : de quoi affecter et planifier (O9)."""
+    personnes: dict[str, list[dict[str, object]]] = {cle: [] for cle in AFFECTABLES}
+    profils = {profil: cle for cle, profil in AFFECTABLES.items()}
+    lignes = (
+        Utilisateur.objects.filter(
+            is_active=True,
+            groups__profil_droits__profil__in=list(profils),
+        )
+        .values_list("pk", "name", "email", "groups__profil_droits__profil")
+        .order_by("name", "email", "pk")
+        .distinct()
+    )
+    for pk, nom, email, profil in lignes:
+        personnes[profils[profil]].append({"id": pk, "nom": nom or email})
+    return personnes
 
 
 class RotationSerializer(serializers.Serializer):
@@ -234,6 +292,8 @@ class SemainesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
             "controles_cloture",
         }:
             return [IsAuthenticated()]
+        if self.action == "personnes":
+            return [ProfilParmi(*DIRECTION)()]
         return [ProfilParmi("proprietaire")()]
 
     def get_queryset(self) -> QuerySet[Semaine]:
@@ -463,3 +523,12 @@ class SemainesViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
         corps.is_valid(raise_exception=True)
         annee, numero = corps.validated_data["annee"], corps.validated_data["numero"]
         return Response(cas.rotation(depot_semaines, annee, numero))
+
+    @extend_schema(responses=PersonnesAffectablesSerializer)
+    @action(detail=False)
+    def personnes(self, request: Request) -> Response:
+        """Gérants, responsables de production et caissières à affecter (#344).
+
+        Propriétaire et gérant : `utilisateurs/` reste réservé à l'administrateur.
+        """
+        return Response(personnes_affectables())
