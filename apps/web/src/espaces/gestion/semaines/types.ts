@@ -18,6 +18,8 @@ export type Passage = { par: string; jour: string; heure: string };
 export type Semaine = {
   /** Identifiant partagé avec les dépenses : « S42 ». */
   id: string;
+  /** Identifiant de la semaine sur le vrai serveur (la simulation n'en a pas besoin). */
+  idServeur?: number;
   numero: number;
   /** Lundi et dimanche de la semaine, « AAAA-MM-JJ ». */
   du: string;

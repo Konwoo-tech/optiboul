@@ -1,9 +1,17 @@
-import { ErreurApi, optiboulFetch } from '@/api';
+import {
+  ErreurApi,
+  optiboulFetch,
+  semainesAffectationsCreate,
+  semainesPlanningUpdate,
+} from '@/api';
+import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { lireSemainesReelles } from './reel.ts';
 import type { InstantaneSemaines, NouveauCreneau, NouvelleAffectation } from './types.ts';
 
-// Le backend n'a pas encore ces routes : l'écran lit le faux serveur (`simulation/semaines.ts`).
+// En simulation, l'écran lit le faux serveur (`simulation/semaines.ts`) ; sur le vrai serveur,
+// `reel.ts` compose l'instantané à partir des routes.
 const RACINE = '/api/v1/simulation/gestion/semaines/';
 
 type Reponse<T> = { data: T };
@@ -15,7 +23,10 @@ export const cleSemaines = (utilisateur: string | undefined) =>
 export function useSemaines(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleSemaines(utilisateur),
-    queryFn: async () => (await optiboulFetch<Reponse<InstantaneSemaines>>(RACINE)).data,
+    queryFn: async () =>
+      SIMULATION
+        ? (await optiboulFetch<Reponse<InstantaneSemaines>>(RACINE)).data
+        : lireSemainesReelles(),
     enabled: Boolean(utilisateur),
     // Les caisses, les dépenses et les demandes bougent ailleurs : on relit à chaque ouverture.
     staleTime: 0,
@@ -34,28 +45,79 @@ async function publier(chemin: string, corps: unknown): Promise<InstantaneSemain
 }
 
 /** Une action sur les semaines : l'écran prend l'instantané renvoyé, la coque relit son contexte. */
-function useActionSemaines<Demande>(utilisateur: string | undefined, chemin: string) {
+function useActionSemaines<Demande>(
+  utilisateur: string | undefined,
+  chemin: string,
+  /** La même action sur le vrai serveur ; elle reçoit la semaine visée (identifiant du serveur). */
+  surLeServeur: (demande: Demande, idsDesSemaines: Record<string, number>) => Promise<unknown>,
+) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (demande: Demande) => publier(chemin, demande),
+    mutationFn: async (demande: Demande): Promise<InstantaneSemaines> => {
+      if (SIMULATION) return publier(chemin, demande);
+      const lues = client.getQueryData<InstantaneSemaines>(cleSemaines(utilisateur));
+      const ids = Object.fromEntries(
+        (lues?.semaines ?? []).flatMap((s) => (s.idServeur ? [[s.id, s.idServeur] as const] : [])),
+      );
+      await surLeServeur(demande, ids);
+      return lireSemainesReelles();
+    },
     onSuccess: (instantane) => {
       client.setQueryData(cleSemaines(utilisateur), instantane);
       // L'ouverture et la clôture changent la semaine, le gérant et le responsable de l'en-tête,
       // et la caissière prévue sur le prochain créneau de la caisse.
       void client.invalidateQueries({ queryKey: ['simulation', 'contexte'] });
+      void client.invalidateQueries({ queryKey: ['coque', 'contexte'] });
       void client.invalidateQueries({ queryKey: ['comptoir', 'caisses'] });
     },
   });
 }
 
-export const useAffecter = (utilisateur: string | undefined) =>
-  useActionSemaines<NouvelleAffectation>(utilisateur, 'affectations/');
+const ouvertureIndisponible = () =>
+  Promise.reject(new ErreurApi(409, { code: 'indisponible', detail: 'Pas encore branché' }));
+
+const idDe = (ids: Record<string, number>, semaine: string) => {
+  const id = ids[semaine];
+  if (id === undefined) {
+    throw new ErreurApi(409, { code: 'semaine_inconnue', detail: 'Semaine introuvable' });
+  }
+  return id;
+};
+
+/** Affecte le gérant ou le responsable de production : le serveur reçoit les deux, l'autre inchangé. */
+export const useAffecter = (utilisateur: string | undefined) => {
+  const client = useQueryClient();
+  return useActionSemaines<NouvelleAffectation>(
+    utilisateur,
+    'affectations/',
+    async ({ semaine, role, personne }, ids) => {
+      const lues = client.getQueryData<InstantaneSemaines>(cleSemaines(utilisateur));
+      const actuelle = lues?.semaines.find((s) => s.id === semaine);
+      const valeur = (id: string | undefined) => (id ? Number(id) : null);
+      await semainesAffectationsCreate(idDe(ids, semaine), {
+        gerant: role === 'gerant' ? valeur(personne) : valeur(actuelle?.gerant?.id),
+        production: role === 'production' ? valeur(personne) : valeur(actuelle?.production?.id),
+      });
+    },
+  );
+};
+/** Place une caissière sur un créneau du planning (vide : le créneau n'a plus personne). */
 export const usePlanifier = (utilisateur: string | undefined) =>
-  useActionSemaines<NouveauCreneau>(utilisateur, 'planning/');
+  useActionSemaines<NouveauCreneau>(
+    utilisateur,
+    'planning/',
+    async ({ semaine, jour, creneau, caissiere }, ids) => {
+      await semainesPlanningUpdate(idDe(ids, semaine), {
+        jour,
+        creneau,
+        caissiere: caissiere ? Number(caissiere) : null,
+      });
+    },
+  );
 export const useOuvrirSemaine = (utilisateur: string | undefined) =>
-  useActionSemaines<{ semaine: string }>(utilisateur, 'ouvrir/');
+  useActionSemaines<{ semaine: string }>(utilisateur, 'ouvrir/', () => ouvertureIndisponible());
 export const useCloturerSemaine = (utilisateur: string | undefined) =>
-  useActionSemaines<{ semaine: string }>(utilisateur, 'cloturer/');
+  useActionSemaines<{ semaine: string }>(utilisateur, 'cloturer/', () => ouvertureIndisponible());
 
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
 export function codeErreur(erreur: unknown): string | undefined {
