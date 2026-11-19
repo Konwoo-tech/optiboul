@@ -1347,6 +1347,10 @@
         "groupe": "Groupe",
         "groupeDe": "Groupe de {{nom}}",
         "actif": "Actif",
+        "bloque": "Bloqué",
+        "debloquer": "Débloquer",
+        "debloquerDe": "Débloquer {{nom}}",
+        "sousLigneSansTelephone": "{{email}} · dernier accès {{acces}}",
         "desactive": "Désactivé",
         "reinitialiser": "Réinitialiser le code",
         "reinitialiserDe": "Réinitialiser le code de {{nom}}",
@@ -1393,6 +1397,7 @@
       "toasts": {
         "groupeChange": "{{nom}} → {{groupe}} · droits « {{profil}} »",
         "codeReinitialise": "Code de {{nom}} réinitialisé",
+        "debloque": "Compte de {{nom}} débloqué",
         "droit": "Votre profil ne permet pas cette action.",
         "comptePropre": "Vous ne pouvez pas modifier votre propre compte.",
         "inconnu": "Cet utilisateur n’existe plus. La liste a été relue.",
@@ -1457,8 +1462,18 @@
         "emailMotDePasse": "E-mail et mot de passe provisoire « {{motDePasse}} »",
         "doubleAuthentification": "Double authentification par {{canal}} au {{telephone}}"
       },
+      "code": {
+        "titre": "Code de {{nom}}",
+        "champ": "Nouveau code à 4 chiffres",
+        "note": "Communiquez le code à la personne de vive voix : il n’est pas envoyé par message.",
+        "erreur": "Le code doit comporter exactement 4 chiffres.",
+        "annuler": "Annuler",
+        "confirmer": "Définir le code"
+      },
       "cree": {
         "titre": "Compte créé",
+        "texteReel": "{{nom}} peut maintenant se connecter. Définissez son code à 4 chiffres depuis la liste (« Réinitialiser le code »). Conservez les codes de secours ci-dessous : ils ne seront plus affichés.",
+        "codesSecours": "Codes de secours",
         "texte": "{{nom}} apparaît maintenant sur l’écran de connexion. Mot de passe provisoire : {{motDePasse}}, à changer à la première connexion. Le code de vérification arrivera par {{canal}} au +237 {{telephone}}.",
         "voirListe": "Voir dans la liste",
         "autre": "Créer un autre utilisateur"

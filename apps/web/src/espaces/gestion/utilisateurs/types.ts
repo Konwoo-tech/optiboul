@@ -25,6 +25,8 @@ export type Utilisateur = {
   /** « AAAA-MM-JJTHH:MM », heure de Yaoundé ; vide : jamais connecté. */
   dernierAcces: string;
   canal: Canal;
+  /** Vrai serveur : le compte est bloqué après trop de codes faux. */
+  bloque?: boolean;
 };
 
 /** Ce que l'écran lit : les comptes, les groupes, et qui regarde (pour verrouiller son compte). */
@@ -60,4 +62,9 @@ export type CodeErreurChamp =
 
 export type ErreursUtilisateur = Partial<Record<ChampUtilisateur, CodeErreurChamp>>;
 
-export type ReponseCreation = { utilisateur: Utilisateur; instantane: InstantaneUtilisateurs };
+export type ReponseCreation = {
+  utilisateur: Utilisateur;
+  instantane: InstantaneUtilisateurs;
+  /** Vrai serveur : codes de secours, montrés une seule fois à la création. */
+  codesSecours?: string[];
+};

@@ -1347,6 +1347,10 @@
         "groupe": "Group",
         "groupeDe": "Group of {{nom}}",
         "actif": "Active",
+        "bloque": "Locked",
+        "debloquer": "Unlock",
+        "debloquerDe": "Unlock {{nom}}",
+        "sousLigneSansTelephone": "{{email}} · last access {{acces}}",
         "desactive": "Disabled",
         "reinitialiser": "Reset code",
         "reinitialiserDe": "Reset the code of {{nom}}",
@@ -1393,6 +1397,7 @@
       "toasts": {
         "groupeChange": "{{nom}} → {{groupe}} · \"{{profil}}\" rights",
         "codeReinitialise": "Code for {{nom}} reset",
+        "debloque": "{{nom}}’s account unlocked",
         "droit": "Your profile does not allow this action.",
         "comptePropre": "You cannot change your own account.",
         "inconnu": "This user no longer exists. The list was refreshed.",
@@ -1457,8 +1462,18 @@
         "emailMotDePasse": "Email and temporary password \"{{motDePasse}}\"",
         "doubleAuthentification": "Two-step verification via {{canal}} to {{telephone}}"
       },
+      "code": {
+        "titre": "{{nom}}’s code",
+        "champ": "New 4-digit code",
+        "note": "Tell the person the code in person: it is not sent by message.",
+        "erreur": "The code must be exactly 4 digits.",
+        "annuler": "Cancel",
+        "confirmer": "Set the code"
+      },
       "cree": {
         "titre": "Account created",
+        "texteReel": "{{nom}} can now sign in. Set their 4-digit code from the list (“Reset code”). Keep the backup codes below: they will not be shown again.",
+        "codesSecours": "Backup codes",
         "texte": "{{nom}} now appears on the sign-in screen. Temporary password: {{motDePasse}}, to be changed at first sign-in. The verification code will arrive via {{canal}} at +237 {{telephone}}.",
         "voirListe": "See in the list",
         "autre": "Create another user"

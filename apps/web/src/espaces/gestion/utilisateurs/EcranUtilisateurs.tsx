@@ -1,4 +1,5 @@
 import { useUtilisateurCourant } from '@/auth';
+import { SIMULATION } from '@/simulation';
 import { useTranslation } from '@/i18n';
 import { EcranChargement, EcranErreur, useToast } from '@/ui';
 import { useRef, useState, type KeyboardEvent } from 'react';
@@ -9,6 +10,7 @@ import { EnTeteEcran } from '../../EnTeteEcran.tsx';
 import {
   codeErreur,
   useActiver,
+  useDebloquer,
   useChangerDeGroupe,
   useCreerUnGroupe,
   useCreerUtilisateur,
@@ -17,6 +19,7 @@ import {
   useUtilisateurs,
 } from './api.ts';
 import { ListeUtilisateurs } from './ListeUtilisateurs.tsx';
+import { ModaleCode } from './ModaleCode.tsx';
 import { NouvelUtilisateur } from './NouvelUtilisateur.tsx';
 import {
   aDesErreurs,
@@ -68,6 +71,9 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
   const activer = useActiver(nom);
   const creerGroupe = useCreerUnGroupe(nom);
   const creer = useCreerUtilisateur(nom);
+  const debloquer = useDebloquer(nom);
+  const [codePour, setCodePour] = useState<Utilisateur | null>(null);
+  const [codesSecours, setCodesSecours] = useState<string[]>([]);
   const [parametres, setParametres] = useSearchParams();
   const [filtre, setFiltre] = useState('all');
   const [brouillon, setBrouillon] = useState<Brouillon>(BROUILLON_VIDE);
@@ -101,7 +107,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
 
   const { utilisateurs, groupes, moi } = instantane;
   const cree = utilisateurs.find((u) => u.id === creeId) ?? null;
-  const occupe = [changerDeGroupe, reinitialiser, activer, creerGroupe, creer].some(
+  const occupe = [changerDeGroupe, reinitialiser, activer, creerGroupe, creer, debloquer].some(
     (m) => m.isPending,
   );
 
@@ -191,16 +197,38 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
     );
   };
 
-  const surReinitialiser = (u: Utilisateur) => {
+  const surReinitialiser = (u: Utilisateur, code?: string) => {
+    // Sur le vrai serveur, l'administrateur choisit le code : une fenêtre le demande d'abord.
+    if (!SIMULATION && code === undefined) {
+      setCodePour(u);
+      return;
+    }
     exclusif((fin) =>
-      reinitialiser.mutate(u.id, {
+      reinitialiser.mutate(
+        { id: u.id, ...(code ? { code } : {}) },
+        {
+          onSettled: fin,
+          onSuccess: () => {
+            setCodePour(null);
+            afficher(t('gestion.utilisateurs.toasts.codeReinitialise', { nom: u.nom }));
+          },
+          onError: (erreur) => {
+            setCodePour(null);
+            signaler(erreur);
+          },
+        },
+      ),
+    );
+  };
+
+  const surDebloquer = (u: Utilisateur) =>
+    exclusif((fin) =>
+      debloquer.mutate(u.id, {
         onSettled: fin,
-        onSuccess: () =>
-          afficher(t('gestion.utilisateurs.toasts.codeReinitialise', { nom: u.nom })),
+        onSuccess: () => afficher(t('gestion.utilisateurs.toasts.debloque', { nom: u.nom })),
         onError: signaler,
       }),
     );
-  };
 
   const surActiver = (u: Utilisateur) => {
     // Comme la maquette, l'état du compte se lit sur sa pastille : pas de message.
@@ -275,6 +303,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
         },
         onSuccess: (reponse) => {
           setCreeId(reponse.utilisateur.id);
+          setCodesSecours(reponse.codesSecours ?? []);
           afficher(t('gestion.utilisateurs.toasts.cree', { nom: reponse.utilisateur.nom }));
         },
         onError: (erreur) => {
@@ -346,6 +375,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
               groupes={groupes}
               utilisateurs={utilisateurs}
               cree={cree}
+              codesSecours={codesSecours}
               occupe={occupe}
               tentative={tentative}
               onChamp={surChamp}
@@ -383,12 +413,22 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
               occupe={occupe}
               onFiltre={setFiltre}
               onGroupe={surGroupe}
-              onReinitialiser={surReinitialiser}
+              onReinitialiser={(u) => surReinitialiser(u)}
               onActiver={surActiver}
+              peutActiver={SIMULATION}
+              {...(SIMULATION ? {} : { onDebloquer: surDebloquer })}
             />
           )}
         </div>
       </div>
+      {codePour && (
+        <ModaleCode
+          nom={codePour.nom}
+          envoiEnCours={reinitialiser.isPending}
+          onFermer={() => setCodePour(null)}
+          onConfirmer={(code) => surReinitialiser(codePour, code)}
+        />
+      )}
     </>
   );
 }
