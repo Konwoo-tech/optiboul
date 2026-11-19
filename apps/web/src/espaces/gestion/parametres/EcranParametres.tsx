@@ -1,4 +1,5 @@
 import { useUtilisateurCourant } from '@/auth';
+import { SIMULATION } from '@/simulation';
 import { useTranslation } from '@/i18n';
 import { Text } from '@mantine/core';
 import { Carte, EcranChargement, EcranErreur, useToast } from '@/ui';
@@ -18,6 +19,7 @@ import type { Enregistrer } from './Champs.tsx';
 import { AutresParametres, HistoriqueDesValeurs } from './Complements.tsx';
 import styles from './Parametres.module.css';
 import { Produits } from './Produits.tsx';
+import { ReglesNotification } from './ReglesNotification.tsx';
 import {
   memeValeur,
   peutConsulterParametres,
@@ -122,6 +124,7 @@ export default function EcranParametres({ ecran }: { ecran: Ecran }) {
           {lecture ? <p className={styles.note}>{t('gestion.parametres.lectureSeule')}</p> : null}
           <AutresParametres groupes={groupes} lecture={lecture} enregistrer={enregistrer} />
           <HistoriqueDesValeurs parametres={liste} utilisateur={nom} />
+          {!SIMULATION && <ReglesNotification lecture={lecture} />}
         </div>
       </div>
     </>

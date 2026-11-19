@@ -43,9 +43,7 @@ const ECRANS_LIVRES: Record<string, EcranLivre | null> = {
   'gestion/sauvegardes': lazy(() => import('./gestion/sauvegardes/EcranSauvegardes.tsx')),
   'gestion/utilisateurs': lazy(() => import('./gestion/utilisateurs/EcranUtilisateurs.tsx')),
   'gestion/tableau-de-bord': lazy(() => import('./gestion/tableau-de-bord/EcranTableauDeBord.tsx')),
-  'gestion/parametres': EN_SIMULATION
-    ? lazy(() => import('./gestion/parametres/EcranParametres.tsx'))
-    : null,
+  'gestion/parametres': lazy(() => import('./gestion/parametres/EcranParametres.tsx')),
   'gestion/semaines': lazy(() => import('./gestion/semaines/EcranSemaines.tsx')),
 };
 
