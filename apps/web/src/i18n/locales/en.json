@@ -44,6 +44,27 @@
       "format": "The code has 6 digits.",
       "incorrect": "Incorrect code. Check your phone’s clock.",
       "defaut": "Activation failed. Please try again."
+    },
+    "postes": {
+      "titre": "Trusted workstations",
+      "aide": "Browsers allowed to sign in with a code, at the bakery. Registering adds the browser you are using now.",
+      "actif": "Active",
+      "jamais": "never",
+      "ceNavigateur": "this browser",
+      "revoqueLe": "Revoked on {{date}}",
+      "enregistreLe": "Registered on {{date}} by {{par}}",
+      "dernierUsage": "Last used: {{date}}",
+      "revoquer": "Revoke {{nom}}",
+      "confirmerRevocation": "Confirm revoking {{nom}}",
+      "nom": "Workstation name",
+      "enregistrer": "Register this browser",
+      "enregistre": "Trusted workstation registered",
+      "revoque": "Workstation revoked",
+      "erreurs": {
+        "nom": "Enter a name for the workstation.",
+        "distant": "A trusted workstation is registered from the bakery.",
+        "defaut": "Registration failed. Try again."
+      }
     }
   },
   "commun": {
@@ -1703,7 +1724,10 @@
         "aide": "For each event, who is notified and through which channels. The app is always on.",
         "profils": "Profiles notified · {{libelle}}",
         "canaux": "Channels · {{libelle}}",
-        "canal": { "sms": "SMS", "whatsapp": "WhatsApp" },
+        "canal": {
+          "sms": "SMS",
+          "whatsapp": "WhatsApp"
+        },
         "enregistre": "Rule saved · {{libelle}}",
         "erreur": "The rule could not be saved."
       },
