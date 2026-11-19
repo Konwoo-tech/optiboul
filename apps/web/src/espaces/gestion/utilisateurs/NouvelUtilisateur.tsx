@@ -1,6 +1,6 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- bouton à rôle « checkbox » : case de la maquette */
 import { useTranslation } from '@/i18n';
-import { MOT_DE_PASSE_DEMO } from '@/simulation';
+import { MOT_DE_PASSE_DEMO, SIMULATION } from '@/simulation';
 import { useEffect, useId, useRef } from 'react';
 
 import { Mot, Pastille } from './Pastille.tsx';
@@ -33,6 +33,8 @@ type Props = {
   utilisateurs: Utilisateur[];
   /** Compte qui vient d'être créé : la confirmation remplace le formulaire. */
   cree: Utilisateur | null;
+  /** Vrai serveur : codes de secours du compte créé, montrés une seule fois. */
+  codesSecours?: string[];
   occupe: boolean;
   /** Numéro de la dernière tentative refusée : le focus va au premier champ en erreur. */
   tentative: number;
@@ -81,13 +83,21 @@ export function NouvelUtilisateur(props: Props) {
           </div>
         </div>
         <div className={styles.faitTexte}>
-          {t('gestion.utilisateurs.cree.texte', {
-            nom: cree.nom,
-            motDePasse: MOT_DE_PASSE_DEMO,
-            canal: NOM_DU_CANAL[cree.canal],
-            telephone: cree.telephone,
-          })}
+          {SIMULATION
+            ? t('gestion.utilisateurs.cree.texte', {
+                nom: cree.nom,
+                motDePasse: MOT_DE_PASSE_DEMO,
+                canal: NOM_DU_CANAL[cree.canal],
+                telephone: cree.telephone,
+              })
+            : t('gestion.utilisateurs.cree.texteReel', { nom: cree.nom })}
         </div>
+        {props.codesSecours && props.codesSecours.length > 0 && (
+          <div className={styles.faitTexte}>
+            <strong>{t('gestion.utilisateurs.cree.codesSecours')}</strong>
+            <div>{props.codesSecours.join(' · ')}</div>
+          </div>
+        )}
         <div className={styles.faitActions}>
           <button type="button" className={styles.secondaire} onClick={props.onVoirLaListe}>
             {t('gestion.utilisateurs.cree.voirListe')}

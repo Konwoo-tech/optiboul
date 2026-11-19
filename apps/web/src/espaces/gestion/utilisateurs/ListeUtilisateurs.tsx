@@ -18,6 +18,10 @@ type Props = {
   onGroupe: (utilisateur: Utilisateur, groupe: string) => void;
   onReinitialiser: (utilisateur: Utilisateur) => void;
   onActiver: (utilisateur: Utilisateur) => void;
+  /** Le serveur n'a pas de désactivation de compte : le bouton est alors masqué. */
+  peutActiver?: boolean;
+  /** Vrai serveur : lève le blocage d'un compte. */
+  onDebloquer?: (utilisateur: Utilisateur) => void;
 };
 
 /** Onglet « Utilisateurs » : filtres par groupe, une ligne par compte, puis les droits par profil. */
@@ -31,6 +35,8 @@ export function ListeUtilisateurs({
   onGroupe,
   onReinitialiser,
   onActiver,
+  peutActiver = true,
+  onDebloquer,
 }: Props) {
   const { t, i18n } = useTranslation();
   const idFiltres = useId();
@@ -77,11 +83,16 @@ export function ListeUtilisateurs({
                     {u.nom} · <span className={styles.profil}>{t(`profils.${u.profil}`)}</span>
                   </div>
                   <div className={styles.sous}>
-                    {t('gestion.utilisateurs.liste.sousLigne', {
-                      email: u.email,
-                      telephone: u.telephone,
-                      acces: formaterAcces(u.dernierAcces, i18n.language),
-                    })}
+                    {t(
+                      u.telephone
+                        ? 'gestion.utilisateurs.liste.sousLigne'
+                        : 'gestion.utilisateurs.liste.sousLigneSansTelephone',
+                      {
+                        email: u.email,
+                        telephone: u.telephone,
+                        acces: formaterAcces(u.dernierAcces, i18n.language),
+                      },
+                    )}
                   </div>
                 </div>
                 <select
@@ -98,11 +109,13 @@ export function ListeUtilisateurs({
                     </option>
                   ))}
                 </select>
-                <Mot niveau={u.actif ? 'ok' : 'neutre'}>
+                <Mot niveau={u.bloque ? 'surveiller' : u.actif ? 'ok' : 'neutre'}>
                   {t(
-                    u.actif
-                      ? 'gestion.utilisateurs.liste.actif'
-                      : 'gestion.utilisateurs.liste.desactive',
+                    u.bloque
+                      ? 'gestion.utilisateurs.liste.bloque'
+                      : u.actif
+                        ? 'gestion.utilisateurs.liste.actif'
+                        : 'gestion.utilisateurs.liste.desactive',
                   )}
                 </Mot>
                 <button
@@ -114,7 +127,18 @@ export function ListeUtilisateurs({
                 >
                   {t('gestion.utilisateurs.liste.reinitialiser')}
                 </button>
-                {!lui && (
+                {u.bloque && onDebloquer && (
+                  <button
+                    type="button"
+                    className={styles.petit}
+                    aria-disabled={occupe || undefined}
+                    aria-label={t('gestion.utilisateurs.liste.debloquerDe', { nom: u.nom })}
+                    onClick={() => onDebloquer(u)}
+                  >
+                    {t('gestion.utilisateurs.liste.debloquer')}
+                  </button>
+                )}
+                {!lui && peutActiver && (
                   <button
                     type="button"
                     className={styles.petitDiscret}
