@@ -852,6 +852,7 @@
       "decomptePasse_one": "{{jour}} · il y a {{count}} jour",
       "decomptePasse_other": "{{jour}} · il y a {{count}} jours",
       "soumettre": "Soumettre au propriétaire",
+      "preparer": "Préparer l’état de paie",
       "valider": "Valider l’état de paie",
       "refuser": "Refuser",
       "payerTout": "Payer tous les restes · {{montant}} FCFA",
@@ -889,6 +890,7 @@
         "meta": "{{type}} · {{date}} · par {{nom}}",
         "supprimer": "Supprimer la ligne « {{libelle}} »",
         "verrou": "Les lignes sont verrouillées une fois l’état de paie soumis.",
+        "bulletin": "Bulletin de paie (PDF)",
         "net": "Net à payer",
         "paye": "Payé",
         "reste": "Reste",
@@ -937,6 +939,7 @@
       },
       "toasts": {
         "soumis": "État de paie soumis au propriétaire",
+        "prepare": "État de paie préparé",
         "paiement": "Paiement enregistré · {{code}}",
         "payes_one": "{{count}} salaire payé",
         "payes_other": "{{count}} salaires payés",

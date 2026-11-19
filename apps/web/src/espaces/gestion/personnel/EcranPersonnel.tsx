@@ -15,6 +15,7 @@ import {
   usePayer,
   usePayerLesRestes,
   usePersonnel,
+  usePreparer,
   usePlanifierLeMois,
   useRetirerLigne,
   useSoumettre,
@@ -47,6 +48,7 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
   const choisirLeJour = useChoisirLeJour(nom);
   const planifier = usePlanifierLeMois(nom);
   const soumettre = useSoumettre(nom);
+  const preparer = usePreparer(nom);
   const payer = usePayer(nom);
   const payerRestes = usePayerLesRestes(nom);
   const decider = useDeciderLaPaie(nom);
@@ -58,7 +60,11 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
   const [erreurServeur, setErreurServeur] = useState<string | null>(null);
 
   const instantane = requete.data;
-  const droits = droitsPaie(profil);
+  // Sans état pour le mois, rien ne se modifie ni ne se paie : seule la préparation est proposée.
+  const droitsDuProfil = droitsPaie(profil);
+  const droits = instantane?.aPreparer
+    ? { ...droitsDuProfil, soumettre: false, valider: false, payer: false }
+    : droitsDuProfil;
   if (!instantane || !profil || !nom) {
     return (
       <>
@@ -83,6 +89,7 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
     choisirLeJour,
     planifier,
     soumettre,
+    preparer,
     payer,
     payerRestes,
     decider,
@@ -217,6 +224,12 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
           onSoumettre={() =>
             soumettre.mutate(undefined, {
               onSuccess: () => afficher(t('gestion.personnel.toasts.soumis')),
+              onError: signaler,
+            })
+          }
+          onPreparer={() =>
+            preparer.mutate(instantane.aPreparer ?? instantane.mois, {
+              onSuccess: () => afficher(t('gestion.personnel.toasts.prepare')),
               onError: signaler,
             })
           }

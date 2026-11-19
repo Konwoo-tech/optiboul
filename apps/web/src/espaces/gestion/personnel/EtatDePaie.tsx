@@ -24,6 +24,8 @@ type Props = {
   onSoumettre: () => void;
   onValider: (accord: boolean) => void;
   onPayerLesRestes: () => void;
+  /** Vrai serveur : prépare l'état du mois (une ligne par employé). */
+  onPreparer: () => void;
 };
 
 /** En-tête de l'état de paie : titre, état, jour de paie, actions du profil et totaux. */
@@ -36,6 +38,7 @@ export function EtatDePaie({
   onSoumettre,
   onValider,
   onPayerLesRestes,
+  onPreparer,
 }: Props) {
   const { t, i18n } = useTranslation();
   const langue = i18n.language;
@@ -103,6 +106,16 @@ export function EtatDePaie({
               {t('gestion.personnel.jourDePaie')}
               <span className={styles.jourTexte}>{decompte}</span>
             </div>
+          )}
+          {instantane.aPreparer && droits.preparer && (
+            <button
+              type="button"
+              className={styles.principal}
+              aria-disabled={occupe}
+              onClick={bloque(onPreparer)}
+            >
+              {t('gestion.personnel.preparer')}
+            </button>
           )}
           {statut === 'brouillon' && droits.soumettre && (
             <button

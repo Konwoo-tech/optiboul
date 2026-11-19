@@ -78,6 +78,10 @@ export type InstantanePaie = {
   calendrier: MoisDuCalendrier[];
   /** Jour du serveur, « AAAA-MM-JJ » : le décompte avant la paie en part. */
   aujourdhui: string;
+  /** Vrai serveur : identifiant de l'état de paie affiché. */
+  etat?: number;
+  /** Vrai serveur : le mois n'a pas encore d'état ; « AAAA-MM » à préparer. */
+  aPreparer?: string | null;
 };
 
 export type NouvelAjustement = {

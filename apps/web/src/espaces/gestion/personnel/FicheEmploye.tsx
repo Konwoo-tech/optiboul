@@ -1,9 +1,11 @@
 import { useTranslation } from '@/i18n';
+import { SIMULATION } from '@/simulation';
 import { formaterNombre } from '@/utils';
 import { useId, useRef, useState } from 'react';
 
 import { jourMois } from '../semaines/affichage.ts';
 import { moisPrecedent } from './affichage.ts';
+import { ouvrirLeBulletin } from './api.ts';
 import { Mot } from './Mot.tsx';
 import styles from './Personnel.module.css';
 import {
@@ -317,6 +319,15 @@ export function FicheEmploye({
           </li>
         ))}
       </ul>
+      {!SIMULATION && !instantane.aPreparer && (
+        <button
+          type="button"
+          className={styles.secondaire}
+          onClick={() => ouvrirLeBulletin(employe.id)}
+        >
+          {t('gestion.personnel.fiche.bulletin')}
+        </button>
+      )}
       {peutPayer && (
         <div className={styles.paiementBloc}>
           <h3 className={styles.paiementTitre}>{t('gestion.personnel.paiement.titre')}</h3>
