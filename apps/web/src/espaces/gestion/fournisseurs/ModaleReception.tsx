@@ -13,8 +13,10 @@ type Props = {
   fournisseur: Fournisseur | undefined;
   enCours: boolean;
   onFermer: () => void;
-  /** Quantité réellement livrée (déjà lue, strictement positive) et observation. */
-  onConfirmer: (quantite: number, observation: string) => Promise<string | null>;
+  /** Le vrai serveur veut le prix unitaire de la livraison (sauf la farine, au prix du sac). */
+  avecPrix?: boolean;
+  /** Quantité réellement livrée (déjà lue, strictement positive), observation et prix unitaire. */
+  onConfirmer: (quantite: number, observation: string, prix?: number) => Promise<string | null>;
   /** La quantité saisie est illisible : l'écran l'annonce. */
   onIncomplet: () => void;
 };
@@ -24,6 +26,7 @@ export function ModaleReception({
   commande,
   fournisseur,
   enCours,
+  avecPrix = false,
   onFermer,
   onConfirmer,
   onIncomplet,
@@ -34,6 +37,8 @@ export function ModaleReception({
   const [observation, setObservation] = useState('');
   const [invalide, setInvalide] = useState(false);
   const [tropGrande, setTropGrande] = useState(false);
+  const [prixTexte, setPrixTexte] = useState('');
+  const [prixManquant, setPrixManquant] = useState(false);
   const idErreur = useId();
   const champ = useRef<HTMLInputElement>(null);
 
@@ -46,10 +51,17 @@ export function ModaleReception({
       champ.current?.focus();
       return;
     }
+    const prix = avecPrix ? Number(prixTexte.replace(/D/g, '')) : undefined;
+    if (avecPrix && !prix) {
+      setPrixManquant(true);
+      return;
+    }
     const refus = quantiteTropGrande(valeur)
       ? 'quantite_trop_grande'
-      : await onConfirmer(valeur, observation.trim());
-    if (refus) {
+      : await onConfirmer(valeur, observation.trim(), prix);
+    if (refus === 'prix_obligatoire') {
+      setPrixManquant(true);
+    } else if (refus) {
       // La saisie est gardée : l'erreur est sur le champ.
       setInvalide(true);
       setTropGrande(true);
@@ -93,6 +105,30 @@ export function ModaleReception({
             max: formaterNombre(QUANTITE_MAX),
           })}
         </span>
+      )}
+      {avecPrix && (
+        <>
+          <label className={styles.etiquette}>
+            {t('gestion.fournisseurs.reception.prix', {
+              unite: uniteMatiere(t, commande.matiere),
+            })}
+            <input
+              className={styles.champ}
+              value={prixTexte}
+              inputMode="numeric"
+              aria-invalid={prixManquant}
+              onChange={(e) => {
+                setPrixTexte(e.target.value.replace(/D/g, ''));
+                setPrixManquant(false);
+              }}
+            />
+          </label>
+          {prixManquant && (
+            <span className={styles.erreurModale} role="alert">
+              {t('gestion.fournisseurs.reception.erreurs.prix_obligatoire')}
+            </span>
+          )}
+        </>
       )}
       <label className={styles.etiquette}>
         {t('gestion.fournisseurs.reception.observation')}

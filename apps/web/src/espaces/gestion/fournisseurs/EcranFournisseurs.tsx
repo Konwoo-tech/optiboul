@@ -1,5 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
+import { SIMULATION } from '@/simulation';
 import { EcranChargement, EcranErreur, useToast } from '@/ui';
 import { formaterNombre } from '@/utils';
 import { useCallback, useState, type KeyboardEvent } from 'react';
@@ -10,6 +11,7 @@ import { EnTeteEcran } from '../../EnTeteEcran.tsx';
 import { jourCourt } from './affichage.ts';
 import {
   codeErreur,
+  ouvrirLeRecu,
   useFournisseurs,
   usePayer,
   usePlanifier,
@@ -40,6 +42,7 @@ const ONGLET_PAR_DEFAUT: Onglet = 'receptions';
 const ERREURS_DE_SAISIE = [
   'quantite_obligatoire',
   'quantite_trop_grande',
+  'prix_obligatoire',
   'reference_obligatoire',
   'reference_invalide',
   'mode_inconnu',
@@ -140,7 +143,13 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
       'facture_inconnue',
     ].includes(code ?? '');
     afficher(
-      t(perimee ? 'gestion.fournisseurs.toasts.dejaFait' : 'gestion.fournisseurs.toasts.erreur'),
+      t(
+        code === 'semaine_non_ouverte'
+          ? 'gestion.fournisseurs.toasts.semaineFermee'
+          : perimee
+            ? 'gestion.fournisseurs.toasts.dejaFait'
+            : 'gestion.fournisseurs.toasts.erreur',
+      ),
     );
   };
 
@@ -191,12 +200,14 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
     numero: string,
     quantite: number,
     observation: string,
+    prix?: number,
   ): Promise<string | null> => {
     try {
       const reponse = await receptionner.mutateAsync({
         commande: numero,
         quantite,
         ...(observation ? { observation } : {}),
+        ...(prix ? { prix } : {}),
       });
       ouvrir(null);
       afficher(
@@ -336,7 +347,10 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
               peutModifier={droits.modifier}
               enCours={enCours}
               onPayer={(f: Facture) => ouvrir({ genre: 'paiement', numero: f.numero })}
-              onRecu={() => afficher(t('gestion.fournisseurs.toasts.recuPret'))}
+              onRecu={(f) => {
+                if (f.paiement !== undefined) ouvrirLeRecu(f.paiement);
+                afficher(t('gestion.fournisseurs.toasts.recuPret'));
+              }}
             />
           )}
         </div>
@@ -347,10 +361,11 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
           commande={commandeOuverte}
           fournisseur={instantane.fournisseurs.find((f) => f.id === commandeOuverte.fournisseur)}
           enCours={enCours}
+          avecPrix={!SIMULATION && commandeOuverte.matiere !== 'farine'}
           onFermer={() => ouvrir(null)}
           onIncomplet={() => afficher(t('gestion.fournisseurs.toasts.quantiteRecue'))}
-          onConfirmer={(quantite, observation) =>
-            confirmerReception(commandeOuverte.numero, quantite, observation)
+          onConfirmer={(quantite, observation, prix) =>
+            confirmerReception(commandeOuverte.numero, quantite, observation, prix)
           }
         />
       )}

@@ -1040,11 +1040,13 @@
         "ligne": "{{fournisseur}} · {{matiere}} · commandé : {{quantite}} {{unite}} · prévu le {{date}}",
         "quantite": "Quantité réellement livrée",
         "observation": "Observation (facultatif)",
+        "prix": "Prix unitaire (FCFA par {{unite}})",
         "aide": "Si la quantité est inférieure à la commande, le manquant reste à livrer et apparaît dans le suivi.",
         "annuler": "Annuler",
         "valider": "Valider la réception",
         "erreurs": {
           "quantite_trop_grande": "Quantité trop élevée (maximum {{max}}).",
+          "prix_obligatoire": "Indiquez le prix unitaire de cette livraison.",
           "defaut": "La réception n’a pas pu être enregistrée. Réessayez."
         }
       },
@@ -1070,7 +1072,8 @@
         "paye": "Paiement enregistré · {{numero}}",
         "recuPret": "Reçu PDF prêt",
         "erreur": "L’action n’a pas pu être enregistrée. Réessayez.",
-        "dejaFait": "Cette ligne a déjà été traitée. La liste est à jour."
+        "dejaFait": "Cette ligne a déjà été traitée. La liste est à jour.",
+        "semaineFermee": "Aucune semaine n’est ouverte : ouvrez-en une dans Gestion › Semaines."
       }
     },
     "semaines": {

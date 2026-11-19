@@ -81,8 +81,9 @@ export type Facture = {
   /** Référence de la transaction (mobile money, R7). */
   reference?: string;
   depense?: string;
-  /** Sur le vrai serveur : identifiant de la facture. */
+  /** Sur le vrai serveur : identifiant de la facture et de son dernier paiement (reçu PDF). */
   idServeur?: number;
+  paiement?: number;
 };
 
 export type InstantaneFournisseurs = {
@@ -106,6 +107,8 @@ export type NouvelleReception = {
   commande: string;
   quantite: number;
   observation?: string;
+  /** FCFA par unité de la matière (vrai serveur, hors farine). */
+  prix?: number;
 };
 
 export type NouveauPaiement = { facture: string; mode: ModePaiement; reference?: string };

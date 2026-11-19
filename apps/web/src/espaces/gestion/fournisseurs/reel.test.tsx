@@ -9,6 +9,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
   cleFournisseurs,
   usePlanifier,
+  usePayer,
   useReceptionner,
   useRelancer,
   useReplanifier,
@@ -103,6 +104,7 @@ function serveurFournisseurs() {
         ]),
       ),
     ),
+    http.get('*/api/v1/factures/11/paiements/', () => HttpResponse.json([])),
     http.get('*/api/v1/semaines/', () =>
       HttpResponse.json(page([{ id: 1, code: 'S46', annee: 2026, numero: 46 }])),
     ),
@@ -162,12 +164,137 @@ describe('lecture des fournisseurs sur le vrai serveur', () => {
   });
 });
 
-describe('actions sur le vrai serveur', () => {
-  const wrapper =
-    (client: QueryClient) =>
-    ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client }, children);
+const wrapper =
+  (client: QueryClient) =>
+  ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client }, children);
 
+describe('paiements sur le vrai serveur', () => {
+  it('une facture payée en partie affiche le reste dû, une soldée son paiement', async () => {
+    serveurFournisseurs();
+    serveur.use(
+      http.get('*/api/v1/factures/', () =>
+        HttpResponse.json(
+          page([
+            {
+              id: 11,
+              numero: 41,
+              fournisseur: 1,
+              semaine: 1,
+              farine: true,
+              montant: 88000,
+              echeance: '2026-11-17',
+              statut: 'en_cours',
+              en_retard: true,
+            },
+            {
+              id: 12,
+              numero: 42,
+              fournisseur: 1,
+              semaine: 1,
+              farine: false,
+              montant: 5000,
+              echeance: '2026-11-20',
+              statut: 'payee',
+              en_retard: false,
+            },
+            {
+              id: 13,
+              numero: 43,
+              fournisseur: 1,
+              semaine: 1,
+              farine: false,
+              montant: 7000,
+              echeance: '2026-11-20',
+              statut: 'a_payer',
+              en_retard: false,
+            },
+          ]),
+        ),
+      ),
+      http.get('*/api/v1/factures/11/paiements/', () =>
+        HttpResponse.json([
+          {
+            id: 1,
+            facture: 11,
+            montant: 30000,
+            mode: 'banque',
+            reference: '',
+            depense: 5,
+            paye_par: 'Willy',
+            paye_le: '2026-11-18T09:00:00+01:00',
+          },
+        ]),
+      ),
+      http.get('*/api/v1/factures/12/paiements/', () =>
+        HttpResponse.json([
+          {
+            id: 2,
+            facture: 12,
+            montant: 5000,
+            mode: 'mobile',
+            reference: 'MP123',
+            depense: 6,
+            paye_par: 'Willy',
+            paye_le: '2026-11-19T10:00:00+01:00',
+          },
+        ]),
+      ),
+    );
+    const { factures } = await lireFournisseursReels();
+    expect(factures[0]).toMatchObject({ statut: 'a-payer', montant: 58000 });
+    expect(factures[1]).toMatchObject({
+      statut: 'payee',
+      montant: 5000,
+      mode: 'mobile',
+      reference: 'MP123',
+      payeeLe: '2026-11-19',
+      depense: '6',
+      paiement: 2,
+    });
+    expect(factures[2]).toMatchObject({ statut: 'a-payer', montant: 7000 });
+  });
+
+  it('paie le reste dû avec une clé d’idempotence', async () => {
+    serveurFournisseurs();
+    const client = new QueryClient();
+    client.setQueryData(cleFournisseurs('Willy'), await lireFournisseursReels());
+    const recus: { corps: unknown; cle: string | null }[] = [];
+    serveur.use(
+      http.post('*/api/v1/factures/11/payer/', async ({ request }) => {
+        recus.push({ corps: await request.json(), cle: request.headers.get('Idempotency-Key') });
+        return HttpResponse.json(
+          {
+            id: 3,
+            facture: 11,
+            montant: 88000,
+            mode: 'mobile',
+            reference: 'MP9',
+            depense: 9,
+            paye_par: 'Willy',
+            paye_le: '2026-11-19T10:00:00+01:00',
+          },
+          { status: 201 },
+        );
+      }),
+    );
+    const { result } = renderHook(() => usePayer('Willy'), { wrapper: wrapper(client) });
+    let retour: unknown;
+    await act(async () => {
+      retour = await result.current.mutateAsync({
+        facture: 'FAC-41',
+        mode: 'mobile',
+        reference: 'MP9',
+      });
+    });
+    expect(retour).toMatchObject({ depense: '9' });
+    expect(recus).toEqual([
+      { corps: { montant: 88000, mode: 'mobile', reference: 'MP9' }, cle: expect.any(String) },
+    ]);
+  });
+});
+
+describe('actions sur le vrai serveur', () => {
   it('planifie, réceptionne, relance et replanifie avec les identifiants du serveur', async () => {
     serveurFournisseurs();
     const client = new QueryClient();
@@ -213,6 +340,7 @@ describe('actions sur le vrai serveur', () => {
         commande: 'BC-007',
         quantite: 6,
         observation: 'Sacs abîmés',
+        prix: 1500,
       });
       await relancer.result.current.mutateAsync({ commande: 'BC-006' });
       await replanifier.result.current.mutateAsync({ commande: 'BC-006' });
@@ -224,7 +352,10 @@ describe('actions sur le vrai serveur', () => {
         chemin: 'planifier',
         corps: { fournisseur: 1, matiere: 'levure', quantite: '12.5', prevue_le: '2026-11-20' },
       },
-      { chemin: 'receptionner', corps: { quantite: '6', observation: 'Sacs abîmés' } },
+      {
+        chemin: 'receptionner',
+        corps: { quantite: '6', observation: 'Sacs abîmés', prix_unitaire: 1500 },
+      },
       { chemin: 'relancer', corps: null },
       { chemin: 'replanifier', corps: { prevue_le: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) } },
     ]);
