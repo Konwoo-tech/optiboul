@@ -1,6 +1,7 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { useContexte } from '@/coque/contexte.ts';
+import { SIMULATION } from '@/simulation';
 import { AvatarUtilisateur, BoutonDeconnexion } from '@/ui';
 import { formaterDateCourte } from '@/utils';
 import { useState } from 'react';
@@ -9,6 +10,7 @@ import { NavLink, useLocation } from 'react-router';
 import { cheminEcran, cleMenu, ecransDe } from '../navigation.ts';
 import { espacesDe } from '../profils.ts';
 import styles from './MiseEnPage.module.css';
+import { SecuriteCompte } from './SecuriteCompte.tsx';
 
 /** Les espaces du profil (s'il en a plusieurs), puis les écrans de l'espace ouvert. */
 function Liens({ onNavigate }: { onNavigate?: () => void }) {
@@ -105,6 +107,7 @@ export function BarreLaterale() {
               <span className={styles.identiteRole}>{t(`profils.${profil}`)}</span>
             </span>
           </div>
+          {!SIMULATION && <SecuriteCompte libelle={t('securite.bouton')} />}
           <BoutonDeconnexion
             action="changer"
             libelle={t('commun.changerUtilisateur')}
@@ -151,6 +154,7 @@ export function BarreTelephone() {
               <span className={styles.piedTelephoneNom}>
                 {utilisateur.name} · {t(`profils.${profil}`)}
               </span>
+              {!SIMULATION && <SecuriteCompte libelle={t('securite.bouton')} />}
               <BoutonDeconnexion
                 action="changer"
                 libelle={t('coque.changer')}

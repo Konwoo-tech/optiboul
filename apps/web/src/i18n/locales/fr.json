@@ -19,6 +19,33 @@
     "enLigneCourt": "en ligne",
     "horsLigneCourt": "hors ligne"
   },
+  "securite": {
+    "bouton": "Sécurité du compte",
+    "titre": "Sécurité du compte",
+    "chargement": "Chargement…",
+    "erreur": "L’opération n’a pas pu aboutir. Réessayez.",
+    "etatActif": "Application d’authentification activée · {{count}} code(s) de secours restant(s)",
+    "etatInactif": "Application d’authentification non activée",
+    "aide": "Ajoutez une vérification par une application (Google Authenticator, Microsoft Authenticator…) pour protéger la connexion à distance.",
+    "activer": "Activer l’application d’authentification",
+    "etapeCle": "Dans l’application, ajoutez un compte avec cette clé (saisie manuelle), puis saisissez le code à 6 chiffres affiché.",
+    "cle": "Clé de configuration",
+    "code": "Code à 6 chiffres",
+    "confirmer": "Vérifier et activer",
+    "annuler": "Annuler",
+    "activee": "Application d’authentification activée",
+    "desactivee": "Application d’authentification désactivée",
+    "codesSecours": "Codes de secours",
+    "codesUneFois": "Conservez-les en lieu sûr : ils ne seront plus affichés.",
+    "regenerer": "Régénérer les codes de secours",
+    "desactiver": "Désactiver",
+    "fermer": "Fermer",
+    "erreurs": {
+      "format": "Le code comporte 6 chiffres.",
+      "incorrect": "Code incorrect. Vérifiez l’heure de votre téléphone.",
+      "defaut": "L’activation a échoué. Réessayez."
+    }
+  },
   "commun": {
     "changerUtilisateur": "Changer d’utilisateur",
     "deconnexion": "Se déconnecter",
