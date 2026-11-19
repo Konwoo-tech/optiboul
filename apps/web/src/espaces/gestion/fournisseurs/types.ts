@@ -38,6 +38,9 @@ export type Commande = {
   semaine: string;
   /** Numéro du bon qui porte le reliquat, une fois replanifié. */
   reliquat?: string;
+  /** Sur le vrai serveur : identifiant de la réception planifiée et du manquant éventuel. */
+  idServeur?: number;
+  manquant?: number;
 };
 
 export const STATUTS_FACTURE = ['a-payer', 'en-cours', 'payee'] as const;
@@ -50,7 +53,9 @@ export type ObjetFacture =
   /** Facture d'une réception : « BC-032 · Levure, 6 kg reçus sur 10 ». */
   | { genre: 'reception'; commande: string; matiere: Matiere; recue: number; commandee?: number }
   /** Livraison déjà facturée : « Bois · 2 chargements (BC-027) ». */
-  | { genre: 'livraison'; commande: string; matiere: Matiere; quantite: number };
+  | { genre: 'livraison'; commande: string; matiere: Matiere; quantite: number }
+  /** Vrai serveur : la facture ne dit pas de quelle réception elle vient. */
+  | { genre: 'serveur'; farine: boolean; semaine: number };
 
 /** Modes de paiement d'une facture fournisseur (cahier des charges §5.7). */
 export const MODES_PAIEMENT = ['especes', 'banque', 'mobile'] as const;
@@ -76,6 +81,8 @@ export type Facture = {
   /** Référence de la transaction (mobile money, R7). */
   reference?: string;
   depense?: string;
+  /** Sur le vrai serveur : identifiant de la facture. */
+  idServeur?: number;
 };
 
 export type InstantaneFournisseurs = {

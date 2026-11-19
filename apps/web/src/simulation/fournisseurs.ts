@@ -506,5 +506,6 @@ export function libelleFactureFr(facture: Pick<Facture, 'objet' | 'statut'>): st
     const sur = objet.commandee !== undefined ? ` reçus sur ${objet.commandee}` : '';
     return `${objet.commande} · ${NOMS_FR[objet.matiere]}, ${objet.recue} ${UNITES_FR[objet.matiere]}${sur}`;
   }
+  if (objet.genre === 'serveur') return `Facture · semaine ${objet.semaine}`;
   return `${NOMS_FR[objet.matiere]} · ${objet.quantite} ${UNITES_FR[objet.matiere]} (${objet.commande})`;
 }

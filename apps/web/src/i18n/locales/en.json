@@ -1023,7 +1023,9 @@
           "farineEnCours": "Flour · week {{semaine}} ({{sacs}} sacks so far)",
           "reception": "{{commande}} · {{matiere}}, {{quantite}} {{unite}}",
           "receptionPartielle": "{{commande}} · {{matiere}}, {{quantite}} {{unite}} received of {{commandee}}",
-          "livraison": "{{matiere}} · {{quantite}} {{unite}} ({{commande}})"
+          "livraison": "{{matiere}} · {{quantite}} {{unite}} ({{commande}})",
+          "serveur": "Invoice · week {{semaine}}",
+          "serveurFarine": "Flour · week {{semaine}}"
         },
         "vide": "No invoices.",
         "reference": " · ref. {{reference}}"
