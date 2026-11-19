@@ -1,6 +1,7 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { EcranChargement, EcranErreur, useToast } from '@/ui';
+import { SIMULATION } from '@/simulation';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -12,6 +13,7 @@ import {
   useAjouterLigne,
   useModifierLigne,
   useChoisirLeJour,
+  useCreerEmploye,
   useDeciderLaPaie,
   usePayer,
   usePayerLesRestes,
@@ -24,6 +26,7 @@ import {
 import { CalendrierPaies } from './CalendrierPaies.tsx';
 import { EtatDePaie } from './EtatDePaie.tsx';
 import { FicheEmploye } from './FicheEmploye.tsx';
+import { ModaleEmploye } from './ModaleEmploye.tsx';
 import styles from './Personnel.module.css';
 import { droitsPaie, montantAPayer, calculerPaie, totaux } from './regles.ts';
 import { TableauPaie } from './TableauPaie.tsx';
@@ -51,6 +54,8 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
   const planifier = usePlanifierLeMois(nom);
   const soumettre = useSoumettre(nom);
   const preparer = usePreparer(nom);
+  const creerEmploye = useCreerEmploye(nom);
+  const [nouvelEmploye, setNouvelEmploye] = useState(false);
   const payer = usePayer(nom);
   const payerRestes = usePayerLesRestes(nom);
   const decider = useDeciderLaPaie(nom);
@@ -239,6 +244,15 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
           onValider={surValider}
           onPayerLesRestes={surPayerLesRestes}
         />
+        {!SIMULATION && profil === 'gerant' && (
+          <button
+            type="button"
+            className={styles.secondaire}
+            onClick={() => setNouvelEmploye(true)}
+          >
+            {t('gestion.personnel.employe.ajouter')}
+          </button>
+        )}
         <div className={styles.rangee}>
           <TableauPaie employes={employes} choisi={choisi.id} onChoisir={choisir} />
           <FicheEmploye
@@ -282,6 +296,22 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
           onPlanifier={(mois, jour) => planifier.mutate({ mois, jour }, { onError: signaler })}
         />
       </div>
+      {nouvelEmploye && (
+        <ModaleEmploye
+          envoiEnCours={creerEmploye.isPending}
+          onFermer={() => setNouvelEmploye(false)}
+          onConfirmer={async (employe) => {
+            try {
+              await creerEmploye.mutateAsync(employe);
+              setNouvelEmploye(false);
+              afficher(t('gestion.personnel.employe.toast', { nom: employe.nom }));
+              return null;
+            } catch (erreur) {
+              return codeErreur(erreur) ?? 'defaut';
+            }
+          }}
+        />
+      )}
     </>
   );
 }

@@ -9,6 +9,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
   clePersonnel,
   useAjouterLigne,
+  useCreerEmploye,
   useModifierLigne,
   usePayer,
   usePayerLesRestes,
@@ -306,6 +307,33 @@ describe('actions sur le vrai serveur', () => {
       await result.current.mutateAsync({ employe: '5', absences: 1.5, avances: 10000 });
     });
     expect(corps).toEqual({ absences: '1.5', avances: 10000 });
+  });
+
+  it('crée un employé avec son salaire de base', async () => {
+    let corps: unknown;
+    serveur.use(
+      http.post('*/api/v1/employes/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json({ id: 9, nom: 'Nadia', salaire_base: 70000 }, { status: 201 });
+      }),
+    );
+    const { result } = renderHook(() => useCreerEmploye('Willy'), {
+      wrapper: wrapper(new QueryClient()),
+    });
+    await act(async () => {
+      await result.current.mutateAsync({
+        nom: 'Nadia',
+        poste: 'Caissière',
+        telephone: '699',
+        base: 70000,
+      });
+    });
+    expect(corps).toEqual({
+      nom: 'Nadia',
+      poste: 'Caissière',
+      telephone: '699',
+      salaire_base: 70000,
+    });
   });
 
   it('sans état lu, l’action est refusée sans appeler le serveur', async () => {

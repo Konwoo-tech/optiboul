@@ -853,6 +853,22 @@
       "decomptePasse_other": "{{jour}} · il y a {{count}} jours",
       "soumettre": "Soumettre au propriétaire",
       "preparer": "Préparer l’état de paie",
+      "employe": {
+        "ajouter": "Ajouter un employé",
+        "titre": "Nouvel employé",
+        "nom": "Nom complet",
+        "poste": "Poste",
+        "telephone": "Téléphone",
+        "base": "Salaire de base mensuel (FCFA)",
+        "note": "L’employé rejoint l’état de paie au prochain mois préparé.",
+        "creer": "Créer l’employé",
+        "annuler": "Annuler",
+        "toast": "{{nom}} ajouté·e au personnel",
+        "erreurs": {
+          "obligatoire": "Nom et salaire de base obligatoires.",
+          "defaut": "L’employé n’a pas pu être créé. Réessayez."
+        }
+      },
       "retenues": {
         "absences": "Jours d’absence (0,5 possible)",
         "avances": "Avances à retenir (FCFA)",

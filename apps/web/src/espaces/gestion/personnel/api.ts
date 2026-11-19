@@ -1,6 +1,7 @@
 import {
   demandesAccorderCreate,
   demandesRefuserCreate,
+  employesCreate,
   ErreurApi,
   getPaiesLignesBulletinRetrieveUrl,
   optiboulFetch,
@@ -207,6 +208,21 @@ export const usePayerLesRestes = (utilisateur: string | undefined) =>
       return { depenses: Array.from({ length: payes }, (_, rang) => String(rang + 1)) };
     },
   );
+
+/** Crée un employé (gérant, vrai serveur) : il rejoint l'état de paie du mois suivant. */
+export function useCreerEmploye(utilisateur: string | undefined) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (employe: { nom: string; poste: string; telephone: string; base: number }) =>
+      employesCreate({
+        nom: employe.nom,
+        poste: employe.poste,
+        telephone: employe.telephone,
+        salaire_base: employe.base,
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: clePersonnel(utilisateur) }),
+  });
+}
 
 /** Ouvre le bulletin de paie PDF d'une ligne dans un nouvel onglet (sans effet en simulation). */
 export function ouvrirLeBulletin(ligne: string) {
