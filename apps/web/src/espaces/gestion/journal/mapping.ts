@@ -85,6 +85,7 @@ export function depuisLigneApi(ligne: LigneJournal): EntreeJournal {
     profil,
     type: typeDeLaLigne(ligne),
     texte: texteDeLaLigne(ligne),
+    codeAction: ligne.action,
     // Dès qu'une des deux valeurs existe (création : pas d'avant ; suppression : pas d'après),
     // l'autre s'affiche « — » ; `null` et `undefined` comptent comme absents.
     ...(estPresent(ligne.avant) || estPresent(ligne.apres)
