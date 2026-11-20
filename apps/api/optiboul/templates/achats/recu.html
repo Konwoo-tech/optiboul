@@ -59,9 +59,7 @@
     <div class="entete">
       <h1>Reçu de paiement</h1>
       <div class="discret">Boulangerie du Faubourg · Etoudi, Yaoundé</div>
-      <div class="discret">
-        {{ moment|date:"d/m/Y" }} à {{ moment|date:"H:i" }} · payé par {{ paiement.paye_par.name }}
-      </div>
+      <div class="discret">{{ moment|date:"d/m/Y" }} à {{ moment|date:"H:i" }} · payé par {{ paiement.paye_par.name }}</div>
     </div>
     <table>
       <tr>
