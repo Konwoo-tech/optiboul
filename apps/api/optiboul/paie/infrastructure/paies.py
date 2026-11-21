@@ -23,6 +23,7 @@ from optiboul.paie.domain.paie import GenreElement
 from optiboul.paie.domain.paie import StatutPaie
 from optiboul.paie.domain.paie import absences_proposees
 from optiboul.paie.domain.paie import echeance_validation
+from optiboul.paie.domain.paie import jour_de_paie_du_mois
 from optiboul.paie.domain.paie import mois_precedent
 from optiboul.paie.domain.paie import montant_absences
 
@@ -70,7 +71,11 @@ class DepotPaieDjango:
                 if total > paye:
                     impayes[ligne.employe_id] = total - paye
             EtatPaie.objects.filter(pk=precedent.pk).update(statut=StatutPaie.PAYEE)
-        etat = EtatPaie.objects.create(mois=mois, prepare_par_id=auteur)
+        etat = EtatPaie.objects.create(
+            mois=mois,
+            prepare_par_id=auteur,
+            jour_de_paie=jour_de_paie_du_mois(mois, parametre("jour_de_paie")),
+        )
         LignePaie.objects.bulk_create(
             LignePaie(
                 etat=etat,
@@ -96,6 +101,13 @@ class DepotPaieDjango:
 
     def marquer(self, etat_id: int, statut: StatutPaie) -> None:
         EtatPaie.objects.filter(pk=etat_id).update(statut=statut)
+
+    def mois_et_jour(self, etat_id: int) -> tuple[date, date | None]:
+        etat = EtatPaie.objects.get(pk=etat_id)
+        return etat.mois, etat.jour_de_paie
+
+    def changer_jour(self, etat_id: int, jour: date) -> None:
+        EtatPaie.objects.filter(pk=etat_id).update(jour_de_paie=jour)
 
     def modifier_ligne(
         self,

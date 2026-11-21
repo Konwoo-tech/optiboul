@@ -17,4 +17,18 @@ export interface ReceptionPlanifiee {
   readonly statut: string;
   readonly planifiee_par: string;
   readonly cree_le: string;
+  /**
+     * Identifiant de la réception faite (#351) ; vide tant que non reçue.
+     * @nullable
+     */
+  readonly reception: number | null;
+  /**
+     * @nullable
+     * @pattern ^-?\d{0,9}(?:\.\d{0,3})?$
+     */
+  readonly recue_quantite: string | null;
+  /** @nullable */
+  readonly recue_par: string | null;
+  /** @nullable */
+  readonly recue_le: string | null;
 }

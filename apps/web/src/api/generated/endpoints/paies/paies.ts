@@ -28,9 +28,11 @@ import type {
   DemandeDePaie,
   ElementPaie,
   EtatPaie,
+  JourDePaie,
   LignePaie,
   ModifierElement,
   ModifierLigne,
+  MoisDuCalendrier,
   NouvelElement,
   PaginatedAbsencesProposeesList,
   PaginatedEtatPaieList,
@@ -416,7 +418,117 @@ export function usePaiesAbsencesProposeesList<TData = Awaited<ReturnType<typeof 
 
 
 
-export type paiesPayerToutCreateResponse200 = {
+export type paiesJourUpdateResponse200 = {
+  data: EtatPaie
+  status: 200
+}
+
+export type paiesJourUpdateResponse403 = {
+  data: Probleme
+  status: 403
+}
+
+export type paiesJourUpdateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type paiesJourUpdateResponseSuccess = (paiesJourUpdateResponse200) & {
+  headers: Headers;
+};
+export type paiesJourUpdateResponseError = (paiesJourUpdateResponse403 | paiesJourUpdateResponse409) & {
+  headers: Headers;
+};
+
+export type paiesJourUpdateResponse = (paiesJourUpdateResponseSuccess | paiesJourUpdateResponseError)
+
+export const getPaiesJourUpdateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/paies/${id}/jour/`
+}
+
+/**
+ * Jour de paie de ce mois (#353) : le gérant en brouillon, le propriétaire
+ * jusqu'au paiement.
+ */
+export const paiesJourUpdate = async (id: number,
+    jourDePaie: JourDePaie, options?: Parameters<typeof optiboulFetch>[1]): Promise<paiesJourUpdateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<paiesJourUpdateResponse>(getPaiesJourUpdateUrl(id),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(jourDePaie)
+  }
+);}
+
+
+
+
+
+export const getPaiesJourUpdateMutationKey = () => ['paiesJourUpdate'] as const;
+
+export const getPaiesJourUpdateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesJourUpdate>>, TError,PaiesJourUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof paiesJourUpdate>>, TError,PaiesJourUpdateMutationVariables, TContext> => {
+
+const mutationKey = getPaiesJourUpdateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof paiesJourUpdate>>, PaiesJourUpdateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  paiesJourUpdate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PaiesJourUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof paiesJourUpdate>>>
+    export type PaiesJourUpdateMutationBody = JourDePaie
+    export type PaiesJourUpdateMutationError = Probleme
+    export type PaiesJourUpdateMutationVariables = {id: number;data: JourDePaie}
+
+    export const usePaiesJourUpdate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paiesJourUpdate>>, TError,PaiesJourUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof paiesJourUpdate>>,
+        TError,
+        PaiesJourUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getPaiesJourUpdateMutationOptions(options), queryClient);
+    }
+    export type paiesPayerToutCreateResponse200 = {
   data: SalairesPayes
   status: 200
 }
@@ -609,7 +721,116 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getPaiesSoumettreCreateMutationOptions(options), queryClient);
     }
-    export type paiesElementsUpdateResponse200 = {
+    export type paiesCalendrierListResponse200 = {
+  data: MoisDuCalendrier[]
+  status: 200
+}
+
+export type paiesCalendrierListResponseSuccess = (paiesCalendrierListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type paiesCalendrierListResponse = (paiesCalendrierListResponseSuccess)
+
+export const getPaiesCalendrierListUrl = () => {
+
+
+
+
+  return `/api/v1/paies/calendrier/`
+}
+
+/**
+ * Calendrier des paies : mois préparés, courant et à venir (#353).
+ */
+export const paiesCalendrierList = async ( options?: Parameters<typeof optiboulFetch>[1]): Promise<paiesCalendrierListResponse> => {
+
+  return optiboulFetch<paiesCalendrierListResponse>(getPaiesCalendrierListUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getPaiesCalendrierListQueryKey = () => {
+    return [
+    `/api/v1/paies/calendrier/`
+    ] as const;
+    }
+
+
+export const getPaiesCalendrierListQueryOptions = <TData = Awaited<ReturnType<typeof paiesCalendrierList>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof paiesCalendrierList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPaiesCalendrierListQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof paiesCalendrierList>>> = ({ signal }) => paiesCalendrierList({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof paiesCalendrierList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type PaiesCalendrierListQueryResult = NonNullable<Awaited<ReturnType<typeof paiesCalendrierList>>>
+export type PaiesCalendrierListQueryError = unknown
+
+
+export function usePaiesCalendrierList<TData = Awaited<ReturnType<typeof paiesCalendrierList>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof paiesCalendrierList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof paiesCalendrierList>>,
+          TError,
+          Awaited<ReturnType<typeof paiesCalendrierList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePaiesCalendrierList<TData = Awaited<ReturnType<typeof paiesCalendrierList>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof paiesCalendrierList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof paiesCalendrierList>>,
+          TError,
+          Awaited<ReturnType<typeof paiesCalendrierList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePaiesCalendrierList<TData = Awaited<ReturnType<typeof paiesCalendrierList>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof paiesCalendrierList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function usePaiesCalendrierList<TData = Awaited<ReturnType<typeof paiesCalendrierList>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof paiesCalendrierList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getPaiesCalendrierListQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type paiesElementsUpdateResponse200 = {
   data: ElementPaie
   status: 200
 }

@@ -33,6 +33,13 @@ if TYPE_CHECKING:
 
 class ManquantSerializer(serializers.ModelSerializer[Manquant]):
     fournisseur = serializers.CharField(source="reception.planifiee.fournisseur.nom")
+    fournisseur_id = serializers.IntegerField(
+        source="reception.planifiee.fournisseur_id",
+    )
+    planifiee = serializers.IntegerField(
+        source="reception.planifiee_id",
+        help_text="Le bon (réception planifiée) d'où vient le manquant (#351).",
+    )
     matiere = serializers.CharField(source="reception.planifiee.matiere.code")
 
     class Meta:
@@ -40,7 +47,9 @@ class ManquantSerializer(serializers.ModelSerializer[Manquant]):
         fields = [
             "id",
             "reception",
+            "planifiee",
             "fournisseur",
+            "fournisseur_id",
             "matiere",
             "quantite",
             "statut",

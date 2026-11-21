@@ -4,6 +4,7 @@ from rest_framework.routers import SimpleRouter
 from .journal import JournalViewSet
 from .parametres import ParametresViewSet
 from .sauvegardes import SauvegardesViewSet
+from .sauvegardes import restaurer_sauvegarde
 from .semaines import SemainesViewSet
 from .views import sante
 
@@ -15,5 +16,10 @@ router.register("semaines", SemainesViewSet, basename="semaine")
 
 urlpatterns = [
     path("sante/", sante, name="sante"),
+    path(
+        "sauvegardes/<int:id>/restaurer/",
+        restaurer_sauvegarde,
+        name="sauvegarde-restaurer",
+    ),
     *router.urls,
 ]

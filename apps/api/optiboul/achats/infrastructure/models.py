@@ -6,6 +6,14 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
+class ConditionsPaiement(models.TextChoices):
+    """Les trois conditions de l'écran Fournisseurs (#351)."""
+
+    CREDIT_LUNDI_MARDI = "credit_lundi_mardi", _("À crédit, payé le lundi ou mardi")
+    SEPT_JOURS = "sept_jours", _("À 7 jours")
+    A_LA_LIVRAISON = "a_la_livraison", _("À la livraison")
+
+
 class Fournisseur(models.Model):
     """Fiche fournisseur (CdC §5.7) : matières, téléphone, conditions de paiement."""
 
@@ -13,6 +21,13 @@ class Fournisseur(models.Model):
     telephone = models.CharField(_("téléphone"), max_length=20, blank=True)
     conditions = models.CharField(
         _("conditions de paiement"),
+        max_length=20,
+        choices=ConditionsPaiement,
+        blank=True,
+    )
+    # Précision libre (ex. conditions d'avant la liste fermée, #351).
+    conditions_note = models.CharField(
+        _("précision sur les conditions"),
         max_length=255,
         blank=True,
     )

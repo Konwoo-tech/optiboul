@@ -8,5 +8,7 @@ class StocksConfig(AppConfig):
 
     def ready(self) -> None:
         from .infrastructure import controles  # noqa: PLC0415
+        from .infrastructure import passation  # noqa: PLC0415
 
         controles.enregistrer()
+        passation.enregistrer()

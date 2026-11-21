@@ -9,7 +9,10 @@
 export interface Manquant {
   readonly id: number;
   readonly reception: number;
+  /** Le bon (réception planifiée) d'où vient le manquant (#351). */
+  planifiee: number;
   fournisseur: string;
+  fournisseur_id: number;
   matiere: string;
   /** @pattern ^-?\d{0,9}(?:\.\d{0,3})?$ */
   readonly quantite: string;

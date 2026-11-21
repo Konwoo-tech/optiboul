@@ -5,6 +5,7 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
+import type { JournalListFamille } from './journalListFamille.ts';
 
 export type JournalListParams = {
 /**
@@ -23,6 +24,14 @@ cursor?: string;
  * Premier jour inclus
  */
 du?: string;
+/**
+ * Famille d'actions de l'écran Journal
+ */
+famille?: JournalListFamille;
+/**
+ * Lignes par page (50 par défaut, 200 au plus)
+ */
+page_size?: number;
 /**
  * Type d'objet (caisse…) ou préfixe d'action (connexion…)
  */

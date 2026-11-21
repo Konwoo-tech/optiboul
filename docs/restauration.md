@@ -27,20 +27,21 @@ python manage.py restaurer_sauvegarde /chemin/vers/le/fichier --confirmer REMPLA
 
 La commande refait l'essai, crée une copie de sécurité `avant-restauration-*.dump` dans le dossier des sauvegardes, puis remplace la base de travail en une seule transaction. En cas d'échec, la base reste telle quelle.
 
-## 3 bis. Restaurer depuis l'écran Sauvegardes (#304)
+## 3 bis. Restaurer depuis l'écran Sauvegardes (#304, #359)
 
 Pour une copie locale réussie encore présente sur le serveur, l'administrateur peut restaurer depuis l'écran Sauvegardes, sans ligne de commande :
 
-1. `POST /api/v1/sauvegardes/{id}/restaurer/` avec `{ "confirmation": "RESTAURER" }` répond `202`, avec l'identifiant de la restauration et celui de la copie de sûreté (`genre: avant_restauration`).
-2. Le travailleur Celery essaie la copie dans une base jetable, prend la copie de sûreté, puis remplace la base en une seule transaction.
-3. `GET /api/v1/sauvegardes/restaurations/{id}/` donne le statut (`en_cours`, `terminee` ou `echec`) et compare les totaux de la copie et de la base restaurée : nombre de caisses, somme des soldes clients, nombre de mouvements de stock. Des totaux égaux confirment la restauration.
+1. `POST /api/v1/sauvegardes/{id}/restaurer/` avec l'en-tête `Idempotency-Key`. La réponse arrive une fois la restauration finie : l'API essaie la copie dans une base jetable, prend une copie de sûreté de la base actuelle (`genre: avant_restauration`), puis remplace la base en une seule transaction.
+2. La réponse `200` donne `copie_avant`, la copie de sûreté, et `controles` : pour le nombre de caisses, la somme des soldes clients et le nombre de mouvements de stock, le total de la copie, celui de la base restaurée et `ok` s'ils sont égaux.
+3. `GET /api/v1/sauvegardes/restaurations/{id}/` relit le même résultat pendant 30 jours.
 
 Règles :
 
-- Une seule restauration à la fois : `409 restauration_en_cours`.
-- Une copie cloud, en échec ou absente du disque n'est pas restaurable depuis l'écran (`409 sauvegarde_non_restaurable`) : passer par la commande ci-dessus.
-- Les saisies faites pendant la restauration sont perdues : prévenir l'équipe et choisir un moment sans activité au comptoir.
-- L'état d'une restauration est gardé 30 jours dans Redis, hors de la base qui est remplacée. La copie de sûreté et l'entrée `sauvegarde.restauree` du journal sont réécrites dans la base restaurée.
+- Une seule restauration à la fois : `409 restauration_en_cours`. La même clé `Idempotency-Key` rejoue la réponse sans restaurer une seconde fois.
+- Une copie cloud, en échec ou absente du disque n'est pas restaurable depuis l'écran (`409 restauration_impossible`) : passer par la commande ci-dessus. Un échec pendant la restauration répond aussi `409 restauration_impossible`, base inchangée.
+- Les saisies faites pendant la restauration sont perdues : prévenir l'équipe et choisir un moment sans activité au comptoir. La session de l'administrateur peut être fermée par la restauration.
+- La requête reste ouverte pendant toute la restauration : le serveur web accepte jusqu'à 10 minutes (`gunicorn --timeout 600`).
+- Le résultat est gardé dans Redis, hors de la base qui est remplacée. La copie de sûreté et l'entrée `sauvegarde.restauree` du journal sont réécrites dans la base restaurée.
 
 ## 4. Reprendre
 

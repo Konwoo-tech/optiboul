@@ -2746,6 +2746,30 @@ paths:
           format: date
         description: Premier jour inclus
       - in: query
+        name: famille
+        schema:
+          type: string
+          enum:
+          - autre
+          - caisse
+          - connexion
+          - demande
+          - depense
+          - fournisseur
+          - paie
+          - parametre
+          - production
+          - sauvegarde
+          - semaine
+          - stock
+          - utilisateur
+        description: Famille d'actions de l'écran Journal
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Lignes par page (50 par défaut, 200 au plus)
+      - in: query
         name: type
         schema:
           type: string
@@ -2760,6 +2784,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedLigneJournalList'
+          description: ''
+  /api/v1/journal/acteurs/:
+    get:
+      operationId: journal_acteurs_list
+      description: Les personnes présentes au journal, pour le filtre par auteur (#361).
+      tags:
+      - journal
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Acteur'
           description: ''
   /api/v1/livraisons/:
     get:
@@ -3106,9 +3147,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EtatMfa'
+                $ref: '#/components/schemas/EtatMfa'
           description: ''
   /api/v1/mfa/codes-secours/:
     post:
@@ -3643,6 +3682,54 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedAbsencesProposeesList'
           description: ''
+  /api/v1/paies/{id}/jour/:
+    put:
+      operationId: paies_jour_update
+      description: |-
+        Jour de paie de ce mois (#353) : le gérant en brouillon, le propriétaire
+        jusqu'au paiement.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) état de paie.
+        required: true
+      tags:
+      - paies
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JourDePaie'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JourDePaie'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JourDePaie'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EtatPaie'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/paies/{id}/payer-tout/:
     post:
       operationId: paies_payer_tout_create
@@ -3717,6 +3804,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/paies/calendrier/:
+    get:
+      operationId: paies_calendrier_list
+      description: 'Calendrier des paies : mois préparés, courant et à venir (#353).'
+      tags:
+      - paies
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MoisDuCalendrier'
           description: ''
   /api/v1/paies/elements/{element}/:
     put:
@@ -5164,16 +5268,22 @@ paths:
     post:
       operationId: sauvegardes_restaurer_create
       description: |-
-        Remplace la base par cette copie, après une copie de sûreté (#304).
+        Remplace la base par cette copie (#359), après une copie de sûreté.
 
-        Action destructive : une seule restauration à la fois, confirmation recopiée.
-        Le travail se fait en tâche de fond ; suivre `restaurations/{id}/`.
+        La réponse arrive une fois la restauration finie : copie de sûreté et contrôles
+        des totaux. Une seule à la fois ; une même `Idempotency-Key` rejoue la réponse.
+        Hors transaction : `pg_restore` doit pouvoir remplacer les tables.
       parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Clé unique de l'opération, générée par l'application web.
+        required: true
       - in: path
         name: id
         schema:
           type: integer
-        description: Un(une) valeur entière unique identifiant ce(cette) sauvegarde.
         required: true
       tags:
       - sauvegardes
@@ -5188,15 +5298,14 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/DemandeRestauration'
-        required: true
       security:
       - cookieAuth: []
       responses:
-        '202':
+        '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RestaurationLancee'
+                $ref: '#/components/schemas/RestaurationFaite'
           description: ''
         '400':
           content:
@@ -5216,6 +5325,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/sauvegardes/{id}/:
+    get:
+      operationId: sauvegardes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) sauvegarde.
+        required: true
+      tags:
+      - sauvegardes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sauvegarde'
+          description: ''
   /api/v1/sauvegardes/etat/:
     get:
       operationId: sauvegardes_etat_retrieve
@@ -5233,13 +5363,29 @@ paths:
   /api/v1/sauvegardes/lancer/:
     post:
       operationId: sauvegardes_lancer_create
+      description: Copie manuelle, locale ou cloud ; suivie par son `id` (#359).
       tags:
       - sauvegardes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Lancement'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Lancement'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Lancement'
       security:
       - cookieAuth: []
       responses:
         '202':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SauvegardeLancee'
+          description: ''
   /api/v1/sauvegardes/restaurations/{restauration}/:
     get:
       operationId: sauvegardes_restaurations_retrieve
@@ -5900,6 +6046,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/CompteCree'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/utilisateurs/{id}/:
     get:
       operationId: utilisateurs_retrieve
@@ -5953,6 +6105,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Compte'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/utilisateurs/{id}/activation/:
+    post:
+      operationId: utilisateurs_activation_create
+      description: Désactive ou réactive un compte (#355) ; mêmes refus que la modification.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) utilisateur.
+        required: true
+      tags:
+      - utilisateurs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Activation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Activation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Activation'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compte'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
           description: ''
         '409':
           content:
@@ -6044,6 +6248,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Compte'
+          description: ''
+  /api/v1/utilisateurs/{id}/reinitialiser-code/:
+    post:
+      operationId: utilisateurs_reinitialiser_code_create
+      description: |-
+        Génère un code à 4 chiffres et l'envoie par le canal du compte (#355).
+
+        Le code n'est jamais renvoyé : seule la personne le reçoit.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) utilisateur.
+        required: true
+      tags:
+      - utilisateurs
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
           description: ''
   /api/v1/utilisateurs/apercu/:
     post:
@@ -6152,6 +6383,27 @@ components:
         * `glace` - glace
         * `sel` - sel
         * `huile` - huile
+    Acteur:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+        profil:
+          type: string
+          nullable: true
+      required:
+      - id
+      - nom
+      - profil
+    Activation:
+      type: object
+      properties:
+        actif:
+          type: boolean
+      required:
+      - actif
     Affectable:
       type: object
       properties:
@@ -6459,6 +6711,16 @@ components:
           type: integer
       required:
       - groupe
+    CleEnum:
+      enum:
+      - sessions
+      - soldes_clients
+      - stocks
+      type: string
+      description: |-
+        * `sessions` - sessions
+        * `soldes_clients` - soldes_clients
+        * `stocks` - stocks
     Client:
       type: object
       properties:
@@ -6739,6 +7001,18 @@ components:
           format: email
           readOnly: true
           title: Adresse électronique
+        telephone:
+          type: string
+          readOnly: true
+          title: Téléphone
+        canal:
+          type: string
+          description: 'Canal du second facteur : sms ou whatsapp.'
+        dernier_acces:
+          type: string
+          format: date-time
+          nullable: true
+          description: Dernière connexion réussie ; vide si jamais connecté.
         groupe:
           type: integer
           nullable: true
@@ -6767,12 +7041,15 @@ components:
       required:
       - bloque
       - bloque_jusqua
+      - canal
+      - dernier_acces
       - email
       - groupe
       - id
       - is_active
       - name
       - profil
+      - telephone
     CompteCree:
       type: object
       properties:
@@ -6788,6 +7065,18 @@ components:
           format: email
           readOnly: true
           title: Adresse électronique
+        telephone:
+          type: string
+          readOnly: true
+          title: Téléphone
+        canal:
+          type: string
+          description: 'Canal du second facteur : sms ou whatsapp.'
+        dernier_acces:
+          type: string
+          format: date-time
+          nullable: true
+          description: Dernière connexion réussie ; vide si jamais connecté.
         groupe:
           type: integer
           nullable: true
@@ -6821,13 +7110,16 @@ components:
       required:
       - bloque
       - bloque_jusqua
+      - canal
       - codesSecours
+      - dernier_acces
       - email
       - groupe
       - id
       - is_active
       - name
       - profil
+      - telephone
     Comptes:
       type: object
       properties:
@@ -6847,6 +7139,16 @@ components:
           type: integer
       required:
       - non_lues
+    ConditionsEnum:
+      enum:
+      - credit_lundi_mardi
+      - sept_jours
+      - a_la_livraison
+      type: string
+      description: |-
+        * `credit_lundi_mardi` - À crédit, payé le lundi ou mardi
+        * `sept_jours` - À 7 jours
+        * `a_la_livraison` - À la livraison
     ConfigurationGoogle:
       type: object
       properties:
@@ -6977,6 +7279,25 @@ components:
         * `ok` - ok
         * `surveiller` - surveiller
         * `bloquant` - bloquant
+    ControleRestauration:
+      type: object
+      properties:
+        cle:
+          $ref: '#/components/schemas/CleEnum'
+        ok:
+          type: boolean
+          description: Même total dans la copie et dans la base.
+        avant:
+          type: integer
+          description: Dans la copie restaurée.
+        apres:
+          type: integer
+          description: Dans la base après restauration.
+      required:
+      - apres
+      - avant
+      - cle
+      - ok
     ControleStock:
       type: object
       properties:
@@ -7217,14 +7538,25 @@ components:
           description: DEM-xxx de la validation.
       required:
       - demande
+    DemandeLiee:
+      type: object
+      properties:
+        id:
+          type: integer
+        numero:
+          type: integer
+        statut:
+          type: string
+      required:
+      - id
+      - numero
+      - statut
     DemandeRestauration:
       type: object
       properties:
         confirmation:
           type: string
-          description: « RESTAURER », recopié par l'administrateur.
-      required:
-      - confirmation
+          description: 'Facultatif ; s''il est envoyé : « RESTAURER ».'
     Depense:
       type: object
       properties:
@@ -7387,6 +7719,27 @@ components:
       required:
       - jour
       - quantite
+    DernierPaiement:
+      type: object
+      properties:
+        id:
+          type: integer
+        mode:
+          type: string
+        reference:
+          type: string
+        paye_le:
+          type: string
+          format: date-time
+        depense:
+          type: integer
+          nullable: true
+      required:
+      - depense
+      - id
+      - mode
+      - paye_le
+      - reference
     Dette:
       type: object
       properties:
@@ -7489,6 +7842,23 @@ components:
       - creneau
       - excel
       - jour
+    Echec:
+      type: object
+      properties:
+        id:
+          type: integer
+        genre:
+          type: string
+        le:
+          type: string
+          format: date-time
+        erreur:
+          type: string
+      required:
+      - erreur
+      - genre
+      - id
+      - le
     EcranEnum:
       enum:
       - administration
@@ -7800,6 +8170,28 @@ components:
         statut:
           type: string
           readOnly: true
+        jour_de_paie:
+          type: string
+          format: date
+          readOnly: true
+        soumis_par:
+          type: string
+          nullable: true
+          readOnly: true
+        valide_par:
+          type: string
+          nullable: true
+          readOnly: true
+        valide_le:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
+        demande:
+          allOf:
+          - $ref: '#/components/schemas/DemandeLiee'
+          nullable: true
+          readOnly: true
         total_net:
           type: integer
           readOnly: true
@@ -7809,11 +8201,16 @@ components:
             $ref: '#/components/schemas/LignePaie'
           readOnly: true
       required:
+      - demande
       - id
+      - jour_de_paie
       - lignes
       - mois
+      - soumis_par
       - statut
       - total_net
+      - valide_le
+      - valide_par
     EtatSauvegardes:
       type: object
       properties:
@@ -7829,9 +8226,16 @@ components:
           type: boolean
         seuil_alerte_heures:
           type: integer
+        derniere_echec:
+          allOf:
+          - $ref: '#/components/schemas/Echec'
+          nullable: true
+          description: Dernière copie en échec, si elle est plus récente que la dernière
+            réussie du même genre (#359).
       required:
       - cloud_en_retard
       - derniere_cloud
+      - derniere_echec
       - derniere_locale
       - seuil_alerte_heures
     Facture:
@@ -7872,6 +8276,30 @@ components:
         en_retard:
           type: boolean
           readOnly: true
+        reception_planifiee:
+          type: integer
+          nullable: true
+          description: Le bon d'où vient la facture (#351) ; vide pour la farine cumulée.
+          readOnly: true
+        quantite:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          nullable: true
+          readOnly: true
+        paye:
+          type: integer
+          description: Total déjà payé, en FCFA.
+          readOnly: true
+        reste:
+          type: integer
+          description: Reste dû, en FCFA ; 0 pour une facture soldée.
+          readOnly: true
+        paiement:
+          allOf:
+          - $ref: '#/components/schemas/DernierPaiement'
+          nullable: true
+          readOnly: true
       required:
       - echeance
       - en_retard
@@ -7881,6 +8309,11 @@ components:
       - id
       - montant
       - numero
+      - paiement
+      - paye
+      - quantite
+      - reception_planifiee
+      - reste
       - semaine
       - statut
     FactureEnRetard:
@@ -8026,8 +8459,17 @@ components:
           title: Téléphone
           maxLength: 20
         conditions:
-          type: string
           title: Conditions de paiement
+          oneOf:
+          - $ref: '#/components/schemas/ConditionsEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        conditions_libelle:
+          type: string
+          readOnly: true
+          description: Libellé à afficher ; vide si non précisées.
+        conditions_note:
+          type: string
+          title: Précision sur les conditions
           maxLength: 255
         matieres:
           type: array
@@ -8045,6 +8487,7 @@ components:
           description: Manquants encore à livrer ou à recevoir de ce fournisseur.
           readOnly: true
       required:
+      - conditions_libelle
       - id
       - manquants
       - matieres
@@ -8245,6 +8688,35 @@ components:
       - jeton
       - motDePasse
       - uid
+    JourDePaie:
+      type: object
+      properties:
+        jour:
+          type: string
+          format: date
+          description: Un jour du mois de l'état.
+      required:
+      - jour
+    Lancement:
+      type: object
+      properties:
+        genre:
+          allOf:
+          - $ref: '#/components/schemas/LancementGenreEnum'
+          default: cloud
+          description: |-
+            locale : copie sur le serveur ; cloud : copie locale puis copie chiffrée hors du serveur (par défaut).
+
+            * `locale` - locale
+            * `cloud` - cloud
+    LancementGenreEnum:
+      enum:
+      - locale
+      - cloud
+      type: string
+      description: |-
+        * `locale` - locale
+        * `cloud` - cloud
     LangueEnum:
       enum:
       - fr
@@ -8439,6 +8911,17 @@ components:
         action:
           type: string
           readOnly: true
+        libelle:
+          type: string
+          description: '« Caisse ouverte » ; un code inconnu : « Famille : reste du
+            code ».'
+          readOnly: true
+        libelle_en:
+          type: string
+          readOnly: true
+        famille:
+          type: string
+          readOnly: true
         objet_type:
           type: string
           readOnly: true
@@ -8447,6 +8930,10 @@ components:
           type: string
           readOnly: true
           title: Identifiant de l'objet
+        objet_libelle:
+          type: string
+          description: « Caisse de jour du 19/11 » ; vide sans objet.
+          readOnly: true
         avant:
           readOnly: true
           nullable: true
@@ -8462,9 +8949,13 @@ components:
       - apres
       - avant
       - entree
+      - famille
       - horodatage
       - id
+      - libelle
+      - libelle_en
       - objet_id
+      - objet_libelle
       - objet_type
       - poste_id
       - poste_nom
@@ -8492,6 +8983,10 @@ components:
           type: integer
           readOnly: true
         employe:
+          type: string
+        employe_id:
+          type: integer
+        poste:
           type: string
         base:
           type: integer
@@ -8546,6 +9041,7 @@ components:
       - base
       - elements
       - employe
+      - employe_id
       - gains
       - id
       - impaye
@@ -8554,6 +9050,7 @@ components:
       - paiements
       - paye
       - penalites
+      - poste
       - reste
     LignePlan:
       type: object
@@ -8761,8 +9258,13 @@ components:
           type: integer
           readOnly: true
           title: Réception
+        planifiee:
+          type: integer
+          description: Le bon (réception planifiée) d'où vient le manquant (#351).
         fournisseur:
           type: string
+        fournisseur_id:
+          type: integer
         matiere:
           type: string
         quantite:
@@ -8790,8 +9292,10 @@ components:
       required:
       - cree_le
       - fournisseur
+      - fournisseur_id
       - id
       - matiere
+      - planifiee
       - quantite
       - reception
       - relances
@@ -9039,6 +9543,56 @@ components:
       required:
       - absences
       - avances
+    MoisDuCalendrier:
+      type: object
+      properties:
+        mois:
+          type: string
+          description: AAAA-MM.
+        etat:
+          type: integer
+          nullable: true
+          description: 'Vide : pas préparé.'
+        jour:
+          type: string
+          format: date
+          description: Jour de paie prévu.
+        statut:
+          $ref: '#/components/schemas/MoisDuCalendrierStatutEnum'
+        total:
+          type: integer
+          description: Net à payer du mois (FCFA).
+        impayes:
+          type: integer
+          description: Reste à payer (FCFA).
+        jours:
+          type: array
+          items:
+            type: string
+            format: date
+          description: Jours où des salaires ont été payés.
+      required:
+      - etat
+      - impayes
+      - jour
+      - jours
+      - mois
+      - statut
+      - total
+    MoisDuCalendrierStatutEnum:
+      enum:
+      - payee
+      - partielle
+      - courante
+      - en_retard
+      - a_venir
+      type: string
+      description: |-
+        * `payee` - payee
+        * `partielle` - partielle
+        * `courante` - courante
+        * `en_retard` - en_retard
+        * `a_venir` - a_venir
     MotDePasseOublie:
       type: object
       properties:
@@ -9847,6 +10401,7 @@ components:
       type: object
       required:
       - results
+      - total
       properties:
         next:
           type: string
@@ -9862,6 +10417,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LigneJournal'
+        total:
+          type: integer
+          description: Lignes qui répondent aux filtres, toutes pages.
     PaginatedLivraisonList:
       type: object
       required:
@@ -10438,8 +10996,17 @@ components:
           title: Téléphone
           maxLength: 20
         conditions:
-          type: string
           title: Conditions de paiement
+          oneOf:
+          - $ref: '#/components/schemas/ConditionsEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        conditions_libelle:
+          type: string
+          readOnly: true
+          description: Libellé à afficher ; vide si non précisées.
+        conditions_note:
+          type: string
+          title: Précision sur les conditions
           maxLength: 255
         matieres:
           type: array
@@ -10479,11 +11046,14 @@ components:
           description: 'Groupe de départ : il ne se supprime pas.'
     PatchedModificationCompte:
       type: object
-      description: Tous les champs sont facultatifs (#302).
+      description: Tous les champs sont facultatifs (#302) ; `nom` vaut `name` (#355).
       properties:
         is_active:
           type: boolean
         name:
+          type: string
+          maxLength: 255
+        nom:
           type: string
           maxLength: 255
         telephone:
@@ -11397,6 +11967,27 @@ components:
           format: date-time
           readOnly: true
           title: Planifiée le
+        reception:
+          type: integer
+          nullable: true
+          description: Identifiant de la réception faite (#351) ; vide tant que non
+            reçue.
+          readOnly: true
+        recue_quantite:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          nullable: true
+          readOnly: true
+        recue_par:
+          type: string
+          nullable: true
+          readOnly: true
+        recue_le:
+          type: string
+          format: date-time
+          nullable: true
+          readOnly: true
       required:
       - cree_le
       - fournisseur
@@ -11406,6 +11997,10 @@ components:
       - planifiee_par
       - prevue_le
       - quantite
+      - reception
+      - recue_le
+      - recue_par
+      - recue_quantite
       - statut
     Receptionner:
       type: object
@@ -11659,12 +12254,24 @@ components:
       - id
       - sauvegarde
       - statut
-    RestaurationLancee:
+    RestaurationFaite:
       type: object
       properties:
+        copie_avant:
+          allOf:
+          - $ref: '#/components/schemas/Sauvegarde'
+          description: Copie de sûreté de la base remplacée (genre avant_restauration).
+        controles:
+          type: array
+          items:
+            $ref: '#/components/schemas/ControleRestauration'
         restauration:
-          $ref: '#/components/schemas/Restauration'
+          allOf:
+          - $ref: '#/components/schemas/Restauration'
+          description: Aussi lisible par GET sauvegardes/restaurations/{id}/.
       required:
+      - controles
+      - copie_avant
       - restauration
     RestaurationStatutEnum:
       enum:
@@ -12006,6 +12613,20 @@ components:
       - source
       - statut
       - taille
+    SauvegardeLancee:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 'La copie à suivre : GET sauvegardes/{id}/.'
+        genre:
+          type: string
+        statut:
+          type: string
+      required:
+      - genre
+      - id
+      - statut
     SecretTotp:
       type: object
       properties:
@@ -12294,9 +12915,13 @@ components:
         apres:
           type: integer
           description: Dans la base après restauration.
+        ok:
+          type: boolean
+          description: Les deux totaux sont égaux (#359).
       required:
       - apres
       - avant
+      - ok
     Totaux:
       type: object
       properties:

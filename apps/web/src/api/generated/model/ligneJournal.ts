@@ -18,8 +18,14 @@ export interface LigneJournal {
   readonly poste_nom: string;
   readonly entree: string;
   readonly action: string;
+  /** « Caisse ouverte » ; un code inconnu : « Famille : reste du code ». */
+  readonly libelle: string;
+  readonly libelle_en: string;
+  readonly famille: string;
   readonly objet_type: string;
   readonly objet_id: string;
+  /** « Caisse de jour du 19/11 » ; vide sans objet. */
+  readonly objet_libelle: string;
   readonly avant: unknown;
   readonly apres: unknown;
 }

@@ -79,3 +79,13 @@ def absences_proposees(
 
 def mois_precedent(mois: date) -> date:
     return (mois.replace(day=1) - timedelta(days=1)).replace(day=1)
+
+
+def jour_de_paie_du_mois(mois: date, jour: int) -> date:
+    """Le jour de paie par défaut d'un mois (paramètre `jour_de_paie`, 1 à 28)."""
+    return mois.replace(day=min(max(jour, 1), 28))
+
+
+def dans_le_mois(mois: date, jour: date) -> bool:
+    """Le jour de paie d'un état reste dans son mois (#353)."""
+    return (jour.year, jour.month) == (mois.year, mois.month)

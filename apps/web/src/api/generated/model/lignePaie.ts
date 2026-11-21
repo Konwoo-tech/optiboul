@@ -11,6 +11,8 @@ import type { PaiementSalaire } from './paiementSalaire.ts';
 export interface LignePaie {
   readonly id: number;
   employe: string;
+  employe_id: number;
+  poste: string;
   readonly base: number;
   /** @pattern ^-?\d{0,3}(?:\.\d{0,1})?$ */
   readonly absences: string;

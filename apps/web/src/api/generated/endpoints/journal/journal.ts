@@ -21,6 +21,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  Acteur,
   JournalListParams,
   PaginatedLigneJournalList
 } from '../../model';
@@ -152,6 +153,115 @@ export function useJournalList<TData = Awaited<ReturnType<typeof journalList>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getJournalListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type journalActeursListResponse200 = {
+  data: Acteur[]
+  status: 200
+}
+
+export type journalActeursListResponseSuccess = (journalActeursListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type journalActeursListResponse = (journalActeursListResponseSuccess)
+
+export const getJournalActeursListUrl = () => {
+
+
+
+
+  return `/api/v1/journal/acteurs/`
+}
+
+/**
+ * Les personnes présentes au journal, pour le filtre par auteur (#361).
+ */
+export const journalActeursList = async ( options?: Parameters<typeof optiboulFetch>[1]): Promise<journalActeursListResponse> => {
+
+  return optiboulFetch<journalActeursListResponse>(getJournalActeursListUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getJournalActeursListQueryKey = () => {
+    return [
+    `/api/v1/journal/acteurs/`
+    ] as const;
+    }
+
+
+export const getJournalActeursListQueryOptions = <TData = Awaited<ReturnType<typeof journalActeursList>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof journalActeursList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getJournalActeursListQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof journalActeursList>>> = ({ signal }) => journalActeursList({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof journalActeursList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type JournalActeursListQueryResult = NonNullable<Awaited<ReturnType<typeof journalActeursList>>>
+export type JournalActeursListQueryError = unknown
+
+
+export function useJournalActeursList<TData = Awaited<ReturnType<typeof journalActeursList>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof journalActeursList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof journalActeursList>>,
+          TError,
+          Awaited<ReturnType<typeof journalActeursList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useJournalActeursList<TData = Awaited<ReturnType<typeof journalActeursList>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof journalActeursList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof journalActeursList>>,
+          TError,
+          Awaited<ReturnType<typeof journalActeursList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useJournalActeursList<TData = Awaited<ReturnType<typeof journalActeursList>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof journalActeursList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useJournalActeursList<TData = Awaited<ReturnType<typeof journalActeursList>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof journalActeursList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getJournalActeursListQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

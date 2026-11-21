@@ -83,7 +83,7 @@ def commencer(sauvegarde: Sauvegarde, auteur: Auteur) -> dict[str, Any] | None:
         return None
     copie = depot_sauvegardes.commencer(
         Genre.AVANT_RESTAURATION,
-        Declencheur.MANUELLE,
+        Declencheur.AVANT_RESTAURATION,
         sauvegarde.pk,
     )
     etat = {
@@ -142,7 +142,11 @@ def _executer(etat: dict[str, Any]) -> None:
     etat["copie_de_surete"] = _reinscrire_copie(copie, etat["sauvegarde"], chemin)
     apres = totaux_de_la_base()
     etat["controles"] = {
-        nom: {"avant": reference.get(nom, 0), "apres": apres.get(nom, 0)}
+        nom: {
+            "avant": reference.get(nom, 0),
+            "apres": apres.get(nom, 0),
+            "ok": reference.get(nom, 0) == apres.get(nom, 0),
+        }
         for nom in apres
     }
     etat["statut"] = TERMINEE
@@ -188,7 +192,7 @@ def _reinscrire_copie(copie: int, source: int, chemin: Path) -> int:
     """Garde l'identifiant annoncé au front s'il est libre dans la base restaurée."""
     champs = {
         "genre": Genre.AVANT_RESTAURATION,
-        "declencheur": Declencheur.MANUELLE,
+        "declencheur": Declencheur.AVANT_RESTAURATION,
         "statut": Statut.REUSSIE,
         "source_id": source if Sauvegarde.objects.filter(pk=source).exists() else None,
         "emplacement": str(chemin),

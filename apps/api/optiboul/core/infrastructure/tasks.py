@@ -51,8 +51,18 @@ def _faire_le_menage() -> None:
 
 
 @shared_task(name="core.sauvegarder")
-def sauvegarder(declencheur: str) -> int:
-    """Copie locale puis copie cloud chiffrée ; un échec cloud garde la locale."""
+def sauvegarder(
+    declencheur: str,
+    locale_id: int | None = None,
+    cloud_id: int | None = None,
+    *,
+    avec_cloud: bool = True,
+) -> int:
+    """Copie locale puis copie cloud chiffrée ; un échec cloud garde la locale.
+
+    `locale_id` et `cloud_id` : lignes inscrites par l'API pour être suivies (#359) ;
+    `avec_cloud=False` : copie locale seulement.
+    """
     try:
         locale = cas.sauvegarder_localement(
             depot_sauvegardes,
@@ -60,14 +70,20 @@ def sauvegarder(declencheur: str) -> int:
             dossier=dossier_sauvegardes(),
             declencheur=Declencheur(declencheur),
             maintenant=timezone.localtime(),
+            sauvegarde_id=locale_id,
         )
     except Exception as erreur:
+        if cloud_id is not None:
+            depot_sauvegardes.echouer(cloud_id, f"Copie locale impossible : {erreur}")
         journaliser(
             "sauvegarde.echec",
             objet_type="sauvegarde",
             apres={"erreur": str(erreur)},
         )
         raise
+    if not avec_cloud:
+        _faire_le_menage()
+        return locale
     chemin = Path(depot_sauvegardes.fichier(locale))
     try:
         cas.copier_dans_le_cloud(
@@ -75,6 +91,7 @@ def sauvegarder(declencheur: str) -> int:
             CoffreS3(),
             source=locale,
             chemin=chemin,
+            sauvegarde_id=cloud_id,
         )
     except Exception:
         # Sans réseau, la copie cloud attend la prochaine sauvegarde (R22) ; l'alerte
@@ -156,12 +173,3 @@ def passation(semaine_id: int) -> int:
     from .passation import produire  # noqa: PLC0415 : WeasyPrint chargé au besoin
 
     return produire(semaine_id).pk
-
-
-@shared_task(name="core.restaurer")
-def restaurer(restauration_id: int) -> str | None:
-    """Restauration demandée depuis l'API (#304) : un seul travailleur à la fois."""
-    from .restaurations import executer  # noqa: PLC0415
-
-    etat = executer(restauration_id)
-    return etat["statut"] if etat else None

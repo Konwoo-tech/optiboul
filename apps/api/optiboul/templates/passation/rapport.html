@@ -148,6 +148,53 @@
         {% else %}
           <p class="absent">Aucune dette client reportée.</p>
         {% endif %}
+      {% elif section.cle == "dettes_fournisseurs" %}
+        {% if section.contenu.lignes %}
+          <table>
+            <tr>
+              <th>Facture</th>
+              <th>Fournisseur</th>
+              <th>Échéance</th>
+              <th class="montant">Reste dû</th>
+            </tr>
+            {% for ligne in section.contenu.lignes %}
+              <tr>
+                <td>{{ ligne.facture }}</td>
+                <td>{{ ligne.fournisseur }}</td>
+                <td>{{ ligne.echeance|date:"d/m/Y" }}</td>
+                <td class="montant">{{ ligne.reste|fcfa }}</td>
+              </tr>
+            {% endfor %}
+            <tr class="total">
+              <td colspan="3">Total dû aux fournisseurs</td>
+              <td class="montant">{{ section.contenu.total|fcfa }}</td>
+            </tr>
+          </table>
+        {% else %}
+          <p class="absent">Aucune facture fournisseur à payer.</p>
+        {% endif %}
+      {% elif section.cle == "stock_bas" %}
+        {% if section.contenu.lignes %}
+          <table>
+            <tr>
+              <th>Matière</th>
+              <th class="montant">Quantité</th>
+              <th class="montant">Seuil</th>
+              <th>Unité</th>
+            </tr>
+            {% for ligne in section.contenu.lignes %}
+              <tr>
+                <td>{{ ligne.matiere }}</td>
+                <td class="montant manque">{{ ligne.quantite|floatformat:"-3" }}</td>
+                <td class="montant">{{ ligne.seuil|floatformat:"-3" }}</td>
+                <td>{{ ligne.unite }}</td>
+              </tr>
+            {% endfor %}
+          </table>
+          <p class="absent">Seuil : {{ section.contenu.sessions }} sessions de consommation.</p>
+        {% else %}
+          <p class="absent">Aucune matière sous son seuil.</p>
+        {% endif %}
       {% else %}
         <table>
           {% for libelle, valeur in section.contenu.items %}

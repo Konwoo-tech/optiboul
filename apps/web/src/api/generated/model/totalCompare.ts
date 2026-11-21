@@ -11,4 +11,6 @@ export interface TotalCompare {
   avant: number;
   /** Dans la base après restauration. */
   apres: number;
+  /** Les deux totaux sont égaux (#359). */
+  ok: boolean;
 }
