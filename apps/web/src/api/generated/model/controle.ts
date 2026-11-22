@@ -6,9 +6,14 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { ControleNiveauEnum } from './controleNiveauEnum.ts';
+import type { FactureEnRetard } from './factureEnRetard.ts';
 
 export interface Controle {
   cle: string;
   niveau: ControleNiveauEnum;
   detail: string;
+  /** Contrôle factures_en_retard seulement. */
+  factures?: FactureEnRetard[];
+  /** Contrôle demandes_en_attente seulement : numéros des demandes. */
+  numeros?: number[];
 }

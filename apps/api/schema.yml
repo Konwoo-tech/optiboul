@@ -5319,6 +5319,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/semaines/{id}/bilan/:
+    get:
+      operationId: semaines_bilan_retrieve
+      description: Recette, dépenses, productions, écart de caisse, caisses et réceptions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - semaines
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BilanSemaine'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/semaines/{id}/:
     get:
       operationId: semaines_retrieve
@@ -5617,6 +5644,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/semaines/personnes/:
+    get:
+      operationId: semaines_personnes_retrieve
+      description: |-
+        Gérants, responsables de production et caissières à affecter (#344).
+
+        Propriétaire et gérant : `utilisateurs/` reste réservé à l'administrateur.
+      tags:
+      - semaines
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonnesAffectables'
+          description: ''
   /api/v1/semaines/rotation/:
     get:
       operationId: semaines_rotation_retrieve
@@ -5772,8 +5817,34 @@ paths:
   /api/v1/users/me/:
     get:
       operationId: users_me_retrieve
+      description: La personne connectée ; PATCH change son thème et sa langue (#347).
       tags:
       - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: users_me_partial_update
+      description: La personne connectée ; PATCH change son thème et sa langue (#347).
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPreferences'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPreferences'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPreferences'
       security:
       - cookieAuth: []
       responses:
@@ -6081,6 +6152,16 @@ components:
         * `glace` - glace
         * `sel` - sel
         * `huile` - huile
+    Affectable:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+      required:
+      - id
+      - nom
     Affectations:
       type: object
       properties:
@@ -6139,6 +6220,34 @@ components:
           type: integer
       required:
       - groupe
+    BilanSemaine:
+      type: object
+      properties:
+        recette:
+          type: integer
+          description: Encaissements de la semaine, tous modes (FCFA).
+        depenses:
+          allOf:
+          - $ref: '#/components/schemas/DepensesDeLaSemaine'
+          description: Dépenses validées.
+        productions:
+          $ref: '#/components/schemas/ProductionsDeLaSemaine'
+        ecart_caisse_cumule:
+          type: integer
+          description: Somme des écarts des caisses fermées (FCFA).
+        caisses:
+          type: integer
+          description: Caisses ouvertes dans la semaine.
+        receptions:
+          type: integer
+          description: Réceptions fournisseurs.
+      required:
+      - caisses
+      - depenses
+      - ecart_caisse_cumule
+      - productions
+      - receptions
+      - recette
     BlankEnum:
       enum:
       - ''
@@ -6844,6 +6953,16 @@ components:
           $ref: '#/components/schemas/ControleNiveauEnum'
         detail:
           type: string
+        factures:
+          type: array
+          items:
+            $ref: '#/components/schemas/FactureEnRetard'
+          description: Contrôle factures_en_retard seulement.
+        numeros:
+          type: array
+          items:
+            type: integer
+          description: 'Contrôle demandes_en_attente seulement : numéros des demandes.'
       required:
       - cle
       - detail
@@ -7244,6 +7363,17 @@ components:
         * `caisse` - caisse
         * `banque` - banque
         * `mobile` - mobile money
+    DepensesDeLaSemaine:
+      type: object
+      properties:
+        nombre:
+          type: integer
+        montant:
+          type: integer
+          description: FCFA.
+      required:
+      - montant
+      - nombre
     DernierComptage:
       type: object
       properties:
@@ -7753,6 +7883,28 @@ components:
       - numero
       - semaine
       - statut
+    FactureEnRetard:
+      type: object
+      properties:
+        id:
+          type: integer
+        numero:
+          type: string
+          description: FAC-41.
+        libelle:
+          type: string
+          description: Le fournisseur.
+        montant:
+          type: integer
+        echeance:
+          type: string
+          format: date
+      required:
+      - echeance
+      - id
+      - libelle
+      - montant
+      - numero
     Fermeture:
       type: object
       properties:
@@ -8093,6 +8245,14 @@ components:
       - jeton
       - motDePasse
       - uid
+    LangueEnum:
+      enum:
+      - fr
+      - en
+      type: string
+      description: |-
+        * `fr` - Français
+        * `en` - Anglais
     LigneADate:
       type: object
       properties:
@@ -10360,6 +10520,16 @@ components:
           type: string
           format: uri
           nullable: true
+    PatchedPreferences:
+      type: object
+      description: Ce que chacun change pour lui-même, quel que soit son profil (#347).
+      properties:
+        theme:
+          allOf:
+          - $ref: '#/components/schemas/ThemeEnum'
+          title: Thème
+        langue:
+          $ref: '#/components/schemas/LangueEnum'
     PatchedProduit:
       type: object
       properties:
@@ -10432,6 +10602,12 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ProfilEnum'
           - $ref: '#/components/schemas/NullEnum'
+        theme:
+          allOf:
+          - $ref: '#/components/schemas/ThemeEnum'
+          title: Thème
+        langue:
+          $ref: '#/components/schemas/LangueEnum'
     Payer:
       type: object
       properties:
@@ -10511,6 +10687,26 @@ components:
       - id
       - nom
       - profil
+    PersonnesAffectables:
+      type: object
+      properties:
+        gerants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Affectable'
+        responsables:
+          type: array
+          items:
+            $ref: '#/components/schemas/Affectable'
+          description: Responsables de production.
+        caissieres:
+          type: array
+          items:
+            $ref: '#/components/schemas/Affectable'
+      required:
+      - caissieres
+      - gerants
+      - responsables
     Placement:
       type: object
       properties:
@@ -10855,6 +11051,17 @@ components:
       required:
       - code
       - pains
+    ProductionsDeLaSemaine:
+      type: object
+      properties:
+        nombre:
+          type: integer
+        sacs:
+          type: integer
+          description: Sacs du plan des productions.
+      required:
+      - nombre
+      - sacs
     Produit:
       type: object
       properties:
@@ -12068,6 +12275,16 @@ components:
           description: Code du produit → prix en FCFA ; null retire le tarif propre.
       required:
       - tarifs
+    ThemeEnum:
+      enum:
+      - auto
+      - clair
+      - sombre
+      type: string
+      description: |-
+        * `auto` - Automatique (sombre la nuit)
+        * `clair` - Clair
+        * `sombre` - Sombre
     TotalCompare:
       type: object
       properties:
@@ -12154,6 +12371,12 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ProfilEnum'
           - $ref: '#/components/schemas/NullEnum'
+        theme:
+          allOf:
+          - $ref: '#/components/schemas/ThemeEnum'
+          title: Thème
+        langue:
+          $ref: '#/components/schemas/LangueEnum'
       required:
       - email
       - id

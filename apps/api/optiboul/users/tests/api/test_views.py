@@ -40,4 +40,6 @@ class TestUserViewSet:
             "url": f"http://testserver/api/v1/users/{user.pk}/",
             "name": user.name,
             "profil": None,
+            "theme": "auto",
+            "langue": "fr",
         }
