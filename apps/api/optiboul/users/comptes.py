@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -118,3 +119,26 @@ def accepter_invitation(uid: str, jeton: str, mot_de_passe: str) -> User | None:
         objet_id=pk,
     )
     return utilisateur
+
+
+@transaction.atomic
+def reinitialiser_code(utilisateur: User, auteur: Auteur) -> None:
+    """Nouveau code à 4 chiffres, envoyé par le canal du compte (#355).
+
+    Le code n'est ni renvoyé à l'administrateur ni écrit au journal.
+    """
+    code = f"{secrets.randbelow(10_000):04d}"
+    connexion.definir_code(utilisateur, code)
+    file_envoi.mettre_en_file(
+        Canal(utilisateur.canal_verification),
+        utilisateur.telephone,
+        f"OptiBoul : votre nouveau code du comptoir est {code}. "
+        "Ne le communiquez à personne.",
+    )
+    journaliser(
+        "utilisateur.code_reinitialise",
+        auteur=auteur,
+        objet_type="utilisateur",
+        objet_id=utilisateur.pk,
+        apres={"canal": utilisateur.canal_verification},
+    )

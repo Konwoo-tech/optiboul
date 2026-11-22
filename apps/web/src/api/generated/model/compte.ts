@@ -12,6 +12,14 @@ export interface Compte {
   readonly id: number;
   readonly name: string;
   readonly email: string;
+  readonly telephone: string;
+  /** Canal du second facteur : sms ou whatsapp. */
+  canal: string;
+  /**
+     * Dernière connexion réussie ; vide si jamais connecté.
+     * @nullable
+     */
+  dernier_acces: string | null;
   /** @nullable */
   readonly groupe: number | null;
   readonly profil: ProfilEnum | NullEnum | null;

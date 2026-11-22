@@ -5,12 +5,21 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
+import type { DemandeLiee } from './demandeLiee.ts';
 import type { LignePaie } from './lignePaie.ts';
 
 export interface EtatPaie {
   readonly id: number;
   readonly mois: string;
   readonly statut: string;
+  readonly jour_de_paie: string;
+  /** @nullable */
+  readonly soumis_par: string | null;
+  /** @nullable */
+  readonly valide_par: string | null;
+  /** @nullable */
+  readonly valide_le: string | null;
+  readonly demande: DemandeLiee | null;
   readonly total_net: number;
   readonly lignes: readonly LignePaie[];
 }

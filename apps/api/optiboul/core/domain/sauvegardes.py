@@ -20,6 +20,7 @@ class Declencheur(StrEnum):
     CLOTURE_PRODUCTION = "cloture_production"
     CLOTURE_SEMAINE = "cloture_semaine"
     MANUELLE = "manuelle"
+    AVANT_RESTAURATION = "avant_restauration"  # copie de sûreté (#304, #359)
 
 
 class Statut(StrEnum):

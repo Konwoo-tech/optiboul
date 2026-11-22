@@ -7,6 +7,6 @@
  */
 
 export interface DemandeRestauration {
-  /** « RESTAURER », recopié par l'administrateur. */
-  confirmation: string;
+  /** Facultatif ; s'il est envoyé : « RESTAURER ». */
+  confirmation?: string;
 }

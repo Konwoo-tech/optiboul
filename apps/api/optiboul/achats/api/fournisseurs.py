@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -11,6 +12,7 @@ from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter
 from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import mixins
 from rest_framework import serializers
 from rest_framework import status
@@ -23,10 +25,12 @@ from optiboul.achats.application import receptions as cas
 from optiboul.achats.application.receptions import RECEPTIONNENT
 from optiboul.achats.domain.receptions import StatutReception
 from optiboul.achats.domain.receptions import verifier_planification
+from optiboul.achats.infrastructure.factures import PAYE
 from optiboul.achats.infrastructure.models import FactureFournisseur
 from optiboul.achats.infrastructure.models import Fournisseur
 from optiboul.achats.infrastructure.models import Manquant
 from optiboul.achats.infrastructure.models import PaiementFournisseur
+from optiboul.achats.infrastructure.models import Reception
 from optiboul.achats.infrastructure.models import ReceptionPlanifiee
 from optiboul.achats.infrastructure.paiements import depots as depots_paiements
 from optiboul.achats.infrastructure.paiements import pdf_recu
@@ -67,6 +71,11 @@ class FournisseurSerializer(serializers.ModelSerializer[Fournisseur]):
     )
     prochaine_reception = serializers.SerializerMethodField()
     manquants = serializers.SerializerMethodField()
+    conditions_libelle = serializers.CharField(
+        source="get_conditions_display",
+        read_only=True,
+        help_text="Libellé à afficher ; vide si non précisées.",
+    )
 
     class Meta:
         model = Fournisseur
@@ -75,12 +84,19 @@ class FournisseurSerializer(serializers.ModelSerializer[Fournisseur]):
             "nom",
             "telephone",
             "conditions",
+            "conditions_libelle",
+            "conditions_note",
             "matieres",
             "actif",
             "prochaine_reception",
             "manquants",
         ]
-        read_only_fields = ["id", "prochaine_reception", "manquants"]
+        read_only_fields = [
+            "id",
+            "conditions_libelle",
+            "prochaine_reception",
+            "manquants",
+        ]
 
     def get_manquants(self, fournisseur: Fournisseur) -> int:
         """Manquants encore à livrer ou à recevoir de ce fournisseur."""
@@ -116,6 +132,7 @@ def _valeurs(fournisseur: Fournisseur) -> dict[str, Any]:
         "nom": fournisseur.nom,
         "telephone": fournisseur.telephone,
         "conditions": fournisseur.conditions,
+        "conditions_note": fournisseur.conditions_note,
         "actif": fournisseur.actif,
         "matieres": sorted(fournisseur.matieres.values_list("code", flat=True)),
     }
@@ -195,6 +212,10 @@ class ReceptionPlanifieeSerializer(serializers.ModelSerializer[ReceptionPlanifie
         queryset=Matiere.objects.all(),
     )
     planifiee_par = serializers.CharField(source="planifiee_par.name", read_only=True)
+    reception = serializers.SerializerMethodField()
+    recue_quantite = serializers.SerializerMethodField()
+    recue_par = serializers.SerializerMethodField()
+    recue_le = serializers.SerializerMethodField()
 
     class Meta:
         model = ReceptionPlanifiee
@@ -208,13 +229,69 @@ class ReceptionPlanifieeSerializer(serializers.ModelSerializer[ReceptionPlanifie
             "statut",
             "planifiee_par",
             "cree_le",
+            "reception",
+            "recue_quantite",
+            "recue_par",
+            "recue_le",
         ]
-        read_only_fields = ["id", "statut", "planifiee_par", "cree_le"]
+        read_only_fields = [
+            "id",
+            "statut",
+            "planifiee_par",
+            "cree_le",
+            "reception",
+            "recue_quantite",
+            "recue_par",
+            "recue_le",
+        ]
+
+    @staticmethod
+    def _reception(planifiee: ReceptionPlanifiee) -> Reception | None:
+        try:
+            return planifiee.reception
+        except Reception.DoesNotExist:
+            return None
+
+    def get_reception(self, planifiee: ReceptionPlanifiee) -> int | None:
+        """Identifiant de la réception faite (#351) ; vide tant que non reçue."""
+        reception = self._reception(planifiee)
+        return reception.pk if reception else None
+
+    @extend_schema_field(
+        serializers.DecimalField(max_digits=12, decimal_places=3, allow_null=True),
+    )
+    def get_recue_quantite(self, planifiee: ReceptionPlanifiee) -> str | None:
+        reception = self._reception(planifiee)
+        return None if reception is None else str(reception.quantite)
+
+    def get_recue_par(self, planifiee: ReceptionPlanifiee) -> str | None:
+        reception = self._reception(planifiee)
+        if reception is None:
+            return None
+        return reception.recue_par.name or reception.recue_par.email
+
+    @extend_schema_field(serializers.DateTimeField(allow_null=True))
+    def get_recue_le(self, planifiee: ReceptionPlanifiee) -> str | None:
+        reception = self._reception(planifiee)
+        return None if reception is None else reception.recue_le.isoformat()
+
+
+class DernierPaiementSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    mode = serializers.CharField()
+    reference = serializers.CharField(allow_blank=True)
+    paye_le = serializers.DateTimeField()
+    depense = serializers.IntegerField(allow_null=True)
 
 
 class FactureSerializer(serializers.ModelSerializer[FactureFournisseur]):
     fournisseur_nom = serializers.CharField(source="fournisseur.nom")
     en_retard = serializers.SerializerMethodField()
+    reception_planifiee = serializers.SerializerMethodField()
+    quantite = serializers.SerializerMethodField()
+    paye = serializers.SerializerMethodField()
+    reste = serializers.SerializerMethodField()
+    paiement = serializers.SerializerMethodField()
 
     class Meta:
         model = FactureFournisseur
@@ -229,11 +306,63 @@ class FactureSerializer(serializers.ModelSerializer[FactureFournisseur]):
             "echeance",
             "statut",
             "en_retard",
+            "reception_planifiee",
+            "quantite",
+            "paye",
+            "reste",
+            "paiement",
         ]
         read_only_fields = fields
 
     def get_en_retard(self, facture: FactureFournisseur) -> bool:
         return facture.statut != "payee" and facture.echeance < timezone.localdate()
+
+    def get_reception_planifiee(self, facture: FactureFournisseur) -> int | None:
+        """Le bon d'où vient la facture (#351) ; vide pour la farine cumulée."""
+        if facture.farine:
+            return None
+        receptions = list(facture.receptions.all())
+        return receptions[0].planifiee_id if len(receptions) == 1 else None
+
+    @extend_schema_field(
+        serializers.DecimalField(max_digits=12, decimal_places=3, allow_null=True),
+    )
+    def get_quantite(self, facture: FactureFournisseur) -> str | None:
+        """Quantité reçue facturée (toutes les réceptions pour la farine)."""
+        receptions = list(facture.receptions.all())
+        if not receptions:
+            return None
+        return str(sum((r.quantite for r in receptions), Decimal(0)))
+
+    def get_paye(self, facture: FactureFournisseur) -> int:
+        """Total déjà payé, en FCFA."""
+        paye = getattr(facture, "paye", None)
+        if paye is None:
+            paye = sum(p.montant for p in facture.paiements.all())
+        return int(paye)
+
+    def get_reste(self, facture: FactureFournisseur) -> int:
+        """Reste dû, en FCFA ; 0 pour une facture soldée."""
+        return max(facture.montant - self.get_paye(facture), 0)
+
+    @extend_schema_field(DernierPaiementSerializer(allow_null=True))
+    def get_paiement(self, facture: FactureFournisseur) -> dict[str, Any] | None:
+        """Le dernier paiement ; vide tant que rien n'est payé."""
+        paiements = sorted(
+            facture.paiements.all(),
+            key=lambda p: (p.paye_le, p.pk),
+            reverse=True,
+        )
+        if not paiements:
+            return None
+        dernier = paiements[0]
+        return {
+            "id": dernier.pk,
+            "mode": dernier.mode,
+            "reference": dernier.reference,
+            "paye_le": dernier.paye_le,
+            "depense": dernier.depense_id,
+        }
 
 
 class ReceptionnerSerializer(serializers.Serializer):
@@ -290,7 +419,11 @@ class FacturesViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericV
     """Factures fournisseurs : à payer, en cours, en retard, payées (CdC §5.7)."""
 
     serializer_class = FactureSerializer
-    queryset = FactureFournisseur.objects.select_related("fournisseur")
+    queryset = (
+        FactureFournisseur.objects.select_related("fournisseur")
+        .prefetch_related("receptions", "paiements")
+        .annotate(paye=PAYE)
+    )
 
     def get_permissions(self):
         if self.action == "payer":
@@ -368,6 +501,7 @@ class ReceptionsPlanifieesViewSet(
 ):
     serializer_class = ReceptionPlanifieeSerializer
     queryset = ReceptionPlanifiee.objects.select_related(
+        "reception__recue_par",
         "fournisseur",
         "matiere",
         "planifiee_par",

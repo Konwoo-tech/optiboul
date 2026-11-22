@@ -10,6 +10,7 @@ from optiboul.core.application.journal import Evenement
 from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.paie.domain.paie import GenreElement
 from optiboul.paie.domain.paie import StatutPaie
+from optiboul.paie.domain.paie import dans_le_mois
 
 if TYPE_CHECKING:
     from datetime import date
@@ -36,6 +37,10 @@ class DepotPaie(Protocol):
         ...
 
     def marquer(self, etat_id: int, statut: StatutPaie) -> None: ...
+
+    def mois_et_jour(self, etat_id: int) -> tuple[date, date | None]: ...
+
+    def changer_jour(self, etat_id: int, jour: date) -> None: ...
 
     def modifier_ligne(
         self,
@@ -270,5 +275,48 @@ def modifier_ligne(
             objet_type="ligne_paie",
             objet_id=str(ligne_id),
             apres={"absences": str(absences), "avances": avances},
+        ),
+    )
+
+
+CHANGENT_LE_JOUR = frozenset({"gerant", "proprietaire"})
+
+
+def changer_jour(
+    depots: Depots,
+    *,
+    etat_id: int,
+    jour: date,
+    auteur: Auteur,
+) -> None:
+    """Jour de paie propre à ce mois (#353) : le gérant tant que l'état est en
+    brouillon, le propriétaire jusqu'au paiement ; toujours dans le mois."""
+    if auteur.profil not in CHANGENT_LE_JOUR:
+        message = "Le gérant ou le propriétaire fixe le jour de paie."
+        raise RefusMetier("droit_insuffisant", message)
+    statut = depots.paie.statut(etat_id)
+    if statut is None:
+        raise RefusMetier("paie_inconnue", "Cet état de paie n'existe pas.")
+    if statut in {StatutPaie.EN_PAIEMENT, StatutPaie.PAYEE}:
+        message = "La paie est déjà en paiement : son jour ne change plus."
+        raise RefusMetier("paie_en_paiement", message)
+    if auteur.profil == "gerant" and statut is not StatutPaie.BROUILLON:
+        message = "Après la soumission, seul le propriétaire change le jour de paie."
+        raise RefusMetier("paie_non_brouillon", message)
+    mois, avant = depots.paie.mois_et_jour(etat_id)
+    if not dans_le_mois(mois, jour):
+        message = f"Le jour de paie doit tomber en {mois:%m/%Y}."
+        raise RefusMetier("jour_hors_du_mois", message)
+    if avant == jour:
+        return
+    depots.paie.changer_jour(etat_id, jour)
+    depots.journal.enregistrer(
+        Evenement(
+            action="paie.jour_modifie",
+            auteur=auteur,
+            objet_type="etat_paie",
+            objet_id=str(etat_id),
+            avant={"jour": avant.isoformat() if avant else None},
+            apres={"jour": jour.isoformat()},
         ),
     )

@@ -5,6 +5,7 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
+import type { DernierPaiement } from './dernierPaiement.ts';
 
 export interface Facture {
   readonly id: number;
@@ -17,4 +18,19 @@ export interface Facture {
   readonly echeance: string;
   readonly statut: string;
   readonly en_retard: boolean;
+  /**
+     * Le bon d'où vient la facture (#351) ; vide pour la farine cumulée.
+     * @nullable
+     */
+  readonly reception_planifiee: number | null;
+  /**
+     * @nullable
+     * @pattern ^-?\d{0,9}(?:\.\d{0,3})?$
+     */
+  readonly quantite: string | null;
+  /** Total déjà payé, en FCFA. */
+  readonly paye: number;
+  /** Reste dû, en FCFA ; 0 pour une facture soldée. */
+  readonly reste: number;
+  readonly paiement: DernierPaiement | null;
 }

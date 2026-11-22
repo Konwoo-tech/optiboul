@@ -48,7 +48,8 @@ def test_fiche_fournisseur(client_de, gerant, responsable_production):
     corps = {
         "nom": "Levures SA",
         "telephone": "699001122",
-        "conditions": "À 30 jours",
+        "conditions": "sept_jours",
+        "conditions_note": "Remise de 2 % au-delà de 30 sacs",
         "matieres": ["levure", "ameliorant"],
     }
     assert (

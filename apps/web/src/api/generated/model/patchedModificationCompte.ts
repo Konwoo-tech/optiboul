@@ -8,12 +8,14 @@
 import type { CanalEnum } from './canalEnum.ts';
 
 /**
- * Tous les champs sont facultatifs (#302).
+ * Tous les champs sont facultatifs (#302) ; `nom` vaut `name` (#355).
  */
 export interface PatchedModificationCompte {
   is_active?: boolean;
   /** @maxLength 255 */
   name?: string;
+  /** @maxLength 255 */
+  nom?: string;
   /** @maxLength 30 */
   telephone?: string;
   canal?: CanalEnum;

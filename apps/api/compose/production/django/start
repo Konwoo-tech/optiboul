@@ -7,4 +7,5 @@ set -o nounset
 
 python /app/manage.py collectstatic --noinput
 
-exec gunicorn config.wsgi --bind 0.0.0.0:5000 --chdir=/app
+# Délai long : la restauration d'une sauvegarde répond une fois finie (#359).
+exec gunicorn config.wsgi --bind 0.0.0.0:5000 --chdir=/app --timeout 600

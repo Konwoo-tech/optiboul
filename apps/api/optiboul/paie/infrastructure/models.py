@@ -45,6 +45,8 @@ class EtatPaie(models.Model):
 
     mois = models.DateField(_("mois"), unique=True)
     statut = models.CharField(_("statut"), max_length=12, default="brouillon")
+    # Propre au mois (#353) ; vide : le paramètre jour_de_paie s'applique.
+    jour_de_paie = models.DateField(_("jour de paie"), null=True, blank=True)
     prepare_par = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,

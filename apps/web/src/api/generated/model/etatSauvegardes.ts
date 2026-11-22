@@ -5,6 +5,7 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
+import type { Echec } from './echec.ts';
 
 export interface EtatSauvegardes {
   /** @nullable */
@@ -13,4 +14,6 @@ export interface EtatSauvegardes {
   derniere_cloud: string | null;
   cloud_en_retard: boolean;
   seuil_alerte_heures: number;
+  /** Dernière copie en échec, si elle est plus récente que la dernière réussie du même genre (#359). */
+  derniere_echec: Echec | null;
 }

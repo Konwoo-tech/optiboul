@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 from rest_framework import status
 from rest_framework.decorators import action
@@ -18,6 +19,8 @@ if TYPE_CHECKING:
     from rest_framework.request import Request
 
 
+# `GET /mfa/` renvoie un seul état, pas une liste (#357).
+@extend_schema_serializer(many=False)
 class EtatMfaSerializer(serializers.Serializer):
     totp = serializers.BooleanField()
     codesSecoursRestants = serializers.IntegerField()  # noqa: N815

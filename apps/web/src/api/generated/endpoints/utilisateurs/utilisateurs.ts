@@ -26,6 +26,7 @@ import type {
 
 import type {
   Acces,
+  Activation,
   Apercu,
   ChangementGroupe,
   Code,
@@ -178,12 +179,19 @@ export type utilisateursCreateResponse201 = {
   status: 201
 }
 
+export type utilisateursCreateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
 export type utilisateursCreateResponseSuccess = (utilisateursCreateResponse201) & {
   headers: Headers;
 };
-;
+export type utilisateursCreateResponseError = (utilisateursCreateResponse400) & {
+  headers: Headers;
+};
 
-export type utilisateursCreateResponse = (utilisateursCreateResponseSuccess)
+export type utilisateursCreateResponse = (utilisateursCreateResponseSuccess | utilisateursCreateResponseError)
 
 export const getUtilisateursCreateUrl = () => {
 
@@ -224,7 +232,7 @@ return optiboulFetch<utilisateursCreateResponse>(getUtilisateursCreateUrl(),
 
 export const getUtilisateursCreateMutationKey = () => ['utilisateursCreate'] as const;
 
-export const getUtilisateursCreateMutationOptions = <TError = unknown,
+export const getUtilisateursCreateMutationOptions = <TError = Probleme,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursCreate>>, TError,UtilisateursCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof utilisateursCreate>>, TError,UtilisateursCreateMutationVariables, TContext> => {
 
@@ -253,10 +261,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type UtilisateursCreateMutationResult = NonNullable<Awaited<ReturnType<typeof utilisateursCreate>>>
     export type UtilisateursCreateMutationBody = NouveauCompte
-    export type UtilisateursCreateMutationError = unknown
+    export type UtilisateursCreateMutationError = Probleme
     export type UtilisateursCreateMutationVariables = {data: NouveauCompte}
 
-    export const useUtilisateursCreate = <TError = unknown,
+    export const useUtilisateursCreate = <TError = Probleme,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursCreate>>, TError,UtilisateursCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof utilisateursCreate>>,
@@ -377,6 +385,11 @@ export type utilisateursPartialUpdateResponse200 = {
   status: 200
 }
 
+export type utilisateursPartialUpdateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
 export type utilisateursPartialUpdateResponse409 = {
   data: Probleme
   status: 409
@@ -385,7 +398,7 @@ export type utilisateursPartialUpdateResponse409 = {
 export type utilisateursPartialUpdateResponseSuccess = (utilisateursPartialUpdateResponse200) & {
   headers: Headers;
 };
-export type utilisateursPartialUpdateResponseError = (utilisateursPartialUpdateResponse409) & {
+export type utilisateursPartialUpdateResponseError = (utilisateursPartialUpdateResponse400 | utilisateursPartialUpdateResponse409) & {
   headers: Headers;
 };
 
@@ -475,6 +488,115 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUtilisateursPartialUpdateMutationOptions(options), queryClient);
+    }
+    export type utilisateursActivationCreateResponse200 = {
+  data: Compte
+  status: 200
+}
+
+export type utilisateursActivationCreateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
+export type utilisateursActivationCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type utilisateursActivationCreateResponseSuccess = (utilisateursActivationCreateResponse200) & {
+  headers: Headers;
+};
+export type utilisateursActivationCreateResponseError = (utilisateursActivationCreateResponse400 | utilisateursActivationCreateResponse409) & {
+  headers: Headers;
+};
+
+export type utilisateursActivationCreateResponse = (utilisateursActivationCreateResponseSuccess | utilisateursActivationCreateResponseError)
+
+export const getUtilisateursActivationCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/utilisateurs/${id}/activation/`
+}
+
+/**
+ * Désactive ou réactive un compte (#355) ; mêmes refus que la modification.
+ */
+export const utilisateursActivationCreate = async (id: number,
+    activation: Activation, options?: Parameters<typeof optiboulFetch>[1]): Promise<utilisateursActivationCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<utilisateursActivationCreateResponse>(getUtilisateursActivationCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(activation)
+  }
+);}
+
+
+
+
+
+export const getUtilisateursActivationCreateMutationKey = () => ['utilisateursActivationCreate'] as const;
+
+export const getUtilisateursActivationCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursActivationCreate>>, TError,UtilisateursActivationCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof utilisateursActivationCreate>>, TError,UtilisateursActivationCreateMutationVariables, TContext> => {
+
+const mutationKey = getUtilisateursActivationCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof utilisateursActivationCreate>>, UtilisateursActivationCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  utilisateursActivationCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UtilisateursActivationCreateMutationResult = NonNullable<Awaited<ReturnType<typeof utilisateursActivationCreate>>>
+    export type UtilisateursActivationCreateMutationBody = Activation
+    export type UtilisateursActivationCreateMutationError = Probleme
+    export type UtilisateursActivationCreateMutationVariables = {id: number;data: Activation}
+
+    export const useUtilisateursActivationCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursActivationCreate>>, TError,UtilisateursActivationCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof utilisateursActivationCreate>>,
+        TError,
+        UtilisateursActivationCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUtilisateursActivationCreateMutationOptions(options), queryClient);
     }
     export type utilisateursCodeCreateResponse204 = {
   data: void
@@ -748,6 +870,97 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getUtilisateursGroupeCreateMutationOptions(options), queryClient);
+    }
+    export type utilisateursReinitialiserCodeCreateResponse204 = {
+  data: void
+  status: 204
+}
+
+export type utilisateursReinitialiserCodeCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type utilisateursReinitialiserCodeCreateResponseSuccess = (utilisateursReinitialiserCodeCreateResponse204) & {
+  headers: Headers;
+};
+export type utilisateursReinitialiserCodeCreateResponseError = (utilisateursReinitialiserCodeCreateResponse409) & {
+  headers: Headers;
+};
+
+export type utilisateursReinitialiserCodeCreateResponse = (utilisateursReinitialiserCodeCreateResponseSuccess | utilisateursReinitialiserCodeCreateResponseError)
+
+export const getUtilisateursReinitialiserCodeCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/utilisateurs/${id}/reinitialiser-code/`
+}
+
+/**
+ * Génère un code à 4 chiffres et l'envoie par le canal du compte (#355).
+ *
+ * Le code n'est jamais renvoyé : seule la personne le reçoit.
+ */
+export const utilisateursReinitialiserCodeCreate = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<utilisateursReinitialiserCodeCreateResponse> => {
+
+  return optiboulFetch<utilisateursReinitialiserCodeCreateResponse>(getUtilisateursReinitialiserCodeCreateUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getUtilisateursReinitialiserCodeCreateMutationKey = () => ['utilisateursReinitialiserCodeCreate'] as const;
+
+export const getUtilisateursReinitialiserCodeCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursReinitialiserCodeCreate>>, TError,UtilisateursReinitialiserCodeCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof utilisateursReinitialiserCodeCreate>>, TError,UtilisateursReinitialiserCodeCreateMutationVariables, TContext> => {
+
+const mutationKey = getUtilisateursReinitialiserCodeCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof utilisateursReinitialiserCodeCreate>>, UtilisateursReinitialiserCodeCreateMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  utilisateursReinitialiserCodeCreate(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UtilisateursReinitialiserCodeCreateMutationResult = NonNullable<Awaited<ReturnType<typeof utilisateursReinitialiserCodeCreate>>>
+
+    export type UtilisateursReinitialiserCodeCreateMutationError = Probleme
+    export type UtilisateursReinitialiserCodeCreateMutationVariables = {id: number}
+
+    export const useUtilisateursReinitialiserCodeCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursReinitialiserCodeCreate>>, TError,UtilisateursReinitialiserCodeCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof utilisateursReinitialiserCodeCreate>>,
+        TError,
+        UtilisateursReinitialiserCodeCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUtilisateursReinitialiserCodeCreateMutationOptions(options), queryClient);
     }
     export type utilisateursApercuCreateResponse200 = {
   data: Acces

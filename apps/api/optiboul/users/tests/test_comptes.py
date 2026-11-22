@@ -126,7 +126,8 @@ def test_champs_obligatoires_et_formats(admin_client, champ, valeur):
     donnees[champ] = valeur
     reponse = admin_client.post(UTILISATEURS, donnees, format="json")
     assert reponse.status_code == 400
-    assert champ in reponse.json()
+    assert reponse.json()["code"] == "champs_invalides"
+    assert champ in reponse.json()["erreurs"]
     assert not User.objects.filter(email="davy@gmail.com").exists()
 
 
@@ -145,7 +146,8 @@ def test_gmail_unique(admin_client, gerant):
         format="json",
     )
     assert reponse.status_code == 400
-    assert "déjà un compte" in reponse.json()["email"][0]
+    assert reponse.json()["erreurs"] == {"email": "email_deja_utilise"}
+    assert "déjà un compte" in reponse.json()["champs"]["email"][0]
 
 
 @pytest.mark.django_db

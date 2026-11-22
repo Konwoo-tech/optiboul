@@ -1,24 +1,24 @@
-"""Ce que les factures fournisseurs apportent à la clôture de la semaine (#344)."""
+"""Ce que les factures fournisseurs apportent à la clôture de la semaine (#344) et
+au rapport de passation (#369)."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Any
 
 from django.utils import timezone
 
 from optiboul.core.application.cloture import Controle
 from optiboul.core.application.cloture import Niveau
 from optiboul.core.application.cloture import enregistrer_controle
+from optiboul.core.application.passation import enregistrer_section
 
+from .factures import non_soldees
+from .factures import numero_affiche
 from .models import FactureFournisseur
 
 if TYPE_CHECKING:
     from optiboul.core.application.semaines import EtatSemaine
-
-
-def numero_affiche(numero: int) -> str:
-    """FAC-41, comme à l'écran Fournisseurs."""
-    return f"FAC-{numero}"
 
 
 def factures_en_retard(semaine: EtatSemaine) -> Controle:
@@ -51,5 +51,12 @@ def factures_en_retard(semaine: EtatSemaine) -> Controle:
     )
 
 
+def section_dettes_fournisseurs(semaine: EtatSemaine) -> dict[str, Any]:
+    """Factures non soldées à la clôture : fournisseur, reste dû, total (#369)."""
+    lignes = non_soldees()
+    return {"lignes": lignes, "total": sum(ligne["reste"] for ligne in lignes)}
+
+
 def enregistrer() -> None:
     enregistrer_controle("factures_en_retard", factures_en_retard)
+    enregistrer_section("dettes_fournisseurs", section_dettes_fournisseurs)

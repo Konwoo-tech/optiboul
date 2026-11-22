@@ -182,13 +182,14 @@ def test_api_etat_et_lancement(
         "derniere_cloud": None,
         "cloud_en_retard": True,
         "seuil_alerte_heures": 48,
+        "derniere_echec": None,
     }
     with (
         mock.patch.object(tasks.sauvegarder, "delay") as delay,
         django_capture_on_commit_callbacks(execute=True),
     ):
         assert client.post(reverse("api:sauvegarde-lancer")).status_code == 202
-    delay.assert_called_once_with(Declencheur.MANUELLE)
+    assert delay.call_args.args[0] == Declencheur.MANUELLE
     assert (
         client_de(proprietaire).get(reverse("api:sauvegarde-list")).status_code == 403
     )

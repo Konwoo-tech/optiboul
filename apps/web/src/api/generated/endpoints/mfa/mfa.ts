@@ -54,7 +54,7 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
 };
 
 export type mfaListResponse200 = {
-  data: EtatMfa[]
+  data: EtatMfa
   status: 200
 }
 

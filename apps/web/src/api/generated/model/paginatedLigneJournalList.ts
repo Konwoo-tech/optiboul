@@ -13,4 +13,6 @@ export interface PaginatedLigneJournalList {
   /** @nullable */
   previous?: string | null;
   results: LigneJournal[];
+  /** Lignes qui répondent aux filtres, toutes pages. */
+  total: number;
 }

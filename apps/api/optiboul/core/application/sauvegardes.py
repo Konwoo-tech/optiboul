@@ -48,16 +48,21 @@ class DepotSauvegardes(Protocol):
     def derniere_reussie(self, genre: Genre) -> datetime | None: ...
 
 
-def sauvegarder_localement(
+def sauvegarder_localement(  # noqa: PLR0913
     depot: DepotSauvegardes,
     exportateur: Exportateur,
     *,
     dossier: Path,
     declencheur: Declencheur,
     maintenant: datetime,
+    sauvegarde_id: int | None = None,
 ) -> int:
-    """Copie locale ; un échec est enregistré, puis l'erreur est relancée."""
-    sauvegarde_id = depot.commencer(Genre.LOCALE, declencheur, None)
+    """Copie locale ; un échec est enregistré, puis l'erreur est relancée.
+
+    `sauvegarde_id` : ligne déjà inscrite par l'API pour être suivie (#359).
+    """
+    if sauvegarde_id is None:
+        sauvegarde_id = depot.commencer(Genre.LOCALE, declencheur, None)
     chemin = dossier / nom_fichier(maintenant, declencheur)
     try:
         taille = exportateur.exporter(chemin)
@@ -74,8 +79,10 @@ def copier_dans_le_cloud(
     *,
     source: int,
     chemin: Path,
+    sauvegarde_id: int | None = None,
 ) -> int:
-    sauvegarde_id = depot.commencer(Genre.CLOUD, Declencheur.PLANIFIEE, source)
+    if sauvegarde_id is None:
+        sauvegarde_id = depot.commencer(Genre.CLOUD, Declencheur.PLANIFIEE, source)
     try:
         emplacement = coffre.deposer(chemin)
     except Exception as erreur:

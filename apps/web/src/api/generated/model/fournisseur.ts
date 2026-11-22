@@ -5,6 +5,7 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
+import type { FournisseurConditions } from './fournisseurConditions.ts';
 import type { FournisseurProchaineReception } from './fournisseurProchaineReception.ts';
 
 export interface Fournisseur {
@@ -13,8 +14,11 @@ export interface Fournisseur {
   nom: string;
   /** @maxLength 20 */
   telephone?: string;
+  conditions?: typeof FournisseurConditions[keyof typeof FournisseurConditions];
+  /** Libellé à afficher ; vide si non précisées. */
+  readonly conditions_libelle: string;
   /** @maxLength 255 */
-  conditions?: string;
+  conditions_note?: string;
   matieres: string[];
   actif?: boolean;
   /** @nullable */

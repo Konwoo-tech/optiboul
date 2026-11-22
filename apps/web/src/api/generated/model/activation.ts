@@ -5,8 +5,7 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
-import type { Restauration } from './restauration.ts';
 
-export interface RestaurationLancee {
-  restauration: Restauration;
+export interface Activation {
+  actif: boolean;
 }

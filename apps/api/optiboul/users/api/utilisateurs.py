@@ -42,6 +42,15 @@ class CompteSerializer(serializers.ModelSerializer[User]):
     )
     groupe = serializers.SerializerMethodField()
     bloque = serializers.SerializerMethodField()
+    canal = serializers.CharField(
+        source="canal_verification",
+        help_text="Canal du second facteur : sms ou whatsapp.",
+    )
+    dernier_acces = serializers.DateTimeField(
+        source="last_login",
+        allow_null=True,
+        help_text="Dernière connexion réussie ; vide si jamais connecté.",
+    )
 
     class Meta:
         model = User
@@ -49,6 +58,9 @@ class CompteSerializer(serializers.ModelSerializer[User]):
             "id",
             "name",
             "email",
+            "telephone",
+            "canal",
+            "dernier_acces",
             "groupe",
             "profil",
             "is_active",
@@ -87,17 +99,23 @@ class NouveauCompteSerializer(serializers.Serializer):
         try:
             adresse = normaliser_gmail(email)
         except CompteInvalide as erreur:
-            raise serializers.ValidationError(str(erreur)) from erreur
+            raise serializers.ValidationError(
+                str(erreur),
+                code="email_invalide",
+            ) from erreur
         if User.objects.filter(email__iexact=adresse).exists():
             message = "Cette adresse Gmail a déjà un compte."
-            raise serializers.ValidationError(message)
+            raise serializers.ValidationError(message, code="email_deja_utilise")
         return adresse
 
     def validate_telephone(self, telephone: str) -> str:
         try:
             return normaliser_telephone(telephone)
         except CompteInvalide as erreur:
-            raise serializers.ValidationError(str(erreur)) from erreur
+            raise serializers.ValidationError(
+                str(erreur),
+                code="telephone_invalide",
+            ) from erreur
 
 
 class CompteCreeSerializer(CompteSerializer):
@@ -125,24 +143,75 @@ class AccesSerializer(serializers.Serializer):
 
 
 class ModificationCompteSerializer(serializers.Serializer):
-    """Tous les champs sont facultatifs (#302)."""
+    """Tous les champs sont facultatifs (#302) ; `nom` vaut `name` (#355)."""
 
     is_active = serializers.BooleanField(required=False)
-    name = serializers.CharField(max_length=255, required=False)
+    name = serializers.CharField(max_length=255, required=False, allow_blank=True)
+    nom = serializers.CharField(max_length=255, required=False, allow_blank=True)
     telephone = serializers.CharField(max_length=30, required=False)
     canal = serializers.ChoiceField(choices=["sms", "whatsapp"], required=False)
 
     def validate_name(self, nom: str) -> str:
         if not nom.strip():
             message = "Le nom est obligatoire."
-            raise serializers.ValidationError(message)
+            raise serializers.ValidationError(message, code="nom_obligatoire")
         return nom.strip()
+
+    def validate_nom(self, nom: str) -> str:
+        return self.validate_name(nom)
 
     def validate_telephone(self, telephone: str) -> str:
         try:
             return normaliser_telephone(telephone)
         except CompteInvalide as erreur:
-            raise serializers.ValidationError(str(erreur)) from erreur
+            raise serializers.ValidationError(
+                str(erreur),
+                code="telephone_invalide",
+            ) from erreur
+
+
+class ActivationSerializer(serializers.Serializer):
+    actif = serializers.BooleanField()
+
+
+# Code par champ quand DRF refuse avec un code générique (absent, vide, mauvais type).
+CODES_PAR_CHAMP = {
+    "nom": "nom_obligatoire",
+    "name": "nom_obligatoire",
+    "email": "email_invalide",
+    "telephone": "telephone_invalide",
+    "groupe": "groupe_obligatoire",
+}
+CODES_GENERIQUES = {
+    "required",
+    "blank",
+    "null",
+    "invalid",
+    "does_not_exist",
+    "incorrect_type",
+    "invalid_choice",
+    "max_length",
+    "min_length",
+}
+
+
+def champs_invalides(erreurs: dict) -> Response:
+    """Refus au format problème : un code stable par champ (#355)."""
+    codes = {}
+    for champ, details in erreurs.items():
+        code = getattr(details[0], "code", "invalid")
+        if code in CODES_GENERIQUES:
+            code = CODES_PAR_CHAMP.get(champ, f"{champ}_invalide")
+        codes[champ] = code
+    return Response(
+        {
+            "detail": "Champs invalides.",
+            "code": "champs_invalides",
+            "erreurs": codes,
+            "champs": erreurs,
+        },
+        status=status.HTTP_400_BAD_REQUEST,
+    )
 
 
 def _valeurs_du_compte(utilisateur: User) -> dict[str, object]:
@@ -168,22 +237,69 @@ class UtilisateursViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
 
     @extend_schema(
         request=ModificationCompteSerializer,
-        responses={200: CompteSerializer, 409: ProblemeSerializer},
+        responses={
+            200: CompteSerializer,
+            400: ProblemeSerializer,
+            409: ProblemeSerializer,
+        },
     )
     def partial_update(self, request: Request, pk: str) -> Response:
         """Nom, téléphone, canal ; désactiver coupe aussi la session ouverte (#302)."""
         utilisateur = self.get_object()
         corps = ModificationCompteSerializer(data=request.data)
         if not corps.is_valid():
-            return Response(
-                {
-                    "detail": "Champs invalides.",
-                    "code": "champs_invalides",
-                    "champs": corps.errors,
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+            return champs_invalides(corps.errors)
+        donnees = dict(corps.validated_data)
+        if "nom" in donnees:
+            donnees["name"] = donnees.pop("nom")
+        return self._modifier(request, utilisateur, donnees)
+
+    @extend_schema(
+        request=ActivationSerializer,
+        responses={
+            200: CompteSerializer,
+            400: ProblemeSerializer,
+            409: ProblemeSerializer,
+        },
+    )
+    @action(detail=True, methods=["post"])
+    def activation(self, request: Request, pk: str) -> Response:
+        """Désactive ou réactive un compte (#355) ; mêmes refus que la modification."""
+        utilisateur = self.get_object()
+        corps = ActivationSerializer(data=request.data)
+        if not corps.is_valid():
+            return champs_invalides(corps.errors)
+        return self._modifier(
+            request,
+            utilisateur,
+            {"is_active": corps.validated_data["actif"]},
+        )
+
+    @extend_schema(
+        request=None,
+        responses={204: None, 409: ProblemeSerializer},
+    )
+    @action(detail=True, methods=["post"], url_path="reinitialiser-code")
+    def reinitialiser_code(self, request: Request, pk: str) -> Response:
+        """Génère un code à 4 chiffres et l'envoie par le canal du compte (#355).
+
+        Le code n'est jamais renvoyé : seule la personne le reçoit.
+        """
+        utilisateur = self.get_object()
+        if not utilisateur.telephone:
+            return _refuser(
+                "telephone_absent",
+                "Ce compte n'a pas de numéro : définissez le code vous-même.",
             )
-        donnees = corps.validated_data
+        comptes.reinitialiser_code(utilisateur, auteur_de(request))
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def _modifier(
+        self,
+        request: Request,
+        utilisateur: User,
+        donnees: dict,
+    ) -> Response:
         desactiver = donnees.get("is_active") is False and utilisateur.is_active
         if desactiver and utilisateur.pk == request.user.pk:
             return _refuser(
@@ -236,11 +352,12 @@ class UtilisateursViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
 
     @extend_schema(
         request=NouveauCompteSerializer,
-        responses={201: CompteCreeSerializer},
+        responses={201: CompteCreeSerializer, 400: ProblemeSerializer},
     )
     def create(self, request: Request) -> Response:
         corps = NouveauCompteSerializer(data=request.data)
-        corps.is_valid(raise_exception=True)
+        if not corps.is_valid():
+            return champs_invalides(corps.errors)
         donnees = corps.validated_data
         nouveau = comptes.creer(
             nom=donnees["nom"],
