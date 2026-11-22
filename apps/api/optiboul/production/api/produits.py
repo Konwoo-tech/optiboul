@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+from datetime import date
+from datetime import timedelta
 from typing import TYPE_CHECKING
 from typing import Any
 
 from django.db import transaction
+from django.db.models import Sum
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import mixins
@@ -31,6 +35,7 @@ from optiboul.production.domain.fiches import Fiche
 from optiboul.production.domain.fiches import boules_par_sac
 from optiboul.production.domain.fiches import cout_de_revient
 from optiboul.production.infrastructure.models import FicheTechnique
+from optiboul.production.infrastructure.models import Fournee
 from optiboul.production.infrastructure.models import Produit
 from optiboul.production.infrastructure.produits import depot_fiches
 from optiboul.production.infrastructure.produits import fiche_de
@@ -116,13 +121,51 @@ class NouvelleFicheSerializer(serializers.Serializer):
     )
 
 
+def pains_du_mois_precedent(aujourd_hui: date) -> dict[int, int]:
+    """Pains réalisés par produit le mois civil précédent (fournées retenues)."""
+    fin = aujourd_hui.replace(day=1)
+    debut = (fin - timedelta(days=1)).replace(day=1)
+    return dict(
+        Fournee.objects.filter(
+            production__plan__jour__gte=debut,
+            production__plan__jour__lt=fin,
+        )
+        .order_by()
+        .values_list("produit")
+        .annotate(total=Sum("pains"))
+        .values_list("produit", "total"),
+    )
+
+
 class ProduitSerializer(serializers.ModelSerializer[Produit]):
     fiche = serializers.SerializerMethodField()
+    pains_produits_mois_precedent = serializers.SerializerMethodField()
+    _pains: dict[int, int] | None = None
 
     class Meta:
         model = Produit
-        fields = ["id", "code", "nom", "nom_en", "prix", "actif", "ordre", "fiche"]
-        read_only_fields = ["id", "fiche"]
+        fields = [
+            "id",
+            "code",
+            "nom",
+            "nom_en",
+            "prix",
+            "actif",
+            "ordre",
+            "cuisson_minutes",
+            "pains_produits_mois_precedent",
+            "fiche",
+        ]
+        read_only_fields = ["id", "fiche", "pains_produits_mois_precedent"]
+
+    def get_pains_produits_mois_precedent(self, produit: Produit) -> int:
+        """Pains réalisés le mois civil précédent, toutes sessions.
+
+        Calculés une fois pour toute la liste : le sérialiseur enfant est partagé.
+        """
+        if self._pains is None:
+            self._pains = pains_du_mois_precedent(timezone.localdate())
+        return self._pains.get(produit.pk, 0)
 
     @extend_schema(responses=FicheSerializer(allow_null=True))
     def get_fiche(self, produit: Produit) -> dict[str, Any] | None:
@@ -134,7 +177,15 @@ class ProduitSerializer(serializers.ModelSerializer[Produit]):
 def _valeurs(produit: Produit) -> dict[str, Any]:
     return {
         champ: getattr(produit, champ)
-        for champ in ("code", "nom", "nom_en", "prix", "actif", "ordre")
+        for champ in (
+            "code",
+            "nom",
+            "nom_en",
+            "prix",
+            "actif",
+            "ordre",
+            "cuisson_minutes",
+        )
     }
 
 

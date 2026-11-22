@@ -21,6 +21,10 @@ export interface Plan {
      */
   statut: PlanStatutEnum | NullEnum | null;
   motif_supplement: string;
+  /** Vide tant que le plan n'est pas proposé. */
+  propose_par: string;
+  /** @nullable */
+  propose_le: string | null;
   valide_par: string;
   /** @nullable */
   valide_le: string | null;

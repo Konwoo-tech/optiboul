@@ -47,6 +47,20 @@ class EtatProduction:
     ]  # produit → recette d'un sac (version du plan)
     matieres: set[str]  # matières suivies en stock de ces recettes
     justifications: dict[str, str]  # écarts au-delà de la tolérance (R10)
+    ouverte_par: str
+    ouverte_le: datetime
+    cloturee_par: str
+    cloturee_le: datetime | None
+
+
+@dataclass(frozen=True)
+class FourneeRetenue:
+    """Une fournée comptée dans le réalisé ; `numero` part de 1, ordre de saisie."""
+
+    id: int
+    numero: int
+    code: str
+    pains: int
 
 
 class DepotProductions(Protocol):
@@ -69,6 +83,16 @@ class DepotProductions(Protocol):
         *,
         code: str,
         pains: int,
+        auteur: int,
+        le: datetime,
+    ) -> None: ...
+
+    def fournees(self, production_id: int) -> list[FourneeRetenue]: ...
+
+    def annuler_fournee(
+        self,
+        fournee_id: int,
+        *,
         auteur: int,
         le: datetime,
     ) -> None: ...
@@ -188,6 +212,53 @@ def saisir_fournee(  # noqa: PLR0913
             objet_type="production",
             objet_id=str(production_id),
             apres={"produit": code, "pains": pains},
+        ),
+    )
+    apres = depots.productions.verrouiller(production_id)
+    assert apres is not None
+    return apres
+
+
+def annuler_fournee(
+    depots: Depots,
+    *,
+    production_id: int,
+    numero: int,
+    auteur: Auteur,
+    maintenant: datetime,
+) -> EtatProduction:
+    """Corrige une fournée saisie par erreur : seule la dernière s'annule, par le
+    responsable, tant que la production est en cours. Elle n'est pas effacée."""
+    _en_cours(depots, production_id, auteur)
+    fournees = depots.productions.fournees(production_id)
+    if not 1 <= numero <= len(fournees):
+        message = f"La fournée n° {numero} n'existe pas dans cette production."
+        raise RefusMetier("fournee_inconnue", message)
+    derniere = fournees[-1]
+    if numero != derniere.numero:
+        message = f"Seule la dernière fournée (n° {derniere.numero}) peut être annulée."
+        raise RefusMetier(
+            "fournee_pas_la_derniere",
+            message,
+            derniere=derniere.numero,
+        )
+    assert auteur.utilisateur_id is not None
+    depots.productions.annuler_fournee(
+        derniere.id,
+        auteur=auteur.utilisateur_id,
+        le=maintenant,
+    )
+    depots.plans.journal.enregistrer(
+        Evenement(
+            action="production.fournee_annulee",
+            auteur=auteur,
+            objet_type="production",
+            objet_id=str(production_id),
+            avant={
+                "numero": derniere.numero,
+                "produit": derniere.code,
+                "pains": derniere.pains,
+            },
         ),
     )
     apres = depots.productions.verrouiller(production_id)

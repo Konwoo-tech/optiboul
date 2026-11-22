@@ -44,6 +44,7 @@ STATUTS = {
     "demande_inconnue": status.HTTP_404_NOT_FOUND,
     "objet_inconnu": status.HTTP_404_NOT_FOUND,
     "production_inconnue": status.HTTP_404_NOT_FOUND,
+    "fournee_inconnue": status.HTTP_404_NOT_FOUND,
     "matiere_inconnue": status.HTTP_400_BAD_REQUEST,
     "supplement_vide": status.HTTP_400_BAD_REQUEST,
     "matiere_hors_fournisseur": status.HTTP_400_BAD_REQUEST,

@@ -4145,6 +4145,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/Probleme'
           description: ''
+  /api/v1/productions/:
+    get:
+      operationId: productions_list
+      description: Historique des productions, la plus récente d'abord (écran Production).
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+      - in: query
+        name: semaine
+        schema:
+          type: integer
+        description: Identifiant de la semaine
+      tags:
+      - productions
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PageDeProductions'
+          description: ''
   /api/v1/productions/{id}/cloturer/:
     post:
       operationId: productions_cloturer_create
@@ -4244,6 +4271,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Production'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+  /api/v1/productions/{id}/fournee/{numero}/:
+    delete:
+      operationId: productions_fournee_destroy
+      description: |-
+        Corrige une fournée saisie par erreur : la dernière seulement, par le
+        responsable, tant que la production est en cours. Elle reste au journal.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: numero
+        schema:
+          type: integer
+        required: true
+      tags:
+      - productions
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Production'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
           description: ''
         '409':
           content:
@@ -7639,6 +7706,9 @@ components:
     FourneeSaisie:
       type: object
       properties:
+        numero:
+          type: integer
+          description: Rang dans la production, à partir de 1 ; la dernière s'annule.
         produit:
           type: string
         pains:
@@ -7647,6 +7717,7 @@ components:
           type: string
           format: date-time
       required:
+      - numero
       - pains
       - produit
       - saisie_le
@@ -8480,10 +8551,17 @@ components:
           type: boolean
           readOnly: true
           title: Suivie en stock
+        prix_unitaire:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+          readOnly: true
       required:
       - cle
       - code
       - nom
+      - prix_unitaire
       - stockee
       - unite
     MatiereACompter:
@@ -9048,6 +9126,28 @@ components:
           minimum: 0
       required:
       - fonds
+    PageDeProductions:
+      type: object
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResumeProduction'
+      required:
+      - count
+      - next
+      - previous
+      - results
     PaginatedAbsencesProposeesList:
       type: object
       required:
@@ -10140,6 +10240,19 @@ components:
           type: integer
           maximum: 32767
           minimum: 0
+        cuisson_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          nullable: true
+          title: Cuisson (minutes)
+        pains_produits_mois_precedent:
+          type: integer
+          description: |-
+            Pains réalisés le mois civil précédent, toutes sessions.
+
+            Calculés une fois pour toute la liste : le sérialiseur enfant est partagé.
+          readOnly: true
         fiche:
           type: object
           additionalProperties: {}
@@ -10297,6 +10410,13 @@ components:
           - $ref: '#/components/schemas/NullEnum'
         motif_supplement:
           type: string
+        propose_par:
+          type: string
+          description: Vide tant que le plan n'est pas proposé.
+        propose_le:
+          type: string
+          format: date-time
+          nullable: true
         valide_par:
           type: string
         valide_le:
@@ -10345,6 +10465,8 @@ components:
       - motif_supplement
       - moyenne_sacs
       - prevus
+      - propose_le
+      - propose_par
       - sacs
       - statut
       - validation_auto
@@ -10541,16 +10663,40 @@ components:
           type: integer
         reste:
           type: integer
+        ouverte_par:
+          type: string
+        ouverte_le:
+          type: string
+          format: date-time
+        cloturee_par:
+          type: string
+          description: Vide tant que la production n'est pas clôturée.
+        cloturee_le:
+          type: string
+          format: date-time
+          nullable: true
+        tolerance_ecart_kg:
+          type: integer
+          description: Écart matière toléré, en kg par sac (R10).
+        tolerance_ecart_pourcent:
+          type: integer
+          description: Écart toléré des intrants en grammes, en % de la recette (R10).
       required:
+      - cloturee_le
+      - cloturee_par
       - consommation
       - creneau
       - id
       - jour
+      - ouverte_le
+      - ouverte_par
       - prevus
       - produits
       - realise
       - reste
       - statut
+      - tolerance_ecart_kg
+      - tolerance_ecart_pourcent
     ProductionProduit:
       type: object
       properties:
@@ -10589,6 +10735,19 @@ components:
           type: integer
           maximum: 32767
           minimum: 0
+        cuisson_minutes:
+          type: integer
+          maximum: 32767
+          minimum: 0
+          nullable: true
+          title: Cuisson (minutes)
+        pains_produits_mois_precedent:
+          type: integer
+          description: |-
+            Pains réalisés le mois civil précédent, toutes sessions.
+
+            Calculés une fois pour toute la liste : le sérialiseur enfant est partagé.
+          readOnly: true
         fiche:
           type: object
           additionalProperties: {}
@@ -10600,6 +10759,7 @@ components:
       - fiche
       - id
       - nom
+      - pains_produits_mois_precedent
     ProduitProduit:
       type: object
       properties:
@@ -11098,6 +11258,16 @@ components:
       required:
       - commandes
       - reprises
+    Responsable:
+      type: object
+      properties:
+        id:
+          type: integer
+        nom:
+          type: string
+      required:
+      - id
+      - nom
     ResteAProduire:
       type: object
       properties:
@@ -11186,6 +11356,62 @@ components:
       required:
       - ignores
       - relances
+    ResumeProduction:
+      type: object
+      description: Une ligne de l'historique des productions d'une semaine.
+      properties:
+        id:
+          type: integer
+        jour:
+          type: string
+          format: date
+        creneau:
+          type: string
+        statut:
+          type: string
+          description: en_cours, cloturee ou non_cloturee.
+        responsable:
+          allOf:
+          - $ref: '#/components/schemas/Responsable'
+          description: Qui a ouvert la production.
+        plan_valide_par:
+          type: string
+        ouverte_le:
+          type: string
+          format: date-time
+        cloturee_le:
+          type: string
+          format: date-time
+          nullable: true
+        sacs:
+          type: integer
+        prevus:
+          type: integer
+        realise:
+          type: integer
+        ecart_matiere_kg:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,9}(?:\.\d{0,3})?$
+          nullable: true
+          description: Farine réelle moins théorique, en kg ; vide sans consommation.
+        motif_ecart:
+          type: string
+          description: Justification de l'écart de farine (R10).
+      required:
+      - cloturee_le
+      - creneau
+      - ecart_matiere_kg
+      - id
+      - jour
+      - motif_ecart
+      - ouverte_le
+      - plan_valide_par
+      - prevus
+      - realise
+      - responsable
+      - sacs
+      - statut
     Rotation:
       type: object
       properties:

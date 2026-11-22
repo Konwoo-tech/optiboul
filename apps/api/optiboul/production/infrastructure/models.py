@@ -16,6 +16,12 @@ class Produit(models.Model):
     prix = models.PositiveIntegerField(_("prix de base (FCFA)"), null=True, blank=True)
     actif = models.BooleanField(_("actif"), default=True)
     ordre = models.PositiveSmallIntegerField(_("ordre"), default=0)
+    # Cuisson au four à bois, affichée sur la fiche technique ; vide tant qu'inconnue.
+    cuisson_minutes = models.PositiveSmallIntegerField(
+        _("cuisson (minutes)"),
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         db_table = "produit"
@@ -247,8 +253,19 @@ class Production(models.Model):
         return f"Production {self.plan.creneau} du {self.plan.jour:%d/%m/%Y}"
 
 
+class FourneesRetenues(models.Manager["Fournee"]):
+    """Les fournées comptées dans le réalisé : une fournée annulée n'est jamais lue."""
+
+    def get_queryset(self) -> models.QuerySet[Fournee]:
+        return super().get_queryset().filter(annulee_le__isnull=True)
+
+
 class Fournee(models.Model):
-    """Pains réellement sortis d'une fournée : le réalisé s'additionne (CdC §5.5)."""
+    """Pains réellement sortis d'une fournée : le réalisé s'additionne (CdC §5.5).
+
+    Une fournée saisie par erreur n'est pas effacée : elle est annulée, et reste
+    visible dans l'administration et le journal (`toutes`).
+    """
 
     production = models.ForeignKey(
         Production,
@@ -270,9 +287,23 @@ class Fournee(models.Model):
         verbose_name=_("saisie par"),
     )
     cree_le = models.DateTimeField(_("saisie le"), default=timezone.now)
+    annulee_par = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+        verbose_name=_("annulée par"),
+    )
+    annulee_le = models.DateTimeField(_("annulée le"), null=True, blank=True)
+
+    toutes = models.Manager()
+    objects = FourneesRetenues()
 
     class Meta:
         db_table = "fournee"
+        base_manager_name = "toutes"
+        default_manager_name = "objects"
         ordering = ["cree_le", "id"]
         constraints = [
             models.CheckConstraint(

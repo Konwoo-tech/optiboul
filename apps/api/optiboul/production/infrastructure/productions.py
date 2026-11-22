@@ -8,6 +8,7 @@ from django.db.models import Sum
 
 from optiboul.production.application.productions import Depots
 from optiboul.production.application.productions import EtatProduction
+from optiboul.production.application.productions import FourneeRetenue
 from optiboul.production.domain.production import StatutProduction
 from optiboul.stocks.infrastructure.models import Matiere
 from optiboul.stocks.infrastructure.stocks import stock
@@ -22,6 +23,14 @@ from .models import Produit
 if TYPE_CHECKING:
     from datetime import datetime
     from decimal import Decimal
+
+    from optiboul.users.models import User
+
+
+def nom_de(utilisateur: User | None) -> str:
+    if utilisateur is None:
+        return ""
+    return utilisateur.name or utilisateur.email
 
 
 def etat(production: Production) -> EtatProduction:
@@ -62,6 +71,10 @@ def etat(production: Production) -> EtatProduction:
             for c in production.consommations.select_related("matiere")
             if c.justification
         },
+        ouverte_par=nom_de(production.ouverte_par),
+        ouverte_le=production.ouverte_le,
+        cloturee_par=nom_de(production.cloturee_par),
+        cloturee_le=production.cloturee_le,
     )
 
 
@@ -106,6 +119,25 @@ class DepotProductionsDjango:
             pains=pains,
             auteur_id=auteur,
             cree_le=le,
+        )
+
+    def fournees(self, production_id: int) -> list[FourneeRetenue]:
+        lignes = Fournee.objects.filter(production_id=production_id).order_by(
+            "cree_le",
+            "id",
+        )
+        return [
+            FourneeRetenue(id=pk, numero=rang, code=code, pains=pains)
+            for rang, (pk, code, pains) in enumerate(
+                lignes.values_list("pk", "produit__code", "pains"),
+                start=1,
+            )
+        ]
+
+    def annuler_fournee(self, fournee_id: int, *, auteur: int, le: datetime) -> None:
+        Fournee.objects.filter(pk=fournee_id).update(
+            annulee_par_id=auteur,
+            annulee_le=le,
         )
 
     def consommer(
