@@ -28,7 +28,8 @@ import type {
   Groupe,
   GroupesListParams,
   PaginatedGroupeList,
-  PatchedGroupe
+  PatchedGroupe,
+  Probleme
 } from '../../model';
 
 import { optiboulFetch } from '../../../http.ts';
@@ -379,4 +380,98 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
         TContext
       > => {
       return useMutation(getGroupesPartialUpdateMutationOptions(options), queryClient);
+    }
+    export type groupesDestroyResponse204 = {
+  data: void
+  status: 204
+}
+
+export type groupesDestroyResponse404 = {
+  data: Probleme
+  status: 404
+}
+
+export type groupesDestroyResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type groupesDestroyResponseSuccess = (groupesDestroyResponse204) & {
+  headers: Headers;
+};
+export type groupesDestroyResponseError = (groupesDestroyResponse404 | groupesDestroyResponse409) & {
+  headers: Headers;
+};
+
+export type groupesDestroyResponse = (groupesDestroyResponseSuccess | groupesDestroyResponseError)
+
+export const getGroupesDestroyUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/groupes/${id}/`
+}
+
+/**
+ * Supprime un groupe vide créé par l'administrateur (#303).
+ */
+export const groupesDestroy = async (id: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<groupesDestroyResponse> => {
+
+  return optiboulFetch<groupesDestroyResponse>(getGroupesDestroyUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getGroupesDestroyMutationKey = () => ['groupesDestroy'] as const;
+
+export const getGroupesDestroyMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof groupesDestroy>>, TError,GroupesDestroyMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof groupesDestroy>>, TError,GroupesDestroyMutationVariables, TContext> => {
+
+const mutationKey = getGroupesDestroyMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof groupesDestroy>>, GroupesDestroyMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  groupesDestroy(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GroupesDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof groupesDestroy>>>
+
+    export type GroupesDestroyMutationError = Probleme
+    export type GroupesDestroyMutationVariables = {id: number}
+
+    export const useGroupesDestroy = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof groupesDestroy>>, TError,GroupesDestroyMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof groupesDestroy>>,
+        TError,
+        GroupesDestroyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getGroupesDestroyMutationOptions(options), queryClient);
     }

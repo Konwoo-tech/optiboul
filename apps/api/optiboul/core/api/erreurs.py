@@ -13,6 +13,9 @@ if TYPE_CHECKING:
 
 # Codes qui ne sont pas des conflits d'état (409) : saisie invalide ou objet absent.
 STATUTS = {
+    "confirmation_invalide": status.HTTP_400_BAD_REQUEST,
+    "sauvegarde_inconnue": status.HTTP_404_NOT_FOUND,
+    "restauration_inconnue": status.HTTP_404_NOT_FOUND,
     "valideur_introuvable": status.HTTP_409_CONFLICT,
     "depense_inconnue": status.HTTP_404_NOT_FOUND,
     "fichier_invalide": status.HTTP_400_BAD_REQUEST,

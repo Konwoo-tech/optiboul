@@ -14,7 +14,10 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from optiboul.core.api.contexte import auteur_de
+from optiboul.core.api.erreurs import ProblemeSerializer
+from optiboul.core.api.erreurs import probleme
 from optiboul.core.api.permissions import ProfilParmi
+from optiboul.core.domain.erreurs import RefusMetier
 from optiboul.users import groupes
 from optiboul.users.models import Profil
 
@@ -35,10 +38,15 @@ class GroupeSerializer(serializers.ModelSerializer[Group]):
         default="",
     )
     membres = serializers.IntegerField(read_only=True)
+    protege = serializers.BooleanField(
+        source="profil_droits.protege",
+        read_only=True,
+        help_text="Groupe de départ : il ne se supprime pas.",
+    )
 
     class Meta:
         model = Group
-        fields = ["id", "nom", "profil", "description", "membres"]
+        fields = ["id", "nom", "profil", "description", "membres", "protege"]
 
     def validate_nom(self, nom: str) -> str:
         autres = Group.objects.filter(name__iexact=nom)
@@ -96,3 +104,14 @@ class GroupesViewSet(ListModelMixin, GenericViewSet):
             **{cle: v for cle, v in champs.items() if v is not None},
         )
         return Response(GroupeSerializer(self.get_queryset().get(pk=groupe.pk)).data)
+
+    @extend_schema(
+        responses={204: None, 404: ProblemeSerializer, 409: ProblemeSerializer},
+    )
+    def destroy(self, request: Request, pk: str) -> Response:
+        """Supprime un groupe vide créé par l'administrateur (#303)."""
+        try:
+            groupes.supprimer_groupe(self.get_object(), auteur_de(request))
+        except RefusMetier as refus:
+            return probleme(refus)
+        return Response(status=status.HTTP_204_NO_CONTENT)

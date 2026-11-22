@@ -2687,6 +2687,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/Groupe'
           description: ''
+    delete:
+      operationId: groupes_destroy
+      description: Supprime un groupe vide créé par l'administrateur (#303).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) groupe.
+        required: true
+      tags:
+      - groupes
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/journal/:
     get:
       operationId: journal_list
@@ -5131,6 +5160,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedSauvegardeList'
           description: ''
+  /api/v1/sauvegardes/{id}/restaurer/:
+    post:
+      operationId: sauvegardes_restaurer_create
+      description: |-
+        Remplace la base par cette copie, après une copie de sûreté (#304).
+
+        Action destructive : une seule restauration à la fois, confirmation recopiée.
+        Le travail se fait en tâche de fond ; suivre `restaurations/{id}/`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un(une) valeur entière unique identifiant ce(cette) sauvegarde.
+        required: true
+      tags:
+      - sauvegardes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemandeRestauration'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DemandeRestauration'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DemandeRestauration'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurationLancee'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/sauvegardes/etat/:
     get:
       operationId: sauvegardes_etat_retrieve
@@ -5155,6 +5240,33 @@ paths:
       responses:
         '202':
           description: No response body
+  /api/v1/sauvegardes/restaurations/{restauration}/:
+    get:
+      operationId: sauvegardes_restaurations_retrieve
+      description: Suivi d'une restauration et contrôle des totaux (avant / après).
+      parameters:
+      - in: path
+        name: restauration
+        schema:
+          type: integer
+        required: true
+      tags:
+      - sauvegardes
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Restauration'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/semaines/:
     get:
       operationId: semaines_list
@@ -6784,6 +6896,25 @@ components:
       - portee
       - semaine
       - statut
+    Controles:
+      type: object
+      properties:
+        sessions:
+          allOf:
+          - $ref: '#/components/schemas/TotalCompare'
+          description: Nombre de caisses (sessions).
+        soldes_clients:
+          allOf:
+          - $ref: '#/components/schemas/TotalCompare'
+          description: Somme des soldes des clients, en FCFA (R21).
+        stocks:
+          allOf:
+          - $ref: '#/components/schemas/TotalCompare'
+          description: Nombre de mouvements de stock.
+      required:
+      - sessions
+      - soldes_clients
+      - stocks
     CoutDeRevient:
       type: object
       properties:
@@ -6967,6 +7098,14 @@ components:
           description: DEM-xxx de la validation.
       required:
       - demande
+    DemandeRestauration:
+      type: object
+      properties:
+        confirmation:
+          type: string
+          description: « RESTAURER », recopié par l'administrateur.
+      required:
+      - confirmation
     Depense:
       type: object
       properties:
@@ -7813,11 +7952,16 @@ components:
         membres:
           type: integer
           readOnly: true
+        protege:
+          type: boolean
+          readOnly: true
+          description: 'Groupe de départ : il ne se supprime pas.'
       required:
       - id
       - membres
       - nom
       - profil
+      - protege
     GroupeNotifications:
       type: object
       properties:
@@ -10169,6 +10313,10 @@ components:
         membres:
           type: integer
           readOnly: true
+        protege:
+          type: boolean
+          readOnly: true
+          description: 'Groupe de départ : il ne se supprime pas.'
     PatchedModificationCompte:
       type: object
       description: Tous les champs sont facultatifs (#302).
@@ -11268,6 +11416,59 @@ components:
       required:
       - id
       - nom
+    Restauration:
+      type: object
+      properties:
+        id:
+          type: integer
+        statut:
+          $ref: '#/components/schemas/RestaurationStatutEnum'
+        sauvegarde:
+          type: integer
+          description: La copie restaurée.
+        copie_de_surete:
+          type: integer
+          description: Sauvegarde « avant_restauration » de la base remplacée.
+        controles:
+          allOf:
+          - $ref: '#/components/schemas/Controles'
+          nullable: true
+          description: Vide tant que la restauration n'est pas terminée.
+        erreur:
+          type: string
+        debut:
+          type: string
+          format: date-time
+        fin:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - controles
+      - copie_de_surete
+      - debut
+      - erreur
+      - fin
+      - id
+      - sauvegarde
+      - statut
+    RestaurationLancee:
+      type: object
+      properties:
+        restauration:
+          $ref: '#/components/schemas/Restauration'
+      required:
+      - restauration
+    RestaurationStatutEnum:
+      enum:
+      - en_cours
+      - terminee
+      - echec
+      type: string
+      description: |-
+        * `en_cours` - en_cours
+        * `terminee` - terminee
+        * `echec` - echec
     ResteAProduire:
       type: object
       properties:
@@ -11867,6 +12068,18 @@ components:
           description: Code du produit → prix en FCFA ; null retire le tarif propre.
       required:
       - tarifs
+    TotalCompare:
+      type: object
+      properties:
+        avant:
+          type: integer
+          description: Dans la copie restaurée.
+        apres:
+          type: integer
+          description: Dans la base après restauration.
+      required:
+      - apres
+      - avant
     Totaux:
       type: object
       properties:

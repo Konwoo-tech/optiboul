@@ -10,6 +10,7 @@ import os
 import subprocess
 import tempfile
 from dataclasses import dataclass
+from dataclasses import field
 from pathlib import Path
 
 import psycopg
@@ -31,6 +32,12 @@ TABLES_TEMOINS = (
     "mouvement_stock",
 )
 DELAI = 3600
+# Totaux comparés entre la copie et la base restaurée (#304) : ils doivent être égaux.
+CONTROLES = {
+    "sessions": "SELECT count(*) FROM caisse",
+    "soldes_clients": "SELECT coalesce(sum(sens * montant), 0) FROM mouvement_compte",
+    "stocks": "SELECT count(*) FROM mouvement_stock",
+}
 
 
 class RestaurationImpossible(Exception):  # noqa: N818
@@ -40,6 +47,7 @@ class RestaurationImpossible(Exception):  # noqa: N818
 @dataclass(frozen=True)
 class RapportEssai:
     lignes: dict[str, int]  # table témoin → nombre de lignes restaurées
+    totaux: dict[str, int] = field(default_factory=dict)  # contrôle → total (CONTROLES)
 
 
 def _acces() -> list[str]:
@@ -139,16 +147,36 @@ def essayer(fichier: Path) -> RapportEssai:
                     )
                     ligne = lien.execute(requete).fetchone()
                     lignes[table] = ligne[0] if ligne else 0
+                totaux = _totaux(lien)
         finally:
             _supprimer(BASE_D_ESSAI)
-    return RapportEssai(lignes)
+    return RapportEssai(lignes, totaux)
+
+
+def _totaux(lien: psycopg.Connection) -> dict[str, int]:
+    totaux = {}
+    for nom, requete in CONTROLES.items():
+        ligne = lien.execute(sql.SQL(requete)).fetchone()
+        totaux[nom] = int(ligne[0]) if ligne else 0
+    return totaux
+
+
+def totaux_de_la_base() -> dict[str, int]:
+    """Les mêmes totaux, lus dans la base de travail après la restauration."""
+    with _connecter(str(connection.settings_dict["NAME"])) as lien:
+        return _totaux(lien)
 
 
 def restaurer(fichier: Path, copie_de_securite: Path) -> None:
     """Remplace la base de travail ; la copie permet de revenir en arrière."""
+    PgDump().exporter(copie_de_securite)
+    remplacer(fichier)
+
+
+def remplacer(fichier: Path) -> None:
+    """Remplace la base de travail en une transaction : un échec la laisse intacte."""
     with tempfile.TemporaryDirectory() as dossier:
         clair = _en_clair(fichier, Path(dossier))
-        PgDump().exporter(copie_de_securite)
         _pg_restore(
             clair,
             str(connection.settings_dict["NAME"]),

@@ -45,6 +45,8 @@ class ProfilGroupe(Model):
     )
     profil = CharField(_("profil"), max_length=20, choices=Profil)
     description = TextField(_("description"), blank=True, default="")
+    # Groupe de départ (CdC §3.2) : il ne se supprime pas (#303).
+    protege = BooleanField(_("groupe de départ"), default=False)
 
     class Meta:
         verbose_name = _("profil du groupe")

@@ -25,8 +25,12 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  DemandeRestauration,
   EtatSauvegardes,
   PaginatedSauvegardeList,
+  Probleme,
+  Restauration,
+  RestaurationLancee,
   SauvegardesListParams
 } from '../../model';
 
@@ -165,7 +169,124 @@ export function useSauvegardesList<TData = Awaited<ReturnType<typeof sauvegardes
 
 
 
-export type sauvegardesEtatRetrieveResponse200 = {
+export type sauvegardesRestaurerCreateResponse202 = {
+  data: RestaurationLancee
+  status: 202
+}
+
+export type sauvegardesRestaurerCreateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
+export type sauvegardesRestaurerCreateResponse404 = {
+  data: Probleme
+  status: 404
+}
+
+export type sauvegardesRestaurerCreateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type sauvegardesRestaurerCreateResponseSuccess = (sauvegardesRestaurerCreateResponse202) & {
+  headers: Headers;
+};
+export type sauvegardesRestaurerCreateResponseError = (sauvegardesRestaurerCreateResponse400 | sauvegardesRestaurerCreateResponse404 | sauvegardesRestaurerCreateResponse409) & {
+  headers: Headers;
+};
+
+export type sauvegardesRestaurerCreateResponse = (sauvegardesRestaurerCreateResponseSuccess | sauvegardesRestaurerCreateResponseError)
+
+export const getSauvegardesRestaurerCreateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/sauvegardes/${id}/restaurer/`
+}
+
+/**
+ * Remplace la base par cette copie, après une copie de sûreté (#304).
+ *
+ * Action destructive : une seule restauration à la fois, confirmation recopiée.
+ * Le travail se fait en tâche de fond ; suivre `restaurations/{id}/`.
+ */
+export const sauvegardesRestaurerCreate = async (id: number,
+    demandeRestauration: DemandeRestauration, options?: Parameters<typeof optiboulFetch>[1]): Promise<sauvegardesRestaurerCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<sauvegardesRestaurerCreateResponse>(getSauvegardesRestaurerCreateUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(demandeRestauration)
+  }
+);}
+
+
+
+
+
+export const getSauvegardesRestaurerCreateMutationKey = () => ['sauvegardesRestaurerCreate'] as const;
+
+export const getSauvegardesRestaurerCreateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sauvegardesRestaurerCreate>>, TError,SauvegardesRestaurerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sauvegardesRestaurerCreate>>, TError,SauvegardesRestaurerCreateMutationVariables, TContext> => {
+
+const mutationKey = getSauvegardesRestaurerCreateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sauvegardesRestaurerCreate>>, SauvegardesRestaurerCreateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  sauvegardesRestaurerCreate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SauvegardesRestaurerCreateMutationResult = NonNullable<Awaited<ReturnType<typeof sauvegardesRestaurerCreate>>>
+    export type SauvegardesRestaurerCreateMutationBody = DemandeRestauration
+    export type SauvegardesRestaurerCreateMutationError = Probleme
+    export type SauvegardesRestaurerCreateMutationVariables = {id: number;data: DemandeRestauration}
+
+    export const useSauvegardesRestaurerCreate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sauvegardesRestaurerCreate>>, TError,SauvegardesRestaurerCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof sauvegardesRestaurerCreate>>,
+        TError,
+        SauvegardesRestaurerCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSauvegardesRestaurerCreateMutationOptions(options), queryClient);
+    }
+    export type sauvegardesEtatRetrieveResponse200 = {
   data: EtatSauvegardes
   status: 200
 }
@@ -350,3 +471,119 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getSauvegardesLancerCreateMutationOptions(options), queryClient);
     }
+    export type sauvegardesRestaurationsRetrieveResponse200 = {
+  data: Restauration
+  status: 200
+}
+
+export type sauvegardesRestaurationsRetrieveResponse404 = {
+  data: Probleme
+  status: 404
+}
+
+export type sauvegardesRestaurationsRetrieveResponseSuccess = (sauvegardesRestaurationsRetrieveResponse200) & {
+  headers: Headers;
+};
+export type sauvegardesRestaurationsRetrieveResponseError = (sauvegardesRestaurationsRetrieveResponse404) & {
+  headers: Headers;
+};
+
+export type sauvegardesRestaurationsRetrieveResponse = (sauvegardesRestaurationsRetrieveResponseSuccess | sauvegardesRestaurationsRetrieveResponseError)
+
+export const getSauvegardesRestaurationsRetrieveUrl = (restauration: number,) => {
+
+
+
+
+  return `/api/v1/sauvegardes/restaurations/${restauration}/`
+}
+
+/**
+ * Suivi d'une restauration et contrôle des totaux (avant / après).
+ */
+export const sauvegardesRestaurationsRetrieve = async (restauration: number, options?: Parameters<typeof optiboulFetch>[1]): Promise<sauvegardesRestaurationsRetrieveResponse> => {
+
+  return optiboulFetch<sauvegardesRestaurationsRetrieveResponse>(getSauvegardesRestaurationsRetrieveUrl(restauration),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSauvegardesRestaurationsRetrieveQueryKey = (restauration: number,) => {
+    return [
+    `/api/v1/sauvegardes/restaurations/${restauration}/`
+    ] as const;
+    }
+
+
+export const getSauvegardesRestaurationsRetrieveQueryOptions = <TData = Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>, TError = Probleme>(restauration: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSauvegardesRestaurationsRetrieveQueryKey(restauration);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>> = ({ signal }) => sauvegardesRestaurationsRetrieve(restauration, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: restauration !== null && restauration !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SauvegardesRestaurationsRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>>
+export type SauvegardesRestaurationsRetrieveQueryError = Probleme
+
+
+export function useSauvegardesRestaurationsRetrieve<TData = Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>, TError = Probleme>(
+ restauration: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSauvegardesRestaurationsRetrieve<TData = Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>, TError = Probleme>(
+ restauration: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>,
+          TError,
+          Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useSauvegardesRestaurationsRetrieve<TData = Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>, TError = Probleme>(
+ restauration: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useSauvegardesRestaurationsRetrieve<TData = Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>, TError = Probleme>(
+ restauration: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sauvegardesRestaurationsRetrieve>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSauvegardesRestaurationsRetrieveQueryOptions(restauration,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+

@@ -10,6 +10,8 @@ from enum import StrEnum
 class Genre(StrEnum):
     LOCALE = "locale"
     CLOUD = "cloud"
+    # Copie de sûreté prise juste avant une restauration (#304).
+    AVANT_RESTAURATION = "avant_restauration"
 
 
 class Declencheur(StrEnum):

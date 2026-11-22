@@ -14,4 +14,6 @@ export interface Groupe {
   profil: ProfilEnum;
   description?: string;
   readonly membres: number;
+  /** Groupe de départ : il ne se supprime pas. */
+  readonly protege: boolean;
 }

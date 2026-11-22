@@ -81,7 +81,7 @@ class ValeurParametre(models.Model):
 class Sauvegarde(models.Model):
     """Une sauvegarde locale ou sa copie cloud chiffrée (CdC §5.12, US-142)."""
 
-    genre = models.CharField(_("genre"), max_length=10)
+    genre = models.CharField(_("genre"), max_length=20)
     declencheur = models.CharField(_("déclencheur"), max_length=20)
     statut = models.CharField(_("statut"), max_length=10, db_index=True)
     source = models.ForeignKey(

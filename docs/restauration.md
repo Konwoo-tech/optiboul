@@ -27,6 +27,21 @@ python manage.py restaurer_sauvegarde /chemin/vers/le/fichier --confirmer REMPLA
 
 La commande refait l'essai, crée une copie de sécurité `avant-restauration-*.dump` dans le dossier des sauvegardes, puis remplace la base de travail en une seule transaction. En cas d'échec, la base reste telle quelle.
 
+## 3 bis. Restaurer depuis l'écran Sauvegardes (#304)
+
+Pour une copie locale réussie encore présente sur le serveur, l'administrateur peut restaurer depuis l'écran Sauvegardes, sans ligne de commande :
+
+1. `POST /api/v1/sauvegardes/{id}/restaurer/` avec `{ "confirmation": "RESTAURER" }` répond `202`, avec l'identifiant de la restauration et celui de la copie de sûreté (`genre: avant_restauration`).
+2. Le travailleur Celery essaie la copie dans une base jetable, prend la copie de sûreté, puis remplace la base en une seule transaction.
+3. `GET /api/v1/sauvegardes/restaurations/{id}/` donne le statut (`en_cours`, `terminee` ou `echec`) et compare les totaux de la copie et de la base restaurée : nombre de caisses, somme des soldes clients, nombre de mouvements de stock. Des totaux égaux confirment la restauration.
+
+Règles :
+
+- Une seule restauration à la fois : `409 restauration_en_cours`.
+- Une copie cloud, en échec ou absente du disque n'est pas restaurable depuis l'écran (`409 sauvegarde_non_restaurable`) : passer par la commande ci-dessus.
+- Les saisies faites pendant la restauration sont perdues : prévenir l'équipe et choisir un moment sans activité au comptoir.
+- L'état d'une restauration est gardé 30 jours dans Redis, hors de la base qui est remplacée. La copie de sûreté et l'entrée `sauvegarde.restauree` du journal sont réécrites dans la base restaurée.
+
 ## 4. Reprendre
 
 1. Redémarrer l'API et Celery.

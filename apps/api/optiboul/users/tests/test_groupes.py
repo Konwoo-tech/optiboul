@@ -37,6 +37,7 @@ def test_creer_un_groupe_trace(client_de, administrateur):
         "profil": "caissier",
         "description": "Week-ends",
         "membres": 0,
+        "protege": False,
     }
     assert (
         client.post(
