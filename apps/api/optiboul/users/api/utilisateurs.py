@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.contrib.auth.models import Group
+from django.db import transaction
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework import status
@@ -15,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
 from optiboul.core.api.contexte import auteur_de
+from optiboul.core.api.erreurs import ProblemeSerializer
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.infrastructure.journal import journaliser
 from optiboul.users import comptes
@@ -122,12 +124,113 @@ class AccesSerializer(serializers.Serializer):
     fonctions = serializers.ListField(child=serializers.CharField())
 
 
+class ModificationCompteSerializer(serializers.Serializer):
+    """Tous les champs sont facultatifs (#302)."""
+
+    is_active = serializers.BooleanField(required=False)
+    name = serializers.CharField(max_length=255, required=False)
+    telephone = serializers.CharField(max_length=30, required=False)
+    canal = serializers.ChoiceField(choices=["sms", "whatsapp"], required=False)
+
+    def validate_name(self, nom: str) -> str:
+        if not nom.strip():
+            message = "Le nom est obligatoire."
+            raise serializers.ValidationError(message)
+        return nom.strip()
+
+    def validate_telephone(self, telephone: str) -> str:
+        try:
+            return normaliser_telephone(telephone)
+        except CompteInvalide as erreur:
+            raise serializers.ValidationError(str(erreur)) from erreur
+
+
+def _valeurs_du_compte(utilisateur: User) -> dict[str, object]:
+    return {
+        "name": utilisateur.name,
+        "telephone": utilisateur.telephone,
+        "canal": utilisateur.canal_verification,
+        "is_active": utilisateur.is_active,
+    }
+
+
+def _refuser(code: str, message: str) -> Response:
+    return Response({"detail": message, "code": code}, status=status.HTTP_409_CONFLICT)
+
+
 class CodeSerializer(serializers.Serializer):
     code = serializers.RegexField(r"^\d{4}$")
 
 
 class UtilisateursViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     serializer_class = CompteSerializer
+    http_method_names = ["get", "post", "patch"]
+
+    @extend_schema(
+        request=ModificationCompteSerializer,
+        responses={200: CompteSerializer, 409: ProblemeSerializer},
+    )
+    def partial_update(self, request: Request, pk: str) -> Response:
+        """Nom, téléphone, canal ; désactiver coupe aussi la session ouverte (#302)."""
+        utilisateur = self.get_object()
+        corps = ModificationCompteSerializer(data=request.data)
+        if not corps.is_valid():
+            return Response(
+                {
+                    "detail": "Champs invalides.",
+                    "code": "champs_invalides",
+                    "champs": corps.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        donnees = corps.validated_data
+        desactiver = donnees.get("is_active") is False and utilisateur.is_active
+        if desactiver and utilisateur.pk == request.user.pk:
+            return _refuser(
+                "compte_propre",
+                "Vous ne désactivez pas votre propre compte.",
+            )
+        if desactiver and utilisateur.profil == Profil.ADMINISTRATEUR:
+            autres = [
+                u
+                for u in User.objects.filter(is_active=True).exclude(pk=utilisateur.pk)
+                if u.profil == Profil.ADMINISTRATEUR
+            ]
+            if not autres:
+                return _refuser(
+                    "dernier_administrateur",
+                    "Il faut au moins un administrateur actif.",
+                )
+        avant = _valeurs_du_compte(utilisateur)
+        with transaction.atomic():
+            utilisateur.name = donnees.get("name", utilisateur.name)
+            utilisateur.telephone = donnees.get("telephone", utilisateur.telephone)
+            utilisateur.canal_verification = donnees.get(
+                "canal",
+                utilisateur.canal_verification,
+            )
+            utilisateur.is_active = donnees.get("is_active", utilisateur.is_active)
+            utilisateur.save()
+            apres = _valeurs_du_compte(utilisateur)
+            if avant["is_active"] != apres["is_active"]:
+                action_journal = (
+                    "utilisateur.reactive"
+                    if apres["is_active"]
+                    else "utilisateur.desactive"
+                )
+            else:
+                action_journal = "utilisateur.modifie"
+            if apres != avant:
+                journaliser(
+                    action_journal,
+                    auteur=auteur_de(request),
+                    objet_type="utilisateur",
+                    objet_id=utilisateur.pk,
+                    avant=avant,
+                    apres=apres,
+                )
+        return Response(CompteSerializer(utilisateur).data)
+
     permission_classes = [ProfilParmi("administrateur")]
     queryset = User.objects.order_by("name", "email")
 

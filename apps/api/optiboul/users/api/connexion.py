@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.contrib.auth import logout
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -300,6 +301,29 @@ def changer_utilisateur(request: Request) -> Response:
     )
     logout(request._request)  # noqa: SLF001
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ConfigurationGoogleSerializer(serializers.Serializer):
+    client_id = serializers.CharField(
+        allow_blank=True,
+        help_text="Identifiant OAuth public du client web ; vide : bouton masqué.",
+    )
+    jetons_de_test = serializers.BooleanField(
+        help_text="En local : un jeton « test:<gmail> » est accepté.",
+    )
+
+
+@extend_schema(responses=ConfigurationGoogleSerializer)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def configuration_google(request: Request) -> Response:
+    """Ce que le bouton « Continuer avec Google » doit savoir (#306)."""
+    return Response(
+        {
+            "client_id": settings.OPTIBOUL_GOOGLE_CLIENT_ID,
+            "jetons_de_test": google.jetons_de_test_actifs(),
+        },
+    )
 
 
 class ConnexionGoogleSerializer(serializers.Serializer):

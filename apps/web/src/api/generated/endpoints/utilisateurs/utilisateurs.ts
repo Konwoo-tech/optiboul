@@ -33,6 +33,8 @@ import type {
   CompteCree,
   NouveauCompte,
   PaginatedCompteList,
+  PatchedModificationCompte,
+  Probleme,
   UtilisateursListParams
 } from '../../model';
 
@@ -370,7 +372,111 @@ export function useUtilisateursRetrieve<TData = Awaited<ReturnType<typeof utilis
 
 
 
-export type utilisateursCodeCreateResponse204 = {
+export type utilisateursPartialUpdateResponse200 = {
+  data: Compte
+  status: 200
+}
+
+export type utilisateursPartialUpdateResponse409 = {
+  data: Probleme
+  status: 409
+}
+
+export type utilisateursPartialUpdateResponseSuccess = (utilisateursPartialUpdateResponse200) & {
+  headers: Headers;
+};
+export type utilisateursPartialUpdateResponseError = (utilisateursPartialUpdateResponse409) & {
+  headers: Headers;
+};
+
+export type utilisateursPartialUpdateResponse = (utilisateursPartialUpdateResponseSuccess | utilisateursPartialUpdateResponseError)
+
+export const getUtilisateursPartialUpdateUrl = (id: number,) => {
+
+
+
+
+  return `/api/v1/utilisateurs/${id}/`
+}
+
+/**
+ * Nom, téléphone, canal ; désactiver coupe aussi la session ouverte (#302).
+ */
+export const utilisateursPartialUpdate = async (id: number,
+    patchedModificationCompte?: PatchedModificationCompte, options?: Parameters<typeof optiboulFetch>[1]): Promise<utilisateursPartialUpdateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return optiboulFetch<utilisateursPartialUpdateResponse>(getUtilisateursPartialUpdateUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(patchedModificationCompte)
+  }
+);}
+
+
+
+
+
+export const getUtilisateursPartialUpdateMutationKey = () => ['utilisateursPartialUpdate'] as const;
+
+export const getUtilisateursPartialUpdateMutationOptions = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursPartialUpdate>>, TError,UtilisateursPartialUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof utilisateursPartialUpdate>>, TError,UtilisateursPartialUpdateMutationVariables, TContext> => {
+
+const mutationKey = getUtilisateursPartialUpdateMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof utilisateursPartialUpdate>>, UtilisateursPartialUpdateMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  utilisateursPartialUpdate(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UtilisateursPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof utilisateursPartialUpdate>>>
+    export type UtilisateursPartialUpdateMutationBody = PatchedModificationCompte | undefined
+    export type UtilisateursPartialUpdateMutationError = Probleme
+    export type UtilisateursPartialUpdateMutationVariables = {id: number;data?: PatchedModificationCompte}
+
+    export const useUtilisateursPartialUpdate = <TError = Probleme,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof utilisateursPartialUpdate>>, TError,UtilisateursPartialUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof utilisateursPartialUpdate>>,
+        TError,
+        UtilisateursPartialUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUtilisateursPartialUpdateMutationOptions(options), queryClient);
+    }
+    export type utilisateursCodeCreateResponse204 = {
   data: void
   status: 204
 }

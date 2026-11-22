@@ -27,10 +27,21 @@ DELAI = 5
 INVALIDE = "google_invalide"
 INDISPONIBLE = "google_indisponible"
 INCONNU = "compte_inconnu"
+# En local seulement (#306) : « test:<gmail> » remplace le jeton de Google.
+PREFIXE_DE_TEST = "test:"
+
+
+def jetons_de_test_actifs() -> bool:
+    return bool(settings.DEBUG and settings.OPTIBOUL_GOOGLE_JETONS_DE_TEST)
 
 
 def email_verifie(jeton: str) -> str:
     """Le Gmail vérifié porté par le jeton, ou un refus (jeton faux, autre client)."""
+    if jetons_de_test_actifs() and jeton.startswith(PREFIXE_DE_TEST):
+        email = jeton.removeprefix(PREFIXE_DE_TEST).strip().lower()
+        if not email.endswith("@gmail.com"):
+            raise RefusConnexion(INVALIDE)
+        return email
     client = settings.OPTIBOUL_GOOGLE_CLIENT_ID
     if not client:
         raise RefusConnexion(INDISPONIBLE)
