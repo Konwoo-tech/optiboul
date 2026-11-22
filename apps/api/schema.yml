@@ -1209,12 +1209,29 @@ paths:
       operationId: connexion_deconnexion_create
       tags:
       - connexion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Deconnexion'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Deconnexion'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Deconnexion'
       security:
       - cookieAuth: []
       - {}
       responses:
         '204':
           description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Probleme'
+          description: ''
   /api/v1/connexion/email/:
     post:
       operationId: connexion_email_create
@@ -6416,6 +6433,18 @@ components:
       description: |-
         * `jour` - jour
         * `nuit` - nuit
+    Deconnexion:
+      type: object
+      properties:
+        raison:
+          allOf:
+          - $ref: '#/components/schemas/RaisonDeconnexionEnum'
+          default: volontaire
+          description: |-
+            « inactivite » : fermée par le minuteur du poste (#299).
+
+            * `volontaire` - volontaire
+            * `inactivite` - inactivite
     Demande:
       type: object
       properties:
@@ -7362,6 +7391,9 @@ components:
       properties:
         genre:
           type: string
+        genre_libelle:
+          type: string
+          readOnly: true
         heure:
           type: string
           format: date-time
@@ -7376,6 +7408,7 @@ components:
           type: integer
       required:
       - genre
+      - genre_libelle
       - heure
       - lien
       - nombre
@@ -8385,6 +8418,9 @@ components:
           type: string
           readOnly: true
           title: Type
+        genre_libelle:
+          type: string
+          readOnly: true
         titre:
           type: string
           readOnly: true
@@ -8410,6 +8446,7 @@ components:
       required:
       - cree_le
       - genre
+      - genre_libelle
       - id
       - lien
       - lue
@@ -9704,10 +9741,18 @@ components:
     PatchedUser:
       type: object
       properties:
+        id:
+          type: integer
+          readOnly: true
         name:
           type: string
           title: Name of User
           maxLength: 255
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Adresse électronique
         url:
           type: string
           format: uri
@@ -10257,6 +10302,14 @@ components:
         * `guichet` - guichet
         * `marche` - marche
         * `tardive` - tardive
+    RaisonDeconnexionEnum:
+      enum:
+      - volontaire
+      - inactivite
+      type: string
+      description: |-
+        * `volontaire` - volontaire
+        * `inactivite` - inactivite
     RaisonEnum:
       enum:
       - sans_telephone
@@ -11178,10 +11231,18 @@ components:
     User:
       type: object
       properties:
+        id:
+          type: integer
+          readOnly: true
         name:
           type: string
           title: Name of User
           maxLength: 255
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Adresse électronique
         url:
           type: string
           format: uri
@@ -11193,6 +11254,8 @@ components:
           - $ref: '#/components/schemas/ProfilEnum'
           - $ref: '#/components/schemas/NullEnum'
       required:
+      - email
+      - id
       - profil
       - url
     Valeur:

@@ -403,6 +403,8 @@ SPECTACULAR_SETTINGS: dict[str, Any] = {
         "ModeReglementEnum": "optiboul.paie.application.paiements.MODES",
         "ModeReglementLibelleEnum": "optiboul.paie.infrastructure.models.MODES_REGLEMENT",
         "CanalEnvoiEnum": "optiboul.notifications.infrastructure.models.CANAUX",
+        "RaisonEnum": "optiboul.clients.api.clients.RAISONS_IGNOREES",
+        "RaisonDeconnexionEnum": "optiboul.users.api.connexion.RAISONS_DECONNEXION",
         "StatutEnvoiEnum": "optiboul.notifications.infrastructure.models.STATUTS_ENVOI",
         "CanalEnum": ["sms", "whatsapp"],  # canal de vérification des comptes
     },

@@ -75,9 +75,7 @@
         {{ moment|date:"d/m/Y" }} à {{ moment|date:"H:i" }} · livré par {{ livraison.cree_par.name }}
       </div>
     </div>
-
     <p class="fort">{{ livraison.client.nom }}</p>
-
     <table>
       <thead>
         <tr>
@@ -98,7 +96,6 @@
         {% endfor %}
       </tbody>
     </table>
-
     <table class="totaux">
       <tr>
         <td>Montant dû</td>
@@ -106,9 +103,7 @@
       </tr>
       {% for paiement in paiements %}
         <tr>
-          <td>
-            Reçu ({{ paiement.get_mode_display }}{% if paiement.reference %} · {{ paiement.reference }}{% endif %})
-          </td>
+          <td>Reçu ({{ paiement.get_mode_display }}{% if paiement.reference %} · {{ paiement.reference }}{% endif %})</td>
           <td class="montant">{{ paiement.montant|fcfa }}</td>
         </tr>
       {% empty %}

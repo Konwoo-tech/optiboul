@@ -77,9 +77,7 @@
       {% for element in ligne.elements.all %}
         <tr>
           <td>{{ element.description }}</td>
-          <td class="montant">
-            {% if element.genre == "penalite" %}-{% endif %}{{ element.montant|fcfa }}
-          </td>
+          <td class="montant">{% if element.genre == "penalite" %}-{% endif %}{{ element.montant|fcfa }}</td>
         </tr>
       {% endfor %}
       <tr>

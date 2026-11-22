@@ -217,15 +217,35 @@ def annuler_identification(request: Request) -> Response:
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@extend_schema(request=None, responses={204: None})
+RAISONS_DECONNEXION = ["volontaire", "inactivite"]
+
+
+class DeconnexionSerializer(serializers.Serializer):
+    raison = serializers.ChoiceField(
+        choices=RAISONS_DECONNEXION,
+        required=False,
+        default="volontaire",
+        help_text="« inactivite » : fermée par le minuteur du poste (#299).",
+    )
+
+
+@extend_schema(
+    request=DeconnexionSerializer,
+    responses={204: None, 400: ProblemeSerializer},
+)
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def deconnexion(request: Request) -> Response:
+    corps = DeconnexionSerializer(data=request.data)
+    if not corps.is_valid():
+        return probleme(connexion.RefusConnexion("raison_invalide"))
     if request.user.is_authenticated:
+        inactivite = corps.validated_data["raison"] == "inactivite"
         journaliser(
-            "connexion.fermee",
+            "connexion.expiree" if inactivite else "connexion.fermee",
             auteur=auteur_de(request),
             objet_type="utilisateur",
+            objet_id=request.user.pk,
         )
     logout(request._request)  # noqa: SLF001
     return Response(status=status.HTTP_204_NO_CONTENT)

@@ -9,8 +9,10 @@ import type { NullEnum } from './nullEnum.ts';
 import type { ProfilEnum } from './profilEnum.ts';
 
 export interface PatchedUser {
+  readonly id?: number;
   /** @maxLength 255 */
   name?: string;
+  readonly email?: string;
   readonly url?: string;
   readonly profil?: ProfilEnum | NullEnum | null;
 }

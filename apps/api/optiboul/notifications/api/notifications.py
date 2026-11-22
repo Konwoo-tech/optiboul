@@ -22,9 +22,11 @@ from optiboul.core.api.permissions import TOUS_LES_PROFILS
 from optiboul.core.api.permissions import ProfilParmi
 from optiboul.core.infrastructure.journal import journaliser
 from optiboul.notifications.domain.regroupement import Avis
+from optiboul.notifications.domain.regroupement import Groupe
 from optiboul.notifications.domain.regroupement import regrouper
 from optiboul.notifications.domain.routage import REGLES_DE_DEPART
 from optiboul.notifications.domain.routage import CanalNotification
+from optiboul.notifications.domain.routage import libelle_du_genre
 from optiboul.notifications.infrastructure.envois import regle
 from optiboul.notifications.infrastructure.models import Notification
 from optiboul.notifications.infrastructure.models import RegleNotification
@@ -38,12 +40,26 @@ LIMITE_REGROUPEMENT = 500
 
 
 class NotificationSerializer(serializers.ModelSerializer[Notification]):
+    genre_libelle = serializers.SerializerMethodField()
     lue = serializers.SerializerMethodField()
 
     class Meta:
         model = Notification
-        fields = ["id", "genre", "titre", "message", "lien", "cree_le", "lue_le", "lue"]
+        fields = [
+            "id",
+            "genre",
+            "genre_libelle",
+            "titre",
+            "message",
+            "lien",
+            "cree_le",
+            "lue_le",
+            "lue",
+        ]
         read_only_fields = fields
+
+    def get_genre_libelle(self, notification: Notification) -> str:
+        return libelle_du_genre(notification.genre)
 
     def get_lue(self, notification: Notification) -> bool:
         return notification.lue_le is not None
@@ -59,11 +75,15 @@ class MarquageSerializer(serializers.Serializer):
 
 class GroupeNotificationsSerializer(serializers.Serializer):
     genre = serializers.CharField()
+    genre_libelle = serializers.SerializerMethodField()
     heure = serializers.DateTimeField()
     titre = serializers.CharField(help_text="Titre de la plus récente.")
     lien = serializers.CharField()
     nombre = serializers.IntegerField()
     non_lues = serializers.IntegerField()
+
+    def get_genre_libelle(self, groupe: Groupe) -> str:
+        return libelle_du_genre(groupe.genre)
 
 
 class MarquerGroupeNotificationsSerializer(serializers.Serializer):

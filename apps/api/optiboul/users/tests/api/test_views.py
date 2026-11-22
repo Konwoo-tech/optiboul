@@ -35,6 +35,8 @@ class TestUserViewSet:
         response = view.me(request)  # type: ignore[misc,call-arg,arg-type]
 
         assert response.data == {
+            "id": user.pk,
+            "email": user.email,
             "url": f"http://testserver/api/v1/users/{user.pk}/",
             "name": user.name,
             "profil": None,

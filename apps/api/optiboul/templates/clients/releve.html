@@ -86,12 +86,8 @@
         <tr>
           <td>{{ ligne.jour|date:"d/m/Y" }}</td>
           <td>{{ ligne.libelle }}</td>
-          <td class="montant">
-            {% if ligne.debit %}{{ ligne.debit|fcfa }}{% endif %}
-          </td>
-          <td class="montant">
-            {% if ligne.credit %}{{ ligne.credit|fcfa }}{% endif %}
-          </td>
+          <td class="montant">{% if ligne.debit %}{{ ligne.debit|fcfa }}{% endif %}</td>
+          <td class="montant">{% if ligne.credit %}{{ ligne.credit|fcfa }}{% endif %}</td>
           <td class="montant">{{ ligne.solde|fcfa }}</td>
         </tr>
       {% endfor %}

@@ -9,6 +9,7 @@
 export interface Notification {
   readonly id: number;
   readonly genre: string;
+  readonly genre_libelle: string;
   readonly titre: string;
   readonly message: string;
   readonly lien: string;

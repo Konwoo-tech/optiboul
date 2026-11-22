@@ -180,10 +180,13 @@ class RelanceSerializer(serializers.ModelSerializer[Relance]):
         }
 
 
+RAISONS_IGNOREES = ["sans_telephone", "sans_dette"]
+
+
 class IgnoreSerializer(serializers.Serializer):
     client = serializers.IntegerField()
     nom = serializers.CharField()
-    raison = serializers.ChoiceField(choices=["sans_telephone", "sans_dette"])
+    raison = serializers.ChoiceField(choices=RAISONS_IGNOREES)
 
 
 class ResultatRelanceSerializer(serializers.Serializer):
