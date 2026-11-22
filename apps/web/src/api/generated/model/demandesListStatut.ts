@@ -11,6 +11,7 @@ export type DemandesListStatut = typeof DemandesListStatut[keyof typeof Demandes
 
 export const DemandesListStatut = {
   accordee: 'accordee',
+  annulee: 'annulee',
   en_attente: 'en_attente',
   refusee: 'refusee',
 } as const;

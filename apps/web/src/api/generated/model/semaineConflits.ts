@@ -9,5 +9,6 @@ import type { Semaine } from './semaine.ts';
 
 export interface SemaineConflits {
   semaine: Semaine;
+  /** Conflits du planning signalés à la planification (O9) ; vide sinon. */
   conflits: string[];
 }

@@ -93,6 +93,25 @@ class AutorisationsDjango:
             maintenant=maintenant,
         ).code
 
+    def retirer(
+        self,
+        depense_id: int,
+        *,
+        motif: str,
+        auteur: Auteur,
+        maintenant: datetime,
+    ) -> str | None:
+        from optiboul.demandes.infrastructure.demandes import depots as depots_demandes  # noqa: PLC0415
+
+        return circuit.annuler(
+            depots_demandes,
+            type_cle=DEPENSE,
+            objet_id=depense_id,
+            motif=motif,
+            auteur=auteur,
+            maintenant=maintenant,
+        )
+
 
 autorisations = AutorisationsDjango()
 

@@ -314,6 +314,43 @@ def decider(  # noqa: PLR0913
     return decidee
 
 
+def annuler(  # noqa: PLR0913
+    depots: Depots,
+    *,
+    type_cle: str,
+    objet_id: int,
+    motif: str,
+    auteur: Auteur,
+    maintenant: datetime,
+) -> str | None:
+    """L'objet lié n'attend plus d'accord : sa demande en attente est close.
+
+    Renvoie le DEM-xxx annulé, s'il y en avait un ; les objets ne bougent pas.
+    """
+    demande = depots.demandes.en_attente_pour(type_cle, objet_id)
+    if demande is None:
+        return None
+    depots.demandes.decider(
+        demande.id,
+        statut=StatutDemande.ANNULEE,
+        decideur=auteur,
+        via=Via.POSTE,
+        motif_refus=motif.strip(),
+        le=maintenant,
+    )
+    depots.journal.enregistrer(
+        Evenement(
+            action="demande.annulee",
+            auteur=auteur,
+            objet_type="demande",
+            objet_id=str(demande.id),
+            avant={"statut": StatutDemande.EN_ATTENTE},
+            apres={"statut": StatutDemande.ANNULEE, "motif": motif.strip()},
+        ),
+    )
+    return demande.code
+
+
 def escalader_echues(depots: Depots, *, maintenant: datetime, systeme: Auteur) -> int:
     """R19 : sans réponse à l'échéance, la demande remonte au propriétaire."""
     echues = depots.demandes.echues(maintenant)

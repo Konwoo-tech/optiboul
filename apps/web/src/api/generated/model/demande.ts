@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type { DemandeEmetteur } from './demandeEmetteur.ts';
+import type { ValideurPossible } from './valideurPossible.ts';
 
 export interface Demande {
   readonly id: number;
@@ -22,6 +23,7 @@ export interface Demande {
   readonly emetteur: DemandeEmetteur;
   readonly emetteur_profil: string;
   readonly valideurs: unknown;
+  readonly valideurs_possibles: readonly ValideurPossible[];
   readonly statut: string;
   readonly cree_le: string;
   /** @nullable */

@@ -288,6 +288,58 @@ class TarifsSerializer(serializers.Serializer):
     )
 
 
+class ClientEcritureSerializer(ClientSerializer):
+    """Corps de création et de modification : `tarifs` s'applique aussi (#309)."""
+
+    tarifs = serializers.DictField(  # type: ignore[assignment]
+        child=serializers.IntegerField(min_value=0, allow_null=True),
+        required=False,
+        write_only=True,
+        help_text="Code du produit → prix en FCFA ; null retire le tarif propre.",
+    )
+
+    class Meta(ClientSerializer.Meta):
+        read_only_fields = ["id", "plafond_effectif", "solde", "prix"]
+
+    def create(self, validated_data: dict[str, Any]) -> Client:
+        validated_data.pop("tarifs", None)
+        return super().create(validated_data)
+
+    def update(self, instance: Client, validated_data: dict[str, Any]) -> Client:
+        validated_data.pop("tarifs", None)
+        return super().update(instance, validated_data)
+
+    def to_representation(self, instance: Client) -> dict[str, Any]:
+        """La réponse est celle de la lecture, tarifs appliqués compris."""
+        return ClientSerializer(instance, context=self.context).to_representation(
+            instance,
+        )
+
+
+def appliquer_tarifs(client: Client, demandes: dict[str, int | None]) -> None:
+    """Un prix fixe le tarif propre, null le retire ; un produit inconnu refuse tout."""
+    produits = {p.code: p for p in Produit.objects.filter(code__in=demandes)}
+    if inconnus := sorted(set(demandes) - set(produits)):
+        message = f"Produits inconnus : {', '.join(inconnus)}."
+        refus = RefusMetier("produit_inconnu", message, produits=inconnus)
+        raise refus
+    for code, prix in demandes.items():
+        if prix is None:
+            TarifClient.objects.filter(client=client, produit=produits[code]).delete()
+        else:
+            TarifClient.objects.update_or_create(
+                client=client,
+                produit=produits[code],
+                defaults={"prix": prix},
+            )
+
+
+def tarifs_de(client: Client) -> dict[str, int]:
+    return dict(
+        TarifClient.objects.filter(client=client).values_list("produit__code", "prix"),
+    )
+
+
 def _valeurs(client: Client) -> dict[str, Any]:
     return {
         champ: getattr(client, champ)
@@ -366,27 +418,71 @@ class ClientsViewSet(
             clients = clients.filter(actif=actif.lower() in {"1", "true", "oui"})
         return rechercher(clients, self.request.query_params.get("recherche", ""))
 
-    def perform_create(self, serializer: serializers.BaseSerializer) -> None:
+    def get_serializer_class(self):
+        if self.action in {"create", "update", "partial_update"}:
+            return ClientEcritureSerializer
+        return super().get_serializer_class()
+
+    @extend_schema(
+        request=ClientEcritureSerializer,
+        responses={201: ClientSerializer, 400: ProblemeSerializer},
+    )
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        try:
+            with transaction.atomic():
+                return super().create(request, *args, **kwargs)
+        except RefusMetier as refus:
+            return probleme(refus)
+
+    @extend_schema(
+        request=ClientEcritureSerializer,
+        responses={200: ClientSerializer, 400: ProblemeSerializer},
+    )
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        try:
+            with transaction.atomic():
+                return super().update(request, *args, **kwargs)
+        except RefusMetier as refus:
+            return probleme(refus)
+
+    @extend_schema(
+        request=ClientEcritureSerializer,
+        responses={200: ClientSerializer, 400: ProblemeSerializer},
+    )
+    def partial_update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        return super().partial_update(request, *args, **kwargs)
+
+    def _enregistrer(self, serializer: serializers.BaseSerializer) -> Client:
+        tarifs = serializer.validated_data.get("tarifs")
         client = serializer.save()
+        if tarifs is not None:
+            appliquer_tarifs(client, tarifs)
+        return client
+
+    def perform_create(self, serializer: serializers.BaseSerializer) -> None:
+        client = self._enregistrer(serializer)
         journaliser(
             "client.cree",
             auteur=auteur_de(self.request),
             objet_type="client",
             objet_id=client.pk,
-            apres=_valeurs(client),
+            apres={**_valeurs(client), "tarifs": tarifs_de(client)},
         )
 
     def perform_update(self, serializer: serializers.BaseSerializer) -> None:
         assert serializer.instance is not None
-        avant = _valeurs(serializer.instance)
-        client = serializer.save()
+        avant = {
+            **_valeurs(serializer.instance),
+            "tarifs": tarifs_de(serializer.instance),
+        }
+        client = self._enregistrer(serializer)
         journaliser(
             "client.modifie",
             auteur=auteur_de(self.request),
             objet_type="client",
             objet_id=client.pk,
             avant=avant,
-            apres=_valeurs(client),
+            apres={**_valeurs(client), "tarifs": tarifs_de(client)},
         )
 
     @extend_schema(
@@ -596,34 +692,14 @@ class ClientsViewSet(
         corps = TarifsSerializer(data=request.data)
         corps.is_valid(raise_exception=True)
         demandes: dict[str, int | None] = corps.validated_data["tarifs"]
-        produits = {p.code: p for p in Produit.objects.filter(code__in=demandes)}
-        if inconnus := sorted(set(demandes) - set(produits)):
-            refus = RefusMetier(
-                "produit_inconnu",
-                f"Produits inconnus : {', '.join(inconnus)}.",
-                produits=inconnus,
-            )
+        avant = tarifs_de(client)
+        try:
+            with transaction.atomic():
+                appliquer_tarifs(client, demandes)
+        except RefusMetier as refus:
             return probleme(refus)
-        avant = {t.produit.code: t.prix for t in client.tarifs.all()}
+        apres = tarifs_de(client)
         with transaction.atomic():
-            for code, prix in demandes.items():
-                if prix is None:
-                    TarifClient.objects.filter(
-                        client=client,
-                        produit=produits[code],
-                    ).delete()
-                else:
-                    TarifClient.objects.update_or_create(
-                        client=client,
-                        produit=produits[code],
-                        defaults={"prix": prix},
-                    )
-            apres = dict(
-                TarifClient.objects.filter(client=client).values_list(
-                    "produit__code",
-                    "prix",
-                ),
-            )
             if apres != avant:
                 journaliser(
                     "client.tarifs",

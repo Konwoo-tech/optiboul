@@ -9,6 +9,7 @@ class StatutDemande(StrEnum):
     EN_ATTENTE = "en_attente"
     ACCORDEE = "accordee"
     REFUSEE = "refusee"
+    ANNULEE = "annulee"  # l'objet lié a été retiré ou n'a plus besoin d'accord
 
 
 class Via(StrEnum):

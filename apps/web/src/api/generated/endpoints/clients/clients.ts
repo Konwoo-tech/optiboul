@@ -26,6 +26,7 @@ import type {
 
 import type {
   Client,
+  ClientEcriture,
   ClientsDettesRetrieveParams,
   ClientsListParams,
   ClientsRelancesListParams,
@@ -35,7 +36,7 @@ import type {
   ImportClasseur,
   PaginatedClientList,
   PaginatedRelanceList,
-  PatchedClient,
+  PatchedClientEcriture,
   Periode,
   Probleme,
   RapportImport,
@@ -215,12 +216,19 @@ export type clientsCreateResponse201 = {
   status: 201
 }
 
+export type clientsCreateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
 export type clientsCreateResponseSuccess = (clientsCreateResponse201) & {
   headers: Headers;
 };
-;
+export type clientsCreateResponseError = (clientsCreateResponse400) & {
+  headers: Headers;
+};
 
-export type clientsCreateResponse = (clientsCreateResponseSuccess)
+export type clientsCreateResponse = (clientsCreateResponseSuccess | clientsCreateResponseError)
 
 export const getClientsCreateUrl = () => {
 
@@ -233,7 +241,7 @@ export const getClientsCreateUrl = () => {
 /**
  * La caisse lit les clients ; le gérant et le propriétaire les gèrent.
  */
-export const clientsCreate = async (client: NonReadonly<Client>, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsCreateResponse> => {
+export const clientsCreate = async (clientEcriture: NonReadonly<ClientEcriture>, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsCreateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -254,7 +262,7 @@ return optiboulFetch<clientsCreateResponse>(getClientsCreateUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(client)
+    body: JSON.stringify(clientEcriture)
   }
 );}
 
@@ -264,7 +272,7 @@ return optiboulFetch<clientsCreateResponse>(getClientsCreateUrl(),
 
 export const getClientsCreateMutationKey = () => ['clientsCreate'] as const;
 
-export const getClientsCreateMutationOptions = <TError = unknown,
+export const getClientsCreateMutationOptions = <TError = Probleme,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsCreate>>, TError,ClientsCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof clientsCreate>>, TError,ClientsCreateMutationVariables, TContext> => {
 
@@ -292,11 +300,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type ClientsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof clientsCreate>>>
-    export type ClientsCreateMutationBody = NonReadonly<Client>
-    export type ClientsCreateMutationError = unknown
-    export type ClientsCreateMutationVariables = {data: NonReadonly<Client>}
+    export type ClientsCreateMutationBody = NonReadonly<ClientEcriture>
+    export type ClientsCreateMutationError = Probleme
+    export type ClientsCreateMutationVariables = {data: NonReadonly<ClientEcriture>}
 
-    export const useClientsCreate = <TError = unknown,
+    export const useClientsCreate = <TError = Probleme,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsCreate>>, TError,ClientsCreateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof clientsCreate>>,
@@ -420,12 +428,19 @@ export type clientsUpdateResponse200 = {
   status: 200
 }
 
+export type clientsUpdateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
 export type clientsUpdateResponseSuccess = (clientsUpdateResponse200) & {
   headers: Headers;
 };
-;
+export type clientsUpdateResponseError = (clientsUpdateResponse400) & {
+  headers: Headers;
+};
 
-export type clientsUpdateResponse = (clientsUpdateResponseSuccess)
+export type clientsUpdateResponse = (clientsUpdateResponseSuccess | clientsUpdateResponseError)
 
 export const getClientsUpdateUrl = (id: number,) => {
 
@@ -439,7 +454,7 @@ export const getClientsUpdateUrl = (id: number,) => {
  * La caisse lit les clients ; le gérant et le propriétaire les gèrent.
  */
 export const clientsUpdate = async (id: number,
-    client: NonReadonly<Client>, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsUpdateResponse> => {
+    clientEcriture: NonReadonly<ClientEcriture>, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsUpdateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -460,7 +475,7 @@ return optiboulFetch<clientsUpdateResponse>(getClientsUpdateUrl(id),
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(client)
+    body: JSON.stringify(clientEcriture)
   }
 );}
 
@@ -470,7 +485,7 @@ return optiboulFetch<clientsUpdateResponse>(getClientsUpdateUrl(id),
 
 export const getClientsUpdateMutationKey = () => ['clientsUpdate'] as const;
 
-export const getClientsUpdateMutationOptions = <TError = unknown,
+export const getClientsUpdateMutationOptions = <TError = Probleme,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsUpdate>>, TError,ClientsUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof clientsUpdate>>, TError,ClientsUpdateMutationVariables, TContext> => {
 
@@ -498,11 +513,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type ClientsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof clientsUpdate>>>
-    export type ClientsUpdateMutationBody = NonReadonly<Client>
-    export type ClientsUpdateMutationError = unknown
-    export type ClientsUpdateMutationVariables = {id: number;data: NonReadonly<Client>}
+    export type ClientsUpdateMutationBody = NonReadonly<ClientEcriture>
+    export type ClientsUpdateMutationError = Probleme
+    export type ClientsUpdateMutationVariables = {id: number;data: NonReadonly<ClientEcriture>}
 
-    export const useClientsUpdate = <TError = unknown,
+    export const useClientsUpdate = <TError = Probleme,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsUpdate>>, TError,ClientsUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof clientsUpdate>>,
@@ -517,12 +532,19 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   status: 200
 }
 
+export type clientsPartialUpdateResponse400 = {
+  data: Probleme
+  status: 400
+}
+
 export type clientsPartialUpdateResponseSuccess = (clientsPartialUpdateResponse200) & {
   headers: Headers;
 };
-;
+export type clientsPartialUpdateResponseError = (clientsPartialUpdateResponse400) & {
+  headers: Headers;
+};
 
-export type clientsPartialUpdateResponse = (clientsPartialUpdateResponseSuccess)
+export type clientsPartialUpdateResponse = (clientsPartialUpdateResponseSuccess | clientsPartialUpdateResponseError)
 
 export const getClientsPartialUpdateUrl = (id: number,) => {
 
@@ -536,7 +558,7 @@ export const getClientsPartialUpdateUrl = (id: number,) => {
  * La caisse lit les clients ; le gérant et le propriétaire les gèrent.
  */
 export const clientsPartialUpdate = async (id: number,
-    patchedClient?: NonReadonly<PatchedClient>, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsPartialUpdateResponse> => {
+    patchedClientEcriture?: NonReadonly<PatchedClientEcriture>, options?: Parameters<typeof optiboulFetch>[1]): Promise<clientsPartialUpdateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -557,7 +579,7 @@ return optiboulFetch<clientsPartialUpdateResponse>(getClientsPartialUpdateUrl(id
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(patchedClient)
+    body: JSON.stringify(patchedClientEcriture)
   }
 );}
 
@@ -567,7 +589,7 @@ return optiboulFetch<clientsPartialUpdateResponse>(getClientsPartialUpdateUrl(id
 
 export const getClientsPartialUpdateMutationKey = () => ['clientsPartialUpdate'] as const;
 
-export const getClientsPartialUpdateMutationOptions = <TError = unknown,
+export const getClientsPartialUpdateMutationOptions = <TError = Probleme,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsPartialUpdate>>, TError,ClientsPartialUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof clientsPartialUpdate>>, TError,ClientsPartialUpdateMutationVariables, TContext> => {
 
@@ -595,11 +617,11 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type ClientsPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof clientsPartialUpdate>>>
-    export type ClientsPartialUpdateMutationBody = NonReadonly<PatchedClient> | undefined
-    export type ClientsPartialUpdateMutationError = unknown
-    export type ClientsPartialUpdateMutationVariables = {id: number;data?: NonReadonly<PatchedClient>}
+    export type ClientsPartialUpdateMutationBody = NonReadonly<PatchedClientEcriture> | undefined
+    export type ClientsPartialUpdateMutationError = Probleme
+    export type ClientsPartialUpdateMutationVariables = {id: number;data?: NonReadonly<PatchedClientEcriture>}
 
-    export const useClientsPartialUpdate = <TError = unknown,
+    export const useClientsPartialUpdate = <TError = Probleme,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clientsPartialUpdate>>, TError,ClientsPartialUpdateMutationVariables, TContext>, request?: SecondParameter<typeof optiboulFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof clientsPartialUpdate>>,

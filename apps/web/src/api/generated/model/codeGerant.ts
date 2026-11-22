@@ -5,12 +5,26 @@
  * API REST d'OptiBoul ERP (Boulangerie du Faubourg)
  * OpenAPI spec version: 1.0.0
  */
+import type { ProfilEnum } from './profilEnum.ts';
 
 /**
  * Le gérant décide sur le poste de la caissière, sans changer d'utilisateur.
+ *
+ * Le valideur est désigné par son identifiant, ou par son profil (#316) : le
+ * gérant de la semaine ouverte, ou le propriétaire.
  */
 export interface CodeGerant {
-  utilisateur: number;
+  utilisateur?: number;
+  /**
+     * gerant (de la semaine ouverte) ou proprietaire.
+     *
+     * * `caissier` - Caissier / caissière
+     * * `gerant` - Gérant de la semaine
+     * * `production` - Responsable de production
+     * * `proprietaire` - Propriétaire
+     * * `administrateur` - Administrateur
+     */
+  profil?: ProfilEnum;
   /**
      * @minLength 4
      * @maxLength 4

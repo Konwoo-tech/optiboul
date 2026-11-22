@@ -99,8 +99,16 @@ class DepotCaissesDjango:
             receveur_id=receveur,
         )
 
-    def fermer(self, caisse_id: int, resultat: ResultatFermeture, le: datetime) -> None:
+    def fermer(
+        self,
+        caisse_id: int,
+        resultat: ResultatFermeture,
+        le: datetime,
+        *,
+        par: int,
+    ) -> None:
         Caisse.objects.filter(pk=caisse_id).update(
+            fermee_par_id=par,
             statut=StatutCaisse.FERMEE,
             en_cours=False,
             attendu=resultat.attendu,
@@ -126,6 +134,7 @@ class DepotCaissesDjango:
             compte=None,
             ecart=None,
             fermee_le=None,
+            fermee_par=None,
         )
 
 

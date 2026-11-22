@@ -26,6 +26,7 @@ import type {
 
 import type {
   Fournisseur,
+  FournisseurChoix,
   FournisseursListParams,
   PaginatedFournisseurList,
   PatchedFournisseur
@@ -595,3 +596,112 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       > => {
       return useMutation(getFournisseursPartialUpdateMutationOptions(options), queryClient);
     }
+    export type fournisseursChoixListResponse200 = {
+  data: FournisseurChoix[]
+  status: 200
+}
+
+export type fournisseursChoixListResponseSuccess = (fournisseursChoixListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type fournisseursChoixListResponse = (fournisseursChoixListResponseSuccess)
+
+export const getFournisseursChoixListUrl = () => {
+
+
+
+
+  return `/api/v1/fournisseurs/choix/`
+}
+
+/**
+ * Liste réduite des fournisseurs actifs, pour choisir à la saisie (#323).
+ */
+export const fournisseursChoixList = async ( options?: Parameters<typeof optiboulFetch>[1]): Promise<fournisseursChoixListResponse> => {
+
+  return optiboulFetch<fournisseursChoixListResponse>(getFournisseursChoixListUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getFournisseursChoixListQueryKey = () => {
+    return [
+    `/api/v1/fournisseurs/choix/`
+    ] as const;
+    }
+
+
+export const getFournisseursChoixListQueryOptions = <TData = Awaited<ReturnType<typeof fournisseursChoixList>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof fournisseursChoixList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getFournisseursChoixListQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof fournisseursChoixList>>> = ({ signal }) => fournisseursChoixList({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof fournisseursChoixList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type FournisseursChoixListQueryResult = NonNullable<Awaited<ReturnType<typeof fournisseursChoixList>>>
+export type FournisseursChoixListQueryError = unknown
+
+
+export function useFournisseursChoixList<TData = Awaited<ReturnType<typeof fournisseursChoixList>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof fournisseursChoixList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof fournisseursChoixList>>,
+          TError,
+          Awaited<ReturnType<typeof fournisseursChoixList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useFournisseursChoixList<TData = Awaited<ReturnType<typeof fournisseursChoixList>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof fournisseursChoixList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof fournisseursChoixList>>,
+          TError,
+          Awaited<ReturnType<typeof fournisseursChoixList>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useFournisseursChoixList<TData = Awaited<ReturnType<typeof fournisseursChoixList>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof fournisseursChoixList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useFournisseursChoixList<TData = Awaited<ReturnType<typeof fournisseursChoixList>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof fournisseursChoixList>>, TError, TData>>, request?: SecondParameter<typeof optiboulFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getFournisseursChoixListQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+

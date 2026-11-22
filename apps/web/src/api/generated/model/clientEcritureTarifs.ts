@@ -7,6 +7,6 @@
  */
 
 /**
- * Prix appliqués à la livraison : le tarif du client, sinon le prix de base.
+ * Code du produit → prix en FCFA ; null retire le tarif propre.
  */
-export type PatchedClientPrix = {[key: string]: number | null};
+export type ClientEcritureTarifs = {[key: string]: number | null};
