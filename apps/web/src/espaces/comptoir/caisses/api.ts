@@ -64,16 +64,18 @@ export function versSessionDeCaisse(caisse: Caisse, especes: DetailEspeces | nul
     jour: caisse.jour,
     type: caisse.creneau === 'jour' ? 'jour' : 'nuit',
     caissiere,
-    ouverture: { heure: heureDeYaounde(caisse.ouverte_le), par: caissiere.nom },
-    // Le serveur ne dit pas qui a fermé : on affiche la caissière de la caisse.
+    ouverture: { heure: heureDeYaounde(caisse.ouverte_le), par: caisse.ouverte_par.nom },
+    // `fermee_par` : qui a fermé la caisse (#312) ; absent tant qu'elle est ouverte.
     fermeture: caisse.fermee_le
-      ? { heure: heureDeYaounde(caisse.fermee_le), par: caissiere.nom }
+      ? {
+          heure: heureDeYaounde(caisse.fermee_le),
+          par: (caisse.fermee_par ?? caisse.caissiere).nom,
+        }
       : null,
     fonds: caisse.fonds,
     attendu: caisse.attendu ?? especes?.attendu ?? caisse.fonds,
     compte: caisse.compte,
-    // La recette n'existe que par caissière : voir `recapitulatif`.
-    recette: 0,
+    recette: caisse.recette,
     enCours: caisse.en_cours,
   };
 }

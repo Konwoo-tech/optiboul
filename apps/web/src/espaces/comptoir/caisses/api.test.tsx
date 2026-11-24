@@ -34,6 +34,9 @@ const OUVERTE = {
   jour: '2026-11-13',
   creneau: 'jour',
   caissiere: DAVY,
+  ouverte_par: DAVY,
+  fermee_par: null,
+  recette: 0,
   planifiee: null,
   hors_planning: true,
   fonds: 20000,
@@ -55,6 +58,8 @@ const FERMEE = {
   ecart: -600,
   statut: 'fermee',
   en_cours: false,
+  fermee_par: { id: 3, nom: 'Willy Gérant' },
+  recette: 5600,
   ouverte_le: '2026-11-12T21:30:00+01:00',
   fermee_le: '2026-11-13T05:10:00+01:00',
 };
@@ -136,7 +141,8 @@ describe('lecture des caisses sur le vrai serveur', () => {
       compte: 21000,
       enCours: false,
       ouverture: { heure: '21:30', par: 'Davy Caisse' },
-      fermeture: { heure: '05:10', par: 'Davy Caisse' },
+      recette: 5600,
+      fermeture: { heure: '05:10', par: 'Willy Gérant' },
     });
     expect(reponse.sessions[1]).toMatchObject({ enCours: true, fermeture: null, attendu: 21600 });
     expect(reponse.caisseOuverte).toEqual({
