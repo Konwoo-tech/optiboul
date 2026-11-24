@@ -81,6 +81,59 @@ describe('connexion sur le vrai serveur', () => {
     await waitFor(() => expect(corps).toEqual({ email: 'davy@gmail.com' }));
   });
 
+  it('Google : sans identifiant ni jeton de test, aucun bouton ; avec le jeton de test local, une saisie de Gmail', async () => {
+    serveur.use(
+      http.get('*/api/v1/connexion/google/configuration/', () =>
+        HttpResponse.json({ client_id: '', jetons_de_test: false }),
+      ),
+    );
+    ouvrir();
+    await screen.findByRole('button', { name: 'Se connecter' });
+    expect(screen.queryByText(/Continuer avec Google/)).toBeNull();
+  });
+
+  it('Google (jeton de test local) : envoie le jeton, puis enchaîne sur le deuxième facteur', async () => {
+    let corps: unknown;
+    serveur.use(
+      http.get('*/api/v1/connexion/google/configuration/', () =>
+        HttpResponse.json({ client_id: '', jetons_de_test: true }),
+      ),
+      http.post('*/api/v1/connexion/google/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json({
+          deuxFacteurs: true,
+          utilisateur: { id: 4, nom: 'Davy Caisse', profil: 'caissier', email: 'davy@gmail.com' },
+          telephoneMasque: '+237 6 •• •• 12 34',
+          via: 'Google',
+        });
+      }),
+    );
+    ouvrir();
+    fireEvent.change(await screen.findByLabelText('Gmail du compte à tester'), {
+      target: { value: 'davy@gmail.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Continuer avec Google/ }));
+    await waitFor(() => expect(corps).toEqual({ jeton: 'test:davy@gmail.com' }));
+    expect(await screen.findByText(/Vérification en deux étapes/)).toBeTruthy();
+  });
+
+  it('Google : un compte non enregistré est refusé avec un message clair', async () => {
+    serveur.use(
+      http.get('*/api/v1/connexion/google/configuration/', () =>
+        HttpResponse.json({ client_id: '', jetons_de_test: true }),
+      ),
+      http.post('*/api/v1/connexion/google/', () =>
+        HttpResponse.json({ detail: 'Compte inconnu.', code: 'compte_inconnu' }, { status: 403 }),
+      ),
+    );
+    ouvrir();
+    fireEvent.change(await screen.findByLabelText('Gmail du compte à tester'), {
+      target: { value: 'inconnu@gmail.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Continuer avec Google/ }));
+    expect(await screen.findByText(/Ce compte Google n’est pas autorisé/)).toBeTruthy();
+  });
+
   it('avec ?mode=email, propose l’adresse e-mail même sur un poste de confiance', async () => {
     serveur.use(http.get('*/api/v1/connexion/utilisateurs/', () => HttpResponse.json(PERSONNES)));
     ouvrir('/connexion?mode=email');

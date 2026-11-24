@@ -1,7 +1,7 @@
 import type { Identification, PersonneConnexion } from '@/auth/connexion.ts';
 import { useTranslation } from '@/i18n';
 import { AvatarUtilisateur, LogoGoogle, useToast } from '@/ui';
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 
 import styles from './Etapes.module.css';
 
@@ -15,6 +15,8 @@ export type DemoIdentifiants = {
 type Props = {
   /** Absent : pas de bouton Google (le vrai serveur demande un jeton Google Identity Services). */
   onGoogle?: () => void;
+  /** Vrai serveur : le bouton Google Identity Services, à la place du bouton simulé. */
+  boutonGoogle?: ReactNode;
   identifier: (identification: Identification) => Promise<void>;
   /** Demande le lien de réinitialisation (vrai serveur). Absent : l'envoi est simplement annoncé. */
   onOublie?: (email: string) => Promise<void>;
@@ -22,7 +24,7 @@ type Props = {
 };
 
 /** Connexion par Google, ou par e-mail et mot de passe (maquette, lignes 64-86). */
-export function FormulaireEmail({ onGoogle, identifier, onOublie, demo }: Props) {
+export function FormulaireEmail({ onGoogle, boutonGoogle, identifier, onOublie, demo }: Props) {
   const { t } = useTranslation();
   const afficherToast = useToast();
   const [email, setEmail] = useState('');
@@ -70,12 +72,14 @@ export function FormulaireEmail({ onGoogle, identifier, onOublie, demo }: Props)
         <h1 className={styles.titre}>{t('connexion.titre')}</h1>
         <p className={styles.sousTitre}>{t('connexion.sousTitreEmail')}</p>
       </div>
-      {onGoogle && (
+      {(onGoogle || boutonGoogle) && (
         <>
-          <button type="button" className={styles.boutonGoogle} onClick={onGoogle}>
-            <LogoGoogle />
-            <span>{t('connexion.google')}</span>
-          </button>
+          {boutonGoogle ?? (
+            <button type="button" className={styles.boutonGoogle} onClick={onGoogle}>
+              <LogoGoogle />
+              <span>{t('connexion.google')}</span>
+            </button>
+          )}
           <div className={styles.separateur}>{t('connexion.ou')}</div>
         </>
       )}

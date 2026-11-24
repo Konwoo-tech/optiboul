@@ -2,6 +2,7 @@ import {
   connexionAnnulerCreate,
   connexionCodeCreate,
   connexionEmailCreate,
+  connexionGoogleCreate,
   connexionOtpEnvoyerCreate,
   connexionOtpVerifierCreate,
   connexionUtilisateursList,
@@ -71,7 +72,19 @@ export async function identifierSurLeServeur(
           email: identification.email,
           motDePasse: identification.motDePasse,
         });
-  const donnees = reponse.data as unknown as ReponseDeuxFacteurs;
+  return versReponseIdentification(reponse);
+}
+
+/** Première étape par Google : `POST /connexion/google/` avec le jeton d'identité de Google (#306). */
+export async function identifierParGoogle(jeton: string): Promise<ReponseIdentification> {
+  return versReponseIdentification(await connexionGoogleCreate({ jeton }));
+}
+
+function versReponseIdentification(reponse: {
+  data: unknown;
+  status: number;
+}): ReponseIdentification {
+  const donnees = reponse.data as ReponseDeuxFacteurs;
   if (!donnees.deuxFacteurs) return { deuxFacteurs: false };
   const { utilisateur } = donnees;
   if (!utilisateur || !donnees.via || donnees.telephoneMasque === undefined) {

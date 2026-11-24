@@ -174,7 +174,10 @@
       "fait": "Your password is saved. You can now sign in."
     },
     "erreurAdresse": "Enter your e-mail address above, then tap “Forgot password?”.",
-    "erreurOublie": "Sending the link failed. Try again."
+    "erreurOublie": "Sending the link failed. Try again.",
+    "googleIndisponible": "Google sign-in is not available right now. Use your e-mail and password.",
+    "googleTest": "Continue with Google (local test)",
+    "googleTestGmail": "Gmail of the account to test"
   },
   "navigation": {
     "espaces": "Areas",
