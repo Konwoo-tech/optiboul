@@ -16,11 +16,13 @@ type Props = {
   /** Absent : pas de bouton Google (le vrai serveur demande un jeton Google Identity Services). */
   onGoogle?: () => void;
   identifier: (identification: Identification) => Promise<void>;
+  /** Demande le lien de réinitialisation (vrai serveur). Absent : l'envoi est simplement annoncé. */
+  onOublie?: (email: string) => Promise<void>;
   demo?: DemoIdentifiants;
 };
 
 /** Connexion par Google, ou par e-mail et mot de passe (maquette, lignes 64-86). */
-export function FormulaireEmail({ onGoogle, identifier, demo }: Props) {
+export function FormulaireEmail({ onGoogle, identifier, onOublie, demo }: Props) {
   const { t } = useTranslation();
   const afficherToast = useToast();
   const [email, setEmail] = useState('');
@@ -43,6 +45,24 @@ export function FormulaireEmail({ onGoogle, identifier, demo }: Props) {
   };
 
   const adresseSaisie = email.trim().toLowerCase();
+
+  const oublie = async () => {
+    if (onOublie) {
+      if (!email.trim()) {
+        setErreur(t('connexion.erreurAdresse'));
+        return;
+      }
+      try {
+        await onOublie(email.trim());
+      } catch {
+        setErreur(t('connexion.erreurOublie'));
+        return;
+      }
+    }
+    afficherToast(
+      t('connexion.toastReinit', { email: email.trim() || t('connexion.votreAdresse') }),
+    );
+  };
 
   return (
     <div className={styles.formulaireEmail}>
@@ -78,17 +98,7 @@ export function FormulaireEmail({ onGoogle, identifier, demo }: Props) {
         <div className={styles.champ}>
           <span className={styles.champEntete}>
             <label htmlFor="mot-de-passe">{t('connexion.motDePasse')}</label>
-            <button
-              type="button"
-              className={styles.lien}
-              onClick={() =>
-                afficherToast(
-                  t('connexion.toastReinit', {
-                    email: email.trim() || t('connexion.votreAdresse'),
-                  }),
-                )
-              }
-            >
+            <button type="button" className={styles.lien} onClick={() => void oublie()}>
               {t('connexion.oublie')}
             </button>
           </span>

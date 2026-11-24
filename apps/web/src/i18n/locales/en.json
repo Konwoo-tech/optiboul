@@ -157,7 +157,24 @@
     "erreurChamps": "Enter your email and password.",
     "erreurIdentifiants": "Wrong email or password.",
     "inactivite": "Signed out after {{minutes}} min of inactivity. Sign in again to continue.",
-    "googleRefuse": "This Google account is not allowed. Pick another one or use your email."
+    "googleRefuse": "This Google account is not allowed. Pick another one or use your email.",
+    "nouveau": {
+      "titre": "New password",
+      "aide": "Choose a new password for your account.",
+      "titreInvitation": "Welcome to OptiBoul",
+      "aideInvitation": "Choose your password to activate your account.",
+      "champ": "Password",
+      "confirmation": "Confirm the password",
+      "enregistrer": "Save the password",
+      "trop_court": "The password must have at least {{minimum}} characters.",
+      "different": "The two passwords do not match.",
+      "faible": "This password is too simple. Choose another one.",
+      "lienInvalide": "This link is invalid or has expired. Request a new link from the sign-in page (“Forgot password?”) or ask the administrator.",
+      "echec": "Saving failed. Try again.",
+      "fait": "Your password is saved. You can now sign in."
+    },
+    "erreurAdresse": "Enter your e-mail address above, then tap “Forgot password?”.",
+    "erreurOublie": "Sending the link failed. Try again."
   },
   "navigation": {
     "espaces": "Areas",

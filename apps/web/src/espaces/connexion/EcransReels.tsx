@@ -3,6 +3,7 @@ import {
   usePersonnesDuPoste,
   type Identification,
 } from '@/auth/connexion.ts';
+import { connexionMotDePasseOublieCreate } from '@/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -66,5 +67,12 @@ export default function EcransReels({ onMessage }: Props) {
       />
     );
   }
-  return <FormulaireEmail identifier={identifierEtSuivre} />;
+  return (
+    <FormulaireEmail
+      identifier={identifierEtSuivre}
+      onOublie={async (email) => {
+        await connexionMotDePasseOublieCreate({ email });
+      }}
+    />
+  );
 }

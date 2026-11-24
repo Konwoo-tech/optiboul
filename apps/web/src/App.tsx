@@ -7,6 +7,7 @@ import { MiseEnPage } from './mise-en-page/MiseEnPage.tsx';
 
 // Un espace n'est chargé que lorsqu'on l'ouvre : le comptoir reste léger.
 const Connexion = lazy(() => import('./espaces/connexion/Connexion.tsx'));
+const ChoixMotDePasse = lazy(() => import('./espaces/connexion/ChoixMotDePasse.tsx'));
 const Comptoir = lazy(() => import('./espaces/comptoir/Comptoir.tsx'));
 const Atelier = lazy(() => import('./espaces/atelier/Atelier.tsx'));
 const Gestion = lazy(() => import('./espaces/gestion/Gestion.tsx'));
@@ -20,6 +21,22 @@ export function App() {
           element={
             <Suspense fallback={<EcranChargement />}>
               <Connexion />
+            </Suspense>
+          }
+        />
+        <Route
+          path="connexion/invitation"
+          element={
+            <Suspense fallback={<EcranChargement />}>
+              <ChoixMotDePasse mode="invitation" />
+            </Suspense>
+          }
+        />
+        <Route
+          path="connexion/nouveau-mot-de-passe"
+          element={
+            <Suspense fallback={<EcranChargement />}>
+              <ChoixMotDePasse mode="reinitialisation" />
             </Suspense>
           }
         />
