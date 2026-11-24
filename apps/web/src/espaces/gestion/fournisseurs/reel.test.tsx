@@ -53,6 +53,10 @@ const planifiee = (id: number, statut: string, quantite = '10.000', matiere = 'l
   statut,
   planifiee_par: 'Willy Gérant',
   cree_le: '2026-11-18T08:00:00+01:00',
+  reception: null,
+  recue_quantite: null,
+  recue_par: null,
+  recue_le: null,
 });
 const page = <T,>(results: T[]) => ({ count: results.length, next: null, previous: null, results });
 
