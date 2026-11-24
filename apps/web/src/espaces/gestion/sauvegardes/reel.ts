@@ -11,7 +11,7 @@ import type { Copie, Declencheur, GenreCopie, InstantaneSauvegardes } from './ty
 /*
  * Lecture de « Gestion › Sauvegardes » sur le vrai serveur : `sauvegardes/` (copies faites) et
  * `sauvegardes/etat/` (dernière copie locale et cloud, alerte). Le serveur lance la sauvegarde en
- * tâche de fond (202) et n'a pas de restauration par l'API (voir E49).
+ * tâche de fond (202) ; la restauration est synchrone (voir `api.ts`).
  */
 
 type Page<T> = { data: { results?: T[]; next?: string | null } };

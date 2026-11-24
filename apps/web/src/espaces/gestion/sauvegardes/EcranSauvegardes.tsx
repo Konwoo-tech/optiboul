@@ -82,7 +82,11 @@ export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
         ? 'gestion.sauvegardes.toasts.droit'
         : code === 'copie_inconnue'
           ? 'gestion.sauvegardes.toasts.inconnue'
-          : 'gestion.sauvegardes.toasts.erreur',
+          : code === 'restauration_en_cours'
+            ? 'gestion.sauvegardes.toasts.restaurationEnCours'
+            : code === 'sauvegarde_echec'
+              ? 'gestion.sauvegardes.toasts.echec'
+              : 'gestion.sauvegardes.toasts.erreur',
     );
   };
 
@@ -132,9 +136,22 @@ export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
     exclusif((fin) =>
       restaurer.mutate(copie.id, {
         onSettled: fin,
-        onSuccess: () => {
+        onSuccess: ({ restauration }) => {
           fermerLaModale();
-          afficher(t('gestion.sauvegardes.toasts.restauree'));
+          const ecarts = restauration.controles.filter((c) => !c.ok);
+          afficher(
+            ecarts.length > 0
+              ? t('gestion.sauvegardes.toasts.restaureeAvecEcart', {
+                  controles: ecarts
+                    .map((c) => t(`gestion.sauvegardes.restauration.controles.${c.cle}`))
+                    .join(', '),
+                })
+              : t(
+                  SIMULATION
+                    ? 'gestion.sauvegardes.toasts.restauree'
+                    : 'gestion.sauvegardes.toasts.restaureeVerifiee',
+                ),
+          );
         },
         onError: (erreur) => {
           if (codeErreur(erreur) === 'copie_inconnue') {
@@ -226,20 +243,18 @@ export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
                       : 'gestion.sauvegardes.copies.locale',
                   )}
                 </span>
-                {SIMULATION && (
-                  <button
-                    type="button"
-                    className={styles.restaurer}
-                    aria-label={t('gestion.sauvegardes.copies.restaurerCopie', {
-                      date: date(copie.instant),
-                    })}
-                    onClick={() => {
-                      if (!occupe) setARestaurer(copie);
-                    }}
-                  >
-                    {t('gestion.sauvegardes.copies.restaurer')}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className={styles.restaurer}
+                  aria-label={t('gestion.sauvegardes.copies.restaurerCopie', {
+                    date: date(copie.instant),
+                  })}
+                  onClick={() => {
+                    if (!occupe) setARestaurer(copie);
+                  }}
+                >
+                  {t('gestion.sauvegardes.copies.restaurer')}
+                </button>
               </li>
             ))}
           </ul>

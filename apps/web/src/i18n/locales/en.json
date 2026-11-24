@@ -1562,13 +1562,22 @@
         "etape3": "Totals are checked: sessions, customer balances, stock.",
         "simule": "Simulation: the totals check is fictitious, no data is actually restored.",
         "annuler": "Cancel",
-        "confirmer": "Restore this copy"
+        "confirmer": "Restore this copy",
+        "controles": {
+          "sessions": "sessions",
+          "soldes_clients": "customer balances",
+          "stocks": "stocks"
+        }
       },
       "toasts": {
         "locale": "Local copy made at {{heure}}",
         "cloud": "Cloud copy sent and verified",
         "cloudEnAttente": "Offline: cloud backup pending",
         "restauree": "Restore completed and verified (simulated check)",
+        "restaureeVerifiee": "Restore completed: sessions, customer balances and stocks verified.",
+        "restaureeAvecEcart": "Restore completed, but the check does not match: {{controles}}.",
+        "restaurationEnCours": "A restore is already in progress.",
+        "echec": "The backup failed: check the journal, then run it again.",
         "droit": "Your profile does not allow this action.",
         "inconnue": "This copy no longer exists: the list has just been refreshed.",
         "erreur": "The action could not be saved. Try again."
