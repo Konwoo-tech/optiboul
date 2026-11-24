@@ -704,7 +704,10 @@
           "autoriser": "Autoriser la livraison",
           "codeIncorrect": "Code incorrect : seul le gérant ou le propriétaire peut décider.",
           "accorde": "Accordé · Livraison au-delà du plafond : {{client}}",
-          "refuse": "Refusé · Livraison au-delà du plafond : {{client}}"
+          "refuse": "Refusé · Livraison au-delà du plafond : {{client}}",
+          "valideur": "Valideur",
+          "gerant": "Gérant de la semaine",
+          "proprietaire": "Propriétaire"
         },
         "bon": {
           "titre": "Bon de livraison",

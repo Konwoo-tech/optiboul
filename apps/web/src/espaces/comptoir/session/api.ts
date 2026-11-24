@@ -164,14 +164,6 @@ function corpsDeLivraison(livraison: NouvelleLivraison) {
 /** Personne connectée, pour décider d'une demande : son identifiant et son profil. */
 export type PersonneConnectee = { id: string; profil: string | null | undefined };
 
-/** Gérant de la semaine ouverte : celui dont le code valide une demande sur le poste de la caissière. */
-async function gerantDeLaSemaine(): Promise<number | undefined> {
-  const reponse = await optiboulFetch<{ data: { results?: { gerant?: { id: number } | null }[] } }>(
-    '/api/v1/semaines/?statut=ouverte',
-  ).catch(() => null);
-  return reponse?.data.results?.[0]?.gerant?.id;
-}
-
 /** Actions de l'écran. Chacune met à jour le cache avec l'état renvoyé par le serveur. */
 export function actionsSession(
   client: QueryClient,
@@ -336,7 +328,12 @@ export function actionsSession(
      * Le gérant (ou le propriétaire) décide sur le poste de la caissière avec son code. Connecté en
      * gérant ou propriétaire, c'est sa propre personne ; sinon, le gérant de la semaine.
      */
-    deciderAutorisation: (demandeId: string, code: string, accord: boolean) =>
+    deciderAutorisation: (
+      demandeId: string,
+      code: string,
+      accord: boolean,
+      valideur?: 'gerant' | 'proprietaire',
+    ) =>
       ranger(
         SIMULATION
           ? envoyer<{ instantane: InstantaneSession; demande: DemandePlafond }>(
@@ -348,10 +345,12 @@ export function actionsSession(
               const avant = client
                 .getQueryData<InstantaneSession>(cle)
                 ?.demandes.find((d) => d.id === demandeId);
-              const direction = moi?.profil === 'gerant' || moi?.profil === 'proprietaire';
-              const decideur = direction ? Number(moi?.id) : await gerantDeLaSemaine();
-              if (!avant || !decideur) return indisponible();
-              const code_gerant = { utilisateur: decideur, code };
+              if (!avant) return indisponible();
+              // Le valideur est désigné par son profil (#316) : le propriétaire connecté décide avec
+              // son code ; sinon le gérant de la semaine ouverte, sans qu'on cherche son identifiant.
+              const profil =
+                valideur ?? (moi?.profil === 'proprietaire' ? 'proprietaire' : 'gerant');
+              const code_gerant = { profil, code } as const;
               await (accord
                 ? demandesAccorderCreate(Number(demandeId), { code_gerant })
                 : demandesRefuserCreate(Number(demandeId), {

@@ -66,6 +66,17 @@
   color: var(--ob-marque);
 }
 
+.choixValideur {
+  height: 44px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  padding: 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ob-encre);
+  background: var(--ob-champ);
+}
+
 .code {
   height: 56px;
   width: 100%;
