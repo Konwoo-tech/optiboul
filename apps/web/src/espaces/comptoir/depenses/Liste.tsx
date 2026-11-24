@@ -14,10 +14,11 @@ import {
 } from './regles.ts';
 import { TYPES_RATTACHEMENT, type InstantaneDepenses, type StatutDepense } from './types.ts';
 
-const NIVEAU_STATUT: Record<StatutDepense, 'ok' | 'surveiller' | 'bloquant'> = {
+const NIVEAU_STATUT: Record<StatutDepense, 'ok' | 'surveiller' | 'bloquant' | 'neutre'> = {
   validee: 'ok',
   'en-attente': 'surveiller',
   refusee: 'bloquant',
+  annulee: 'neutre',
 };
 
 type Props = {

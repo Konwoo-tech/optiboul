@@ -3,16 +3,15 @@ import {
   caissesProchaineRetrieve,
   demandesList,
   depensesList,
-  fournisseursList,
+  depensesSeuilRetrieve,
+  fournisseursChoixList,
   preAutorisationsList,
-  parametresList,
   semainesList,
   toutesLesPages,
   type Budget,
   type Demande,
   type Depense as DepenseServeur,
-  type Fournisseur as FournisseurServeur,
-  type Parametre,
+  type FournisseurChoix,
   type PreAutorisation as PreAutorisationServeur,
   type Semaine as SemaineServeur,
 } from '@/api';
@@ -70,6 +69,7 @@ const STATUTS: Record<string, StatutDepense> = {
   validee: 'validee',
   en_attente: 'en-attente',
   refusee: 'refusee',
+  annulee: 'annulee',
 };
 
 export function versStatutDemande(statut: string): StatutDemande {
@@ -82,7 +82,7 @@ export function versSemaine(semaine: SemaineServeur): Semaine {
   return { id: String(semaine.id), numero: semaine.numero, du: semaine.du, au: semaine.au };
 }
 
-export function versFournisseur(fournisseur: FournisseurServeur): Fournisseur {
+export function versFournisseur(fournisseur: FournisseurChoix): Fournisseur {
   return {
     id: String(fournisseur.id),
     nom: fournisseur.nom,
@@ -186,7 +186,7 @@ export async function lireDepensesReelles(): Promise<InstantaneDepenses> {
     semaines,
     fournisseurs,
     demandes,
-    parametres,
+    seuilServeur,
     prochaine,
     preAutorisations,
   ] = await Promise.all([
@@ -199,14 +199,15 @@ export async function lireDepensesReelles(): Promise<InstantaneDepenses> {
     toutesLesPages<SemaineServeur>(
       (page) => semainesList({ page }) as Promise<Page<SemaineServeur>>,
     ),
-    toutesLesPages<FournisseurServeur>(
-      (page) => fournisseursList({ page }) as Promise<Page<FournisseurServeur>>,
-    ).catch(() => [] as FournisseurServeur[]),
+    // Lecture réduite ouverte à la caisse et à la production (#323).
+    fournisseursChoixList()
+      .then((reponse) => reponse.data as unknown as FournisseurChoix[])
+      .catch(() => [] as FournisseurChoix[]),
     toutesLesPages<Demande>(
       (page) => demandesList({ type: 'depense', page }) as Promise<Page<Demande>>,
     ).catch(() => [] as Demande[]),
-    // Le serveur réserve les paramètres à la direction : sans eux, le seuil par défaut s'applique.
-    parametresList().catch(() => null),
+    // Seuil de validation lisible par tous ceux qui saisissent (#323).
+    depensesSeuilRetrieve().catch(() => null),
     caissesProchaineRetrieve().catch(() => null),
     preAutorisationsList().catch(() => null),
   ]);
@@ -214,9 +215,7 @@ export async function lireDepensesReelles(): Promise<InstantaneDepenses> {
   const codeSemaine = (id: number) => codes.get(id) ?? `S${id}`;
   const ouverte = semaines.find((s) => s.statut === 'ouverte') ?? semaines.at(-1);
   if (!ouverte) throw new Error('Aucune semaine enregistrée');
-  const seuil = ((parametres?.data ?? []) as Parametre[]).find(
-    (p) => p.cle === 'seuil_validation_depenses',
-  )?.valeur;
+  const seuil = (seuilServeur?.data as { seuil?: number } | undefined)?.seuil;
   const lu = budget
     ? versBudget(budget.data as unknown as Budget)
     : { mois: new Date().toISOString().slice(0, 7), lignes: [] };

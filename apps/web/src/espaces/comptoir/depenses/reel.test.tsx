@@ -134,45 +134,19 @@ function serveurDepenses(options: { parametresRefuses?: boolean } = {}) {
     http.get('*/api/v1/depenses/', () => HttpResponse.json(page([BOIS, PETRIN]))),
     http.get('*/api/v1/budgets/', () => HttpResponse.json(BUDGET)),
     http.get('*/api/v1/semaines/', () => HttpResponse.json(page([SEMAINE]))),
-    http.get('*/api/v1/fournisseurs/', () =>
-      HttpResponse.json(
-        page([
-          {
-            id: 4,
-            nom: "Marché d'Etoudi",
-            telephone: '677001202',
-            conditions: 'Comptant',
-            matieres: ['levure', 'bois', 'charbon'],
-            actif: true,
-            prochaine_reception: null,
-            manquants: 0,
-          },
-        ]),
-      ),
+    http.get('*/api/v1/fournisseurs/choix/', () =>
+      HttpResponse.json([
+        { id: 4, nom: "Marché d'Etoudi", matieres: ['levure', 'bois', 'charbon'] },
+      ]),
     ),
     http.get('*/api/v1/demandes/', ({ request }) => {
       expect(new URL(request.url).searchParams.get('type')).toBe('depense');
       return HttpResponse.json(page([DEMANDE, { ...DEMANDE, id: 8, objet_type: 'livraison' }]));
     }),
-    http.get('*/api/v1/parametres/', () =>
+    http.get('*/api/v1/depenses/seuil/', () =>
       options.parametresRefuses
         ? HttpResponse.json({ detail: 'non' }, { status: 403 })
-        : HttpResponse.json([
-            {
-              cle: 'seuil_validation_depenses',
-              valeur: 75000,
-              defaut: 50000,
-              libelle: '',
-              genre: '',
-              unite: '',
-              usage: '',
-              choix: [],
-              minimum: null,
-              maximum: null,
-              modifie_le: null,
-              modifie_par: '',
-            },
-          ]),
+        : HttpResponse.json({ seuil: 75000 }),
     ),
     http.get('*/api/v1/caisses/prochaine/', () =>
       HttpResponse.json({
@@ -221,9 +195,14 @@ describe('lecture des dépenses sur le vrai serveur', () => {
     ]);
   });
 
-  it('sans accès aux paramètres (hors propriétaire), le seuil par défaut s’applique', async () => {
+  it('si le seuil est refusé, le seuil par défaut s’applique', async () => {
     serveurDepenses({ parametresRefuses: true });
     expect((await lireDepensesReelles()).seuil).toBe(SEUIL_PAR_DEFAUT);
+  });
+
+  it('une dépense annulée par son auteur garde son statut (#300)', () => {
+    const code = (id: number) => `S${id}`;
+    expect(versDepense({ ...BOIS, statut: 'annulee' } as never, code).statut).toBe('annulee');
   });
 
   it('traduit une dépense de stock et une dépense en attente', () => {
