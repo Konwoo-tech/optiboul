@@ -1044,3 +1044,19 @@
   font-size: 14px;
   color: var(--ob-discret);
 }
+
+.fournee {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  font-size: 14px;
+  color: var(--ob-encre);
+}
+
+.fournee span {
+  font-weight: 700;
+}

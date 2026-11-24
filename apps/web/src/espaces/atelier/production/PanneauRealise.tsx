@@ -1,10 +1,17 @@
 import { useTranslation } from '@/i18n';
+import { useState } from 'react';
 import { formaterNombre } from '@/utils';
 
 import { ecartEnPains, libelleProduit } from './affichage.ts';
 import styles from './Production.module.css';
 import { chiffresSaisis, lireSaisie, motDEcart, pourcentDEcart } from './regles.ts';
-import { CLES_PRODUIT, type Brouillon, type CleProduit, type Plan } from './types.ts';
+import {
+  CLES_PRODUIT,
+  type Brouillon,
+  type CleProduit,
+  type DerniereFournee,
+  type Plan,
+} from './types.ts';
 
 type Props = {
   plan: Plan;
@@ -14,6 +21,9 @@ type Props = {
   occupe: boolean;
   onChange: (produit: CleProduit, texte: string) => void;
   onEnregistrer: () => void;
+  /** La dernière fournée annulable (vrai serveur, production en cours). */
+  derniereFournee?: DerniereFournee | null;
+  onAnnulerFournee?: (numero: number) => void;
 };
 
 /** Onglet « Réalisé » : les pains réellement produits, avec l'écart en pains et en pourcentage. */
@@ -24,7 +34,10 @@ export function PanneauRealise({
   occupe,
   onChange,
   onEnregistrer,
+  derniereFournee = null,
+  onAnnulerFournee,
 }: Props) {
+  const [confirmation, setConfirmation] = useState(false);
   const { t, i18n } = useTranslation();
   const langue = i18n.language;
   const tr = (cle: string) => t(`atelier.production.realise.${cle}`);
@@ -74,6 +87,48 @@ export function PanneauRealise({
           </div>
         );
       })}
+      {lectureSeule === null && derniereFournee && onAnnulerFournee && (
+        <fieldset className={styles.fournee} aria-label={tr('fournee.titre')}>
+          <span>
+            {t('atelier.production.realise.fournee.derniere', {
+              pains: formaterNombre(derniereFournee.pains),
+              produit: libelleProduit(derniereFournee.produit),
+              heure: derniereFournee.a,
+            })}
+          </span>
+          {confirmation ? (
+            <>
+              <button
+                type="button"
+                className={styles.confirmer}
+                disabled={occupe}
+                onClick={() => {
+                  setConfirmation(false);
+                  onAnnulerFournee(derniereFournee.numero);
+                }}
+              >
+                {tr('fournee.confirmer')}
+              </button>
+              <button
+                type="button"
+                className={styles.annuler}
+                onClick={() => setConfirmation(false)}
+              >
+                {tr('fournee.garder')}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className={styles.secondaire}
+              disabled={occupe}
+              onClick={() => setConfirmation(true)}
+            >
+              {tr('fournee.annuler')}
+            </button>
+          )}
+        </fieldset>
+      )}
       {lectureSeule && <p className={styles.lectureSeule}>{tr(`lecture.${lectureSeule}`)}</p>}
       {lectureSeule === null && (
         <button

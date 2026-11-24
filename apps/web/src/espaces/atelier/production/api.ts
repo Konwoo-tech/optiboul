@@ -2,6 +2,7 @@ import {
   ErreurApi,
   optiboulFetch,
   productionsCloturerCreate,
+  productionsFourneeDestroy,
   productionsConsommationUpdate,
   productionsFourneeCreate,
   productionsOuvrirCreate,
@@ -165,6 +166,16 @@ export function actionsDe(client: QueryClient, utilisateur: string | undefined) 
               await fournees(Number(id), realise);
               return relire();
             })(),
+      ),
+    /** Annule la dernière fournée (le serveur refuse toute autre) ; réservé au vrai serveur. */
+    annulerLaDerniereFournee: (numero: number) =>
+      ranger(
+        (async () => {
+          const id = lue()?.productionId;
+          if (SIMULATION || !id) return sansProduction();
+          await productionsFourneeDestroy(Number(id), numero);
+          return relire();
+        })(),
       ),
     enregistrerLaConsommation: (consommation: Consommation) =>
       ranger(

@@ -12,6 +12,7 @@ import {
   versDemandeProduction,
   versPlan,
   versRealise,
+  derniereFourneeDe,
 } from './reel.ts';
 import type { InstantaneProduction } from './types.ts';
 
@@ -349,6 +350,31 @@ describe('écritures de la production sur le vrai serveur', () => {
       { produit: 'KO', pains: 100 },
       { produit: 'GC135', pains: 50 },
     ]);
+  });
+
+  it('annuler la dernière fournée : DELETE sur son numéro, puis relecture', async () => {
+    serveurProduction();
+    const client = new QueryClient();
+    client.setQueryData(cleProduction('Serge'), instantane());
+    let numero = '';
+    serveur.use(
+      http.delete('*/api/v1/productions/9/fournee/:numero/', ({ params }) => {
+        numero = String(params.numero);
+        return HttpResponse.json(EN_COURS);
+      }),
+    );
+    await actionsDe(client, 'Serge').annulerLaDerniereFournee(3);
+    expect(numero).toBe('3');
+  });
+
+  it('la dernière fournée est celle de plus grand numéro, dans les codes de l’écran', () => {
+    expect(derniereFourneeDe([])).toBeNull();
+    expect(
+      derniereFourneeDe([
+        { numero: 1, produit: 'BAG', pains: 100, saisie_le: '2026-11-13T07:00:00+01:00' },
+        { numero: 2, produit: 'GC135', pains: 50, saisie_le: '2026-11-13T07:30:00+01:00' },
+      ]),
+    ).toEqual({ numero: 2, produit: 'GC', pains: 50, a: '07:30' });
   });
 
   it('enregistre la consommation et la justifie par matière', async () => {

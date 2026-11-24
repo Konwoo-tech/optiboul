@@ -2117,6 +2117,14 @@
         "realise": "Réalisé",
         "champ": "Réalisé {{produit}}",
         "enregistrer": "Enregistrer la production",
+        "annulee": "Fournée annulée : le réalisé est corrigé.",
+        "fournee": {
+          "titre": "Dernière fournée",
+          "derniere": "Dernière fournée : {{pains}} {{produit}} à {{heure}}.",
+          "annuler": "Annuler cette fournée",
+          "confirmer": "Oui, annuler la fournée",
+          "garder": "Non, la garder"
+        },
         "lecture": {
           "proprietaire": "Lecture seule pour le propriétaire.",
           "responsable": "Lecture seule : la saisie revient au responsable de production de la semaine.",
