@@ -1,4 +1,6 @@
+import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
+import { SIMULATION } from '@/simulation';
 import { FenetreModale } from '@/ui';
 import { useEffect, useRef, useState } from 'react';
 
@@ -20,13 +22,22 @@ export function ModaleAutorisation({ demande, actions, onFermer, onDecision }: P
   const { t } = useTranslation();
   const [code, setCode] = useState('');
   const [erreur, setErreur] = useState('');
+  const { utilisateur } = useUtilisateurCourant();
+  // Sur le poste de la caissière, le code est celui du gérant de la semaine ou du propriétaire (#316).
+  const choisirLeValideur = !SIMULATION && utilisateur?.profil === 'caissier';
+  const [valideur, setValideur] = useState<'gerant' | 'proprietaire'>('gerant');
   const champCode = useRef<HTMLInputElement>(null);
   // Comme la maquette (autoFocus) : on saisit le code sans toucher la souris.
   useEffect(() => champCode.current?.focus(), []);
 
   const decider = async (accord: boolean) => {
     try {
-      const reponse = await actions.deciderAutorisation(demande.id, code, accord);
+      const reponse = await actions.deciderAutorisation(
+        demande.id,
+        code,
+        accord,
+        choisirLeValideur ? valideur : undefined,
+      );
       onDecision(accord, reponse.demande);
     } catch (e) {
       setErreur(
@@ -49,6 +60,21 @@ export function ModaleAutorisation({ demande, actions, onFermer, onDecision }: P
         })}
       </div>
       <div className={styles.aide}>{t('comptoir.session.modales.autorisation.aide')}</div>
+      {choisirLeValideur && (
+        <label className={styles.etiquette}>
+          {t('comptoir.session.modales.autorisation.valideur')}
+          <select
+            className={styles.choixValideur}
+            value={valideur}
+            onChange={(e) => setValideur(e.target.value as 'gerant' | 'proprietaire')}
+          >
+            <option value="gerant">{t('comptoir.session.modales.autorisation.gerant')}</option>
+            <option value="proprietaire">
+              {t('comptoir.session.modales.autorisation.proprietaire')}
+            </option>
+          </select>
+        </label>
+      )}
       <label className={styles.etiquette}>
         {t('comptoir.session.modales.autorisation.code')}
         <input

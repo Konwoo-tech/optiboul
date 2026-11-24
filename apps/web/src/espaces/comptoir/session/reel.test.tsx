@@ -560,7 +560,7 @@ describe('livraisons et accords de plafond sur le vrai serveur', () => {
     expect(reponse.demande).toBeUndefined();
   });
 
-  it('accorde ou refuse avec le code du gérant de la semaine (caissière connectée)', async () => {
+  it('accorde ou refuse avec le code du gérant de la semaine, désigné par son profil (#316)', async () => {
     const client = new QueryClient();
     client.setQueryData(cleSession('Davy'), instantaneDe());
     serveurSession();
@@ -576,10 +576,10 @@ describe('livraisons et accords de plafond sur le vrai serveur', () => {
     await actions.deciderAutorisation('12', '3333', false);
     expect(recus[0]).toEqual({
       chemin: 'accorder',
-      corps: { code_gerant: { utilisateur: 3, code: '3333' } },
+      corps: { code_gerant: { profil: 'gerant', code: '3333' } },
     });
     expect(recus[1]?.chemin).toBe('refuser');
-    expect(recus[1]?.corps).toMatchObject({ code_gerant: { utilisateur: 3, code: '3333' } });
+    expect(recus[1]?.corps).toMatchObject({ code_gerant: { profil: 'gerant', code: '3333' } });
     expect(recus[1]?.corps).toMatchObject({ motif: expect.any(String) });
     expect(accord.demande).toMatchObject({ id: '12', statut: 'acceptee' });
   });
@@ -602,7 +602,39 @@ describe('livraisons et accords de plafond sur le vrai serveur', () => {
     await expect(actions.deciderAutorisation('12', '0000', true)).rejects.toMatchObject({
       code: 'code_incorrect',
     });
-    expect(corps).toEqual({ code_gerant: { utilisateur: 3, code: '0000' } });
+    expect(corps).toEqual({ code_gerant: { profil: 'gerant', code: '0000' } });
+  });
+
+  it('le propriétaire connecté décide avec son code, désigné par son profil (#316)', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Patron'), instantaneDe());
+    serveurSession();
+    let corps: unknown;
+    serveur.use(
+      http.post('*/api/v1/demandes/12/accorder/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json(DEMANDE);
+      }),
+    );
+    const actions = actionsSession(client, 'Patron', { id: '2', profil: 'proprietaire' });
+    await actions.deciderAutorisation('12', '2222', true);
+    expect(corps).toEqual({ code_gerant: { profil: 'proprietaire', code: '2222' } });
+  });
+
+  it('la caissière choisit le valideur : le propriétaire peut décider sur son poste (#316)', async () => {
+    const client = new QueryClient();
+    client.setQueryData(cleSession('Davy'), instantaneDe());
+    serveurSession();
+    let corps: unknown;
+    serveur.use(
+      http.post('*/api/v1/demandes/12/accorder/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json(DEMANDE);
+      }),
+    );
+    const actions = actionsSession(client, 'Davy', { id: '4', profil: 'caissier' });
+    await actions.deciderAutorisation('12', '2222', true, 'proprietaire');
+    expect(corps).toEqual({ code_gerant: { profil: 'proprietaire', code: '2222' } });
   });
 
   it('envoie le bon par WhatsApp : 202 ; sans numéro, le refus remonte', async () => {

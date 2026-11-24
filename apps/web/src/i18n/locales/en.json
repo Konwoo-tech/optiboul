@@ -704,7 +704,10 @@
           "autoriser": "Authorise delivery",
           "codeIncorrect": "Wrong code: only the manager or the owner can decide.",
           "accorde": "Approved · Delivery over the limit: {{client}}",
-          "refuse": "Refused · Delivery over the limit: {{client}}"
+          "refuse": "Refused · Delivery over the limit: {{client}}",
+          "valideur": "Approver",
+          "gerant": "Week manager",
+          "proprietaire": "Owner"
         },
         "bon": {
           "titre": "Delivery slip",
