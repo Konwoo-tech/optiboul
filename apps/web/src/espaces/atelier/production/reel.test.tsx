@@ -48,6 +48,8 @@ const PLAN = {
   creneau: 'jour',
   statut: 'valide',
   motif_supplement: '',
+  propose_par: 'Serge Production',
+  propose_le: '2026-11-13T05:10:00+01:00',
   valide_par: 'Willy Gérant',
   valide_le: '2026-11-13T05:40:00+01:00',
   validation_auto: false,
@@ -85,7 +87,60 @@ const EN_COURS = {
   prevus: 741,
   realise: 200,
   reste: 541,
+  ouverte_par: 'Serge Production',
+  ouverte_le: '2026-11-13T06:10:00+01:00',
+  cloturee_par: '',
+  cloturee_le: null,
+  tolerance_ecart_kg: 0.3,
+  tolerance_ecart_pourcent: 2,
 };
+const PASSEES = [
+  {
+    id: 9,
+    jour: '2026-11-13',
+    creneau: 'jour',
+    statut: 'en_cours',
+    responsable: { id: 5, nom: 'Serge Production' },
+    plan_valide_par: 'Willy Gérant',
+    ouverte_le: '2026-11-13T06:10:00+01:00',
+    cloturee_le: null,
+    sacs: 3,
+    prevus: 957,
+    realise: 200,
+    ecart_matiere_kg: null,
+    motif_ecart: '',
+  },
+  {
+    id: 8,
+    jour: '2026-11-12',
+    creneau: 'nuit',
+    statut: 'cloturee',
+    responsable: { id: 5, nom: 'Serge Production' },
+    plan_valide_par: 'Willy Gérant',
+    ouverte_le: '2026-11-12T20:00:00+01:00',
+    cloturee_le: '2026-11-13T01:30:00+01:00',
+    sacs: 2,
+    prevus: 640,
+    realise: 630,
+    ecart_matiere_kg: '-0.500',
+    motif_ecart: 'perte : sac percé',
+  },
+  {
+    id: 7,
+    jour: '2026-11-11',
+    creneau: 'jour',
+    statut: 'non_cloturee',
+    responsable: { id: 5, nom: 'Serge Production' },
+    plan_valide_par: '',
+    ouverte_le: '2026-11-11T06:00:00+01:00',
+    cloturee_le: null,
+    sacs: 1,
+    prevus: 300,
+    realise: 0,
+    ecart_matiere_kg: null,
+    motif_ecart: '',
+  },
+];
 const SEMAINE = {
   id: 1,
   code: 'S46',
@@ -105,6 +160,11 @@ function serveurProduction(options: { enCours?: boolean } = { enCours: true }) {
       options.enCours
         ? HttpResponse.json(EN_COURS)
         : HttpResponse.json({ detail: 'x', code: 'production_inconnue' }, { status: 404 }),
+    ),
+    http.get('*/api/v1/productions/', ({ request }) =>
+      HttpResponse.json(
+        new URL(request.url).searchParams.get('semaine') === '1' ? page(PASSEES) : page([]),
+      ),
     ),
     http.get('*/api/v1/productions/reste-a-produire/', () =>
       HttpResponse.json({
@@ -173,7 +233,29 @@ describe('lecture de la production sur le vrai serveur', () => {
     expect(i.stock.farine).toBe(2);
     expect(i.productionId).toBe('9');
     expect(i.demandeEnAttente).toMatchObject({ id: '4', numero: 4, total: 3, motif: 'guichet' });
-    expect(i.historique).toEqual([]);
+    // Jalons du cycle et tolérance, tels que le serveur les donne.
+    expect(i.planPropose).toEqual({ par: 'Serge Production', a: '05:10' });
+    expect(i.ouverte).toEqual({ par: 'Serge Production', a: '06:10' });
+    expect(i.cloturee).toBeNull();
+    expect(i.seuilEcartKg).toBe(0.3);
+    // Historique : la production en cours est exclue (déjà affichée), les plus anciennes d'abord.
+    expect(i.historique.map((h) => h.id)).toEqual(['7', '8']);
+    expect(i.historique[1]).toEqual({
+      id: '8',
+      date: '2026-11-12',
+      type: 'nuit',
+      responsable: 'Serge Production',
+      validePar: 'Willy Gérant',
+      ouvertA: '20:00',
+      clotureA: '01:30',
+      sacs: 2,
+      prevus: 640,
+      realise: 630,
+      ecartKg: -0.5,
+      statut: 'cloturee',
+      motif: 'perte',
+    });
+    expect(i.historique[0]).toMatchObject({ statut: 'non-cloturee', realise: null, clotureA: '—' });
   });
 
   it('sans production ouverte : plan validé, pas encore en cours', async () => {
@@ -198,6 +280,13 @@ describe('lecture de la production sur le vrai serveur', () => {
   it('plan sans ligne, réalisé, consommation et demande hors supplément', () => {
     expect(versPlan([]).plan).toMatchObject({ sacs: 0, prevus: 0 });
     expect(versRealise([])).toEqual({ BAG: null, KO: null, GC: null });
+    // Prévu 0 : rien à produire, donc rien à saisir ; prévu > 0 sans réalisé : à saisir.
+    expect(
+      versRealise([
+        { code: 'BAG', sacs: 1, prevus: 315, realise: 0, reste: 315 },
+        { code: 'GC135', sacs: 0, prevus: 0, realise: 0, reste: 0 },
+      ]),
+    ).toEqual({ BAG: null, KO: null, GC: 0 });
     expect(versConsommation([]).farine).toBeNull();
     expect(
       versDemandeProduction({

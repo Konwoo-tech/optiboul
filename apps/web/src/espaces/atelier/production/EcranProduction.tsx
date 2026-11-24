@@ -7,6 +7,8 @@ import { useSearchParams } from 'react-router';
 import { cheminEcran, ECRANS, type Ecran } from '../../../navigation.ts';
 import type { Profil } from '../../../profils.ts';
 import { EnTeteEcran } from '../../EnTeteEcran.tsx';
+import { ErreurApi } from '@/api';
+import { SIMULATION } from '@/simulation';
 import { codeErreur, useActionsProduction, useProduction, type ActionsProduction } from './api.ts';
 import { Cycle } from './Cycle.tsx';
 import { FicheTechnique } from './FicheTechnique.tsx';
@@ -199,7 +201,12 @@ function Contenu({ ecran, instantane, nom, profil, actions }: ContenuProps) {
       const code = codeErreur(erreur);
       const connu = code && i18n.exists(`atelier.production.erreurs.${code}`);
       afficher(
-        t(connu ? `atelier.production.erreurs.${code}` : 'atelier.production.erreurs.defaut'),
+        connu
+          ? t(`atelier.production.erreurs.${code}`)
+          : // Un refus que l'écran ne connaît pas : le serveur dit pourquoi, en français.
+            erreur instanceof ErreurApi && erreur.message && !SIMULATION
+            ? erreur.message
+            : t('atelier.production.erreurs.defaut'),
       );
     },
     [afficher, i18n, t],

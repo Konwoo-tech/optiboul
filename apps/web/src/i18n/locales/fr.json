@@ -2218,7 +2218,14 @@
         "demande_en_attente": "Une demande d’augmentation attend déjà la réponse du gérant.",
         "supplement_invalide": "Ajoutez entre 0 et 10 sacs par produit.",
         "supplement_vide": "Ajoutez au moins un sac.",
-        "justification_requise": "L’écart de matières dépasse le seuil : justifiez-le avant de clôturer."
+        "justification_requise": "L’écart de matières dépasse le seuil : justifiez-le avant de clôturer.",
+        "plan_vide": "Aucun sac à pétrir : il n’y a pas encore de commande.",
+        "plan_deja_valide": "Le plan de cette session est déjà validé.",
+        "plan_non_valide": "Le plan doit être validé avant d’ouvrir la production.",
+        "production_deja_ouverte": "La production de cette session est déjà ouverte.",
+        "justification_obligatoire": "L’écart de matières dépasse la tolérance : justifiez-le avant de clôturer.",
+        "cloture_impossible": "Saisissez la production réalisée et la consommation réelle avant de clôturer.",
+        "fournee_pas_la_derniere": "Seule la dernière fournée peut être annulée."
       },
       "fiche": {
         "titre": "Fiche technique produit",

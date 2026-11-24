@@ -54,20 +54,36 @@ const GC135 = {
   actif: true,
   ordre: 2,
   fiche: FICHE,
+  cuisson_minutes: 35,
+  pains_produits_mois_precedent: 4120,
 };
 const SANS_FICHE = { ...GC135, id: 4, code: 'PL', fiche: null };
-const ETAT = [
-  { matiere: 'farine', quantite: '100.000', valeur: 100000, besoin_par_session: '0' },
-  { matiere: 'sel', quantite: '2000.000', valeur: 4000, besoin_par_session: '0' },
-  { matiere: 'bois', quantite: '20.000', valeur: 20000, besoin_par_session: '0' },
-  { matiere: 'huile', quantite: '0.000', valeur: 0, besoin_par_session: '0' },
+const MATIERES = [
+  {
+    code: 'farine',
+    nom: 'Farine',
+    unite: 'kg',
+    cle: true,
+    stockee: true,
+    prix_unitaire: '1000.00',
+  },
+  { code: 'sel', nom: 'Sel', unite: 'g', cle: false, stockee: true, prix_unitaire: '2.00' },
+  {
+    code: 'bois',
+    nom: 'Bois',
+    unite: 'unite',
+    cle: false,
+    stockee: true,
+    prix_unitaire: '1000.00',
+  },
+  { code: 'huile', nom: 'Huile', unite: 'l', cle: false, stockee: true, prix_unitaire: null },
 ];
 const page = <T,>(results: T[]) => ({ count: results.length, next: null, previous: null, results });
 
 function serveurFiches() {
   serveur.use(
     http.get('*/api/v1/produits/', () => HttpResponse.json(page([GC135, SANS_FICHE]))),
-    http.get('*/api/v1/mouvements-stock/etat/', () => HttpResponse.json(ETAT)),
+    http.get('*/api/v1/matieres/', () => HttpResponse.json(MATIERES)),
   );
 }
 
@@ -98,10 +114,10 @@ describe('fiches techniques sur le vrai serveur', () => {
       modifieA: '10:15',
       modifiePar: 'Willy Gérant',
       prix: [160, 160],
-      produitsOctobre: 0,
-      cuisson: 24,
+      produitsOctobre: 4120,
+      cuisson: 35,
     });
-    // Farine au sac (×50), sel au kilo (grammes ×1000), bois à l'unité ; sans stock, 0.
+    // Farine au sac (×50), sel au kilo (grammes ×1000), bois à l'unité ; sans prix reçu, 0.
     expect(r.prix).toMatchObject({ farine: 50000, sel: 2000, bois: 1000, huile: 0, levure: 0 });
   });
 

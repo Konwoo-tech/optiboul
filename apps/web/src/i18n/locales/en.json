@@ -2218,7 +2218,14 @@
         "demande_en_attente": "An increase request is already waiting for the manager.",
         "supplement_invalide": "Add between 0 and 10 sacks per product.",
         "supplement_vide": "Add at least one sack.",
-        "justification_requise": "The material gap is above the threshold: explain it before closing."
+        "justification_requise": "The material gap is above the threshold: explain it before closing.",
+        "plan_vide": "No bag to knead: there is no order yet.",
+        "plan_deja_valide": "This session’s plan is already approved.",
+        "plan_non_valide": "The plan must be approved before opening production.",
+        "production_deja_ouverte": "This session’s production is already open.",
+        "justification_obligatoire": "The material gap is above the tolerance: explain it before closing.",
+        "cloture_impossible": "Enter the produced quantities and the actual consumption before closing.",
+        "fournee_pas_la_derniere": "Only the last batch can be cancelled."
       },
       "fiche": {
         "titre": "Product technical sheet",
