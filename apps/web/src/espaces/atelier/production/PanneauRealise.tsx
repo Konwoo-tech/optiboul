@@ -88,22 +88,19 @@ export function PanneauRealise({
         );
       })}
       {lectureSeule === null && derniereFournee && onAnnulerFournee && (
-        <fieldset
-          className={`${styles.lectureSeule} ${styles.sansCadre}`}
-          aria-label={tr('fournee.titre')}
-        >
+        <fieldset className={styles.fournee} aria-label={tr('fournee.titre')}>
           <span>
             {t('atelier.production.realise.fournee.derniere', {
               pains: formaterNombre(derniereFournee.pains),
               produit: libelleProduit(derniereFournee.produit),
               heure: derniereFournee.a,
             })}
-          </span>{' '}
+          </span>
           {confirmation ? (
             <>
               <button
                 type="button"
-                className={styles.enregistrer}
+                className={styles.confirmer}
                 disabled={occupe}
                 onClick={() => {
                   setConfirmation(false);
@@ -111,13 +108,22 @@ export function PanneauRealise({
                 }}
               >
                 {tr('fournee.confirmer')}
-              </button>{' '}
-              <button type="button" onClick={() => setConfirmation(false)}>
+              </button>
+              <button
+                type="button"
+                className={styles.annuler}
+                onClick={() => setConfirmation(false)}
+              >
                 {tr('fournee.garder')}
               </button>
             </>
           ) : (
-            <button type="button" disabled={occupe} onClick={() => setConfirmation(true)}>
+            <button
+              type="button"
+              className={styles.secondaire}
+              disabled={occupe}
+              onClick={() => setConfirmation(true)}
+            >
               {tr('fournee.annuler')}
             </button>
           )}
