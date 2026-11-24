@@ -1,8 +1,17 @@
-import { ErreurApi, optiboulFetch, sauvegardesLancerCreate } from '@/api';
+import {
+  ErreurApi,
+  optiboulFetch,
+  sauvegardesLancerCreate,
+  sauvegardesRestaurerCreate,
+  sauvegardesRetrieve,
+  type RestaurationFaite,
+  type Sauvegarde,
+  type SauvegardeLancee,
+} from '@/api';
 import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { lireSauvegardesReelles } from './reel.ts';
+import { lireSauvegardesReelles, versCopie } from './reel.ts';
 import type { InstantaneSauvegardes, ReponseCopie, ReponseRestauration } from './types.ts';
 
 // En simulation, l'écran lit le faux serveur (`simulation/sauvegardes.ts`) ; sur le vrai serveur,
@@ -36,6 +45,8 @@ async function envoyer<T>(chemin: string): Promise<T> {
 function useAction<Demande, Resultat extends { instantane: InstantaneSauvegardes }>(
   utilisateur: string | undefined,
   action: (demande: Demande) => Promise<Resultat>,
+  /** Une restauration remplace la base : tout ce que les écrans ont en cache est à relire. */
+  toutRelire = false,
 ) {
   const client = useQueryClient();
   return useMutation({
@@ -43,29 +54,33 @@ function useAction<Demande, Resultat extends { instantane: InstantaneSauvegardes
     onSuccess: (resultat) => {
       client.setQueryData(cleSauvegardes(utilisateur), resultat.instantane);
       void client.invalidateQueries({ queryKey: ['simulation', 'gestion', 'journal'] });
+      if (toutRelire) void client.invalidateQueries();
     },
   });
 }
 
+/** Relectures d'une copie lancée, à une seconde d'intervalle, avant d'annoncer qu'elle est en attente. */
+const ESSAIS_DE_SUIVI = 10;
+
 /**
- * Sur le vrai serveur, « lancer » met la sauvegarde en file (202) : on relit quelques fois jusqu'à ce
- * qu'une copie réussie plus récente apparaisse ; sinon la copie annoncée est celle de l'instant.
+ * Sur le vrai serveur, « lancer » met la copie en file (202) et renvoie son identifiant : on la suit
+ * (`sauvegardes/{id}/`) jusqu'à sa réussite ou son échec ; trop longue, elle est annoncée « en attente ».
  */
 async function lancerEtAttendre(genre: 'locale' | 'cloud'): Promise<ReponseCopie> {
-  const avant = await lireSauvegardesReelles();
-  const derniere = (i: InstantaneSauvegardes) => i.copies.find((c) => c.genre === genre)?.id;
-  const idAvant = derniere(avant);
-  await sauvegardesLancerCreate();
-  let instantane = avant;
-  for (let essai = 0; essai < 8; essai += 1) {
+  const lancee = (await sauvegardesLancerCreate({ genre })).data as unknown as SauvegardeLancee;
+  for (let essai = 0; essai < ESSAIS_DE_SUIVI; essai += 1) {
     await new Promise((resoudre) => setTimeout(resoudre, 1000));
-    instantane = await lireSauvegardesReelles();
-    const nouvelle = instantane.copies.find((c) => c.genre === genre && c.id !== idAvant);
-    if (nouvelle) return { copie: nouvelle, instantane };
+    const copie = (await sauvegardesRetrieve(lancee.id)).data as unknown as Sauvegarde;
+    if (copie.statut === 'echec') {
+      throw new ErreurApi(409, { code: 'sauvegarde_echec', detail: copie.erreur });
+    }
+    if (copie.statut === 'reussie') {
+      return { copie: versCopie(copie), instantane: await lireSauvegardesReelles() };
+    }
   }
   return {
     copie: { id: 'en-attente', genre, declencheur: 'manuelle', instant: new Date().toISOString() },
-    instantane,
+    instantane: await lireSauvegardesReelles(),
   };
 }
 
@@ -79,12 +94,55 @@ export const useSauvegarderCloud = (utilisateur: string | undefined) =>
     SIMULATION ? envoyer<ReponseCopie>('cloud/') : lancerEtAttendre('cloud'),
   );
 
-/** Le serveur n'a pas de restauration par l'API (M4) : le bouton est masqué. */
+/**
+ * Restaure une copie. Sur le vrai serveur, la réponse n'arrive qu'une fois la base remplacée : copie de
+ * sûreté et contrôle des totaux (sessions, soldes clients, stocks). Une même clé d'idempotence rejoue
+ * la réponse si la connexion tombe.
+ */
+async function restaurerLaCopie(id: string): Promise<ReponseRestauration> {
+  const avant = await lireSauvegardesReelles();
+  const faite = (
+    await sauvegardesRestaurerCreate(
+      Number(id),
+      { confirmation: 'RESTAURER' },
+      { headers: { 'Idempotency-Key': crypto.randomUUID() } },
+    ).catch((erreur: unknown) => {
+      // La base remplacée emporte la session de l'administrateur : le serveur peut alors répondre par
+      // une erreur sans code alors que la restauration a eu lieu (ticket #383).
+      if (erreur instanceof ErreurApi && !erreur.code && erreur.status < 500) {
+        throw new ErreurApi(409, {
+          code: 'restauration_session_perdue',
+          detail: erreur.message,
+        });
+      }
+      throw erreur;
+    })
+  ).data as unknown as RestaurationFaite;
+  const instantane = await lireSauvegardesReelles();
+  const copie = avant.copies.find((c) => c.id === id) ?? {
+    id,
+    genre: 'locale' as const,
+    declencheur: 'manuelle' as const,
+    instant: '',
+  };
+  return {
+    restauration: {
+      copie,
+      copieAvant: versCopie(faite.copie_avant),
+      controles: faite.controles.map(({ cle, ok }) => ({ cle, ok })),
+    },
+    instantane,
+  };
+}
+
 export const useRestaurer = (utilisateur: string | undefined) =>
-  useAction<string, ReponseRestauration>(utilisateur, (id) =>
-    SIMULATION
-      ? envoyer<ReponseRestauration>(`${encodeURIComponent(id)}/restaurer/`)
-      : Promise.reject(new ErreurApi(409, { code: 'indisponible', detail: 'Pas de restauration' })),
+  useAction<string, ReponseRestauration>(
+    utilisateur,
+    (id) =>
+      SIMULATION
+        ? envoyer<ReponseRestauration>(`${encodeURIComponent(id)}/restaurer/`)
+        : restaurerLaCopie(id),
+    true,
   );
 
 /** Code d'une erreur de l'API, pour choisir le message affiché. */

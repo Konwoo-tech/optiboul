@@ -40,6 +40,7 @@ const ETAT = {
   derniere_cloud: null,
   cloud_en_retard: true,
   seuil_alerte_heures: 24,
+  derniere_echec: null,
 };
 
 describe('lecture des sauvegardes sur le vrai serveur', () => {
@@ -80,23 +81,26 @@ describe('actions sur le vrai serveur', () => {
     ({ children }: { children: ReactNode }) =>
       createElement(QueryClientProvider, { client }, children);
 
-  it('lance la sauvegarde (202) et attend la nouvelle copie', async () => {
-    let lancees = 0;
+  it('lance la sauvegarde du genre demandé (202), suit la copie annoncée, puis relit la liste', async () => {
+    let corps: unknown;
+    let lectures = 0;
     serveur.use(
+      http.post('*/api/v1/sauvegardes/lancer/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json({ id: 6, genre: 'locale', statut: 'en_cours' }, { status: 202 });
+      }),
+      http.get('*/api/v1/sauvegardes/6/', () => {
+        lectures += 1;
+        return HttpResponse.json(
+          lectures < 2
+            ? COPIE(6, 'locale', 'manuelle', 'en_cours')
+            : COPIE(6, 'locale', 'manuelle'),
+        );
+      }),
       http.get('*/api/v1/sauvegardes/', () =>
-        HttpResponse.json(
-          page(
-            lancees
-              ? [COPIE(1, 'locale', 'planifiee'), COPIE(6, 'locale', 'manuelle')]
-              : [COPIE(1, 'locale', 'planifiee')],
-          ),
-        ),
+        HttpResponse.json(page([COPIE(1, 'locale', 'planifiee'), COPIE(6, 'locale', 'manuelle')])),
       ),
       http.get('*/api/v1/sauvegardes/etat/', () => HttpResponse.json(ETAT)),
-      http.post('*/api/v1/sauvegardes/lancer/', () => {
-        lancees += 1;
-        return new HttpResponse(null, { status: 202 });
-      }),
     );
     const { result } = renderHook(() => useSauvegarderLocale('Admin'), {
       wrapper: wrapper(new QueryClient()),
@@ -105,18 +109,45 @@ describe('actions sur le vrai serveur', () => {
     await act(async () => {
       reponse = await result.current.mutateAsync();
     });
-    expect(lancees).toBe(1);
+    expect(corps).toEqual({ genre: 'locale' });
+    expect(lectures).toBe(2);
     expect(reponse).toMatchObject({ copie: { id: '6', declencheur: 'manuelle' } });
   });
 
-  it('sans nouvelle copie après quelques relectures, la copie annoncée est celle de l’instant', async () => {
+  it('une copie en échec devient une erreur avec le message du serveur', async () => {
+    serveur.use(
+      http.post('*/api/v1/sauvegardes/lancer/', () =>
+        HttpResponse.json({ id: 7, genre: 'cloud', statut: 'en_cours' }, { status: 202 }),
+      ),
+      http.get('*/api/v1/sauvegardes/7/', () =>
+        HttpResponse.json({
+          ...COPIE(7, 'cloud', 'manuelle', 'echec'),
+          erreur: 'Cloud injoignable',
+        }),
+      ),
+    );
+    const { result } = renderHook(() => useSauvegarderCloud('Admin'), {
+      wrapper: wrapper(new QueryClient()),
+    });
+    await expect(result.current.mutateAsync()).rejects.toMatchObject({
+      code: 'sauvegarde_echec',
+      message: 'Cloud injoignable',
+    });
+  });
+
+  it('une copie trop longue est annoncée « en attente »', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     serveur.use(
+      http.post('*/api/v1/sauvegardes/lancer/', () =>
+        HttpResponse.json({ id: 8, genre: 'cloud', statut: 'en_cours' }, { status: 202 }),
+      ),
+      http.get('*/api/v1/sauvegardes/8/', () =>
+        HttpResponse.json(COPIE(8, 'cloud', 'manuelle', 'en_cours')),
+      ),
       http.get('*/api/v1/sauvegardes/', () =>
         HttpResponse.json(page([COPIE(1, 'cloud', 'planifiee')])),
       ),
       http.get('*/api/v1/sauvegardes/etat/', () => HttpResponse.json(ETAT)),
-      http.post('*/api/v1/sauvegardes/lancer/', () => new HttpResponse(null, { status: 202 })),
     );
     const { result } = renderHook(() => useSauvegarderCloud('Admin'), {
       wrapper: wrapper(new QueryClient()),
@@ -124,16 +155,94 @@ describe('actions sur le vrai serveur', () => {
     let reponse: unknown;
     await act(async () => {
       const promesse = result.current.mutateAsync();
-      await vi.advanceTimersByTimeAsync(9000);
+      await vi.advanceTimersByTimeAsync(12000);
       reponse = await promesse;
     });
     expect(reponse).toMatchObject({ copie: { id: 'en-attente', genre: 'cloud' } });
   });
 
-  it('la restauration n’existe pas sur le serveur', async () => {
+  it('restaure la copie choisie : confirmation, clé d’idempotence, copie de sûreté et contrôles', async () => {
+    let corps: unknown;
+    let cle: string | null = null;
+    serveur.use(
+      http.get('*/api/v1/sauvegardes/', () =>
+        HttpResponse.json(
+          page([COPIE(3, 'locale', 'cloture_semaine'), COPIE(1, 'locale', 'planifiee')]),
+        ),
+      ),
+      http.get('*/api/v1/sauvegardes/etat/', () => HttpResponse.json(ETAT)),
+      http.post('*/api/v1/sauvegardes/3/restaurer/', async ({ request }) => {
+        corps = await request.json();
+        cle = request.headers.get('Idempotency-Key');
+        return HttpResponse.json({
+          copie_avant: COPIE(9, 'locale', 'avant_restauration'),
+          controles: [
+            { cle: 'sessions', ok: true, avant: 14, apres: 14 },
+            { cle: 'soldes_clients', ok: false, avant: 14050, apres: 14000 },
+            { cle: 'stocks', ok: true, avant: 9, apres: 9 },
+          ],
+          restauration: { id: 7, statut: 'terminee', sauvegarde: 3, copie_de_surete: 9 },
+        });
+      }),
+    );
     const { result } = renderHook(() => useRestaurer('Admin'), {
       wrapper: wrapper(new QueryClient()),
     });
-    await expect(result.current.mutateAsync('1')).rejects.toMatchObject({ code: 'indisponible' });
+    let reponse: unknown;
+    await act(async () => {
+      reponse = await result.current.mutateAsync('3');
+    });
+    expect(corps).toEqual({ confirmation: 'RESTAURER' });
+    expect(cle).toBeTruthy();
+    expect(reponse).toMatchObject({
+      restauration: {
+        copie: { id: '3', declencheur: 'cloture' },
+        copieAvant: { id: '9' },
+        controles: [
+          { cle: 'sessions', ok: true },
+          { cle: 'soldes_clients', ok: false },
+          { cle: 'stocks', ok: true },
+        ],
+      },
+    });
+  });
+
+  it('une réponse perdue (session emportée par la base restaurée) devient un message clair', async () => {
+    serveur.use(
+      http.get('*/api/v1/sauvegardes/', () =>
+        HttpResponse.json(page([COPIE(3, 'locale', 'manuelle')])),
+      ),
+      http.get('*/api/v1/sauvegardes/etat/', () => HttpResponse.json(ETAT)),
+      http.post('*/api/v1/sauvegardes/3/restaurer/', () =>
+        HttpResponse.text('<h1>SessionInterrupted</h1>', { status: 400 }),
+      ),
+    );
+    const { result } = renderHook(() => useRestaurer('Admin'), {
+      wrapper: wrapper(new QueryClient()),
+    });
+    await expect(result.current.mutateAsync('3')).rejects.toMatchObject({
+      code: 'restauration_session_perdue',
+    });
+  });
+
+  it('une restauration déjà en cours est refusée avec son code', async () => {
+    serveur.use(
+      http.get('*/api/v1/sauvegardes/', () =>
+        HttpResponse.json(page([COPIE(3, 'locale', 'manuelle')])),
+      ),
+      http.get('*/api/v1/sauvegardes/etat/', () => HttpResponse.json(ETAT)),
+      http.post('*/api/v1/sauvegardes/3/restaurer/', () =>
+        HttpResponse.json(
+          { detail: 'Une restauration est déjà en cours.', code: 'restauration_en_cours' },
+          { status: 409 },
+        ),
+      ),
+    );
+    const { result } = renderHook(() => useRestaurer('Admin'), {
+      wrapper: wrapper(new QueryClient()),
+    });
+    await expect(result.current.mutateAsync('3')).rejects.toMatchObject({
+      code: 'restauration_en_cours',
+    });
   });
 });
