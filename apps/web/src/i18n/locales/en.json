@@ -2117,6 +2117,14 @@
         "realise": "Actual",
         "champ": "Actual {{produit}}",
         "enregistrer": "Save production",
+        "annulee": "Batch cancelled: the produced total is corrected.",
+        "fournee": {
+          "titre": "Last batch",
+          "derniere": "Last batch: {{pains}} {{produit}} at {{heure}}.",
+          "annuler": "Cancel this batch",
+          "confirmer": "Yes, cancel the batch",
+          "garder": "No, keep it"
+        },
         "lecture": {
           "proprietaire": "Read-only for the owner.",
           "responsable": "Read-only: the head of production of the week enters the figures.",

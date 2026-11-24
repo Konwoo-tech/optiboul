@@ -1044,3 +1044,8 @@
   font-size: 14px;
   color: var(--ob-discret);
 }
+
+.sansCadre {
+  border: 0;
+  min-width: 0;
+}

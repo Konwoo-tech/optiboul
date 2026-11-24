@@ -101,6 +101,7 @@ type ProduitServeur = {
   realise: number;
   reste: number;
 };
+type FourneeServeur = { numero: number; produit: string; pains: number; saisie_le: string };
 type EnCoursServeur = {
   id: number;
   statut: string;
@@ -202,6 +203,25 @@ export function versHistorique(productions: readonly ResumeProduction[]): LigneH
     .reverse();
 }
 
+/** La fournée au plus grand numéro : le serveur n'annule que celle-là. */
+export function derniereFourneeDe(
+  fournees: readonly FourneeServeur[],
+): InstantaneProduction['derniereFournee'] {
+  const derniere = fournees.reduce<FourneeServeur | null>(
+    (a, f) => (!a || f.numero > a.numero ? f : a),
+    null,
+  );
+  const cle = derniere ? CODE_DU_PRODUIT[derniere.produit] : undefined;
+  return derniere && cle
+    ? {
+        numero: derniere.numero,
+        produit: cle,
+        pains: derniere.pains,
+        a: heureDeYaounde(derniere.saisie_le),
+      }
+    : null;
+}
+
 /** Le cycle de la session : commandes, plan proposé, plan validé, en cours, clôturée. */
 export function etapeDe(plan: string | null, production: string | undefined): Etape {
   if (production === 'cloturee' || production === 'non_cloturee') return 'cloturee';
@@ -259,7 +279,7 @@ export async function lireProductionReelle(): Promise<InstantaneProduction> {
       .then((r) => r.data as unknown as EnCoursServeur)
       .catch(() => null),
     productionsResteAProduireRetrieve(session)
-      .then((r) => r.data as unknown as { produits: ProduitServeur[] })
+      .then((r) => r.data as unknown as { produits: ProduitServeur[]; fournees?: FourneeServeur[] })
       .catch(() => null),
     toutesLesPages<Semaine>((page) => semainesList({ page }) as Promise<Page<Semaine>>),
     commandesList({ jour: plan.jour, creneau: plan.creneau as never })
@@ -322,5 +342,6 @@ export async function lireProductionReelle(): Promise<InstantaneProduction> {
       demandes.map((d) => versDemandeProduction(d)).find((d) => d !== undefined) ?? null,
     historique: versHistorique(passees),
     ...(enCours ? { productionId: String(enCours.id) } : {}),
+    derniereFournee: enCours ? derniereFourneeDe(reste?.fournees ?? []) : null,
   };
 }

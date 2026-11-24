@@ -268,6 +268,12 @@ function Contenu({ ecran, instantane, nom, profil, actions }: ContenuProps) {
       t('atelier.production.toasts.realiseEnregistre'),
     );
 
+  const annulerLaFournee = (numero: number) =>
+    void agir(async () => {
+      const reponse = await actions.annulerLaDerniereFournee(numero);
+      setRealise(brouillonDuRealise(reponse.instantane.realise));
+    }, t('atelier.production.realise.annulee'));
+
   const enregistrerLaConsommation = () =>
     void agir(
       () => actions.enregistrerLaConsommation(consommationSaisie(consommation)),
@@ -425,6 +431,8 @@ function Contenu({ ecran, instantane, nom, profil, actions }: ContenuProps) {
               occupe={occupe}
               onChange={(produit, texte) => setRealise((avant) => ({ ...avant, [produit]: texte }))}
               onEnregistrer={enregistrerLeRealise}
+              derniereFournee={instantane.derniereFournee ?? null}
+              onAnnulerFournee={annulerLaFournee}
             />
           )}
           {onglet === 'consommation' && (

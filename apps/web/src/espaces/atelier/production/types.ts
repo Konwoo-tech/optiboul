@@ -129,7 +129,12 @@ export type InstantaneProduction = {
   historique: LigneHistorique[];
   /** Identifiant de la production ouverte sur le vrai serveur (la simulation n'en a pas besoin). */
   productionId?: string;
+  /** Absente en simulation, où le réalisé se saisit en total. */
+  derniereFournee?: DerniereFournee | null;
 };
+
+/** La dernière fournée saisie : la seule que le serveur laisse annuler. */
+export type DerniereFournee = { numero: number; produit: CleProduit; pains: number; a: string };
 
 export type SortieDeStock = { matiere: Matiere; quantite: number };
 
