@@ -39,7 +39,8 @@ export function MiseEnPage() {
         void deconnecterSimulation('inactivite').then(() => client.invalidateQueries());
         return;
       }
-      void connexionDeconnexionCreate().then(() => client.resetQueries());
+      // Le serveur journalise `connexion.expiree` (et non `connexion.fermee`) : #299.
+      void connexionDeconnexionCreate({ raison: 'inactivite' }).then(() => client.resetQueries());
     },
   });
 

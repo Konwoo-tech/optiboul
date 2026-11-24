@@ -72,6 +72,8 @@ function serveurCaisses(options: { especesRefusees?: boolean } = {}) {
   serveur.use(
     http.get('*/api/v1/users/me/', () =>
       HttpResponse.json({
+        id: 4,
+        email: 'davy@gmail.com',
         url: 'http://localhost/api/v1/users/4/',
         name: 'Davy',
         profil: 'caissier',
@@ -189,7 +191,7 @@ describe('lecture des caisses sur le vrai serveur', () => {
     expect(versSessionDeCaisse(OUVERTE as never, null).attendu).toBe(20000);
   });
 
-  it('le hook lit l’identifiant de la personne connectée dans son adresse', async () => {
+  it('le hook lit l’identifiant de la personne connectée (id de /users/me/, #296)', async () => {
     serveurCaisses();
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: ReactNode }) => (

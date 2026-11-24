@@ -9,6 +9,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
   cheminDuLien,
   heureDeNotification,
+  typeDuGenre,
   useNombreNonLues,
   useNotifications,
 } from './notifications.ts';
@@ -27,6 +28,7 @@ afterAll(() => serveur.close());
 const NOTIFICATION = {
   id: 12,
   genre: 'caisse.hors_planning',
+  genre_libelle: 'Caisse hors planning',
   titre: 'Caisse de nuit ouverte par Davy Caisse',
   message: 'Elle n’était pas prévue au planning.',
   lien: '/comptoir/caisses',
@@ -171,9 +173,24 @@ describe('écran atteint par « Ouvrir »', () => {
     expect(cheminDuLien('/comptoir/caisses', 'gerant')).toBe('/comptoir/caisses');
   });
 
-  it('traduit les chemins qui ne portent pas le nom de l’écran du front (E14)', () => {
-    expect(cheminDuLien('/gestion/paie', 'proprietaire')).toBe('/gestion/personnel');
-    expect(cheminDuLien('/atelier/stocks/controles', 'gerant')).toBe('/atelier/stocks');
+  it('garde l’onglet ou la passation du lien, et rien d’autre (#298)', () => {
+    expect(cheminDuLien('/gestion/personnel', 'proprietaire')).toBe('/gestion/personnel');
+    expect(cheminDuLien('/atelier/stocks?onglet=inventaires', 'gerant')).toBe(
+      '/atelier/stocks?onglet=inventaires',
+    );
+    expect(cheminDuLien('/gestion/semaines?passation=7', 'proprietaire')).toBe(
+      '/gestion/semaines?passation=7',
+    );
+    expect(cheminDuLien('/gestion/semaines?passation=7&x=1', 'proprietaire')).toBe(
+      '/gestion/semaines?passation=7',
+    );
+  });
+
+  it('le libellé du type vient du serveur ; sans lui, le genre rendu lisible', async () => {
+    expect(typeDuGenre('caisse.hors_planning', 'Caisse hors planning')).toBe(
+      'Caisse hors planning',
+    );
+    expect(typeDuGenre('plan.propose')).toBe('Plan propose');
   });
 
   it('n’en propose aucun si le profil ne peut pas ouvrir l’écran ou si le lien est inconnu', () => {

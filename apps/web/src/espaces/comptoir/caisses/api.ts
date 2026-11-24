@@ -164,9 +164,6 @@ export async function lireCaisses(moi: string): Promise<ReponseCaisses> {
   };
 }
 
-/** Identifiant de la personne connectée : le dernier segment de son adresse `/users/4/`. */
-const idDeLUtilisateur = (url: string | undefined) => url?.split('/').filter(Boolean).at(-1) ?? '';
-
 /** Caisses visibles par la personne connectée (la caissière ne reçoit que les siennes). */
 export function useCaisses(utilisateur: string | undefined) {
   const { utilisateur: connecte } = useUtilisateurCourant();
@@ -175,7 +172,7 @@ export function useCaisses(utilisateur: string | undefined) {
     queryFn: async () =>
       SIMULATION
         ? (await optiboulFetch<Reponse<ReponseCaisses>>(RACINE)).data
-        : lireCaisses(idDeLUtilisateur(connecte?.url)),
+        : lireCaisses(String(connecte?.id ?? '')),
     enabled: Boolean(utilisateur) && (SIMULATION || Boolean(connecte)),
     // Les espèces bougent à chaque livraison et chaque dépense : on relit à chaque ouverture de l'écran.
     staleTime: 0,

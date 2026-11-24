@@ -428,7 +428,7 @@ export type ActionsSession = ReturnType<typeof actionsSession>;
 export function useActionsSession(utilisateur: string | undefined): ActionsSession {
   const client = useQueryClient();
   const { utilisateur: connecte } = useUtilisateurCourant();
-  const idConnecte = connecte?.url?.split('/').filter(Boolean).at(-1) ?? '';
+  const idConnecte = String(connecte?.id ?? '');
   const profil = connecte?.profil;
   // Référence stable : les écouteurs clavier ne se réinstallent pas à chaque rendu.
   return useMemo(
