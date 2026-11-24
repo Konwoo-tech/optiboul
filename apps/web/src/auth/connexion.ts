@@ -4,6 +4,7 @@ import {
   connexionEmailCreate,
   connexionOtpEnvoyerCreate,
   connexionOtpVerifierCreate,
+  connexionUtilisateursList,
   ErreurApi,
   useConnexionUtilisateursList,
   type CodeEnvoye,
@@ -85,6 +86,15 @@ export async function identifierSurLeServeur(
     telephoneMasque: donnees.telephoneMasque,
     via: donnees.via,
   };
+}
+
+/**
+ * Un visiteur sans session n'a pas encore de cookie CSRF, et le serveur l'exige pour toute écriture
+ * anonyme. Il ne le pose que sur la liste des personnes du poste, même quand il la refuse (403) :
+ * on l'appelle donc avant d'écrire depuis une page qui ne la charge pas (lien reçu par e-mail).
+ */
+export function amorcerLeJetonCsrf(): Promise<unknown> {
+  return connexionUtilisateursList().catch(() => undefined);
 }
 
 export async function annulerIdentificationSurLeServeur(): Promise<void> {

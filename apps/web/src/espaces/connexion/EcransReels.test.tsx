@@ -61,6 +61,26 @@ describe('connexion sur le vrai serveur', () => {
     expect(screen.queryByText('Profils de démonstration')).toBeNull();
   });
 
+  it('« Mot de passe oublié ? » demande le lien au serveur, après avoir exigé l’adresse', async () => {
+    let corps: unknown;
+    serveur.use(
+      http.post('*/api/v1/connexion/mot-de-passe-oublie/', async ({ request }) => {
+        corps = await request.json();
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    ouvrir();
+    await screen.findByRole('button', { name: 'Se connecter' });
+    fireEvent.click(screen.getByRole('button', { name: 'Mot de passe oublié ?' }));
+    expect(await screen.findByText(/Saisissez votre adresse e-mail ci-dessus/)).toBeTruthy();
+    expect(corps).toBeUndefined();
+    fireEvent.change(screen.getByLabelText('Adresse e-mail'), {
+      target: { value: 'davy@gmail.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Mot de passe oublié ?' }));
+    await waitFor(() => expect(corps).toEqual({ email: 'davy@gmail.com' }));
+  });
+
   it('avec ?mode=email, propose l’adresse e-mail même sur un poste de confiance', async () => {
     serveur.use(http.get('*/api/v1/connexion/utilisateurs/', () => HttpResponse.json(PERSONNES)));
     ouvrir('/connexion?mode=email');

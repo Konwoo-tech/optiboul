@@ -157,7 +157,24 @@
     "erreurChamps": "Saisissez votre e-mail et votre mot de passe.",
     "erreurIdentifiants": "E-mail ou mot de passe incorrect.",
     "inactivite": "Déconnexion automatique après {{minutes}} min d’inactivité. Reconnectez-vous pour continuer.",
-    "googleRefuse": "Ce compte Google n’est pas autorisé. Choisissez-en un autre ou utilisez votre e-mail."
+    "googleRefuse": "Ce compte Google n’est pas autorisé. Choisissez-en un autre ou utilisez votre e-mail.",
+    "nouveau": {
+      "titre": "Nouveau mot de passe",
+      "aide": "Choisissez un nouveau mot de passe pour votre compte.",
+      "titreInvitation": "Bienvenue sur OptiBoul",
+      "aideInvitation": "Choisissez votre mot de passe pour activer votre compte.",
+      "champ": "Mot de passe",
+      "confirmation": "Confirmez le mot de passe",
+      "enregistrer": "Enregistrer le mot de passe",
+      "trop_court": "Le mot de passe comporte au moins {{minimum}} caractères.",
+      "different": "Les deux mots de passe ne sont pas identiques.",
+      "faible": "Ce mot de passe est trop simple. Choisissez-en un autre.",
+      "lienInvalide": "Ce lien est invalide ou expiré. Demandez un nouveau lien depuis la page de connexion (« Mot de passe oublié ? ») ou à l’administrateur.",
+      "echec": "L’enregistrement a échoué. Réessayez.",
+      "fait": "Votre mot de passe est enregistré. Vous pouvez vous connecter."
+    },
+    "erreurAdresse": "Saisissez votre adresse e-mail ci-dessus, puis touchez « Mot de passe oublié ? ».",
+    "erreurOublie": "L’envoi du lien a échoué. Réessayez."
   },
   "navigation": {
     "espaces": "Espaces",
