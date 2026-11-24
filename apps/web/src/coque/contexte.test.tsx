@@ -175,15 +175,55 @@ describe('contexte de la coque sur le vrai serveur', () => {
     });
   });
 
-  it('avant la connexion, rien n’est demandé au serveur', async () => {
-    serveur.use(http.get('*/api/v1/users/me/', () => new HttpResponse(null, { status: 403 })));
+  it('avant la connexion, seul le poste est interrogé ; hors poste de confiance, rien à montrer', async () => {
+    serveur.use(
+      http.get('*/api/v1/users/me/', () => new HttpResponse(null, { status: 403 })),
+      http.get('*/api/v1/postes/actuel/', () => HttpResponse.json({ poste: null, contexte: null })),
+    );
     let demandes = 0;
     serveur.events.on('request:start', ({ request }) => {
-      if (/semaines|caisses|postes/.test(request.url)) demandes += 1;
+      if (/semaines|caisses/.test(request.url)) demandes += 1;
     });
     await lire();
     await new Promise((resolve) => setTimeout(resolve, 300));
     expect(demandes).toBe(0);
     expect(contexteAffiche()).toBeNull();
+  });
+
+  it('avant la connexion, un poste de confiance donne la semaine, le gérant et la session (#307)', async () => {
+    serveur.use(
+      http.get('*/api/v1/users/me/', () => new HttpResponse(null, { status: 403 })),
+      http.get('*/api/v1/postes/actuel/', () =>
+        HttpResponse.json({
+          poste: { id: 1, nom: 'PC du comptoir' },
+          contexte: {
+            semaine: {
+              numero: 49,
+              du: '2026-11-30',
+              au: '2026-12-06',
+              gerant: 'Willy Gérant',
+              production: 'Serge Production',
+            },
+            session: {
+              creneau: 'jour',
+              ouverte_le: '2026-11-20T08:54:28+01:00',
+              caissiere: 'Davy Caisse',
+            },
+          },
+        }),
+      ),
+    );
+    await lire();
+    await waitFor(() => expect(contexteAffiche()).not.toBeNull());
+    expect(contexteAffiche()).toEqual({
+      poste: 'PC du comptoir',
+      gerantDeLaSemaine: 'Willy Gérant',
+      responsableProduction: 'Serge Production',
+      caissierDeSession: 'Davy Caisse',
+      semaine: { numero: 49, du: '2026-11-30', au: '2026-12-06' },
+      sessionOuverteDepuis: '08:54',
+      sessionType: 'jour',
+      sessionOuverte: true,
+    });
   });
 });

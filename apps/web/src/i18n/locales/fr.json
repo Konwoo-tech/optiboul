@@ -174,7 +174,10 @@
       "fait": "Votre mot de passe est enregistré. Vous pouvez vous connecter."
     },
     "erreurAdresse": "Saisissez votre adresse e-mail ci-dessus, puis touchez « Mot de passe oublié ? ».",
-    "erreurOublie": "L’envoi du lien a échoué. Réessayez."
+    "erreurOublie": "L’envoi du lien a échoué. Réessayez.",
+    "googleIndisponible": "La connexion par Google n’est pas disponible pour le moment. Utilisez votre e-mail et votre mot de passe.",
+    "googleTest": "Continuer avec Google (test local)",
+    "googleTestGmail": "Gmail du compte à tester"
   },
   "navigation": {
     "espaces": "Espaces",
