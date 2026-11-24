@@ -106,7 +106,17 @@ async function restaurerLaCopie(id: string): Promise<ReponseRestauration> {
       Number(id),
       { confirmation: 'RESTAURER' },
       { headers: { 'Idempotency-Key': crypto.randomUUID() } },
-    )
+    ).catch((erreur: unknown) => {
+      // La base remplacée emporte la session de l'administrateur : le serveur peut alors répondre par
+      // une erreur sans code alors que la restauration a eu lieu (ticket #383).
+      if (erreur instanceof ErreurApi && !erreur.code && erreur.status < 500) {
+        throw new ErreurApi(409, {
+          code: 'restauration_session_perdue',
+          detail: erreur.message,
+        });
+      }
+      throw erreur;
+    })
   ).data as unknown as RestaurationFaite;
   const instantane = await lireSauvegardesReelles();
   const copie = avant.copies.find((c) => c.id === id) ?? {

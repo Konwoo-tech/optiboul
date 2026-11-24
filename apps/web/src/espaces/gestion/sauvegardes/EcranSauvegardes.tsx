@@ -20,6 +20,16 @@ import { libelleDeCopie } from './regles.ts';
 import styles from './Sauvegardes.module.css';
 import type { Copie } from './types.ts';
 
+/** Code d'erreur du serveur → clé du message affiché. */
+const MESSAGES_D_ERREUR: Record<string, string> = {
+  droit_insuffisant: 'droit',
+  copie_inconnue: 'inconnue',
+  restauration_en_cours: 'restaurationEnCours',
+  restauration_impossible: 'impossible',
+  restauration_session_perdue: 'sessionPerdue',
+  sauvegarde_echec: 'echec',
+};
+
 /**
  * Gestion › Sauvegardes (US-142, US-143) : l'état des copies locale et cloud, la sauvegarde à la
  * demande, la liste des copies et la restauration guidée. Réservé à l'administrateur. Hors ligne,
@@ -77,17 +87,11 @@ export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
 
   const messageDErreur = (erreur: unknown) => {
     const code = codeErreur(erreur);
-    return t(
-      code === 'droit_insuffisant'
-        ? 'gestion.sauvegardes.toasts.droit'
-        : code === 'copie_inconnue'
-          ? 'gestion.sauvegardes.toasts.inconnue'
-          : code === 'restauration_en_cours'
-            ? 'gestion.sauvegardes.toasts.restaurationEnCours'
-            : code === 'sauvegarde_echec'
-              ? 'gestion.sauvegardes.toasts.echec'
-              : 'gestion.sauvegardes.toasts.erreur',
-    );
+    const cle = code ? MESSAGES_D_ERREUR[code] : undefined;
+    return t(`gestion.sauvegardes.toasts.${cle ?? 'erreur'}`, {
+      // Le serveur dit pourquoi une restauration est impossible (outil absent, copie illisible…).
+      detail: erreur instanceof Error ? erreur.message : '',
+    });
   };
 
   const surLocale = () =>
@@ -96,9 +100,11 @@ export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
         onSettled: fin,
         onSuccess: ({ copie }) =>
           afficher(
-            t('gestion.sauvegardes.toasts.locale', {
-              heure: formaterHeure(new Date(copie.instant)),
-            }),
+            copie.id === 'en-attente'
+              ? t('gestion.sauvegardes.toasts.enAttente')
+              : t('gestion.sauvegardes.toasts.locale', {
+                  heure: formaterHeure(new Date(copie.instant)),
+                }),
           ),
         onError: (erreur) => {
           afficher(messageDErreur(erreur));
@@ -116,7 +122,14 @@ export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
     exclusif((fin) =>
       cloud.mutate(undefined, {
         onSettled: fin,
-        onSuccess: () => afficher(t('gestion.sauvegardes.toasts.cloud')),
+        onSuccess: ({ copie }) =>
+          afficher(
+            t(
+              copie.id === 'en-attente'
+                ? 'gestion.sauvegardes.toasts.enAttente'
+                : 'gestion.sauvegardes.toasts.cloud',
+            ),
+          ),
         onError: (erreur) => {
           afficher(messageDErreur(erreur));
           void requete.refetch();

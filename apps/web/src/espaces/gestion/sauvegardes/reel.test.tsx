@@ -207,6 +207,24 @@ describe('actions sur le vrai serveur', () => {
     });
   });
 
+  it('une réponse perdue (session emportée par la base restaurée) devient un message clair', async () => {
+    serveur.use(
+      http.get('*/api/v1/sauvegardes/', () =>
+        HttpResponse.json(page([COPIE(3, 'locale', 'manuelle')])),
+      ),
+      http.get('*/api/v1/sauvegardes/etat/', () => HttpResponse.json(ETAT)),
+      http.post('*/api/v1/sauvegardes/3/restaurer/', () =>
+        HttpResponse.text('<h1>SessionInterrupted</h1>', { status: 400 }),
+      ),
+    );
+    const { result } = renderHook(() => useRestaurer('Admin'), {
+      wrapper: wrapper(new QueryClient()),
+    });
+    await expect(result.current.mutateAsync('3')).rejects.toMatchObject({
+      code: 'restauration_session_perdue',
+    });
+  });
+
   it('une restauration déjà en cours est refusée avec son code', async () => {
     serveur.use(
       http.get('*/api/v1/sauvegardes/', () =>

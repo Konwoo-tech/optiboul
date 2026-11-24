@@ -23,6 +23,7 @@ const DECLENCHEURS: Record<string, Declencheur> = {
   cloture_production: 'cloture',
   cloture_semaine: 'cloture',
   manuelle: 'manuelle',
+  avant_restauration: 'avant_restauration',
 };
 
 export function versCopie(s: Sauvegarde): Copie {
