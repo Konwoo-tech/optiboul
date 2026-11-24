@@ -31,25 +31,26 @@ export type NotificationAffichee = {
   chemin: string | null;
 };
 
-/**
- * Chemins annoncés par l'API qui ne portent pas le nom de l'écran du front (écart E14).
- * Clé : `espace/écran` de l'API ; valeur : `espace/écran` du front.
- */
-const ALIAS_DE_LIENS: Record<string, string> = {
-  'gestion/paie': 'gestion/personnel',
-  'atelier/stocks/controles': 'atelier/stocks',
-};
+/** Paramètres de lien que l'API peut joindre au chemin d'un écran (#298) : rien d'autre n'est repris. */
+const PARAMETRES_DE_LIEN = ['onglet', 'passation'];
 
 /**
- * Le lien d'une notification (« /atelier/production ») devient le chemin d'un écran que ce profil
- * peut ouvrir ; sinon `null` (la notification s'affiche sans bouton « Ouvrir »).
+ * Le lien d'une notification (« /atelier/stocks?onglet=inventaires ») devient le chemin d'un écran
+ * que ce profil peut ouvrir ; sinon `null` (la notification s'affiche sans bouton « Ouvrir »).
+ * L'API émet `/{espace}/{écran}` avec, au besoin, `?onglet=` ou `?passation=`.
  */
 export function cheminDuLien(lien: string, profil: Profil | null | undefined): string | null {
-  const brut = lien.replace(/^\/+|\/+$/g, '');
-  const [espace, cle] = (ALIAS_DE_LIENS[brut] ?? brut).split('/');
+  const [chemin = '', recherche = ''] = lien.split('?');
+  const [espace, cle] = chemin.replace(/^\/+|\/+$/g, '').split('/');
   if (!espace || !cle) return null;
   const ecran = ecransDe(profil, espace as Espace).find((candidat) => candidat.cle === cle);
-  return ecran ? cheminEcran(ecran) : null;
+  if (!ecran) return null;
+  const parametres = new URLSearchParams();
+  for (const [nom, valeur] of new URLSearchParams(recherche)) {
+    if (PARAMETRES_DE_LIEN.includes(nom)) parametres.set(nom, valeur);
+  }
+  const suite = parametres.toString();
+  return suite ? `${cheminEcran(ecran)}?${suite}` : cheminEcran(ecran);
 }
 
 /** « 18:02 » aujourd'hui, « 12 nov. 18:02 » un autre jour (heure de Yaoundé). */
@@ -70,8 +71,9 @@ export function heureDeNotification(instant: string, langue: string, maintenant 
   return `${dateCourte} ${heure}`;
 }
 
-/** Texte du type d'une notification : le genre de l'API (« plan.propose ») rendu lisible. */
-function typeDuGenre(genre: string): string {
+/** Texte du type d'une notification : le libellé du serveur (#297), sinon le genre rendu lisible. */
+export function typeDuGenre(genre: string, libelle?: string): string {
+  if (libelle) return libelle;
   const texte = genre.replace(/[._]/g, ' ').trim();
   return texte.charAt(0).toUpperCase() + texte.slice(1);
 }
@@ -113,7 +115,7 @@ export function useNotifications(actif: boolean) {
         id: String(notification.id),
         lue: notification.lue,
         enDirect: false,
-        type: typeDuGenre(notification.genre),
+        type: typeDuGenre(notification.genre, notification.genre_libelle),
         heure: heureDeNotification(notification.cree_le, langue),
         titre: notification.titre,
         detail: notification.message,
