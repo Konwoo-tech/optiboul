@@ -4,11 +4,13 @@ import {
   demandesList,
   mouvementsStockStockRetrieve,
   productionsEnCoursRetrieve,
+  productionsList,
   productionsPlanRetrieve,
   productionsResteAProduireRetrieve,
   semainesList,
   toutesLesPages,
   type Demande,
+  type ResumeProduction,
   type Semaine,
 } from '@/api';
 import type { Creneau } from '@/utils';
@@ -16,15 +18,18 @@ import type { Creneau } from '@/utils';
 import { justificationEnvoyee } from './justifications.ts';
 import {
   CLES_PRODUIT,
+  MOTIFS_ECART,
   type CleProduit,
   type Consommation,
   type DemandeEstimee,
   type DemandeProduction,
   type Etape,
   type InstantaneProduction,
+  type LigneHistorique,
   type LigneDemande,
   type LignePlan,
   type Matiere,
+  type MotifEcart,
   type MotifSupplement,
   type Plan,
   type Quantites,
@@ -34,7 +39,8 @@ import {
 /*
  * Lecture de « Atelier › Production » sur le vrai serveur : `productions/plan/`, `en-cours/`,
  * `reste-a-produire/`, les commandes de la session, la semaine ouverte, le stock et les demandes de
- * supplément. Le serveur ne liste pas les productions passées : l'historique reste vide (E39).
+ * supplément. L'historique vient de `productions/?semaine=` ; les jalons du cycle (qui a proposé,
+ * ouvert, clôturé, et quand) et la tolérance d'écart viennent du plan et de la production.
  */
 
 type Page<T> = { data: { results?: T[]; next?: string | null } };
@@ -82,6 +88,8 @@ type PlanServeur = {
   jour: string;
   creneau: string;
   statut: string | null;
+  propose_par: string;
+  propose_le: string | null;
   valide_par: string;
   valide_le: string | null;
   lignes: LignePlanServeur[];
@@ -105,6 +113,11 @@ type EnCoursServeur = {
   }[];
   prevus: number;
   realise: number;
+  ouverte_par: string;
+  ouverte_le: string | null;
+  cloturee_par: string;
+  cloturee_le: string | null;
+  tolerance_ecart_kg: number;
 };
 
 /** Plan et demande estimée par produit de l'écran, d'après les lignes du serveur. */
@@ -147,6 +160,48 @@ export function versPlan(lignes: readonly LignePlanServeur[]): {
   };
 }
 
+/** Un jalon du cycle : qui, et l'heure à Yaoundé ; `repli` quand le serveur ne dit pas qui. */
+export const jalonDe = (par: string, quand: string | null, repli = '') =>
+  quand || par ? { par: par || repli, a: quand ? heureDeYaounde(quand) : '' } : null;
+
+/**
+ * Le motif et la précision d'une justification, telle que l'écran l'envoie (« perte : texte »).
+ * Une justification écrite autrement garde le motif « autre ».
+ */
+export function versJustification(texte: string): { motif: MotifEcart; texte: string } | null {
+  if (!texte) return null;
+  const [debut, ...reste] = texte.split(' : ');
+  const motif = (MOTIFS_ECART as readonly string[]).includes(debut ?? '')
+    ? (debut as MotifEcart)
+    : null;
+  return motif ? { motif, texte: reste.join(' : ') } : { motif: 'autre', texte };
+}
+
+/** Une ligne de l'historique des productions d'une semaine (le serveur donne la plus récente d'abord). */
+export function versHistorique(productions: readonly ResumeProduction[]): LigneHistorique[] {
+  return productions
+    .filter((p) => p.statut !== 'en_cours')
+    .map((p) => {
+      const justification = versJustification(p.motif_ecart);
+      return {
+        id: String(p.id),
+        date: p.jour,
+        type: (p.creneau === 'jour' ? 'jour' : 'nuit') as Creneau,
+        responsable: p.responsable.nom,
+        validePar: p.plan_valide_par || '—',
+        ouvertA: heureDeYaounde(p.ouverte_le),
+        clotureA: p.cloturee_le ? heureDeYaounde(p.cloturee_le) : '—',
+        sacs: p.sacs,
+        prevus: p.prevus,
+        realise: p.realise > 0 ? p.realise : null,
+        ecartKg: Number(p.ecart_matiere_kg ?? 0),
+        statut: p.statut === 'cloturee' ? ('cloturee' as const) : ('non-cloturee' as const),
+        ...(justification ? { motif: justification.motif } : {}),
+      };
+    })
+    .reverse();
+}
+
 /** Le cycle de la session : commandes, plan proposé, plan validé, en cours, clôturée. */
 export function etapeDe(plan: string | null, production: string | undefined): Etape {
   if (production === 'cloturee' || production === 'non_cloturee') return 'cloturee';
@@ -160,7 +215,8 @@ export function versRealise(produits: readonly ProduitServeur[]): Realise {
   const realise = { BAG: null, KO: null, GC: null } as Realise;
   for (const p of produits) {
     const cle = CODE_DU_PRODUIT[p.code];
-    if (cle && p.realise > 0) realise[cle] = p.realise;
+    // Un produit que le plan ne prévoit pas n'a rien à saisir : son réalisé est 0, pas « à saisir ».
+    if (cle) realise[cle] = p.realise > 0 ? p.realise : p.prevus === 0 ? 0 : null;
   }
   return realise;
 }
@@ -218,6 +274,11 @@ export async function lireProductionReelle(): Promise<InstantaneProduction> {
     caissesProchaineRetrieve().catch(() => null),
   ]);
   const ouverte = semaines.find((s) => s.statut === 'ouverte') ?? semaines.at(-1);
+  const passees = ouverte
+    ? await toutesLesPages<ResumeProduction>(
+        (page) => productionsList({ semaine: ouverte.id, page }) as Promise<Page<ResumeProduction>>,
+      ).catch(() => [] as ResumeProduction[])
+    : [];
   const { plan: lignes, demande } = versPlan(plan.lignes);
   const produits = enCours?.produits ?? reste?.produits ?? [];
   const valide = plan.valide_par
@@ -234,19 +295,23 @@ export async function lireProductionReelle(): Promise<InstantaneProduction> {
     caissiere:
       prochaine?.data.planifiee?.nom ?? prochaine?.data.caisse_en_cours?.caissiere.nom ?? '',
     etape,
-    // Le serveur ne dit pas qui a proposé le plan ni quand : le responsable de production le fait.
-    planPropose: plan.statut ? { par: responsable, a: '' } : null,
+    planPropose: plan.statut ? jalonDe(plan.propose_par, plan.propose_le, responsable) : null,
     planValide: valide,
-    ouverte: enCours ? { par: responsable, a: '' } : null,
-    cloturee: etape === 'cloturee' ? { par: responsable, a: '' } : null,
+    ouverte: enCours ? jalonDe(enCours.ouverte_par, enCours.ouverte_le, responsable) : null,
+    cloturee:
+      etape === 'cloturee' && enCours
+        ? jalonDe(enCours.cloturee_par, enCours.cloturee_le, responsable)
+        : null,
     clientsCommandes: commandes.length,
     plan: lignes,
     demande,
     realise: versRealise(produits),
     consommation: versConsommation(enCours?.consommation ?? []),
-    justification: justificationEnvoyee(enCours ? String(enCours.id) : undefined),
-    // La tolérance d'écart se règle dans les paramètres (réservés au propriétaire) : valeur par défaut.
-    seuilEcartKg: 0.5,
+    justification:
+      versJustification(enCours?.consommation.find((l) => l.justification)?.justification ?? '') ??
+      justificationEnvoyee(enCours ? String(enCours.id) : undefined),
+    // Tolérance réglée dans les paramètres, que le serveur redit avec la production.
+    seuilEcartKg: enCours?.tolerance_ecart_kg ?? 0.5,
     stock: Object.fromEntries(
       MATIERES_SUIVIES.map((m) => [
         m,
@@ -255,8 +320,7 @@ export async function lireProductionReelle(): Promise<InstantaneProduction> {
     ) as Record<Matiere, number>,
     demandeEnAttente:
       demandes.map((d) => versDemandeProduction(d)).find((d) => d !== undefined) ?? null,
-    // Le serveur ne liste pas les productions passées.
-    historique: [],
+    historique: versHistorique(passees),
     ...(enCours ? { productionId: String(enCours.id) } : {}),
   };
 }

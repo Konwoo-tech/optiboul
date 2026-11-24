@@ -1,9 +1,9 @@
 import {
-  mouvementsStockEtatList,
+  matieresList,
   produitsList,
   produitsNouvelleVersionCreate,
   toutesLesPages,
-  type LigneEtat,
+  type Matiere as MatiereServeur,
   type Produit,
 } from '@/api';
 
@@ -18,9 +18,9 @@ import type {
 
 /*
  * Fiches techniques sur le vrai serveur : `produits/` (version courante de chaque fiche) et
- * `produits/{id}/nouvelle-version/` (une modification crée une version). Les prix des matières se
- * déduisent de l'état du stock. Le serveur ne donne ni la cuisson ni les pains produits le mois
- * dernier : valeurs d'attente (E40).
+ * `produits/{id}/nouvelle-version/` (une modification crée une version). Les prix des matières sont
+ * le dernier prix reçu (`matieres/`) ; la cuisson et les pains produits le mois précédent viennent
+ * du produit.
  */
 
 type Page<T> = { data: { results?: T[]; next?: string | null } };
@@ -41,6 +41,8 @@ type ProduitServeur = {
   nom_en: string;
   prix: number;
   fiche: FicheServeur | null;
+  cuisson_minutes: number | null;
+  pains_produits_mois_precedent: number;
 };
 
 const FUSEAU = 'Africa/Douala';
@@ -51,7 +53,7 @@ const heureDeYaounde = (iso: string) =>
     new Date(iso),
   );
 
-/** Minutes de cuisson affichées quand le serveur n'en donne pas. */
+/** Minutes de cuisson affichées tant que le serveur ne les connaît pas (champ vide). */
 export const CUISSON_PAR_DEFAUT = 24;
 
 /** Le serveur compte le sel, la levure et l'améliorant en grammes ; l'écran en kilos. */
@@ -102,24 +104,29 @@ export function versFiche(produit: ProduitServeur): FicheProduit | undefined {
     modifiePar: fiche.cree_par_nom,
     // Un seul prix de vente côté serveur (les tarifs des clients sont à part).
     prix: produit.prix > 0 ? [produit.prix, produit.prix] : null,
-    produitsOctobre: 0,
-    cuisson: CUISSON_PAR_DEFAUT,
+    produitsOctobre: produit.pains_produits_mois_precedent,
+    cuisson: produit.cuisson_minutes ?? CUISSON_PAR_DEFAUT,
   };
 }
 
-/** Prix unitaire de chaque matière d'après la valeur et la quantité en stock (farine au sac, le reste au kilo). */
-export function prixDesMatieres(etat: readonly LigneEtat[]): Record<Matiere, number> {
+/**
+ * Prix de chaque matière : le dernier prix reçu, que le serveur donne par unité de stock (farine au
+ * kilo, sel, levure et améliorant au gramme). L'écran compte la farine au sac (×50) et le reste au
+ * kilo (×1000 pour les grammes). Sans prix reçu : 0.
+ */
+export function prixDesMatieres(
+  matieres: readonly Pick<MatiereServeur, 'code' | 'prix_unitaire'>[],
+): Record<Matiere, number> {
   const prix = Object.fromEntries(
     (['farine', 'sel', 'levure', 'ameliorant', 'glace', 'bois', 'huile'] as Matiere[]).map((m) => [
       m,
       0,
     ]),
   ) as Record<Matiere, number>;
-  for (const ligne of etat) {
-    const quantite = Number(ligne.quantite);
-    if (!(ligne.matiere in prix) || quantite <= 0) continue;
-    const unitaire = ligne.valeur / quantite;
-    const m = ligne.matiere as Matiere;
+  for (const ligne of matieres) {
+    const unitaire = Number(ligne.prix_unitaire ?? 0);
+    if (!(ligne.code in prix) || !(unitaire > 0)) continue;
+    const m = ligne.code as Matiere;
     prix[m] = Math.round(
       m === 'farine'
         ? unitaire * 50
@@ -132,17 +139,17 @@ export function prixDesMatieres(etat: readonly LigneEtat[]): Record<Matiere, num
 }
 
 export async function lireFichesReelles(): Promise<InstantaneFiches> {
-  const [produits, etat] = await Promise.all([
+  const [produits, matieres] = await Promise.all([
     toutesLesPages<Produit>((page) => produitsList({ page }) as Promise<Page<Produit>>),
-    mouvementsStockEtatList()
-      .then((r) => r.data as unknown as LigneEtat[])
-      .catch(() => [] as LigneEtat[]),
+    matieresList()
+      .then((r) => r.data as MatiereServeur[])
+      .catch(() => [] as MatiereServeur[]),
   ]);
   return {
     fiches: (produits as unknown as ProduitServeur[])
       .map(versFiche)
       .filter((f): f is FicheProduit => f !== undefined),
-    prix: prixDesMatieres(etat),
+    prix: prixDesMatieres(matieres),
   };
 }
 
