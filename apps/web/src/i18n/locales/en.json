@@ -511,7 +511,8 @@
       "statuts": {
         "validee": "Approved",
         "en-attente": "Pending",
-        "refusee": "Refused"
+        "refusee": "Refused",
+        "annulee": "Cancelled"
       },
       "rattache": {
         "production": "Production · {{session}}",

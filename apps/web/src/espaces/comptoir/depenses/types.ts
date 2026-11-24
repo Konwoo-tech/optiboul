@@ -24,7 +24,7 @@ export type ModeDepense = (typeof MODES_DEPENSE)[number];
 export const TYPES_RATTACHEMENT = ['production', 'semaine', 'stock'] as const;
 export type TypeRattachement = (typeof TYPES_RATTACHEMENT)[number];
 
-export const STATUTS_DEPENSE = ['validee', 'en-attente', 'refusee'] as const;
+export const STATUTS_DEPENSE = ['validee', 'en-attente', 'refusee', 'annulee'] as const;
 export type StatutDepense = (typeof STATUTS_DEPENSE)[number];
 
 /** Achats courants dont la semaine peut pré-autoriser un plafond (O7). */
