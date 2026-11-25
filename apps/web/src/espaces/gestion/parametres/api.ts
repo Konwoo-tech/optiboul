@@ -1,15 +1,8 @@
-import { ErreurApi, optiboulFetch, parametresUpdate } from '@/api';
-import { SIMULATION } from '@/simulation';
+import { ErreurApi, parametresUpdate } from '@/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { lireHistoriqueReel, lireParametresReels, lireProduitsReels } from './reel.ts';
-import type { Parametre, ProduitParametre, ValeurParametre, ValeurPassee } from './types.ts';
-
-// En simulation, l'écran lit le faux serveur (`simulation/parametres.ts`) ; sur le vrai serveur,
-// `reel.ts` lit `parametres/` et `produits/`.
-const RACINE = SIMULATION ? '/api/v1/simulation/gestion/parametres/' : '';
-
-type Reponse<T> = { data: T };
+import type { Parametre, ValeurParametre } from './types.ts';
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleParametres = (utilisateur: string | undefined) =>
@@ -22,8 +15,7 @@ export const cleHistorique = (utilisateur: string | undefined, cle: string) =>
 export function useParametres(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleParametres(utilisateur),
-    queryFn: async () =>
-      SIMULATION ? (await optiboulFetch<Reponse<Parametre[]>>(RACINE)).data : lireParametresReels(),
+    queryFn: lireParametresReels,
     enabled: Boolean(utilisateur),
     staleTime: 0,
     refetchOnMount: 'always',
@@ -33,10 +25,7 @@ export function useParametres(utilisateur: string | undefined) {
 export function useProduits(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleProduits(utilisateur),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<ProduitParametre[]>>(`${RACINE}produits/`)).data
-        : lireProduitsReels(),
+    queryFn: lireProduitsReels,
     enabled: Boolean(utilisateur),
     // Les fiches se modifient dans l'atelier : on relit à chaque ouverture.
     staleTime: 0,
@@ -48,10 +37,7 @@ export function useProduits(utilisateur: string | undefined) {
 export function useHistorique(utilisateur: string | undefined, cle: string) {
   return useQuery({
     queryKey: cleHistorique(utilisateur, cle),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<ValeurPassee[]>>(`${RACINE}${cle}/historique/`)).data
-        : lireHistoriqueReel(cle),
+    queryFn: () => lireHistoriqueReel(cle),
     enabled: Boolean(utilisateur) && cle !== '',
     staleTime: 0,
     refetchOnMount: 'always',
@@ -63,15 +49,7 @@ export function useModifierParametre(utilisateur: string | undefined) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async ({ cle, valeur }: { cle: string; valeur: ValeurParametre }) =>
-      SIMULATION
-        ? (
-            await optiboulFetch<Reponse<Parametre>>(`${RACINE}${cle}/`, {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ valeur }),
-            })
-          ).data
-        : ((await parametresUpdate(cle, { valeur })).data as unknown as Parametre),
+      (await parametresUpdate(cle, { valeur })).data as unknown as Parametre,
     onSuccess: (parametre) => {
       client.setQueryData<Parametre[]>(cleParametres(utilisateur), (liste) =>
         liste?.map((p) => (p.cle === parametre.cle ? parametre : p)),
