@@ -1,4 +1,3 @@
-import { SIMULATION } from '@/simulation';
 import { formaterNombre } from '@/utils';
 
 import type { Profil } from '../../../profils.ts';
@@ -201,14 +200,20 @@ export const realiseComplet = (realise: Realise): boolean =>
 export const consommationComplete = (consommation: Consommation): boolean =>
   MATIERES_CONSOMMEES.every((matiere) => consommation[matiere] !== null);
 
-/** Sorties de stock d'une clôture : la consommation réelle, convertie dans l'unité du stock. */
-export function sortiesDeStock(consommation: Consommation): SortieDeStock[] {
+/**
+ * Sorties de stock d'une clôture : la consommation réelle, dans l'unité du stock. `prototype` (la
+ * simulation) compte la farine en sacs et le reste en kg ; `serveur` garde l'unité de la consommation
+ * (farine en kg, sel, levure, améliorant en g), qui est celle du stock du vrai serveur.
+ */
+export function sortiesDeStock(
+  consommation: Consommation,
+  unites: 'prototype' | 'serveur' = 'prototype',
+): SortieDeStock[] {
   const sorties: SortieDeStock[] = [];
   for (const matiere of MATIERES_CONSOMMEES) {
     const valeur = consommation[matiere];
     if (valeur === null) continue;
-    // Sur le vrai serveur, le stock se compte dans l'unité de la consommation : rien à convertir.
-    const facteur = SIMULATION ? MATIERES_PESEES[matiere].stockParUnite : 1;
+    const facteur = unites === 'serveur' ? 1 : MATIERES_PESEES[matiere].stockParUnite;
     const quantite = Math.round(valeur * facteur * 100) / 100;
     if (quantite > 0) sorties.push({ matiere, quantite });
   }

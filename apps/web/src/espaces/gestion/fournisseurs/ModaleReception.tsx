@@ -5,7 +5,7 @@ import { useId, useRef, useState } from 'react';
 
 import { jourCourt, nomMatiere, quantite, uniteMatiere } from './affichage.ts';
 import styles from './Fournisseurs.module.css';
-import { filtrerQuantite, QUANTITE_MAX, quantiteSaisie, quantiteTropGrande } from './regles.ts';
+import { filtrerQuantite, quantiteMax, quantiteSaisie, quantiteTropGrande } from './regles.ts';
 import type { Commande, Fournisseur } from './types.ts';
 
 type Props = {
@@ -58,7 +58,7 @@ export function ModaleReception({
       setPrixManquant(true);
       return;
     }
-    const refus = quantiteTropGrande(valeur)
+    const refus = quantiteTropGrande(valeur, quantiteMax())
       ? 'quantite_trop_grande'
       : await onConfirmer(valeur, observation.trim(), prix);
     if (refus === 'prix_obligatoire') {
@@ -106,7 +106,7 @@ export function ModaleReception({
       {tropGrande && (
         <span className={styles.erreurModale} id={idErreur} role="alert">
           {t('gestion.fournisseurs.reception.erreurs.quantite_trop_grande', {
-            max: formaterNombre(QUANTITE_MAX),
+            max: formaterNombre(quantiteMax()),
           })}
         </span>
       )}

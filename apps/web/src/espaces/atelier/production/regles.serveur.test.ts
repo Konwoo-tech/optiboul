@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { sortiesDeStock } from './regles.ts';
 import type { Consommation } from './types.ts';
 
-// Sur le vrai serveur (hors simulation), le stock se compte dans l'unité de la consommation :
+// Sur le vrai serveur, le stock se compte dans l'unité de la consommation :
 // farine en kg ; sel, levure et améliorant en g. Aucune conversion à l'affichage.
 describe('sorties de stock sur le vrai serveur', () => {
   const consommation: Consommation = {
@@ -17,7 +17,7 @@ describe('sorties de stock sur le vrai serveur', () => {
   };
 
   it('reprend la consommation telle quelle, dans l’unité du serveur', () => {
-    expect(sortiesDeStock(consommation)).toEqual([
+    expect(sortiesDeStock(consommation, 'serveur')).toEqual([
       { matiere: 'farine', quantite: 150 },
       { matiere: 'sel', quantite: 1800 },
       { matiere: 'levure', quantite: 1350 },
