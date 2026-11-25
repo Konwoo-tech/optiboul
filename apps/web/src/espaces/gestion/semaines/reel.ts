@@ -2,6 +2,7 @@ import {
   caissesList,
   clientsDettesRetrieve,
   depensesList,
+  facturesList,
   mouvementsStockEtatList,
   semainesBilanRetrieve,
   semainesControlesClotureList,
@@ -13,6 +14,7 @@ import {
   type BilanSemaine,
   type Caisse,
   type Depense,
+  type Facture,
   type LigneEtat,
   type PersonnesAffectables,
   type Semaine as SemaineServeur,
@@ -206,6 +208,8 @@ export function passationPrevue(
   stockBas: Matiere[],
   numeroSuivante: number,
   destinataire: Personne | null,
+  /** Reste dû aux fournisseurs (factures non soldées), entiers FCFA. */
+  dettesFournisseurs = 0,
 ): Passation {
   const fermees = caisses.filter((c) => !c.en_cours && c.compte !== null);
   const derniere = fermees.at(-1);
@@ -218,7 +222,7 @@ export function passationPrevue(
         : null,
       ecartCumule: caisses.reduce((s, c) => s + (c.ecart ?? 0), 0),
     },
-    dettes: { clients: -dettesClients, fournisseurs: 0 },
+    dettes: { clients: -dettesClients, fournisseurs: dettesFournisseurs },
     stockBas,
     incidents: [],
   };
@@ -226,7 +230,7 @@ export function passationPrevue(
 
 /** Compose l'instantané de l'écran des semaines à partir des routes du serveur. */
 export async function lireSemainesReelles(): Promise<InstantaneSemaines> {
-  const [moi, semaines, caisses, depenses, personnes, dettes, etat] = await Promise.all([
+  const [moi, semaines, caisses, depenses, personnes, dettes, etat, factures] = await Promise.all([
     usersMeRetrieve().then(
       (r) => r.data as unknown as { url: string; name: string; profil: Profil },
     ),
@@ -248,7 +252,11 @@ export async function lireSemainesReelles(): Promise<InstantaneSemaines> {
     mouvementsStockEtatList()
       .then((r) => r.data as unknown as LigneEtat[])
       .catch(() => [] as LigneEtat[]),
+    toutesLesPages<Facture>((page) => facturesList({ page }) as Promise<Page<Facture>>).catch(
+      () => [] as Facture[],
+    ),
   ]);
+  const resteDu = factures.reduce((somme, f) => somme + f.reste, 0);
   const lues = (semaines as unknown as SemaineLue[]).map(versSemaine);
   const ouverte = semaines.find((s) => s.statut === 'ouverte');
 
@@ -298,6 +306,7 @@ export async function lireSemainesReelles(): Promise<InstantaneSemaines> {
         stockBas,
         ouverte.numero + 1,
         null,
+        resteDu,
       ),
     };
   }
