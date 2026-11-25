@@ -20,8 +20,9 @@ import type {
 
 /*
  * Lecture de « Gestion › Utilisateurs » sur le vrai serveur : `utilisateurs/` et `groupes/`
- * (administrateur seulement). Le compte du serveur ne porte ni téléphone, ni canal, ni dernier accès,
- * ni activation : ces informations restent vides à l'écran (voir E47).
+ * (administrateur seulement). Le compte porte le téléphone, le canal du second facteur, le dernier
+ * accès et l'activation ; la désactivation, la réactivation et la réinitialisation du code ont leurs
+ * routes (E47).
  */
 
 type Page<T> = { data: { results?: T[]; next?: string | null } };
@@ -35,6 +36,14 @@ export function versGroupe(g: GroupeServeur): Groupe {
   };
 }
 
+/** « +237677412018 » (le serveur) devient « 6 77 41 20 18 » (l'écran). */
+export function telephoneDeLEcran(serveur: string): string {
+  const chiffres = serveur.replace(/\D/g, '').replace(/^237/, '');
+  return chiffres.length === 9
+    ? `${chiffres[0]} ${chiffres.slice(1, 3)} ${chiffres.slice(3, 5)} ${chiffres.slice(5, 7)} ${chiffres.slice(7)}`
+    : chiffres;
+}
+
 export function versUtilisateur(c: Compte): Utilisateur | undefined {
   if (!c.profil) return undefined;
   return {
@@ -42,11 +51,11 @@ export function versUtilisateur(c: Compte): Utilisateur | undefined {
     nom: c.name,
     profil: c.profil as Profil,
     email: c.email,
-    telephone: '',
+    telephone: telephoneDeLEcran(c.telephone ?? ''),
     groupe: c.groupe === null ? '' : String(c.groupe),
     actif: c.is_active,
-    dernierAcces: '',
-    canal: 'whatsapp',
+    dernierAcces: c.dernier_acces ?? '',
+    canal: c.canal === 'sms' ? 'sms' : 'whatsapp',
     bloque: c.bloque,
   };
 }
