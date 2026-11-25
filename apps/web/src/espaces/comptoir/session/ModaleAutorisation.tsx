@@ -1,6 +1,5 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { SIMULATION } from '@/simulation';
 import { FenetreModale } from '@/ui';
 import { useEffect, useRef, useState } from 'react';
 
@@ -24,7 +23,7 @@ export function ModaleAutorisation({ demande, actions, onFermer, onDecision }: P
   const [erreur, setErreur] = useState('');
   const { utilisateur } = useUtilisateurCourant();
   // Sur le poste de la caissière, le code est celui du gérant de la semaine ou du propriétaire (#316).
-  const choisirLeValideur = !SIMULATION && utilisateur?.profil === 'caissier';
+  const choisirLeValideur = utilisateur?.profil === 'caissier';
   const [valideur, setValideur] = useState<'gerant' | 'proprietaire'>('gerant');
   const champCode = useRef<HTMLInputElement>(null);
   // Comme la maquette (autoFocus) : on saisit le code sans toucher la souris.

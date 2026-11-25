@@ -2,7 +2,6 @@ import { useTranslation } from '@/i18n';
 import type { NiveauStatut } from '@/utils';
 import type { CSSProperties } from 'react';
 
-import { ECRITURES } from './api.ts';
 import { dateCourte, libelleDuMode, nomDeSession } from './affichage.ts';
 import { formaterNombre, formaterSigne, niveauDuSolde, totauxDesLivraisons } from './calculs.ts';
 import styles from './Livraisons.module.css';
@@ -160,11 +159,7 @@ export function Livraisons({
         {!peutSaisir && (
           <div className={styles.lectureSeule}>
             {ouverte
-              ? t(
-                  ECRITURES.livraisons
-                    ? 'comptoir.session.livraisons.lectureSeule'
-                    : 'comptoir.session.livraisons.bientot',
-                )
+              ? t('comptoir.session.livraisons.lectureSeule')
               : t('comptoir.session.livraisons.verrouillee')}
           </div>
         )}
