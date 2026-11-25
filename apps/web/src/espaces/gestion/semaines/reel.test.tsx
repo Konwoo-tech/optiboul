@@ -147,6 +147,15 @@ function serveurSemaines() {
         { id: 4, nom: 'Davy Caisse', profil: 'caissier' },
       ]),
     ),
+    http.get('*/api/v1/factures/', () =>
+      HttpResponse.json(
+        page([
+          { id: 1, reste: 15000, statut: 'a_payer' },
+          { id: 2, reste: 18000, statut: 'en_cours' },
+          { id: 3, reste: 0, statut: 'payee' },
+        ]),
+      ),
+    ),
     http.get('*/api/v1/clients/dettes/', () =>
       HttpResponse.json({ nombre: 7, total: 16250, clients: [] }),
     ),
@@ -228,7 +237,7 @@ describe('lecture des semaines sur le vrai serveur', () => {
     ]);
     expect(i.clotures.S46?.passation).toMatchObject({
       numeroSuivante: 47,
-      dettes: { clients: -16250 },
+      dettes: { clients: -16250, fournisseurs: 33000 },
       stockBas: ['glace'],
       caisses: { derniere: { jour: '2026-11-13', par: 'Davy Caisse', compte: 21000 } },
     });
@@ -304,6 +313,7 @@ describe('lecture des semaines sur le vrai serveur', () => {
       depenses: { nombre: 0, montant: 0 },
     });
     expect(passationPrevue([], 0, [], 47, null).caisses.derniere).toBeNull();
+    expect(passationPrevue([], 0, [], 47, null, 33000).dettes.fournisseurs).toBe(33000);
   });
 });
 
