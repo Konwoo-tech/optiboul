@@ -1,5 +1,3 @@
-import { SIMULATION } from '@/simulation';
-
 import type { Profil } from '../../../profils.ts';
 import { ajouterJours } from '../../atelier/stocks/regles.ts';
 import type { Commande, Facture, Matiere } from './types.ts';
@@ -91,8 +89,8 @@ export const QUANTITE_MAX_SERVEUR = 1_000_000;
 export const quantiteTropGrande = (valeur: number, max: number = QUANTITE_MAX): boolean =>
   valeur > max;
 
-/** La borne en vigueur à l'écran : celle du prototype en simulation, celle des grammes sur le vrai serveur. */
-export const quantiteMax = (): number => (SIMULATION ? QUANTITE_MAX : QUANTITE_MAX_SERVEUR);
+/** La borne en vigueur à l'écran : celle du serveur, en grammes. */
+export const quantiteMax = (): number => QUANTITE_MAX_SERVEUR;
 
 /** Une quantité à planifier ou à recevoir doit être un nombre strictement positif. */
 export const quantiteValide = (valeur: number): boolean => Number.isFinite(valeur) && valeur > 0;

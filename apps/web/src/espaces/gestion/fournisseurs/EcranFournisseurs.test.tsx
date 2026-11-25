@@ -1,38 +1,149 @@
-import { configurerApi } from '@/api';
+import { configurerApi, ErreurApi } from '@/api';
 import { initI18n } from '@/i18n';
-import { installerApiSimulee } from '@/simulation';
-import { reinitialiserSimulation, repondre } from '@/simulation/routeur.ts';
-import { memoriserUtilisateurConnecte } from '@/simulation/session.ts';
+import { creerServeurApi } from '@/test';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { delay, http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-// Ces tests jouent l'écran sur le faux serveur ; la lecture du vrai serveur est dans reel.test.tsx.
-vi.hoisted(() => vi.stubEnv('MODE', 'simulation'));
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ECRANS } from '../../../navigation.ts';
 import EcranFournisseurs from './EcranFournisseurs.tsx';
+import {
+  DEPART,
+  PARTIELLE,
+  PAYEE,
+  PLANIFIE,
+  RECUE,
+  REPLANIFIE,
+} from './instantanes.test-donnees.ts';
+import type { InstantaneFournisseurs } from './types.ts';
 
-let retablir: () => void;
-let client: QueryClient;
+/*
+ * L'écran Fournisseurs rendu depuis des instantanés au format de l'écran ; la composition de
+ * l'instantané à partir des routes du serveur est testée dans reel.test.tsx. Les actions (planifier,
+ * réceptionner, relancer, replanifier, payer) appellent un faux serveur au format de l'API réelle,
+ * dont les réponses font passer le « serveur » d'un instantané au suivant. La personne connectée
+ * vient de `users/me/`.
+ */
+
+const lecture = vi.hoisted(() => ({ lireFournisseursReels: vi.fn(), numeroDeCommande: vi.fn() }));
+vi.mock('./reel.ts', () => lecture);
+
+const serveur = creerServeurApi();
+
+beforeAll(() => {
+  configurerApi({ baseUrl: 'http://localhost' });
+  serveur.listen({ onUnhandledFrame: 'bypass' });
+});
+afterAll(() => serveur.close());
+
+const PERSONNES = {
+  willy: { id: 3, nom: 'Willy', profil: 'gerant' },
+  fotso: { id: 5, nom: 'M. Fotso', profil: 'proprietaire' },
+  davy: { id: 1, nom: 'Davy', profil: 'caissier' },
+} as const;
+
+/** L'instantané côté « serveur » (au format de l'écran), la personne connectée, les appels reçus. */
+let etat: InstantaneFournisseurs;
+let connecte: keyof typeof PERSONNES;
+let appels: string[];
+let latence = 0;
+
+const chiffres = (numero: string) => Number(numero.replace(/\D/g, ''));
+
+/** Ce que lit l'écran : l'instantané, avec les identifiants du serveur que `reel.ts` y ajoute. */
+function instantane(): InstantaneFournisseurs {
+  const copie = structuredClone(etat);
+  for (const c of copie.commandes) {
+    c.idServeur = chiffres(c.numero);
+    if (c.statut === 'partielle' && !c.reliquat) c.manquant = chiffres(c.numero);
+  }
+  for (const f of copie.factures) {
+    f.idServeur = chiffres(f.numero);
+    if (f.statut === 'payee') f.paiement = chiffres(f.numero);
+  }
+  return copie;
+}
+
+beforeEach(() => {
+  appels = [];
+  latence = 0;
+  lecture.lireFournisseursReels.mockReset();
+  lecture.lireFournisseursReels.mockImplementation(async () => {
+    if (connecte === 'davy') {
+      throw new ErreurApi(403, { detail: 'Refusé.', code: 'droit_insuffisant' });
+    }
+    return instantane();
+  });
+  lecture.numeroDeCommande.mockImplementation((id: number) => `BC-${String(id).padStart(3, '0')}`);
+});
+
+const dejaTraitee = (code: string) =>
+  HttpResponse.json({ detail: 'Déjà traité.', code }, { status: 409 });
+
+function installerServeur() {
+  serveur.use(
+    http.get('*/api/v1/users/me/', () => {
+      const p = PERSONNES[connecte];
+      return HttpResponse.json({
+        id: p.id,
+        name: p.nom,
+        email: 'x@optiboul.local',
+        url: `http://localhost/api/v1/users/${p.id}/`,
+        profil: p.profil,
+      });
+    }),
+    http.post('*/api/v1/receptions-planifiees/', async () => {
+      appels.push('planifier');
+      await delay(latence);
+      etat = structuredClone(PLANIFIE);
+      return HttpResponse.json({ id: 37 }, { status: 201 });
+    }),
+    http.post('*/api/v1/receptions-planifiees/:id/receptionner/', async ({ params, request }) => {
+      const corps = (await request.json()) as { quantite: string };
+      appels.push(`receptionner ${params.id} ${JSON.stringify(corps)}`);
+      await delay(latence);
+      const commande = etat.commandes.find((c) => chiffres(c.numero) === Number(params.id));
+      if (commande?.statut !== 'planifiee') return dejaTraitee('commande_deja_recue');
+      const partielle = corps.quantite !== '8000';
+      etat = structuredClone(partielle ? PARTIELLE : RECUE);
+      return HttpResponse.json({ ecart: partielle ? '-3000' : '0' });
+    }),
+    http.post('*/api/v1/manquants/:id/relancer/', () => {
+      appels.push('relancer');
+      return HttpResponse.json({});
+    }),
+    http.post('*/api/v1/manquants/:id/replanifier/', async ({ request }) => {
+      appels.push(`replanifier ${JSON.stringify(await request.json())}`);
+      etat = structuredClone(REPLANIFIE);
+      return HttpResponse.json({});
+    }),
+    http.post('*/api/v1/factures/:id/payer/', async ({ params, request }) => {
+      appels.push(`payer ${params.id} ${JSON.stringify(await request.json())}`);
+      await delay(latence);
+      const facture = etat.factures.find((f) => chiffres(f.numero) === Number(params.id));
+      if (facture?.statut === 'payee') return dejaTraitee('facture_non_payable');
+      etat = structuredClone(PAYEE);
+      return HttpResponse.json({ depense: 17 });
+    }),
+  );
+}
 
 async function ouvrir(
-  utilisateur = 'willy',
+  utilisateur: keyof typeof PERSONNES = 'willy',
   langue: 'fr' | 'en' = 'fr',
   adresse = '',
-  latenceMs = 0,
+  delaiMs = 0,
 ) {
-  vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date('2026-10-14T17:02:00Z'));
+  connecte = utilisateur;
+  latence = delaiMs;
+  etat = structuredClone(DEPART);
   await initI18n('fr').changeLanguage(langue);
-  configurerApi({ baseUrl: 'http://localhost' });
-  retablir = installerApiSimulee({ latenceMs });
-  reinitialiserSimulation();
-  memoriserUtilisateurConnecte(utilisateur);
+  installerServeur();
   const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'fournisseurs')!;
-  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <OptiboulProvider>
       <QueryClientProvider client={client}>
@@ -42,14 +153,16 @@ async function ouvrir(
       </QueryClientProvider>
     </OptiboulProvider>,
   );
+  if (utilisateur === 'davy') return;
   await screen.findByRole('tablist');
   await screen.findByText(/Dette fournisseurs|Supplier debt/);
 }
 
 afterEach(async () => {
+  cleanup();
+  serveur.resetHandlers();
+  vi.restoreAllMocks();
   await initI18n('fr').changeLanguage('fr');
-  retablir();
-  vi.useRealTimers();
 });
 
 const saisir = (champ: HTMLElement, valeur: string) =>
@@ -83,7 +196,7 @@ describe('Gestion › Fournisseurs : réceptions', () => {
     expect(titres).toEqual(['BC-034', 'BC-033', 'BC-035', 'BC-036', 'BC-030', 'BC-031', 'BC-032']);
     const partielle = ligneDe('BC-032');
     expect(within(partielle).getByText('Manquant')).toBeTruthy();
-    expect(within(partielle).getByText(/Manque 4 kg/)).toBeTruthy();
+    expect(within(partielle).getByText(/Manque 4000 g/)).toBeTruthy();
     expect(within(partielle).getByRole('button', { name: 'Relancer BC-032' })).toBeTruthy();
     expect(
       within(ligneDe('BC-031')).getByText(/Réceptionnée par Willy · 12 oct\. · 08:10/),
@@ -167,12 +280,12 @@ describe('Gestion › Fournisseurs : planifier', () => {
     await ouvrir();
     const fournisseur = screen.getByLabelText('Fournisseur') as HTMLSelectElement;
     const matiere = screen.getByLabelText('Matière') as HTMLSelectElement;
-    expect([...matiere.options].map((o) => o.text)).toEqual(['Farine (sacs)']);
-    saisir(fournisseur, 'f2');
+    expect([...matiere.options].map((o) => o.text)).toEqual(['Farine (kg)']);
+    saisir(fournisseur, '2');
     expect([...matiere.options].map((o) => o.text)).toEqual([
-      'Levure (kg)',
-      'Sel (kg)',
-      'Améliorant (kg)',
+      'Levure (g)',
+      'Sel (g)',
+      'Améliorant (g)',
     ]);
     expect(matiere.value).toBe('levure');
     const jours = screen.getByLabelText('Date de réception prévue') as HTMLSelectElement;
@@ -188,10 +301,11 @@ describe('Gestion › Fournisseurs : planifier', () => {
     expect(within(ligneDe('BC-037')).getByText('Planifiée')).toBeTruthy();
     expect((screen.getByLabelText('Quantité commandée') as HTMLInputElement).value).toBe('');
     expect(carte('Réceptions planifiées')).toContain('5');
+    expect(appels).toEqual(['planifier']);
   });
 
   it('verrouille le formulaire pendant l’envoi', async () => {
-    await ouvrir('willy', 'fr', '', 40);
+    await ouvrir('willy', 'fr', '', 80);
     saisir(screen.getByLabelText('Quantité commandée'), '12');
     fireEvent.click(bouton('Planifier'));
     await waitFor(() => expect(bouton('Planifier').getAttribute('aria-disabled')).toBe('true'));
@@ -205,8 +319,15 @@ describe('Gestion › Fournisseurs : planifier', () => {
     await screen.findByText('Réception planifiée · BC-037');
     expect(bouton('Planifier').getAttribute('aria-disabled')).toBe('false');
     expect(screen.queryByText(/BC-038/)).toBeNull();
+    expect(appels).toEqual(['planifier']);
   });
 });
+
+/** Sur le vrai serveur, le prix unitaire de la livraison est demandé (sauf pour la farine). */
+const validerAvecPrix = (fenetre: HTMLElement) => {
+  saisir(within(fenetre).getByLabelText(/Prix unitaire/), '2');
+  fireEvent.click(within(fenetre).getByRole('button', { name: 'Valider la réception' }));
+};
 
 describe('Gestion › Fournisseurs : réceptionner', () => {
   it('ouvre la fenêtre avec le focus dedans et la quantité commandée ; Échap la ferme', async () => {
@@ -218,12 +339,12 @@ describe('Gestion › Fournisseurs : réceptionner', () => {
     expect(within(fenetre).getByRole('heading', { name: 'Réception BC-034' })).toBeTruthy();
     expect(
       within(fenetre).getByText(
-        'Mfoundi Levures & Sel · Levure · commandé : 8 kg · prévu le mer. 14 oct.',
+        /Mfoundi Levures & Sel · Levure · commandé : 8000 g · prévu le mer\. 14 oct\./,
       ),
     ).toBeTruthy();
     expect(
       (within(fenetre).getByLabelText('Quantité réellement livrée') as HTMLInputElement).value,
-    ).toBe('8');
+    ).toBe('8000');
     expect(fenetre.contains(document.activeElement)).toBe(true);
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
@@ -244,40 +365,52 @@ describe('Gestion › Fournisseurs : réceptionner', () => {
     expect(champ.getAttribute('aria-invalid')).toBe('false');
   });
 
-  it('une réception complète met à jour la ligne, la dette et le stock', async () => {
+  it('exige le prix unitaire pour la levure, pas pour la farine', async () => {
     await ouvrir();
     fireEvent.click(bouton('Réceptionner BC-034'));
-    fireEvent.click(await screen.findByRole('button', { name: 'Valider la réception' }));
+    const fenetre = await screen.findByRole('dialog');
+    fireEvent.click(within(fenetre).getByRole('button', { name: 'Valider la réception' }));
+    expect((await within(fenetre).findByRole('alert')).textContent).toMatch(/prix/i);
+    expect(appels).toEqual([]);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.click(bouton('Réceptionner BC-033'));
+    const farine = await screen.findByRole('dialog');
+    expect(within(farine).queryByLabelText(/Prix unitaire/)).toBeNull();
+  });
+
+  it('une réception complète met à jour la ligne et la dette', async () => {
+    await ouvrir();
+    fireEvent.click(bouton('Réceptionner BC-034'));
+    validerAvecPrix(await screen.findByRole('dialog'));
     expect(await screen.findByText('Réception enregistrée · stock mis à jour')).toBeTruthy();
     expect(screen.queryByRole('dialog')).toBeNull();
     const ligne = ligneDe('BC-034');
     expect(within(ligne).getByText('Reçue')).toBeTruthy();
     expect(within(ligne).getByText(/Réceptionnée par Willy · 14 oct\./)).toBeTruthy();
     expect(carte('Dette fournisseurs')).toContain('2 374 900 FCFA');
-    const reponse = repondre(new URL('http://x/api/v1/simulation/atelier/stocks/'), 'GET', {});
-    const stock = (await reponse.json()) as { matieres: Array<{ cle: string; stock: number }> };
-    expect(stock.matieres.find((m) => m.cle === 'levure')!.stock).toBe(10.7);
+    expect(appels).toEqual(['receptionner 34 {"quantite":"8000","prix_unitaire":2}']);
   });
 
   it('une réception partielle crée un manquant à relancer', async () => {
     await ouvrir();
     fireEvent.click(bouton('Réceptionner BC-034'));
     const fenetre = await screen.findByRole('dialog');
-    saisir(within(fenetre).getByLabelText('Quantité réellement livrée'), '5');
+    saisir(within(fenetre).getByLabelText('Quantité réellement livrée'), '5000');
     saisir(within(fenetre).getByLabelText('Observation (facultatif)'), 'Carton abîmé');
-    fireEvent.click(within(fenetre).getByRole('button', { name: 'Valider la réception' }));
+    validerAvecPrix(fenetre);
     expect(await screen.findByText('Réception partielle · manquant enregistré')).toBeTruthy();
     const ligne = ligneDe('BC-034');
     expect(within(ligne).getByText('Manquant')).toBeTruthy();
-    expect(within(ligne).getByText(/Manque 3 kg · 5 kg/)).toBeTruthy();
+    expect(within(ligne).getByText(/Manque 3000 g · 5000 g/)).toBeTruthy();
     expect(within(ligne).getByRole('button', { name: 'Relancer BC-034' })).toBeTruthy();
     expect(carte('Manquants à livrer')).toContain('2');
+    expect(appels[0]).toContain('"observation":"Carton abîmé"');
   });
 
   it('verrouille les boutons des lignes pendant l’envoi', async () => {
-    await ouvrir('willy', 'fr', '', 40);
+    await ouvrir('willy', 'fr', '', 80);
     fireEvent.click(bouton('Réceptionner BC-034'));
-    fireEvent.click(await screen.findByRole('button', { name: 'Valider la réception' }));
+    validerAvecPrix(await screen.findByRole('dialog'));
     await waitFor(() =>
       expect(bouton('Réceptionner BC-033').getAttribute('aria-disabled')).toBe('true'),
     );
@@ -288,19 +421,11 @@ describe('Gestion › Fournisseurs : réceptionner', () => {
   it('si le bon a été reçu entre-temps, la liste est relue et l’erreur annoncée', async () => {
     await ouvrir();
     fireEvent.click(bouton('Réceptionner BC-034'));
-    const bouton2 = await screen.findByRole('button', { name: 'Valider la réception' });
-    await act(async () => {
-      const r = repondre(
-        new URL('http://x/api/v1/simulation/gestion/fournisseurs/receptions/'),
-        'POST',
-        {
-          commande: 'BC-034',
-          quantite: 8,
-        },
-      );
-      await r.json();
-    });
-    fireEvent.click(bouton2);
+    const fenetre = await screen.findByRole('dialog');
+    saisir(within(fenetre).getByLabelText(/Prix unitaire/), '2');
+    // Une autre personne a réceptionné le bon entre-temps.
+    etat = structuredClone(RECUE);
+    fireEvent.click(within(fenetre).getByRole('button', { name: 'Valider la réception' }));
     expect(
       await screen.findByText('Cette ligne a déjà été traitée. La liste est à jour.'),
     ).toBeTruthy();
@@ -314,6 +439,7 @@ describe('Gestion › Fournisseurs : manquant', () => {
     await ouvrir();
     fireEvent.click(bouton('Relancer BC-032'));
     expect(await screen.findByText('Relance envoyée à Mfoundi Levures & Sel')).toBeTruthy();
+    expect(appels).toEqual(['relancer']);
   });
 
   it('replanifier le reliquat crée un bon pour demain et solde le manquant', async () => {
@@ -323,6 +449,7 @@ describe('Gestion › Fournisseurs : manquant', () => {
     expect(within(ligneDe('BC-037')).getByText('Planifiée')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Relancer/ })).toBeNull();
     expect(carte('Manquants à livrer')).toContain('0');
+    expect(appels).toEqual(['replanifier {"prevue_le":"2026-10-15"}']);
   });
 });
 
@@ -342,16 +469,17 @@ describe('Gestion › Fournisseurs : fiches', () => {
     expect(within(levure).getByText('Levure, Sel, Améliorant · +237 6 77 45 12 09')).toBeTruthy();
     expect(within(levure).getByText('Paiement à 7 jours')).toBeTruthy();
     expect(within(levure).getByText('30 000 FCFA')).toBeTruthy();
-    expect(within(levure).getByText('mer. 14 oct. · 8 kg')).toBeTruthy();
-    expect(within(levure).getByText('4 kg')).toBeTruthy();
+    expect(within(levure).getByText(/mer\. 14 oct\. · 8000 g/)).toBeTruthy();
+    expect(within(levure).getByText(/^4000 g$/)).toBeTruthy();
     const farine = fiches[0]!.closest('li')!;
     expect(within(farine).getByText('2 264 900 FCFA')).toBeTruthy();
-    expect(within(farine).getByText('jeu. 15 oct. · 40 sacs')).toBeTruthy();
+    expect(within(farine).getByText(/jeu\. 15 oct\. · 2000 kg/)).toBeTruthy();
   });
 });
 
 describe('Gestion › Fournisseurs : factures et dettes', () => {
   it('liste les factures avec leur statut et leur échéance', async () => {
+    const ouvert = vi.spyOn(window, 'open').mockReturnValue(null);
     await ouvrir('willy', 'fr', '?onglet=dettes');
     await screen.findByText(/FAC-41 · /);
     const ligne = (numero: string) => ligneDe(numero);
@@ -361,11 +489,12 @@ describe('Gestion › Fournisseurs : factures et dettes', () => {
     expect(within(ligne('FAC-42')).getByText(/44 sacs à ce jour/)).toBeTruthy();
     expect(within(ligne('FAC-42')).queryByRole('button')).toBeNull();
     expect(within(ligne('FAC-0213')).getByText('À payer')).toBeTruthy();
-    expect(within(ligne('FAC-0213')).getByText(/6 kg reçus sur 10/)).toBeTruthy();
+    expect(within(ligne('FAC-0213')).getByText(/6000 g reçus sur 10000/)).toBeTruthy();
     expect(within(ligne('FAC-40')).getByText('Payée')).toBeTruthy();
     expect(within(ligne('FAC-40')).getByText(/Payée le lun\. 5 oct\. · Banque/)).toBeTruthy();
     fireEvent.click(within(ligne('FAC-40')).getByRole('button', { name: 'Reçu PDF FAC-40' }));
-    expect(screen.getByText('Reçu PDF prêt')).toBeTruthy();
+    // Sur le vrai serveur, le reçu s'ouvre dans un nouvel onglet.
+    expect(ouvert).toHaveBeenCalledWith(expect.stringContaining('/recu/'), '_blank', 'noopener');
   });
 
   it('paie une facture : mode au choix, dépense créée, facture payée avec son reçu', async () => {
@@ -375,7 +504,7 @@ describe('Gestion › Fournisseurs : factures et dettes', () => {
     const fenetre = await screen.findByRole('dialog');
     expect(
       within(fenetre).getByText(
-        'FAC-41 · Grands Moulins du Centre · Farine · semaine 41 (72 sacs) · 1 405 800 FCFA',
+        /FAC-41 · Grands Moulins du Centre · Farine · semaine 41 \(72 sacs\) · 1\s405\s800 FCFA/,
       ),
     ).toBeTruthy();
     const especes = within(fenetre).getByRole('button', { name: 'Espèces' });
@@ -393,7 +522,7 @@ describe('Gestion › Fournisseurs : factures et dettes', () => {
     saisir(champ, 'MP241014.K3');
     expect(within(fenetre).queryByRole('alert')).toBeNull();
     fireEvent.click(within(fenetre).getByRole('button', { name: 'Enregistrer le paiement' }));
-    expect(await screen.findByText('Paiement enregistré · DEP-0017')).toBeTruthy();
+    expect(await screen.findByText('Paiement enregistré · 17')).toBeTruthy();
     expect(screen.queryByRole('dialog')).toBeNull();
     const ligne = ligneDe('FAC-41');
     expect(within(ligne).getByText('Payée')).toBeTruthy();
@@ -402,40 +531,27 @@ describe('Gestion › Fournisseurs : factures et dettes', () => {
     expect(within(ligne).getByRole('button', { name: 'Reçu PDF FAC-41' })).toBeTruthy();
     expect(carte('Dette fournisseurs')).toContain('929 100 FCFA');
     expect(carte('Factures en retard')).toContain('1');
+    expect(appels).toEqual([
+      'payer 41 {"montant":1405800,"mode":"mobile","reference":"MP241014.K3"}',
+    ]);
   });
 
   it('verrouille le paiement pendant l’envoi', async () => {
-    await ouvrir('willy', 'fr', '?onglet=dettes', 40);
+    await ouvrir('willy', 'fr', '?onglet=dettes', 80);
     await screen.findByText(/FAC-41 · /);
     fireEvent.click(bouton('Payer FAC-41'));
     fireEvent.click(await screen.findByRole('button', { name: 'Enregistrer le paiement' }));
     await waitFor(() =>
       expect(bouton('Payer FAC-0213').getAttribute('aria-disabled')).toBe('true'),
     );
-    await screen.findByText('Paiement enregistré · DEP-0017');
+    await screen.findByText('Paiement enregistré · 17');
   });
 });
 
 describe('Gestion › Fournisseurs : états', () => {
   it('affiche l’erreur de chargement avec un bouton pour réessayer', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] });
-    await initI18n('fr').changeLanguage('fr');
-    configurerApi({ baseUrl: 'http://localhost' });
-    retablir = installerApiSimulee({ latenceMs: 0 });
-    reinitialiserSimulation();
-    // Un caissier n'a pas accès : le faux serveur répond 403.
-    memoriserUtilisateurConnecte('davy');
-    const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'fournisseurs')!;
-    client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <OptiboulProvider>
-        <QueryClientProvider client={client}>
-          <MemoryRouter initialEntries={['/gestion/fournisseurs']}>
-            <EcranFournisseurs ecran={ecran} />
-          </MemoryRouter>
-        </QueryClientProvider>
-      </OptiboulProvider>,
-    );
+    // Un caissier n'a pas accès : le serveur répond 403.
+    await ouvrir('davy');
     expect(await screen.findByText(/Les fournisseurs n’ont pas pu être chargés/)).toBeTruthy();
     expect(screen.getByRole('button', { name: /Réessayer/ })).toBeTruthy();
   });
@@ -450,9 +566,76 @@ describe('Gestion › Fournisseurs : états', () => {
     ]);
     expect(within(ligneDe('BC-034')).getByText('Planned')).toBeTruthy();
     expect(screen.getAllByText(/Planned by Willy/)).toHaveLength(4);
-    expect(within(ligneDe('BC-032')).getByText(/Short 4 kg · 6 kg/)).toBeTruthy();
+    expect(within(ligneDe('BC-032')).getByText(/Short 4000 g · 6000 g/)).toBeTruthy();
     onglet('Invoices & debts');
     expect(await screen.findByText(/Flour · week 42 \(44 sacks so far\)/)).toBeTruthy();
     expect(screen.getAllByText(/Due: Tue Oct 13/)).toHaveLength(1);
+  });
+});
+
+describe('Gestion › Fournisseurs : fenêtres et liste périmée', () => {
+  it('une quantité énorme garde la fenêtre ouverte, la saisie et l’erreur sur le champ', async () => {
+    await ouvrir();
+    fireEvent.click(bouton('Réceptionner BC-034'));
+    const fenetre = await screen.findByRole('dialog');
+    const champ = within(fenetre).getByLabelText('Quantité réellement livrée') as HTMLInputElement;
+    saisir(champ, '9999999');
+    saisir(within(fenetre).getByLabelText(/Prix unitaire/), '2');
+    fireEvent.click(within(fenetre).getByRole('button', { name: 'Valider la réception' }));
+    const alerte = await within(fenetre).findByRole('alert');
+    expect(alerte.textContent).toMatch(/^Quantité trop élevée \(maximum 1\s000\s000\)\.$/);
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(champ.value).toBe('9999999');
+    expect(champ.getAttribute('aria-describedby')).toBe(alerte.id);
+    expect(document.activeElement).toBe(champ);
+    saisir(champ, '8000');
+    expect(within(fenetre).queryByRole('alert')).toBeNull();
+    expect(appels).toEqual([]);
+  });
+
+  it('la planification refuse une quantité énorme sans envoyer', async () => {
+    await ouvrir();
+    saisir(screen.getByLabelText('Quantité commandée'), '2000000');
+    fireEvent.click(bouton('Planifier'));
+    expect((await screen.findByRole('alert')).textContent).toMatch(
+      /^Quantité trop élevée \(maximum 1\s000\s000\)\.$/,
+    );
+    expect(screen.queryByText(/Réception planifiée/)).toBeNull();
+    expect(appels).toEqual([]);
+  });
+
+  it('le focus revient sur le bouton d’origine quand la fenêtre de paiement se ferme', async () => {
+    await ouvrir('willy', 'fr', '?onglet=dettes');
+    await screen.findByText(/FAC-41 · /);
+    const declencheur = bouton('Payer FAC-41');
+    declencheur.focus();
+    fireEvent.click(declencheur);
+    const fenetre = await screen.findByRole('dialog');
+    expect(fenetre.contains(document.activeElement)).toBe(true);
+    fireEvent.click(within(fenetre).getByRole('button', { name: 'Annuler' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(declencheur);
+  });
+
+  it('si la facture a été payée entre-temps, la fenêtre se ferme, la liste est relue et l’erreur annoncée', async () => {
+    await ouvrir('willy', 'fr', '?onglet=dettes');
+    await screen.findByText(/FAC-41 · /);
+    fireEvent.click(bouton('Payer FAC-41'));
+    const valider = await screen.findByRole('button', { name: 'Enregistrer le paiement' });
+    // Une autre personne a payé la facture entre-temps.
+    etat = structuredClone(PAYEE);
+    fireEvent.click(valider);
+    expect(
+      await screen.findByText('Cette ligne a déjà été traitée. La liste est à jour.'),
+    ).toBeTruthy();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await waitFor(() =>
+      expect(within(screen.getByText(/^FAC-41 · /).closest('li')!).getByText('Payée')).toBeTruthy(),
+    );
+  });
+
+  it('le panneau d’un onglet est atteignable au clavier', async () => {
+    await ouvrir();
+    expect(screen.getByRole('tabpanel').getAttribute('tabindex')).toBe('0');
   });
 });

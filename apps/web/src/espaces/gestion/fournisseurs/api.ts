@@ -4,11 +4,9 @@ import {
   getPaiementsFournisseursRecuRetrieveUrl,
   manquantsRelancerCreate,
   manquantsReplanifierCreate,
-  optiboulFetch,
   receptionsPlanifieesCreate,
   receptionsPlanifieesReceptionnerCreate,
 } from '@/api';
-import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { lireFournisseursReels, numeroDeCommande } from './reel.ts';
@@ -21,12 +19,6 @@ import type {
   NouvelleReception,
 } from './types.ts';
 
-// En simulation, l'écran lit le faux serveur (`simulation/fournisseursApi.ts`) ; sur le vrai serveur,
-// `reel.ts` compose l'instantané à partir des routes.
-const RACINE = '/api/v1/simulation/gestion/fournisseurs/';
-
-type Reponse<T> = { data: T };
-
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleFournisseurs = (utilisateur: string | undefined) =>
   ['simulation', 'gestion', 'fournisseurs', utilisateur] as const;
@@ -34,10 +26,7 @@ export const cleFournisseurs = (utilisateur: string | undefined) =>
 export function useFournisseurs(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleFournisseurs(utilisateur),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<InstantaneFournisseurs>>(RACINE)).data
-        : lireFournisseursReels(),
+    queryFn: lireFournisseursReels,
     enabled: Boolean(utilisateur),
     // Le stock, les semaines et les dépenses bougent ailleurs : on relit à chaque ouverture.
     staleTime: 0,
@@ -53,16 +42,6 @@ type Resultat = {
   depense?: string;
 };
 
-async function publier(chemin: string, corps: unknown): Promise<Resultat> {
-  return (
-    await optiboulFetch<Reponse<Resultat>>(`${RACINE}${chemin}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(corps),
-    })
-  ).data;
-}
-
 type Contexte = {
   /** L'instantané lu avant l'action : identifiants du serveur des bons et des manquants. */
   avant: InstantaneFournisseurs | undefined;
@@ -74,14 +53,12 @@ const introuvable = (code: string) =>
 /** Une action sur les fournisseurs : l'écran prend l'instantané renvoyé. */
 function useAction<Demande>(
   utilisateur: string | undefined,
-  chemin: string,
-  /** La même action sur le vrai serveur ; elle rend ce que l'écran affiche en retour. */
+  /** L'action sur le serveur ; elle rend ce que l'écran affiche en retour. */
   surLeServeur: (demande: Demande, contexte: Contexte) => Promise<Partial<Resultat>>,
 ) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (demande: Demande): Promise<Resultat> => {
-      if (SIMULATION) return publier(chemin, demande);
       const avant = client.getQueryData<InstantaneFournisseurs>(cleFournisseurs(utilisateur));
       const retour = await surLeServeur(demande, { avant });
       return { ...retour, instantane: await lireFournisseursReels() };
@@ -104,7 +81,7 @@ const commandeDe = ({ avant }: Contexte, numero: string) => {
 const decimal = (valeur: number) => String(valeur);
 
 export const usePlanifier = (u: string | undefined) =>
-  useAction<NouvelleCommande>(u, 'commandes/', async (saisie) => {
+  useAction<NouvelleCommande>(u, async (saisie) => {
     const reponse = await receptionsPlanifieesCreate({
       fournisseur: Number(saisie.fournisseur),
       matiere: saisie.matiere,
@@ -117,7 +94,7 @@ export const usePlanifier = (u: string | undefined) =>
   });
 
 export const useReceptionner = (u: string | undefined) =>
-  useAction<NouvelleReception>(u, 'receptions/', async (saisie, contexte) => {
+  useAction<NouvelleReception>(u, async (saisie, contexte) => {
     const commande = commandeDe(contexte, saisie.commande);
     const reponse = await receptionsPlanifieesReceptionnerCreate(commande.idServeur, {
       quantite: decimal(saisie.quantite),
@@ -129,7 +106,7 @@ export const useReceptionner = (u: string | undefined) =>
   });
 
 export const useRelancer = (u: string | undefined) =>
-  useAction<{ commande: string }>(u, 'relances/', async ({ commande }, contexte) => {
+  useAction<{ commande: string }>(u, async ({ commande }, contexte) => {
     const { manquant } = commandeDe(contexte, commande);
     if (manquant === undefined) throw introuvable('aucun_manquant');
     await manquantsRelancerCreate(manquant);
@@ -137,7 +114,7 @@ export const useRelancer = (u: string | undefined) =>
   });
 
 export const useReplanifier = (u: string | undefined) =>
-  useAction<{ commande: string }>(u, 'reliquats/', async ({ commande }, contexte) => {
+  useAction<{ commande: string }>(u, async ({ commande }, contexte) => {
     const { manquant } = commandeDe(contexte, commande);
     if (manquant === undefined) throw introuvable('aucun_manquant');
     // Le serveur demande le jour : demain, comme la proposition de l'écran.
@@ -147,7 +124,7 @@ export const useReplanifier = (u: string | undefined) =>
   });
 
 export const usePayer = (u: string | undefined) =>
-  useAction<NouveauPaiement>(u, 'paiements/', async (saisie, { avant }) => {
+  useAction<NouveauPaiement>(u, async (saisie, { avant }) => {
     const facture = avant?.factures.find((f) => f.numero === saisie.facture);
     if (facture?.idServeur === undefined) throw introuvable('facture_inconnue');
     const reponse = await facturesPayerCreate(
@@ -163,9 +140,8 @@ export const usePayer = (u: string | undefined) =>
     return { depense: String((reponse.data as { depense: number }).depense) };
   });
 
-/** Ouvre le reçu PDF d'un paiement dans un nouvel onglet (sans effet en simulation). */
+/** Ouvre le reçu PDF d'un paiement dans un nouvel onglet. */
 export function ouvrirLeRecu(paiement: number) {
-  if (SIMULATION) return;
   window.open(getPaiementsFournisseursRecuRetrieveUrl(paiement), '_blank', 'noopener');
 }
 
