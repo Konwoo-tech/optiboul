@@ -339,27 +339,39 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
           ))}
         </div>
 
-        <div
-          className={styles.onglets}
-          role="tablist"
-          aria-label={t('gestion.fournisseurs.sections')}
-        >
-          {ONGLETS.map((cle) => (
+        <div className={styles.entete}>
+          <div
+            className={styles.onglets}
+            role="tablist"
+            aria-label={t('gestion.fournisseurs.sections')}
+          >
+            {ONGLETS.map((cle) => (
+              <button
+                type="button"
+                key={cle}
+                id={`onglet-fournisseurs-${cle}`}
+                role="tab"
+                aria-selected={onglet === cle}
+                aria-controls="panneau-fournisseurs"
+                tabIndex={onglet === cle ? 0 : -1}
+                className={`${styles.onglet} ${onglet === cle ? styles.ongletActif : ''}`}
+                onClick={() => choisirOnglet(cle)}
+                onKeyDown={naviguerEntreOnglets}
+              >
+                {t(`gestion.fournisseurs.onglets.${cle}`)}
+              </button>
+            ))}
+          </div>
+          {droits.modifier && onglet === 'fournisseurs' && (
             <button
               type="button"
-              key={cle}
-              id={`onglet-fournisseurs-${cle}`}
-              role="tab"
-              aria-selected={onglet === cle}
-              aria-controls="panneau-fournisseurs"
-              tabIndex={onglet === cle ? 0 : -1}
-              className={`${styles.onglet} ${onglet === cle ? styles.ongletActif : ''}`}
-              onClick={() => choisirOnglet(cle)}
-              onKeyDown={naviguerEntreOnglets}
+              className={styles.principal}
+              onClick={() => ouvrir({ genre: 'fiche' })}
             >
-              {t(`gestion.fournisseurs.onglets.${cle}`)}
+              <span aria-hidden>+ </span>
+              {t('gestion.fournisseurs.fiche.ajouter')}
             </button>
-          ))}
+          )}
         </div>
 
         <div
@@ -384,7 +396,6 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
             <Fiches
               instantane={instantane}
               peutModifier={droits.modifier}
-              onNouveau={() => ouvrir({ genre: 'fiche' })}
               onModifier={(f) => ouvrir({ genre: 'fiche', id: f.id })}
             />
           )}
