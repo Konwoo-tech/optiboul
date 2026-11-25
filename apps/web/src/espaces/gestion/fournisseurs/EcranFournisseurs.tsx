@@ -13,6 +13,7 @@ import {
   codeErreur,
   ouvrirLeRecu,
   useEnregistrerFournisseur,
+  useAnnulerReception,
   useFournisseurs,
   usePayer,
   usePlanifier,
@@ -74,6 +75,7 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
   const relancer = useRelancer(nom);
   const replanifier = useReplanifier(nom);
   const payer = usePayer(nom);
+  const annulerReception = useAnnulerReception(nom);
   const enregistrer = useEnregistrerFournisseur(nom);
   // La fenêtre appartient à la personne qui l'a ouverte : changer d'utilisateur la ferme.
   const [ouverte, setOuverte] = useState<{ nom?: string; fenetre: Fenetre | null }>({
@@ -117,7 +119,8 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
     receptionner.isPending ||
     relancer.isPending ||
     replanifier.isPending ||
-    payer.isPending;
+    payer.isPending ||
+    annulerReception.isPending;
   const nomFournisseur = (id: string) =>
     instantane.fournisseurs.find((f) => f.id === id)?.nom ?? '';
 
@@ -143,6 +146,7 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
     const code = codeErreur(erreur);
     const perimee = [
       'commande_deja_recue',
+      'reception_close',
       'aucun_manquant',
       'facture_non_payable',
       'commande_inconnue',
@@ -170,6 +174,15 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
       return null;
     } catch (erreur) {
       return codeErreur(erreur) ?? 'defaut';
+    }
+  };
+
+  const annulerBon = async (commande: Commande) => {
+    try {
+      await annulerReception.mutateAsync({ commande: commande.numero });
+      afficher(t('gestion.fournisseurs.toasts.annulee', { numero: commande.numero }));
+    } catch (erreur) {
+      echec(erreur);
     }
   };
 
@@ -387,6 +400,7 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
               peutModifier={droits.modifier}
               enCours={enCours}
               onReceptionner={(c) => ouvrir({ genre: 'reception', numero: c.numero })}
+              onAnnuler={(c) => void annulerBon(c)}
               onRelancer={(c) => void relancerManquant(c)}
               onReplanifier={(c) => void replanifierReliquat(c)}
               onPlanifier={planifierReception}

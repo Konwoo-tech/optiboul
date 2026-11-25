@@ -6,6 +6,7 @@ import {
   getPaiementsFournisseursRecuRetrieveUrl,
   manquantsRelancerCreate,
   manquantsReplanifierCreate,
+  receptionsPlanifieesAnnulerCreate,
   receptionsPlanifieesCreate,
   receptionsPlanifieesReceptionnerCreate,
 } from '@/api';
@@ -107,6 +108,12 @@ export const useReceptionner = (u: string | undefined) =>
     });
     const ecart = Number((reponse.data as { ecart?: string }).ecart ?? 0);
     return { commande: { statut: ecart < 0 ? 'partielle' : 'recue' } as Commande };
+  });
+
+export const useAnnulerReception = (u: string | undefined) =>
+  useAction<{ commande: string }>(u, async ({ commande }, contexte) => {
+    await receptionsPlanifieesAnnulerCreate(commandeDe(contexte, commande).idServeur);
+    return {};
   });
 
 export const useRelancer = (u: string | undefined) =>

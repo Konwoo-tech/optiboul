@@ -434,6 +434,32 @@ describe('Gestion › Fournisseurs : réceptionner', () => {
   });
 });
 
+describe('Gestion › Fournisseurs : annuler une réception planifiée', () => {
+  it('annule un bon planifié : POST, message, liste relue', async () => {
+    serveur.use(
+      http.post('*/api/v1/receptions-planifiees/:id/annuler/', ({ params }) => {
+        appels.push(`annuler ${params.id}`);
+        etat = {
+          ...etat,
+          commandes: etat.commandes.filter((c) => chiffres(c.numero) !== Number(params.id)),
+        };
+        return HttpResponse.json({});
+      }),
+    );
+    await ouvrir();
+    const bon = etat.commandes.find((c) => c.statut === 'planifiee')!;
+    fireEvent.click(bouton(`Annuler ${bon.numero}`));
+    expect(await screen.findByText(`Bon ${bon.numero} annulé`)).toBeTruthy();
+    expect(appels).toEqual([`annuler ${chiffres(bon.numero)}`]);
+    expect(screen.queryByRole('button', { name: `Annuler ${bon.numero}` })).toBeNull();
+  });
+
+  it('le propriétaire ne voit pas le bouton Annuler', async () => {
+    await ouvrir('fotso');
+    expect(screen.queryByRole('button', { name: /^Annuler BC-/ })).toBeNull();
+  });
+});
+
 describe('Gestion › Fournisseurs : manquant', () => {
   it('relancer annonce la relance au fournisseur', async () => {
     await ouvrir();
