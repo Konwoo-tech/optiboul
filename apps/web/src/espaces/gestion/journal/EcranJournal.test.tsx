@@ -1,54 +1,157 @@
-import { configurerApi } from '@/api';
+import { configurerApi, ErreurApi } from '@/api';
 import { initI18n } from '@/i18n';
-import { installerApiSimulee } from '@/simulation';
-import { consigner } from '@/simulation/journal.ts';
-import { reinitialiserSimulation } from '@/simulation/routeur.ts';
-import { memoriserUtilisateurConnecte } from '@/simulation/session.ts';
+import { creerServeurApi } from '@/test';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-// Ces tests jouent l'écran sur le faux serveur ; la lecture du vrai serveur est dans reel.test.tsx.
-vi.hoisted(() => vi.stubEnv('MODE', 'simulation'));
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ECRANS } from '../../../navigation.ts';
+import type { Profil } from '../../../profils.ts';
 import EcranJournal from './EcranJournal.tsx';
+import {
+  LIMITE_AFFICHEE,
+  type EntreeJournal,
+  type FiltresJournal,
+  type InstantaneJournal,
+  type TypeAction,
+} from './types.ts';
 
-let retablir: () => void;
-const JOURNAL = '/api/v1/simulation/gestion/journal/';
+/*
+ * L'écran Journal rendu depuis le modèle de l'écran ; la conversion des lignes du serveur
+ * (`journal/`, `journal/acteurs/`) est testée dans reel.test.tsx et mapping.test.ts. La personne
+ * connectée (droits) vient de `users/me/`, sur un faux serveur au format de l'API réelle.
+ */
 
-/** Appels du faux serveur au journal, et réponse remplacée si `surcharge` en donne une. */
-function espionner(surcharge?: (url: URL) => Response | undefined) {
-  const appels: string[] = [];
-  const reel = globalThis.fetch;
-  globalThis.fetch = async (entree, init) => {
-    const url = new URL(
-      entree instanceof Request ? entree.url : String(entree),
-      'http://localhost',
-    );
-    if (url.pathname === JOURNAL) appels.push(url.search);
-    const remplacee = surcharge?.(url);
-    return remplacee ?? reel(entree, init);
+const lecture = vi.hoisted(() => ({ lireJournalReel: vi.fn() }));
+vi.mock('./reel.ts', () => lecture);
+
+const serveur = creerServeurApi();
+
+beforeAll(() => {
+  configurerApi({ baseUrl: 'http://localhost' });
+  serveur.listen({ onUnhandledFrame: 'bypass' });
+});
+afterAll(() => serveur.close());
+
+const AUJOURDHUI = '2026-10-14';
+const VEILLE = '2026-10-13';
+
+const PROFILS: Record<string, { nom: string; profil: Profil }> = {
+  davy: { nom: 'Davy', profil: 'caissier' },
+  serge: { nom: 'Serge', profil: 'production' },
+  willy: { nom: 'Willy', profil: 'gerant' },
+  fotso: { nom: 'M. Fotso', profil: 'proprietaire' },
+  admin: { nom: 'Support OptiBoul', profil: 'administrateur' },
+};
+
+const PROFIL_DE_L_AUTEUR: Record<string, Profil | null> = {
+  Davy: 'caissier',
+  Serge: 'production',
+  Willy: 'gerant',
+};
+
+function entree(
+  rang: number,
+  jour: string,
+  heure: string,
+  auteur: string,
+  type: TypeAction,
+  texte: string,
+  changement?: { avant: string; apres: string },
+): EntreeJournal {
+  return {
+    id: `J-${rang}`,
+    quand: new Date(`${jour}T${heure}:00+01:00`).toISOString(),
+    jour,
+    heure,
+    auteur,
+    profil: PROFIL_DE_L_AUTEUR[auteur] ?? null,
+    type,
+    texte,
+    ...(changement ?? {}),
   };
-  return appels;
 }
 
-async function ouvrir(
-  utilisateur: string | null = 'fotso',
-  langue: 'fr' | 'en' = 'fr',
-  /** Gestes joués sur le faux serveur avant l'ouverture de l'écran. */
-  avant?: () => void,
-) {
-  vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date('2026-10-14T17:02:00Z'));
+/** Les dix lignes de la maquette : neuf de la session du jour, une de la veille. */
+const DEPART = (): EntreeJournal[] =>
+  (
+    [
+      [
+        AUJOURDHUI,
+        '21:41',
+        'Davy',
+        'session',
+        'Livraison Aïcha – 7 800 FCFA dû, 7 800 reçu (Orange Money)',
+      ],
+      [AUJOURDHUI, '21:28', 'Davy', 'session', 'Livraison Hervé – 11 550 FCFA dû, 11 550 reçu'],
+      [
+        AUJOURDHUI,
+        '21:15',
+        'Davy',
+        'session',
+        'Livraison Mama Ngono – 16 700 FCFA dû, 16 700 reçu (MTN MoMo)',
+      ],
+      [AUJOURDHUI, '21:02', 'Davy', 'session', 'Livraison White – 10 700 FCFA dû, 10 200 reçu'],
+      [AUJOURDHUI, '20:51', 'Davy', 'session', 'Livraison Alex – 12 200 FCFA dû, 12 200 reçu'],
+      [AUJOURDHUI, '20:30', 'Davy', 'session', 'Mouvement interne : ration 12 BAG'],
+      [AUJOURDHUI, '19:10', 'Davy', 'depense', 'Dépense : Levure – 25 000 FCFA'],
+      [AUJOURDHUI, '18:02', 'Davy', 'session', 'Ouverture de la session de nuit du 14 oct.'],
+      [AUJOURDHUI, '17:55', 'Serge', 'connexion', 'Connexion'],
+      [VEILLE, '16:40', 'Willy', 'depense', 'Dépense soumise : Réparation du pétrin – 65 000 FCFA'],
+    ] as const
+  ).map(([jour, heure, auteur, type, texte], rang) =>
+    entree(rang + 1, jour, heure, auteur, type, texte),
+  );
+
+/** Le registre du « serveur », les plus récentes en premier. */
+let registre: EntreeJournal[];
+let connecte: string | null;
+
+/** Ce que fait le serveur : filtres (auteur, type, période), limite et total. */
+function lireLeRegistre(filtres: FiltresJournal): InstantaneJournal {
+  const retenues = registre.filter(
+    (e) =>
+      (!filtres.auteur || e.auteur === filtres.auteur) &&
+      (!filtres.type || e.type === filtres.type) &&
+      (!filtres.du || e.jour >= filtres.du) &&
+      (!filtres.au || e.jour <= filtres.au),
+  );
+  return {
+    entrees: retenues.slice(0, LIMITE_AFFICHEE),
+    total: retenues.length,
+    auteurs: [...new Set(registre.map((e) => e.auteur))].sort(),
+    aujourdhui: AUJOURDHUI,
+  };
+}
+
+beforeEach(() => {
+  registre = DEPART();
+  lecture.lireJournalReel.mockReset();
+  lecture.lireJournalReel.mockImplementation(async (filtres: FiltresJournal) =>
+    lireLeRegistre(filtres),
+  );
+});
+
+async function ouvrir(utilisateur: string | null = 'fotso', langue: 'fr' | 'en' = 'fr') {
+  connecte = utilisateur;
   await initI18n('fr').changeLanguage(langue);
-  configurerApi({ baseUrl: 'http://localhost' });
-  retablir = installerApiSimulee({ latenceMs: 0 });
-  reinitialiserSimulation();
-  memoriserUtilisateurConnecte(utilisateur);
-  avant?.();
+  serveur.use(
+    http.get('*/api/v1/users/me/', () => {
+      const personne = connecte ? PROFILS[connecte] : undefined;
+      return personne
+        ? HttpResponse.json({
+            id: 1,
+            name: personne.nom,
+            email: 'x@optiboul.local',
+            url: 'http://localhost/api/v1/users/1/',
+            profil: personne.profil,
+          })
+        : HttpResponse.json({ detail: 'Non connecté.' }, { status: 403 });
+    }),
+  );
   const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'journal')!;
   render(
     <OptiboulProvider>
@@ -64,9 +167,9 @@ async function ouvrir(
 }
 
 afterEach(async () => {
+  cleanup();
+  serveur.resetHandlers();
   await initI18n('fr').changeLanguage('fr');
-  retablir();
-  vi.useRealTimers();
 });
 
 const lignes = async () =>
@@ -110,13 +213,10 @@ describe('Gestion › Journal : liste', () => {
   });
 
   it('montre en tête une action faite sur un autre écran, avec son auteur et son profil', async () => {
-    await ouvrir('fotso', 'fr', () =>
-      consigner({
-        auteur: 'Willy',
-        type: 'paie',
-        texte: 'Jour de paie d’octobre fixé au 2026-10-30',
-      }),
+    registre.unshift(
+      entree(11, AUJOURDHUI, '18:02', 'Willy', 'paie', 'Jour de paie d’octobre fixé au 2026-10-30'),
     );
+    await ouvrir();
     const l = await lignes();
     expect(l).toHaveLength(11);
     expect(visible(l[0]!)).toBe(
@@ -125,9 +225,8 @@ describe('Gestion › Journal : liste', () => {
   });
 
   it('un auteur sans compte (le système) s’affiche sans profil', async () => {
-    await ouvrir('fotso', 'fr', () =>
-      consigner({ auteur: 'Système', type: 'production', texte: 'Archivage' }),
-    );
+    registre.unshift(entree(11, AUJOURDHUI, '18:02', 'Système', 'production', 'Archivage'));
+    await ouvrir();
     expect(visible((await lignes())[0]!)).toBe('18:02|Système|Archivage');
   });
 
@@ -144,27 +243,17 @@ describe('Gestion › Journal : liste', () => {
   });
 
   it('ne montre que les 40 dernières actions et indique le total', async () => {
-    await ouvrir('fotso', 'fr', () => {
-      for (let i = 0; i < 45; i += 1)
-        consigner({ auteur: 'Willy', type: 'caisse', texte: `A${i}` });
-    });
+    for (let i = 0; i < 45; i += 1) {
+      registre.unshift(entree(100 + i, AUJOURDHUI, '19:00', 'Willy', 'caisse', `A${i}`));
+    }
+    await ouvrir();
     expect(await lignes()).toHaveLength(40);
     expect(await screen.findByText(/40 dernières actions affichées sur 55/)).toBeTruthy();
   });
 
   it('affiche l’état vide quand le journal ne contient rien', async () => {
-    await ouvrir('fotso', 'fr', () => {
-      const reel = globalThis.fetch;
-      globalThis.fetch = async (entree, init) => {
-        const url = new URL(
-          entree instanceof Request ? entree.url : String(entree),
-          'http://localhost',
-        );
-        return url.pathname === JOURNAL
-          ? Response.json({ entrees: [], total: 0, auteurs: [], aujourdhui: '2026-10-14' })
-          : reel(entree, init);
-      };
-    });
+    registre = [];
+    await ouvrir();
     expect(await screen.findByText('Aucune action consignée pour l’instant.')).toBeTruthy();
     expect(screen.queryByRole('list')).toBeNull();
   });
@@ -172,22 +261,33 @@ describe('Gestion › Journal : liste', () => {
 
 describe('Gestion › Journal : valeurs avant / après', () => {
   it('montre « Avant → Après » sous l’action, et « — » pour un avant vide', async () => {
-    await ouvrir('fotso', 'fr', () => {
-      consigner({
-        auteur: 'Willy',
-        type: 'paie',
-        texte: 'Jour de paie d’octobre fixé au 2026-10-30',
-        avant: '2026-10-29',
-        apres: '2026-10-30',
-      });
-      consigner({
-        auteur: 'Willy',
-        type: 'paie',
-        texte: 'Jour de paie de novembre planifié au 2026-11-30',
-        avant: '',
-        apres: '2026-11-30',
-      });
-    });
+    registre.unshift(
+      entree(
+        12,
+        AUJOURDHUI,
+        '18:03',
+        'Willy',
+        'paie',
+        'Jour de paie de novembre planifié au 2026-11-30',
+        {
+          avant: '',
+          apres: '2026-11-30',
+        },
+      ),
+      entree(
+        11,
+        AUJOURDHUI,
+        '18:02',
+        'Willy',
+        'paie',
+        'Jour de paie d’octobre fixé au 2026-10-30',
+        {
+          avant: '2026-10-29',
+          apres: '2026-10-30',
+        },
+      ),
+    );
+    await ouvrir();
     const l = await lignes();
     expect(l[0]!.textContent).toContain('Avant : — → Après : 2026-11-30');
     expect(l[1]!.textContent).toContain('Avant : 2026-10-29 → Après : 2026-10-30');
@@ -206,7 +306,7 @@ describe('Gestion › Journal : filtres', () => {
     fireEvent.change(screen.getByLabelText('Type d’action'), { target: { value: 'depense' } });
     await waitFor(async () => expect(await lignes()).toHaveLength(2));
 
-    fireEvent.change(screen.getByLabelText('Du'), { target: { value: '2026-10-14' } });
+    fireEvent.change(screen.getByLabelText('Du'), { target: { value: AUJOURDHUI } });
     await waitFor(async () => expect(await lignes()).toHaveLength(1));
   });
 
@@ -241,16 +341,16 @@ describe('Gestion › Journal : filtres', () => {
   it('annonce une période inversée, relie l’erreur aux champs, n’appelle pas le serveur et l’efface à la saisie', async () => {
     await ouvrir();
     await lignes();
-    const appels = espionner();
-    fireEvent.change(screen.getByLabelText('Du'), { target: { value: '2026-10-14' } });
-    await waitFor(() => expect(appels).toHaveLength(1));
-    fireEvent.change(screen.getByLabelText('Au'), { target: { value: '2026-10-13' } });
+    const avant = lecture.lireJournalReel.mock.calls.length;
+    fireEvent.change(screen.getByLabelText('Du'), { target: { value: AUJOURDHUI } });
+    await waitFor(() => expect(lecture.lireJournalReel.mock.calls.length).toBe(avant + 1));
+    fireEvent.change(screen.getByLabelText('Au'), { target: { value: VEILLE } });
     const alerte = await screen.findByRole('alert');
     expect(alerte.textContent).toBe('Le premier jour doit précéder le dernier.');
     expect(screen.getByLabelText('Au').getAttribute('aria-describedby')).toBe(alerte.id);
     expect(screen.getByLabelText('Au').getAttribute('aria-invalid')).toBe('true');
-    expect(appels).toHaveLength(1);
-    fireEvent.change(screen.getByLabelText('Au'), { target: { value: '2026-10-14' } });
+    expect(lecture.lireJournalReel.mock.calls.length).toBe(avant + 1);
+    fireEvent.change(screen.getByLabelText('Au'), { target: { value: AUJOURDHUI } });
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByLabelText('Au').getAttribute('aria-invalid')).toBe('false');
   });
@@ -275,21 +375,10 @@ describe('Gestion › Journal : droits et erreurs', () => {
   it.each(['davy', 'serge'])(
     'refuse le profil de %s : message, pas de liste, aucun appel au journal',
     async (id) => {
-      const appels: string[] = [];
-      await ouvrir(id, 'fr', () => {
-        const reel = globalThis.fetch;
-        globalThis.fetch = async (entree, init) => {
-          const url = new URL(
-            entree instanceof Request ? entree.url : String(entree),
-            'http://localhost',
-          );
-          if (url.pathname === JOURNAL) appels.push(url.search);
-          return reel(entree, init);
-        };
-      });
+      await ouvrir(id);
       expect((await screen.findByRole('alert')).textContent).toContain('réservé au gérant');
       expect(screen.queryByRole('list')).toBeNull();
-      expect(appels).toHaveLength(0);
+      expect(lecture.lireJournalReel).not.toHaveBeenCalled();
     },
   );
 
@@ -299,38 +388,33 @@ describe('Gestion › Journal : droits et erreurs', () => {
   });
 
   it('une erreur du journal affiche « Réessayer » et recharge au clic', async () => {
-    let panne = true;
-    await ouvrir('fotso', 'fr', () => {
-      const reel = globalThis.fetch;
-      globalThis.fetch = async (entree, init) => {
-        const url = new URL(
-          entree instanceof Request ? entree.url : String(entree),
-          'http://localhost',
-        );
-        if (url.pathname === JOURNAL && panne) {
-          return Response.json({ detail: 'Panne', code: 'panne' }, { status: 500 });
-        }
-        return reel(entree, init);
-      };
-    });
+    lecture.lireJournalReel.mockRejectedValueOnce(
+      new ErreurApi(500, { detail: 'Panne', code: 'panne' }),
+    );
+    await ouvrir();
     expect(await screen.findByText(/Le journal n’a pas pu être chargé/)).toBeTruthy();
-    panne = false;
     fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
     expect(await lignes()).toHaveLength(10);
   });
 
   it('un serveur injoignable affiche l’erreur et « Réessayer »', async () => {
-    await ouvrir('fotso', 'fr', () => {
-      const reel = globalThis.fetch;
-      globalThis.fetch = async (entree, init) => {
-        const url = new URL(
-          entree instanceof Request ? entree.url : String(entree),
-          'http://localhost',
-        );
-        if (url.pathname === '/api/v1/users/me/') throw new TypeError('Failed to fetch');
-        return reel(entree, init);
-      };
-    });
+    await ouvrir('fotso');
+    await lignes();
+    cleanup();
+    serveur.use(http.get('*/api/v1/users/me/', () => HttpResponse.error()));
+    render(
+      <OptiboulProvider>
+        <QueryClientProvider
+          client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+        >
+          <MemoryRouter initialEntries={['/gestion/journal']}>
+            <EcranJournal
+              ecran={ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'journal')!}
+            />
+          </MemoryRouter>
+        </QueryClientProvider>
+      </OptiboulProvider>,
+    );
     expect(await screen.findByRole('button', { name: 'Réessayer' })).toBeTruthy();
     expect(screen.queryByRole('list')).toBeNull();
   });
