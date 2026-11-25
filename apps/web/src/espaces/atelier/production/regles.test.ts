@@ -92,7 +92,7 @@ describe('écarts', () => {
     expect(ecartAJustifier(-12.1, limite)).toBe(true);
   });
 
-  it('convertit la consommation en sorties de stock (farine en sacs, sel en kg)', () => {
+  it('simulation : convertit la consommation en sorties de stock (farine en sacs, sel en kg)', () => {
     expect(sortiesDeStock(juste)).toEqual([
       { matiere: 'farine', quantite: 6 },
       { matiere: 'sel', quantite: 3.6 },

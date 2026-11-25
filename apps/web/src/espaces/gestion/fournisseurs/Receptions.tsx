@@ -18,7 +18,7 @@ import {
   matieresDe,
   NIVEAU_COMMANDE,
   quantiteSaisie,
-  QUANTITE_MAX,
+  quantiteMax,
   quantiteTropGrande,
   trierCommandes,
 } from './regles.ts';
@@ -68,7 +68,7 @@ export function Receptions({
             ? erreur
             : 'defaut'
         }`,
-        { max: formaterNombre(QUANTITE_MAX) },
+        { max: formaterNombre(quantiteMax()) },
       )
     : '';
 
@@ -78,7 +78,7 @@ export function Receptions({
       champQuantite.current?.focus();
       return;
     }
-    if (quantiteTropGrande(quantiteSaisie(quantiteTexte))) {
+    if (quantiteTropGrande(quantiteSaisie(quantiteTexte), quantiteMax())) {
       setErreur('quantite_trop_grande');
       champQuantite.current?.focus();
       return;

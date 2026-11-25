@@ -4,6 +4,7 @@ import { formaterNombre } from '@/utils';
 import { useId, useRef, useState } from 'react';
 
 import type { Profil } from '../../../profils.ts';
+import { uniteMatiere } from '../../atelier/stocks/affichage.ts';
 import { dateCourte, libelleSession } from './affichage.ts';
 import styles from './Depenses.module.css';
 import {
@@ -121,7 +122,7 @@ export function Formulaire({
   };
 
   const puce = (actif: boolean) => `${styles.puce} ${actif ? styles.puceActive : ''}`;
-  const unite = (cle: Matiere) => t(`comptoir.depenses.matieres.${cle}.unite`);
+  const unite = (cle: Matiere) => uniteMatiere(t, cle);
 
   return (
     <form

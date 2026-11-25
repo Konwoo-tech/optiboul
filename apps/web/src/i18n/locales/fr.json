@@ -438,31 +438,38 @@
       "matieres": {
         "farine": {
           "nom": "Farine",
-          "unite": "sacs"
+          "unite": "sacs",
+          "uniteServeur": "kg"
         },
         "sel": {
           "nom": "Sel",
-          "unite": "kg"
+          "unite": "kg",
+          "uniteServeur": "g"
         },
         "levure": {
           "nom": "Levure",
-          "unite": "kg"
+          "unite": "kg",
+          "uniteServeur": "g"
         },
         "ameliorant": {
           "nom": "Améliorant",
-          "unite": "kg"
+          "unite": "kg",
+          "uniteServeur": "g"
         },
         "glace": {
           "nom": "Glace",
-          "unite": "sachets"
+          "unite": "sachets",
+          "uniteServeur": "sachets"
         },
         "bois": {
           "nom": "Bois",
-          "unite": "chargements"
+          "unite": "chargements",
+          "uniteServeur": "chargements"
         },
         "huile": {
           "nom": "Huile",
-          "unite": "litres"
+          "unite": "litres",
+          "uniteServeur": "litres"
         }
       },
       "modes": {
@@ -1319,6 +1326,7 @@
         "erreurs": {
           "quantite_trop_grande": "Quantité trop élevée (maximum {{max}}).",
           "prix_obligatoire": "Indiquez le prix unitaire de cette livraison.",
+          "prix_decimal": "Le serveur n’accepte pas encore un prix à la décimale (ex. 2,5 FCFA le gramme) : indiquez un prix entier.",
           "defaut": "La réception n’a pas pu être enregistrée. Réessayez."
         }
       },

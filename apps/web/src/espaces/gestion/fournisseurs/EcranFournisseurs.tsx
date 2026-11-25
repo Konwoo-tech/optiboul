@@ -1,4 +1,5 @@
 import { useUtilisateurCourant } from '@/auth';
+import { ErreurApi } from '@/api';
 import { useTranslation } from '@/i18n';
 import { SIMULATION } from '@/simulation';
 import { EcranChargement, EcranErreur, useToast } from '@/ui';
@@ -192,6 +193,11 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
 
   /** Erreurs de saisie : la fenêtre reste ouverte, la saisie est gardée, l'erreur est sur le champ. */
   const erreurDeSaisie = (erreur: unknown): string | null => {
+    // Le serveur refuse un prix à la décimale (400 sur `prix_unitaire`, sans code) : la fenêtre l'explique.
+    if (erreur instanceof ErreurApi && erreur.status === 400) {
+      const champs = (erreur.details ?? {}) as { prix_unitaire?: unknown };
+      if (champs.prix_unitaire) return 'prix_decimal';
+    }
     const code = codeErreur(erreur);
     return code && ERREURS_DE_SAISIE.includes(code) ? code : null;
   };

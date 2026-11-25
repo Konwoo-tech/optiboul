@@ -1,6 +1,7 @@
 import type { Creneau } from '@/utils';
 import type { TFunction } from 'i18next';
 
+import { uniteMatiere } from '../../atelier/stocks/affichage.ts';
 import { dateCourte } from '../session/affichage.ts';
 import type { Depense, DemandeDepense, Rattachement, SessionRattachee } from './types.ts';
 import { numeroDemande, validateurDe } from './regles.ts';
@@ -47,7 +48,7 @@ export function libelleRattachement(
       matiere: t(`comptoir.depenses.matieres.${rattachement.matiere}.nom`),
       // « 2,5 » en français, « 2.5 » en anglais.
       quantite: String(rattachement.quantite).replace('.', langue === 'en' ? '.' : ','),
-      unite: t(`comptoir.depenses.matieres.${rattachement.matiere}.unite`),
+      unite: uniteMatiere(t, rattachement.matiere),
     });
   }
   return t('comptoir.depenses.rattache.semaine', { numero: numeroSemaine ?? '' });

@@ -1,7 +1,9 @@
 import { useTranslation } from '@/i18n';
+import { SIMULATION } from '@/simulation';
 import { FenetreModale } from '@/ui';
 import { formaterNombre } from '@/utils';
 
+import { uniteMatiere } from '../stocks/affichage.ts';
 import { nomDeMatiere } from './affichage.ts';
 import styles from './Production.module.css';
 import { sortiesDeStock } from './regles.ts';
@@ -40,7 +42,7 @@ export function ModaleCloture({
       </p>
       <p className={styles.titreModale}>{t('atelier.production.cloture.sorties')}</p>
       <ul className={styles.sorties}>
-        {sortiesDeStock(consommation).map((sortie) => {
+        {sortiesDeStock(consommation, SIMULATION ? 'prototype' : 'serveur').map((sortie) => {
           const disponible = instantane.stock[sortie.matiere];
           const insuffisant = sortie.quantite > disponible;
           // Le stock ne descend jamais sous zéro : on le dit plutôt que d'afficher un reste négatif.
@@ -49,7 +51,7 @@ export function ModaleCloture({
             <li className={styles.sortie} key={sortie.matiere}>
               <span>{nomDeMatiere(t, sortie.matiere)}</span>
               <span className={styles.sortieValeur}>
-                {`−${virgule(sortie.quantite)} ${t(`comptoir.depenses.matieres.${sortie.matiere}.unite`)}`}{' '}
+                {`−${virgule(sortie.quantite)} ${uniteMatiere(t, sortie.matiere)}`}{' '}
                 <span className={styles.sortieReste}>
                   · {t('atelier.production.cloture.reste', { stock: virgule(restant) })}
                   {insuffisant && (

@@ -35,6 +35,9 @@ export const GUICHET_MOYEN: Quantites = { BAG: 120, KO: 60, GC: 20 };
 /** Écart de matière toléré par sac travaillé, en kg (R10). */
 export const SEUIL_ECART_KG_PAR_SAC = 2;
 
+/** Kilos de farine dans un sac à pétrir (le plan compte la farine en sacs). */
+export const KG_PAR_SAC = 50;
+
 /** Sacs de farine d'une session type : la cuisson (bois et huile) se répartit dessus. */
 export const SACS_PAR_SESSION = 8;
 
@@ -197,13 +200,21 @@ export const realiseComplet = (realise: Realise): boolean =>
 export const consommationComplete = (consommation: Consommation): boolean =>
   MATIERES_CONSOMMEES.every((matiere) => consommation[matiere] !== null);
 
-/** Sorties de stock d'une clôture : la consommation réelle, convertie dans l'unité du stock. */
-export function sortiesDeStock(consommation: Consommation): SortieDeStock[] {
+/**
+ * Sorties de stock d'une clôture : la consommation réelle, dans l'unité du stock. `prototype` (la
+ * simulation) compte la farine en sacs et le reste en kg ; `serveur` garde l'unité de la consommation
+ * (farine en kg, sel, levure, améliorant en g), qui est celle du stock du vrai serveur.
+ */
+export function sortiesDeStock(
+  consommation: Consommation,
+  unites: 'prototype' | 'serveur' = 'prototype',
+): SortieDeStock[] {
   const sorties: SortieDeStock[] = [];
   for (const matiere of MATIERES_CONSOMMEES) {
     const valeur = consommation[matiere];
     if (valeur === null) continue;
-    const quantite = Math.round(valeur * MATIERES_PESEES[matiere].stockParUnite * 100) / 100;
+    const facteur = unites === 'serveur' ? 1 : MATIERES_PESEES[matiere].stockParUnite;
+    const quantite = Math.round(valeur * facteur * 100) / 100;
     if (quantite > 0) sorties.push({ matiere, quantite });
   }
   return sorties;

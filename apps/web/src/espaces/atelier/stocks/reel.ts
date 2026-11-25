@@ -117,7 +117,7 @@ export function versFiche(ligne: LigneEtat): FicheMatiere | undefined {
     cle: ligne.matiere,
     stock,
     besoin: Number(ligne.besoin_par_session),
-    prix: stock > 0 ? Math.round(ligne.valeur / stock) : 0,
+    prix: stock > 0 ? ligne.valeur / stock : 0,
   };
 }
 
