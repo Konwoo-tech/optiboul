@@ -12,7 +12,7 @@ import {
   type MouvementStock,
 } from '@/api';
 
-import type { Creneau } from '@/utils';
+import { creneauDe } from '@/utils';
 
 import {
   MATIERES,
@@ -71,7 +71,7 @@ export function origineDuMouvement(m: MouvementStock): OrigineMouvement {
     case 'production':
       return {
         genre: 'production',
-        creneau: (/nuit/i.test(m.motif) ? 'nuit' : 'jour') as Creneau,
+        creneau: creneauDe(new Date(m.cree_le)),
         date: jourDeYaounde(m.cree_le),
       };
     case 'inventaire':

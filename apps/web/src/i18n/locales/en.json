@@ -111,6 +111,7 @@
     "quiEtesVous": "Who are you?",
     "quiEtesVousDetail": "Tap your name, then enter your code.",
     "changerPersonne": "← Someone else",
+    "compteBloque": "Too many failures: account blocked for 15 minutes. Ask the administrator to unblock it.",
     "codeIncorrect": "Wrong code. Try again or ask the administrator to reset it.",
     "effacer": "Delete",
     "chiffresSaisis_one": "{{count}} digit entered out of {{total}}",

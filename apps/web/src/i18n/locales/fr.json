@@ -111,6 +111,7 @@
     "quiEtesVous": "Qui êtes-vous ?",
     "quiEtesVousDetail": "Touchez votre nom, puis saisissez votre code.",
     "changerPersonne": "← Changer de personne",
+    "compteBloque": "Trop d’échecs : compte bloqué 15 minutes. Demandez à l’administrateur de le débloquer.",
     "codeIncorrect": "Code incorrect. Réessayez ou demandez à l’administrateur de le réinitialiser.",
     "effacer": "Effacer",
     "chiffresSaisis_one": "{{count}} chiffre saisi sur {{total}}",

@@ -46,11 +46,13 @@ let connecte: keyof typeof PERSONNES;
 let appels: string[];
 let ajouts: number;
 let depenses: number;
+let caisseFermee: boolean;
 
 beforeEach(() => {
   appels = [];
   ajouts = 0;
   depenses = 0;
+  caisseFermee = false;
   lecture.lirePersonnelReel.mockReset();
   lecture.lirePersonnelReel.mockImplementation(async () => {
     if (connecte === 'davy') {
@@ -151,6 +153,15 @@ function installerServeur() {
         mode: ModePaiement;
         reference?: string;
       };
+      if (caisseFermee && corps.mode === 'especes') {
+        return HttpResponse.json(
+          {
+            detail: 'Aucune caisse ouverte : ouvrez la session avant de payer en espèces.',
+            code: 'aucune_caisse_ouverte',
+          },
+          { status: 409 },
+        );
+      }
       payer(String(params.id), corps.montant, corps.mode, corps.reference);
       return HttpResponse.json({ depense: depenses });
     }),
@@ -365,6 +376,19 @@ describe('Gestion › Personnel : paiement', () => {
     expect(screen.getAllByText('Paiement en cours', { selector: 'span' }).length).toBeGreaterThan(
       0,
     );
+  });
+
+  it('un salaire en espèces sans caisse ouverte est refusé avec le message du serveur', async () => {
+    caisseFermee = true;
+    await ouvrir('willy', 'fr', VALIDE);
+    fireEvent.click(ligne('Davy'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Payer Davy' }));
+    expect(
+      await screen.findByText(
+        'Aucune caisse ouverte : ouvrez la session avant de payer en espèces.',
+      ),
+    ).toBeTruthy();
+    expect(depenses).toBe(0);
   });
 
   it('payer tous les restes solde les huit salaires', async () => {
