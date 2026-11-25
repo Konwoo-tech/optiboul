@@ -5,7 +5,7 @@ import {
   mfaTotpActiverCreate,
   mfaTotpDesactiverCreate,
   mfaTotpPreparerCreate,
-  type EtatMfa,
+  type CodesSecours,
   type SecretTotp,
 } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
@@ -39,7 +39,7 @@ function FenetreSecurite({ onFermer }: { onFermer: () => void }) {
   const client = useQueryClient();
   const etat = useQuery({
     queryKey: CLE,
-    queryFn: async () => (await mfaList()).data as unknown as EtatMfa,
+    queryFn: async () => (await mfaList()).data,
   });
   const [secret, setSecret] = useState<SecretTotp | null>(null);
   const [code, setCode] = useState('');
@@ -48,7 +48,7 @@ function FenetreSecurite({ onFermer }: { onFermer: () => void }) {
   const relire = () => client.invalidateQueries({ queryKey: CLE });
 
   const preparer = useMutation({
-    mutationFn: async () => (await mfaTotpPreparerCreate()).data as SecretTotp,
+    mutationFn: async () => (await mfaTotpPreparerCreate()).data,
     onSuccess: (donnees) => {
       setSecret(donnees);
       setCode('');
@@ -57,8 +57,7 @@ function FenetreSecurite({ onFermer }: { onFermer: () => void }) {
     onError: () => afficher(t('securite.erreur')),
   });
   const activer = useMutation({
-    mutationFn: async (valeur: string) =>
-      (await mfaTotpActiverCreate({ code: valeur })).data as unknown as { codesSecours: string[] },
+    mutationFn: async (valeur: string) => (await mfaTotpActiverCreate({ code: valeur })).data as CodesSecours,
     onSuccess: (donnees) => {
       setSecret(null);
       setCodes(donnees.codesSecours);
@@ -78,8 +77,7 @@ function FenetreSecurite({ onFermer }: { onFermer: () => void }) {
     onError: () => afficher(t('securite.erreur')),
   });
   const regenerer = useMutation({
-    mutationFn: async () =>
-      (await mfaCodesSecoursCreate()).data as unknown as { codesSecours: string[] },
+    mutationFn: async () => (await mfaCodesSecoursCreate()).data,
     onSuccess: (donnees) => {
       setCodes(donnees.codesSecours);
       void relire();
