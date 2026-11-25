@@ -105,6 +105,8 @@ export type InstantaneSession = {
   plafond: number;
   clients: Client[];
   commandes: Record<string, Saisies>;
+  /** Identifiant de la commande du serveur, par client (pour l'annuler). */
+  idsCommandes?: Record<string, string>;
   /** Commande habituelle de chaque client à cette session. */
   habituelles: Record<string, Quantites>;
   /** Heure de la dernière relance WhatsApp, par client. */

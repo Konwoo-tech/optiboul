@@ -634,8 +634,14 @@
         "toasts": {
           "relancesEnvoyees": "{{count}} WhatsApp messages sent",
           "relanceEnvoyee": "WhatsApp message sent to {{nom}}",
-          "commandeAjoutee": "Order for {{nom}} added"
-        }
+          "commandeAjoutee": "Order for {{nom}} added",
+          "commandeAnnulee": "{{nom}}'s order cancelled",
+          "veilleReprise_one": "{{count}} order repeated from yesterday",
+          "veilleReprise_other": "{{count}} orders repeated from yesterday",
+          "veilleVide": "No order to repeat from yesterday"
+        },
+        "reprendreVeille": "Repeat yesterday",
+        "annulerCommande": "Cancel {{nom}}'s order"
       },
       "livraisons": {
         "recherche": "Customer: first letters…",
