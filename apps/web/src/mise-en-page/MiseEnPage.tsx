@@ -4,6 +4,7 @@ import { memoriserMessageConnexion, useDeconnexionAutomatique } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { configurationSimulee, deconnecterSimulation, SIMULATION } from '@/simulation';
 import { BandeauHorsLigne, LimiteErreur } from '@/ui';
+import { useAppliquerPreferences } from '@/ui/preferences.ts';
 import { useQueryClient } from '@tanstack/react-query';
 import { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router';
@@ -29,6 +30,9 @@ export function MiseEnPage() {
     ? configurationSimulee().inactiviteMinutes
     : ((session.data?.data as { inactiviteMinutes?: number | null } | undefined)
         ?.inactiviteMinutes ?? 0);
+
+  // Thème et langue de la personne connectée (mémorisés côté serveur, US-004).
+  useAppliquerPreferences();
 
   useDeconnexionAutomatique({
     minutes: inactiviteMinutes,

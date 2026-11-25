@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { BasculeApparence } from './BasculeApparence.tsx';
 import styles from './EnTetePage.module.css';
 import { PanneauNotifications } from './PanneauNotifications.tsx';
+import { THEME_DU_SERVEUR, useEnregistrerPreferences } from './preferences.ts';
 import { useCreneau } from './useCreneau.ts';
 
 type Niveau = 'ok' | 'surveiller' | 'neutre';
@@ -44,6 +45,7 @@ export function EnTetePage({
   const { data: contexte } = useContexte();
   const [notificationsOuvertes, setNotificationsOuvertes] = useState(false);
   const nonLues = useNombreNonLues();
+  const enregistrerPreference = useEnregistrerPreferences();
 
   // « Session de nuit » / « Session de jour » (la connexion, elle, dit « Nuit » / « Jour »).
   const type = t(`creneau.${session?.creneau ?? contexte?.sessionType ?? creneau}`);
@@ -80,7 +82,13 @@ export function EnTetePage({
           libelle={online ? enLigne : t('etat.horsLigne')}
         />
         <div className={styles.apparence}>
-          <BasculeApparence />
+          <BasculeApparence
+            onChoix={(choix) =>
+              enregistrerPreference(
+                'langue' in choix ? choix : { theme: THEME_DU_SERVEUR[choix.theme] },
+              )
+            }
+          />
         </div>
       </div>
       <PanneauNotifications
