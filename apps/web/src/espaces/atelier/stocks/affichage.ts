@@ -1,4 +1,3 @@
-import { SIMULATION } from '@/simulation';
 import type { TFunction } from 'i18next';
 
 import { dateCourte } from '../../comptoir/session/affichage.ts';
@@ -16,12 +15,11 @@ export const nomMatiere = (t: TFunction, matiere: Matiere) =>
   t(`comptoir.depenses.matieres.${matiere}.nom`);
 
 /**
- * Unité d'une matière à l'écran. Sur le vrai serveur : celle du stock (farine en kg ; sel, levure et
- * améliorant en g ; glace en sachets…), pour que l'écran et le serveur comptent pareil. La
- * simulation garde les unités du prototype (farine en sacs, le reste en kg).
+ * Unité d'une matière à l'écran : celle du stock du serveur (farine en kg ; sel, levure et améliorant
+ * en g ; glace en sachets…), pour que l'écran et le serveur comptent pareil.
  */
 export const uniteMatiere = (t: TFunction, matiere: Matiere) =>
-  t(`comptoir.depenses.matieres.${matiere}.${SIMULATION ? 'unite' : 'uniteServeur'}`);
+  t(`comptoir.depenses.matieres.${matiere}.uniteServeur`);
 
 /** « mer. 14 oct. » (français) ou « Wed Oct 14 » (anglais) pour un jour ISO. */
 export function jourCourt(iso: string, langue: string): string {

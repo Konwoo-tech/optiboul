@@ -1,4 +1,3 @@
-import { SIMULATION } from '@/simulation';
 import { useTranslation } from '@/i18n';
 import { useRef } from 'react';
 
@@ -6,7 +5,6 @@ import {
   codeInventaire,
   jourCourt,
   nomMatiere,
-  quantite,
   resumeDesEcarts,
   uniteMatiere,
 } from './affichage.ts';
@@ -14,13 +12,11 @@ import { Mot } from './Mot.tsx';
 import {
   comptageSaisi,
   controleDuJour,
-  ecartPourcent,
   inventaireDuJour,
   lignesEnEcart,
   NIVEAU_CONTROLE,
   NIVEAU_INVENTAIRE,
   statutControle,
-  ligneHorsTolerance,
 } from './regles.ts';
 import styles from './Stocks.module.css';
 import { type InstantaneStocks, type Matiere, type NouvelInventaire } from './types.ts';
@@ -60,7 +56,6 @@ export function Inventaires({
   const matieres = instantane.matieresACompter
     ? instantane.matieres.filter((m) => instantane.matieresACompter?.includes(m.cle))
     : instantane.matieres;
-  const aLAveugle = !SIMULATION;
   const aFaire = controleDuJour(controles, inventaires, aujourdhui);
 
   const soumettre = () => {
@@ -160,22 +155,11 @@ export function Inventaires({
           <div className={styles.regleComptage}>{t('atelier.stocks.inventaires.regle')}</div>
           {matieres.map((m) => {
             const texte = brouillon[m.cle] ?? '';
-            const compte = comptageSaisi(texte);
-            const ecart = compte === null ? 0 : compte - m.stock;
-            const pourcent = ecartPourcent(m.stock, compte ?? 0);
-            const niveau =
-              compte === null
-                ? 'neutre'
-                : ligneHorsTolerance({ theorique: m.stock, compte })
-                  ? 'bloquant'
-                  : 'ok';
             const unite = uniteMatiere(t, m.cle);
             return (
               <div className={styles.comptageLigne} key={m.cle}>
                 <span className={styles.comptageMatiere}>{nomMatiere(t, m.cle)}</span>
-                <span className={styles.comptageTheorique}>
-                  {aLAveugle ? '—' : `${quantite(m.stock, langue)} ${unite}`}
-                </span>
+                <span className={styles.comptageTheorique}>—</span>
                 <span className={styles.comptageSaisie}>
                   <input
                     className={styles.comptage}
@@ -194,16 +178,8 @@ export function Inventaires({
                   />
                   <span className={styles.comptageUnite}>{unite}</span>
                 </span>
-                <span
-                  className={styles.comptageEcart}
-                  style={{ color: `var(--ob-${niveau}-texte)` }}
-                >
-                  {compte === null || aLAveugle
-                    ? '—'
-                    : `${ecart > 0 ? '+' : ecart < 0 ? '−' : ''}${quantite(Math.abs(ecart), langue)} ${unite} · ${
-                        pourcent > 0 ? '+' : ''
-                      }${pourcent.toFixed(1).replace('.', langue === 'en' ? '.' : ',')} %`}
-                </span>
+                {/* Comptage à l'aveugle (O13) : ni stock théorique ni écart avant l'envoi, pas même par la couleur. */}
+                <span className={styles.comptageEcart}>—</span>
               </div>
             );
           })}
