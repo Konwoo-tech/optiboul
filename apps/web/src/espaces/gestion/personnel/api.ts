@@ -10,9 +10,9 @@ import {
   paiesLignesPayerCreate,
   paiesLignesUpdate,
   paiesPayerToutCreate,
+  paiesJourUpdate,
   paiesPreparerCreate,
   paiesSoumettreCreate,
-  parametresUpdate,
 } from '@/api';
 import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -128,25 +128,28 @@ export const useRetirerLigne = (utilisateur: string | undefined) =>
       return {};
     },
   );
-/** Le serveur garde un seul jour de paie (paramètre `jour_de_paie`), le même tous les mois. */
+/** Le jour de paie du mois affiché (`PUT /paies/{id}/jour/`), tant que l'état n'est pas soumis. */
 export const useChoisirLeJour = (utilisateur: string | undefined) =>
   useActionPaie<string>(
     utilisateur,
     (jour) => envoyer<InstantanePaie>('jour/', 'PUT', { jour }),
-    async (jour) => {
-      await parametresUpdate('jour_de_paie', {
-        valeur: Number(jour.slice(8)),
-        motif: 'Jour de paie choisi depuis l’écran Personnel et paie',
-      } as never);
+    async (jour, avant) => {
+      await paiesJourUpdate(etatDe(avant), { jour });
       return {};
     },
   );
-/** Le serveur n'a pas de jour de paie par mois : seul le jour commun se change (E46). */
+/** Prépare l'état d'un mois et fixe son jour de paie. */
 export const usePlanifierLeMois = (utilisateur: string | undefined) =>
   useActionPaie<{ mois: string; jour: string }>(
     utilisateur,
     (demande) => envoyer<InstantanePaie>('calendrier/', 'PUT', demande),
-    () => Promise.reject(refus('indisponible')),
+    async ({ mois, jour }) => {
+      const etat = (await paiesPreparerCreate({ mois: `${mois}-01` })).data as unknown as {
+        id: number;
+      };
+      await paiesJourUpdate(etat.id, { jour });
+      return {};
+    },
   );
 /** Absences (jours) et avances d'une ligne, tant que l'état est en brouillon (réel seulement). */
 export const useModifierLigne = (utilisateur: string | undefined) =>

@@ -9,10 +9,12 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
   clePersonnel,
   useAjouterLigne,
+  useChoisirLeJour,
   useCreerEmploye,
   useModifierLigne,
   usePayer,
   usePayerLesRestes,
+  usePlanifierLeMois,
   usePreparer,
   useRetirerLigne,
   useSoumettre,
@@ -36,6 +38,8 @@ const MOIS = new Intl.DateTimeFormat('fr-CA', { timeZone: 'Africa/Douala' })
 const LIGNE = {
   id: 5,
   employe: 'Aïcha Boulangère',
+  employe_id: 1,
+  poste: 'Boulangère',
   base: 130000,
   absences: '1.0',
   montant_absences: 5000,
@@ -76,26 +80,53 @@ const LIGNE = {
     },
   ],
 };
-const ETAT = (statut: string, mois = MOIS) => ({
+const ETAT = (statut: string, mois = MOIS, extra: Record<string, unknown> = {}) => ({
   id: 3,
   mois: `${mois}-01`,
   statut,
+  jour_de_paie: `${mois}-05`,
+  soumis_par: statut === 'brouillon' ? null : 'Willy Gérant',
+  valide_par: null,
+  valide_le: null,
+  demande: null,
   total_net: 117000,
   lignes: [LIGNE],
+  ...extra,
 });
-const DEMANDE = {
-  id: 21,
-  numero: 21,
-  type: 'paie',
-  objet_id: 3,
-  statut: 'en_attente',
-  emetteur: { nom: 'Willy Gérant' },
-  decide_par_nom: '',
-  decide_le: null,
-};
 const page = <T,>(results: T[]) => ({ count: results.length, next: null, previous: null, results });
 
-function serveurPaie(etats: unknown[], demandes: unknown[] = []) {
+/** Le calendrier du serveur : un mois par ligne, avec son jour de paie et les jours possibles. */
+const CALENDRIER = [
+  {
+    mois: '2026-09',
+    etat: 1,
+    jour: '2026-09-05',
+    statut: 'payee',
+    total: 100000,
+    impayes: 0,
+    jours: ['2026-09-05'],
+  },
+  {
+    mois: '2026-10',
+    etat: 2,
+    jour: '2026-10-05',
+    statut: 'en_retard',
+    total: 117000,
+    impayes: 97000,
+    jours: ['2026-10-05'],
+  },
+  {
+    mois: MOIS,
+    etat: 3,
+    jour: `${MOIS}-05`,
+    statut: 'courante',
+    total: 117000,
+    impayes: 97000,
+    jours: [`${MOIS}-05`, `${MOIS}-10`, `${MOIS}-15`],
+  },
+];
+
+function serveurPaie(etats: unknown[], calendrier: unknown[] = CALENDRIER) {
   serveur.use(
     http.get('*/api/v1/paies/', () => HttpResponse.json(page(etats))),
     http.get('*/api/v1/employes/', () =>
@@ -112,16 +143,13 @@ function serveurPaie(etats: unknown[], demandes: unknown[] = []) {
         ]),
       ),
     ),
-    http.get('*/api/v1/demandes/', () => HttpResponse.json(page(demandes))),
-    http.get('*/api/v1/parametres/', () =>
-      HttpResponse.json([{ cle: 'jour_de_paie', valeur: 5, choix: [5, 10, 15] }]),
-    ),
+    http.get('*/api/v1/paies/calendrier/', () => HttpResponse.json(calendrier)),
   );
 }
 
 describe('lecture du personnel et de la paie sur le vrai serveur', () => {
   it('compose l’état du mois : lignes, ajustements, paiements, demande en attente', async () => {
-    serveurPaie([ETAT('soumis')], [DEMANDE]);
+    serveurPaie([ETAT('soumis', MOIS, { demande: { id: 21, numero: 21, statut: 'en_attente' } })]);
     const i = await lirePersonnelReel();
     expect(i).toMatchObject({
       mois: MOIS,
@@ -168,9 +196,32 @@ describe('lecture du personnel et de la paie sur le vrai serveur', () => {
   });
 
   it('sans état pour le mois : une ligne par employé actif et le mois à préparer', async () => {
-    serveurPaie([ETAT('payee', '2020-01')]);
+    serveurPaie(
+      [ETAT('payee', '2020-01')],
+      [
+        {
+          mois: '2020-01',
+          etat: 3,
+          jour: '2020-01-05',
+          statut: 'payee',
+          total: 117000,
+          impayes: 0,
+          jours: ['2020-01-05'],
+        },
+        {
+          mois: MOIS,
+          etat: null,
+          jour: `${MOIS}-05`,
+          statut: 'a_venir',
+          total: 0,
+          impayes: 0,
+          jours: [`${MOIS}-05`, `${MOIS}-10`],
+        },
+      ],
+    );
     const i = await lirePersonnelReel();
     expect(i.aPreparer).toBe(MOIS);
+    expect(i.joursPossibles).toEqual([`${MOIS}-05`, `${MOIS}-10`]);
     expect(i.etat).toBeUndefined();
     expect(i.employes.map((e) => [e.nom, e.base])).toEqual([
       ['Aïcha Boulangère', 130000],
@@ -179,18 +230,14 @@ describe('lecture du personnel et de la paie sur le vrai serveur', () => {
     expect(i.calendrier.at(-1)).toMatchObject({ mois: MOIS, statut: 'planifiee' });
   });
 
-  it('état validé : le valideur et son heure viennent de la demande accordée', async () => {
-    serveurPaie(
-      [ETAT('en_paiement')],
-      [
-        {
-          ...DEMANDE,
-          statut: 'accordee',
-          decide_par_nom: 'Patron Dev',
-          decide_le: `${MOIS}-02T10:30:00+01:00`,
-        },
-      ],
-    );
+  it('état validé : le valideur et son heure viennent de l’état', async () => {
+    serveurPaie([
+      ETAT('en_paiement', MOIS, {
+        valide_par: 'Patron Dev',
+        valide_le: `${MOIS}-02T10:30:00+01:00`,
+        demande: { id: 21, numero: 21, statut: 'accordee' },
+      }),
+    ]);
     const i = await lirePersonnelReel();
     expect(i).toMatchObject({
       statut: 'en-paiement',
@@ -200,20 +247,18 @@ describe('lecture du personnel et de la paie sur le vrai serveur', () => {
     });
   });
 
-  it('le calendrier et le jour de paie', () => {
+  it('le calendrier du serveur : statuts, totaux payés et impayés, jours possibles du mois courant', () => {
     expect(jourDePaieDuMois('2026-02', 31)).toBe('2026-02-28');
-    const mois = versCalendrier(
-      [ETAT('payee', '2026-09'), ETAT('soumis', '2026-10')] as never,
-      '2026-11',
-      5,
-      '2026-11',
-    );
+    const mois = versCalendrier(CALENDRIER as never);
     expect(mois.map((m) => [m.mois, m.statut])).toEqual([
       ['2026-09', 'payee'],
       ['2026-10', 'partielle'],
-      ['2026-11', 'planifiee'],
+      [MOIS, 'courante'],
     ]);
+    // Total payé = net − reste ; les impayés sont reportés.
     expect(mois[1]).toMatchObject({ total: 20000, impayes: 97000 });
+    expect(mois[2]?.jours).toEqual([`${MOIS}-05`, `${MOIS}-10`, `${MOIS}-15`]);
+    expect(mois[0]?.jours).toBeUndefined();
   });
 });
 
@@ -341,5 +386,38 @@ describe('actions sur le vrai serveur', () => {
       wrapper: wrapper(new QueryClient()),
     });
     await expect(result.current.mutateAsync()).rejects.toMatchObject({ code: 'etat_inconnu' });
+  });
+
+  it('choisit le jour de paie de l’état affiché, et planifie un mois pas encore préparé', async () => {
+    serveurPaie([ETAT('brouillon')]);
+    const client = new QueryClient();
+    client.setQueryData(clePersonnel('Willy'), await lirePersonnelReel());
+    const recus: { chemin: string; corps: unknown }[] = [];
+    serveur.use(
+      http.put('*/api/v1/paies/3/jour/', async ({ request }) => {
+        recus.push({ chemin: 'jour 3', corps: await request.json() });
+        return HttpResponse.json(ETAT('brouillon'));
+      }),
+      http.post('*/api/v1/paies/preparer/', async ({ request }) => {
+        recus.push({ chemin: 'preparer', corps: await request.json() });
+        return HttpResponse.json({ ...ETAT('brouillon', '2099-01'), id: 8 }, { status: 201 });
+      }),
+      http.put('*/api/v1/paies/8/jour/', async ({ request }) => {
+        recus.push({ chemin: 'jour 8', corps: await request.json() });
+        return HttpResponse.json(ETAT('brouillon'));
+      }),
+    );
+    const w = wrapper(client);
+    const jour = renderHook(() => useChoisirLeJour('Willy'), { wrapper: w });
+    const planifier = renderHook(() => usePlanifierLeMois('Willy'), { wrapper: w });
+    await act(async () => {
+      await jour.result.current.mutateAsync(`${MOIS}-10`);
+      await planifier.result.current.mutateAsync({ mois: '2099-01', jour: '2099-01-10' });
+    });
+    expect(recus).toEqual([
+      { chemin: 'jour 3', corps: { jour: `${MOIS}-10` } },
+      { chemin: 'preparer', corps: { mois: '2099-01-01' } },
+      { chemin: 'jour 8', corps: { jour: '2099-01-10' } },
+    ]);
   });
 });

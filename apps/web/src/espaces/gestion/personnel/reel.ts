@@ -1,15 +1,13 @@
 import {
-  demandesList,
   employesList,
+  paiesCalendrierList,
   paiesList,
-  parametresList,
   toutesLesPages,
-  type Demande,
   type ElementPaie,
   type Employe as EmployeServeur,
   type EtatPaie,
   type LignePaie,
-  type Parametre,
+  type MoisDuCalendrier as MoisServeur,
   type PaiementSalaire,
 } from '@/api';
 
@@ -24,9 +22,9 @@ import type {
 } from './types.ts';
 
 /*
- * Lecture de « Gestion › Personnel et paie » sur le vrai serveur : `paies/` (états et lignes),
- * `employes/` (poste), `demandes/` (la validation de l'état) et le paramètre `jour_de_paie`. Le
- * serveur n'a pas de calendrier : il est déduit des états déjà préparés (voir E46).
+ * Lecture de « Gestion › Personnel et paie » sur le vrai serveur : `paies/` (états, lignes avec leur
+ * employé et leur poste, qui a soumis et validé, la demande liée), `paies/calendrier/` (un jour de paie
+ * par mois, les jours possibles) et `employes/` (pour un mois pas encore préparé) (voir E46).
  */
 
 type Page<T> = { data: { results?: T[]; next?: string | null } };
@@ -80,11 +78,11 @@ export function versPaiement(p: PaiementSalaire): Paiement {
 }
 
 /** Une ligne du serveur : l'identifiant de l'écran est celui de la ligne de paie. */
-export function versEmploye(ligne: LignePaie, poste: string): Employe {
+export function versEmploye(ligne: LignePaie): Employe {
   return {
     id: String(ligne.id),
     nom: ligne.employe,
-    poste,
+    poste: ligne.poste,
     base: ligne.base,
     absences: Number(ligne.absences),
     avances: ligne.avances,
@@ -94,56 +92,50 @@ export function versEmploye(ligne: LignePaie, poste: string): Employe {
   };
 }
 
-const sommePayee = (etat: EtatPaie) => etat.lignes.reduce((somme, l) => somme + l.paye, 0);
-const sommeReste = (etat: EtatPaie) => etat.lignes.reduce((somme, l) => somme + l.reste, 0);
+const STATUTS_CALENDRIER: Record<string, MoisDuCalendrier['statut']> = {
+  payee: 'payee',
+  partielle: 'partielle',
+  en_retard: 'partielle',
+  courante: 'courante',
+  a_venir: 'planifiee',
+};
 
-/** Le calendrier : un mois par état préparé, du plus ancien au plus récent. */
-export function versCalendrier(
-  etats: readonly EtatPaie[],
-  courant: string,
-  jour: number,
-  aPreparer: string | null,
-): MoisDuCalendrier[] {
-  const mois = [...etats]
-    .sort((a, b) => a.mois.localeCompare(b.mois))
-    .map((e): MoisDuCalendrier => {
-      const m = moisDuServeur(e.mois);
-      const base = { mois: m, jour: jourDePaieDuMois(m, jour) };
-      if (e.statut === 'payee') return { ...base, statut: 'payee', total: sommePayee(e) };
-      if (m < courant) {
-        return {
-          ...base,
-          statut: 'partielle',
-          total: sommePayee(e),
-          impayes: sommeReste(e),
-        };
-      }
-      return { ...base, statut: 'courante' };
+/** Le calendrier du serveur : un mois par ligne, avec son jour de paie et les jours possibles. */
+export function versCalendrier(mois: readonly MoisServeur[]): MoisDuCalendrier[] {
+  return [...mois]
+    .sort((x, y) => x.mois.localeCompare(y.mois))
+    .map((m): MoisDuCalendrier => {
+      const statut = STATUTS_CALENDRIER[m.statut] ?? 'courante';
+      return {
+        mois: m.mois,
+        jour: m.jour,
+        statut,
+        ...(statut === 'payee' || statut === 'partielle'
+          ? { total: m.total - m.impayes, ...(m.impayes ? { impayes: m.impayes } : {}) }
+          : {}),
+        ...(m.jours.length > 1 && (statut === 'courante' || statut === 'planifiee')
+          ? { jours: m.jours }
+          : {}),
+      };
     });
-  return aPreparer
-    ? [...mois, { mois: aPreparer, jour: jourDePaieDuMois(aPreparer, jour), statut: 'planifiee' }]
-    : mois;
 }
 
 const aujourdhuiLocal = () =>
   new Intl.DateTimeFormat('fr-CA', { timeZone: FUSEAU }).format(new Date());
 
 export async function lirePersonnelReel(): Promise<InstantanePaie> {
-  const [etats, employes, demandes, parametres] = await Promise.all([
+  const [etats, employes, calendrierServeur] = await Promise.all([
     toutesLesPages<EtatPaie>((page) => paiesList({ page }) as Promise<Page<EtatPaie>>),
     toutesLesPages<EmployeServeur>(
       (page) => employesList({ page }) as Promise<Page<EmployeServeur>>,
     ),
-    toutesLesPages<Demande>(
-      (page) => demandesList({ type: 'paie', page }) as Promise<Page<Demande>>,
-    ).catch(() => [] as Demande[]),
-    parametresList().catch(() => null),
+    paiesCalendrierList()
+      .then((r) => (Array.isArray(r.data) ? (r.data as MoisServeur[]) : []))
+      .catch(() => [] as MoisServeur[]),
   ]);
   const aujourdhui = aujourdhuiLocal();
   const courant = aujourdhui.slice(0, 7);
-  const parametre = ((parametres?.data ?? []) as Parametre[]).find((p) => p.cle === 'jour_de_paie');
-  const jour = Number(parametre?.valeur ?? 5);
-  const postes = new Map(employes.map((e) => [e.nom, e.poste ?? ''] as const));
+  const calendrier = versCalendrier(calendrierServeur);
 
   const recent = [...etats].sort((a, b) => b.mois.localeCompare(a.mois))[0];
   // Le dernier état est affiché tant qu'il est du mois ou pas soldé ; sinon, le mois est à préparer.
@@ -153,11 +145,10 @@ export async function lirePersonnelReel(): Promise<InstantanePaie> {
       : undefined;
   const aPreparer = aAfficher ? null : courant;
   const mois = aAfficher ? moisDuServeur(aAfficher.mois) : courant;
-  const demandeDe = aAfficher
-    ? demandes.filter((d) => d.objet_id === aAfficher.id).sort((a, b) => b.id - a.id)[0]
-    : undefined;
+  const duMois = calendrierServeur.find((m) => m.mois === mois);
+  const demandeLiee = aAfficher?.demande ?? null;
   const lignes: Employe[] = aAfficher
-    ? aAfficher.lignes.map((l) => versEmploye(l, postes.get(l.employe) ?? ''))
+    ? aAfficher.lignes.map(versEmploye)
     : employes
         .filter((e) => e.actif !== false)
         .map((e) => ({
@@ -171,21 +162,20 @@ export async function lirePersonnelReel(): Promise<InstantanePaie> {
           ajustements: [],
           paiements: [],
         }));
-  const choix = (parametre?.choix ?? []) as number[];
   return {
     mois,
     statut: aAfficher ? (STATUTS[aAfficher.statut] ?? 'brouillon') : 'brouillon',
-    jourDePaie: jourDePaieDuMois(mois, jour),
-    joursPossibles: choix.map((c) => jourDePaieDuMois(mois, c)),
-    soumisPar: demandeDe?.emetteur ? ((demandeDe.emetteur as { nom?: string }).nom ?? '') : '',
-    validePar: demandeDe?.decide_par_nom ?? '',
-    valideA: demandeDe?.decide_le ? heureDeYaounde(demandeDe.decide_le) : '',
+    jourDePaie: aAfficher?.jour_de_paie ?? duMois?.jour ?? jourDePaieDuMois(mois, 5),
+    joursPossibles: duMois?.jours ?? [],
+    soumisPar: aAfficher?.soumis_par ?? '',
+    validePar: aAfficher?.valide_par ?? '',
+    valideA: aAfficher?.valide_le ? heureDeYaounde(aAfficher.valide_le) : '',
     demande:
-      demandeDe && demandeDe.statut === 'en_attente'
-        ? { id: String(demandeDe.id), numero: demandeDe.numero }
+      demandeLiee && demandeLiee.statut === 'en_attente'
+        ? { id: String(demandeLiee.id), numero: demandeLiee.numero }
         : null,
     employes: lignes,
-    calendrier: versCalendrier(etats, courant, jour, aPreparer),
+    calendrier,
     aujourdhui,
     ...(aAfficher ? { etat: aAfficher.id } : { aPreparer }),
   };
