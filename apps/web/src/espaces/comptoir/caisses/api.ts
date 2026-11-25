@@ -14,7 +14,6 @@ import {
   type Semaine,
 } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
-import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { PLAFOND_CAISSE } from './regles.ts';
@@ -31,19 +30,6 @@ import type {
 
 /** Receveur « le coffre » d'une remise : le serveur le reconnaît à l'absence de receveur. */
 export const COFFRE = 'coffre';
-
-// En simulation, l'écran lit l'API simulée ; sur le vrai serveur, `lireCaisses` compose les routes.
-const RACINE = '/api/v1/simulation/caisses/';
-const JSON_ENTETES = { 'Content-Type': 'application/json' };
-
-type Reponse<T> = { data: T };
-
-const poster = <T = undefined>(chemin: string, corps: object) =>
-  optiboulFetch<Reponse<T>>(`${RACINE}${chemin}`, {
-    method: 'POST',
-    headers: JSON_ENTETES,
-    body: JSON.stringify(corps),
-  });
 
 /** Clé des caisses : elle contient la personne connectée, pour ne jamais montrer celles d'une autre. */
 export const cleCaisses = (utilisateur: string | undefined) =>
@@ -100,7 +86,8 @@ export async function lireCaisses(moi: string): Promise<ReponseCaisses> {
     ),
   ]);
   const gerant = semaines?.data.results?.[0]?.gerant;
-  const ouverte = caisses.find((c) => c.en_cours);
+  // La caissière ne reçoit que ses caisses : la caisse ouverte d'une autre vient de `prochaine`.
+  const ouverte = caisses.find((c) => c.en_cours) ?? prochaine.data.caisse_en_cours ?? undefined;
   // Le détail des espèces (fonds, encaissé, dépenses, remises) de la caisse ouverte, ou à défaut de la
   // dernière fermée : le récapitulatif de clôture annonce ses dépenses. Réservé à qui peut voir la caisse.
   const caisseDuDetail =
@@ -138,7 +125,8 @@ export async function lireCaisses(moi: string): Promise<ReponseCaisses> {
     sessions: triees,
     caisseOuverte: ouverte
       ? (() => {
-          const s = triees.find((x) => x.id === String(ouverte.id)) as SessionCaisse;
+          const s =
+            triees.find((x) => x.id === String(ouverte.id)) ?? versSessionDeCaisse(ouverte, null);
           return {
             id: s.id,
             jour: s.jour,
@@ -175,11 +163,8 @@ export function useCaisses(utilisateur: string | undefined) {
   const { utilisateur: connecte } = useUtilisateurCourant();
   return useQuery({
     queryKey: cleCaisses(utilisateur),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<ReponseCaisses>>(RACINE)).data
-        : lireCaisses(String(connecte?.id ?? '')),
-    enabled: Boolean(utilisateur) && (SIMULATION || Boolean(connecte)),
+    queryFn: () => lireCaisses(String(connecte?.id ?? '')),
+    enabled: Boolean(utilisateur) && Boolean(connecte),
     // Les espèces bougent à chaque livraison et chaque dépense : on relit à chaque ouverture de l'écran.
     staleTime: 0,
     refetchOnMount: 'always',
@@ -189,14 +174,12 @@ export function useCaisses(utilisateur: string | undefined) {
 /** Une action sur les caisses, puis rechargement de la liste. */
 function useActionCaisse<Demande extends object, Resultat = undefined>(
   utilisateur: string | undefined,
-  chemin: string,
-  /** Même action sur le vrai serveur (en simulation, on appelle la route simulée). */
+  /** L'action sur le serveur. */
   surLeServeur: (demande: Demande) => Promise<Resultat>,
 ) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (demande: Demande): Promise<Resultat> =>
-      SIMULATION ? (await poster<Resultat>(chemin, demande)).data : surLeServeur(demande),
+    mutationFn: (demande: Demande): Promise<Resultat> => surLeServeur(demande),
     // La pastille « Session … » de l'en-tête dérive du contexte : on le relit aussi.
     onSuccess: () =>
       Promise.all([
@@ -210,20 +193,20 @@ function useActionCaisse<Demande extends object, Resultat = undefined>(
 const sansCaisse = () => Promise.reject(new Error('Aucune caisse choisie'));
 
 export const useOuvrirCaisse = (utilisateur: string | undefined) =>
-  useActionCaisse<OuvertureDemandee>(utilisateur, 'ouvrir/', async ({ fonds }) => {
+  useActionCaisse<OuvertureDemandee>(utilisateur, async ({ fonds }) => {
     await caissesOuvrirCreate({ fonds });
   });
 
 /** Ferme la caisse ouverte (`idCaisse`) avec le comptage des espèces. */
 export const useFermerCaisse = (utilisateur: string | undefined, idCaisse?: string) =>
-  useActionCaisse<FermetureDemandee>(utilisateur, 'fermer/', async ({ compte }) => {
+  useActionCaisse<FermetureDemandee>(utilisateur, async ({ compte }) => {
     if (!idCaisse) return sansCaisse();
     await caissesFermerCreate(Number(idCaisse), { compte });
   });
 
 /** Rouvre la dernière caisse fermée (`idCaisse`), avec son motif. */
 export const useRouvrirCaisse = (utilisateur: string | undefined, idCaisse?: string) =>
-  useActionCaisse<ReouvertureDemandee>(utilisateur, 'rouvrir/', async ({ motif }) => {
+  useActionCaisse<ReouvertureDemandee>(utilisateur, async ({ motif }) => {
     if (!idCaisse) return sansCaisse();
     await caissesRouvrirCreate(Number(idCaisse), { motif });
   });
@@ -233,16 +216,12 @@ export const useRouvrirCaisse = (utilisateur: string | undefined, idCaisse?: str
  * double clic ne remet pas deux fois la même somme.
  */
 export const useRemettreAuCoffre = (utilisateur: string | undefined, idCaisse?: string) =>
-  useActionCaisse<RemiseDemandee, RemiseEnregistree>(
-    utilisateur,
-    'remettre/',
-    async ({ montant, receveur }) => {
-      if (!idCaisse) return sansCaisse();
-      const reponse = await caissesRemettreCreate(
-        Number(idCaisse),
-        { montant, receveur: receveur === COFFRE ? null : Number(receveur) },
-        { headers: { 'Idempotency-Key': crypto.randomUUID() } },
-      );
-      return { attendu: (reponse.data as { attendu: number }).attendu, receveur, heure: '' };
-    },
-  );
+  useActionCaisse<RemiseDemandee, RemiseEnregistree>(utilisateur, async ({ montant, receveur }) => {
+    if (!idCaisse) return sansCaisse();
+    const reponse = await caissesRemettreCreate(
+      Number(idCaisse),
+      { montant, receveur: receveur === COFFRE ? null : Number(receveur) },
+      { headers: { 'Idempotency-Key': crypto.randomUUID() } },
+    );
+    return { attendu: (reponse.data as { attendu: number }).attendu, receveur, heure: '' };
+  });

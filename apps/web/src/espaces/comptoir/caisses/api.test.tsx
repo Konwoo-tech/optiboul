@@ -180,11 +180,32 @@ describe('lecture des caisses sur le vrai serveur', () => {
     expect(reponse.sessions).toHaveLength(2);
   });
 
+  it('la caisse ouverte d’une autre caissière (absente de sa liste) vient de « prochaine »', async () => {
+    serveurCaisses();
+    serveur.use(
+      http.get('*/api/v1/caisses/', () =>
+        HttpResponse.json({ count: 1, next: null, previous: null, results: [FERMEE] }),
+      ),
+    );
+    const reponse = await lireCaisses('9');
+    expect(reponse.caisseOuverte).toMatchObject({ id: '2', type: 'jour', jour: '2026-11-13' });
+    expect(reponse.sessions.map((s) => s.id)).toEqual(['1']);
+  });
+
   it('la dernière caisse fermée peut être rouverte quand aucune n’est ouverte', async () => {
     serveurCaisses();
     serveur.use(
       http.get('*/api/v1/caisses/', () =>
         HttpResponse.json({ count: 1, next: null, previous: null, results: [FERMEE] }),
+      ),
+      http.get('*/api/v1/caisses/prochaine/', () =>
+        HttpResponse.json({
+          jour: '2026-11-13',
+          creneau: 'jour',
+          planifiee: null,
+          fonds_propose: 20000,
+          caisse_en_cours: null,
+        }),
       ),
     );
     const reponse = await lireCaisses('4');
@@ -199,6 +220,15 @@ describe('lecture des caisses sur le vrai serveur', () => {
     serveur.use(
       http.get('*/api/v1/caisses/', () =>
         HttpResponse.json({ count: 1, next: null, previous: null, results: [FERMEE] }),
+      ),
+      http.get('*/api/v1/caisses/prochaine/', () =>
+        HttpResponse.json({
+          jour: '2026-11-13',
+          creneau: 'jour',
+          planifiee: null,
+          fonds_propose: 20000,
+          caisse_en_cours: null,
+        }),
       ),
       http.get('*/api/v1/caisses/1/especes/', () =>
         HttpResponse.json({ ...ESPECES, depenses: 3000, attendu: 18600 }),
