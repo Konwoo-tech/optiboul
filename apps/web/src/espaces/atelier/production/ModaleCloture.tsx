@@ -2,6 +2,7 @@ import { useTranslation } from '@/i18n';
 import { FenetreModale } from '@/ui';
 import { formaterNombre } from '@/utils';
 
+import { uniteMatiere } from '../stocks/affichage.ts';
 import { nomDeMatiere } from './affichage.ts';
 import styles from './Production.module.css';
 import { sortiesDeStock } from './regles.ts';
@@ -49,7 +50,7 @@ export function ModaleCloture({
             <li className={styles.sortie} key={sortie.matiere}>
               <span>{nomDeMatiere(t, sortie.matiere)}</span>
               <span className={styles.sortieValeur}>
-                {`−${virgule(sortie.quantite)} ${t(`comptoir.depenses.matieres.${sortie.matiere}.unite`)}`}{' '}
+                {`−${virgule(sortie.quantite)} ${uniteMatiere(t, sortie.matiere)}`}{' '}
                 <span className={styles.sortieReste}>
                   · {t('atelier.production.cloture.reste', { stock: virgule(restant) })}
                   {insuffisant && (

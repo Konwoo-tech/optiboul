@@ -39,6 +39,7 @@ export function ModaleReception({
   const [tropGrande, setTropGrande] = useState(false);
   const [prixTexte, setPrixTexte] = useState('');
   const [prixManquant, setPrixManquant] = useState(false);
+  const [prixDecimal, setPrixDecimal] = useState(false);
   const idErreur = useId();
   const champ = useRef<HTMLInputElement>(null);
 
@@ -51,7 +52,8 @@ export function ModaleReception({
       champ.current?.focus();
       return;
     }
-    const prix = avecPrix ? Number(prixTexte.replace(/D/g, '')) : undefined;
+    // Le prix se saisit par unité de stock (le gramme pour la levure) : décimal accepté (2,5).
+    const prix = avecPrix ? Number(prixTexte.replace(',', '.')) : undefined;
     if (avecPrix && !prix) {
       setPrixManquant(true);
       return;
@@ -61,6 +63,8 @@ export function ModaleReception({
       : await onConfirmer(valeur, observation.trim(), prix);
     if (refus === 'prix_obligatoire') {
       setPrixManquant(true);
+    } else if (refus === 'prix_decimal') {
+      setPrixDecimal(true);
     } else if (refus) {
       // La saisie est gardée : l'erreur est sur le champ.
       setInvalide(true);
@@ -115,14 +119,20 @@ export function ModaleReception({
             <input
               className={styles.champ}
               value={prixTexte}
-              inputMode="numeric"
-              aria-invalid={prixManquant}
+              inputMode="decimal"
+              aria-invalid={prixManquant || prixDecimal}
               onChange={(e) => {
-                setPrixTexte(e.target.value.replace(/D/g, ''));
+                setPrixTexte(filtrerQuantite(e.target.value));
                 setPrixManquant(false);
+                setPrixDecimal(false);
               }}
             />
           </label>
+          {prixDecimal && (
+            <span className={styles.erreurModale} role="alert">
+              {t('gestion.fournisseurs.reception.erreurs.prix_decimal')}
+            </span>
+          )}
           {prixManquant && (
             <span className={styles.erreurModale} role="alert">
               {t('gestion.fournisseurs.reception.erreurs.prix_obligatoire')}

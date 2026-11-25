@@ -1,11 +1,18 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- Tableaux en grille CSS (colonnes de la maquette, valeur par valeur) : passer à <table> changerait la mise en page au pixel près ; les rôles ARIA table, row et cell portent la sémantique. */
 import { useTranslation } from '@/i18n';
+import { SIMULATION } from '@/simulation';
 import { formaterNombre } from '@/utils';
 import { Link } from 'react-router';
 
 import { libelleProduit } from './affichage.ts';
 import styles from './Production.module.css';
-import { besoinEnFarine, bornerSupplement, supplementEnDemande, totalSacs } from './regles.ts';
+import {
+  besoinEnFarine,
+  bornerSupplement,
+  KG_PAR_SAC,
+  supplementEnDemande,
+  totalSacs,
+} from './regles.ts';
 import {
   CLES_PRODUIT,
   MOTIFS_SUPPLEMENT,
@@ -66,7 +73,8 @@ export function PanneauPlan({
   const commandes = CLES_PRODUIT.reduce((somme, cle) => somme + demande[cle].commande, 0);
   const suggestion = CLES_PRODUIT.reduce((somme, cle) => somme + demande[cle].besoin, 0);
   const besoin = besoinEnFarine(plan, supplement);
-  const farine = stock.farine;
+  // Le plan compte la farine en sacs à pétrir (50 kg) ; le stock du vrai serveur est en kg.
+  const farine = SIMULATION ? stock.farine : stock.farine / KG_PAR_SAC;
   const arrondi = (valeur: number) =>
     String(Math.round(valeur * 100) / 100).replace('.', langue === 'en' ? '.' : ',');
 

@@ -122,7 +122,7 @@ export type InstantaneProduction = {
   justification: Justification | null;
   /** Écart de matière toléré par sac travaillé, en kg (R10). */
   seuilEcartKg: number;
-  /** Stock actuel de chaque matière, dans l'unité du stock (farine en sacs). */
+  /** Stock actuel de chaque matière, dans l'unité du stock (serveur : farine en kg, sel, levure, améliorant en g ; simulation : farine en sacs). */
   stock: Record<Matiere, number>;
   demandeEnAttente: DemandeProduction | null;
   /** Plus anciennes d'abord. */

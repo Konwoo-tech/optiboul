@@ -61,9 +61,6 @@ const MATIERES_SUIVIES: readonly Matiere[] = [
 const estMatiere = (code: string): code is Matiere =>
   (MATIERES_SUIVIES as readonly string[]).includes(code);
 
-/** Kilos de farine dans un sac : le stock de l'écran compte la farine en sacs. */
-const KG_PAR_SAC = 50;
-
 const FUSEAU = 'Africa/Douala';
 const heureDeYaounde = (iso: string) =>
   new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: FUSEAU }).format(
@@ -333,10 +330,7 @@ export async function lireProductionReelle(): Promise<InstantaneProduction> {
     // Tolérance réglée dans les paramètres, que le serveur redit avec la production.
     seuilEcartKg: enCours?.tolerance_ecart_kg ?? 0.5,
     stock: Object.fromEntries(
-      MATIERES_SUIVIES.map((m) => [
-        m,
-        m === 'farine' ? Number(quantites[m] ?? 0) / KG_PAR_SAC : Number(quantites[m] ?? 0),
-      ]),
+      MATIERES_SUIVIES.map((m) => [m, Number(quantites[m] ?? 0)]),
     ) as Record<Matiere, number>,
     demandeEnAttente:
       demandes.map((d) => versDemandeProduction(d)).find((d) => d !== undefined) ?? null,

@@ -1,3 +1,5 @@
+import { SIMULATION } from '@/simulation';
+
 import type { Profil } from '../../../profils.ts';
 import { ajouterJours } from '../../atelier/stocks/regles.ts';
 import type { Commande, Facture, Matiere } from './types.ts';
@@ -80,8 +82,12 @@ export const NIVEAU_FACTURE: Record<EtatFacture, NiveauMot> = {
 /** Une facture se paie tant qu'elle est « à payer » (en retard comprise). */
 export const sePaie = (facture: Pick<Facture, 'statut'>): boolean => facture.statut === 'a-payer';
 
-/** Borne haute d'une quantité saisie (dans l'unité de la matière) : au-delà, c'est une faute de frappe. */
-export const QUANTITE_MAX = 10_000;
+/**
+ * Borne haute d'une quantité saisie (dans l'unité de la matière) : au-delà, c'est une faute de
+ * frappe. Sur le vrai serveur, sel, levure et améliorant se comptent en grammes : la borne est mille
+ * fois plus haute (1 000 kg).
+ */
+export const QUANTITE_MAX = SIMULATION ? 10_000 : 1_000_000;
 
 export const quantiteTropGrande = (valeur: number): boolean => valeur > QUANTITE_MAX;
 

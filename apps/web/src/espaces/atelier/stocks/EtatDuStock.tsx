@@ -61,7 +61,7 @@ export function EtatDuStock({ instantane }: { instantane: InstantaneStocks }) {
                       ? `${jourCourt(prochaine.jour, langue)} · ${quantite(prochaine.quantite, langue)} ${unite}`
                       : '—'}
                   </td>
-                  <td>{formaterNombre(m.stock * m.prix)}</td>
+                  <td>{formaterNombre(Math.round(m.stock * m.prix))}</td>
                   <Mot cellule niveau={NIVEAU_STOCK[niveau]} className={styles.motDansTableau}>
                     {t(`atelier.stocks.etat.niveaux.${niveau}`)}
                   </Mot>

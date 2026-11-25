@@ -1,3 +1,4 @@
+import { SIMULATION } from '@/simulation';
 import { formaterNombre } from '@/utils';
 
 import type { Profil } from '../../../profils.ts';
@@ -34,6 +35,9 @@ export const GUICHET_MOYEN: Quantites = { BAG: 120, KO: 60, GC: 20 };
 
 /** Écart de matière toléré par sac travaillé, en kg (R10). */
 export const SEUIL_ECART_KG_PAR_SAC = 2;
+
+/** Kilos de farine dans un sac à pétrir (le plan compte la farine en sacs). */
+export const KG_PAR_SAC = 50;
 
 /** Sacs de farine d'une session type : la cuisson (bois et huile) se répartit dessus. */
 export const SACS_PAR_SESSION = 8;
@@ -203,7 +207,9 @@ export function sortiesDeStock(consommation: Consommation): SortieDeStock[] {
   for (const matiere of MATIERES_CONSOMMEES) {
     const valeur = consommation[matiere];
     if (valeur === null) continue;
-    const quantite = Math.round(valeur * MATIERES_PESEES[matiere].stockParUnite * 100) / 100;
+    // Sur le vrai serveur, le stock se compte dans l'unité de la consommation : rien à convertir.
+    const facteur = SIMULATION ? MATIERES_PESEES[matiere].stockParUnite : 1;
+    const quantite = Math.round(valeur * facteur * 100) / 100;
     if (quantite > 0) sorties.push({ matiere, quantite });
   }
   return sorties;

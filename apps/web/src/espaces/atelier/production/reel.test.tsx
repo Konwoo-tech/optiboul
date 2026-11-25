@@ -228,10 +228,11 @@ describe('lecture de la production sur le vrai serveur', () => {
     expect(i.plan.lignes.GC).toMatchObject({ pains: 8, sacs: 1, supplement: 1, boules: 11 });
     expect(i.demande.BAG).toMatchObject({ commande: 170, estimee: 170, prevus: 315 });
     expect(i.realise).toEqual({ BAG: 200, KO: null, GC: null });
-    // L'eau n'est pas une matière suivie ; la farine compte en sacs dans le stock.
+    // L'eau n'est pas une matière suivie.
     expect(i.consommation).toMatchObject({ farine: 49.5, sel: null });
     expect(i.consommation).not.toHaveProperty('eau');
-    expect(i.stock.farine).toBe(2);
+    // Le stock est dans l'unité du serveur : la farine en kg (100), pas en sacs.
+    expect(i.stock.farine).toBe(100);
     expect(i.productionId).toBe('9');
     expect(i.demandeEnAttente).toMatchObject({ id: '4', numero: 4, total: 3, motif: 'guichet' });
     // Jalons du cycle et tolérance, tels que le serveur les donne.

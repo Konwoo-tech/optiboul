@@ -438,31 +438,38 @@
       "matieres": {
         "farine": {
           "nom": "Flour",
-          "unite": "sacks"
+          "unite": "sacks",
+          "uniteServeur": "kg"
         },
         "sel": {
           "nom": "Salt",
-          "unite": "kg"
+          "unite": "kg",
+          "uniteServeur": "g"
         },
         "levure": {
           "nom": "Yeast",
-          "unite": "kg"
+          "unite": "kg",
+          "uniteServeur": "g"
         },
         "ameliorant": {
           "nom": "Improver",
-          "unite": "kg"
+          "unite": "kg",
+          "uniteServeur": "g"
         },
         "glace": {
           "nom": "Ice",
-          "unite": "bags"
+          "unite": "bags",
+          "uniteServeur": "sachets"
         },
         "bois": {
           "nom": "Firewood",
-          "unite": "loads"
+          "unite": "loads",
+          "uniteServeur": "chargements"
         },
         "huile": {
           "nom": "Oil",
-          "unite": "litres"
+          "unite": "litres",
+          "uniteServeur": "litres"
         }
       },
       "modes": {
@@ -1319,6 +1326,7 @@
         "erreurs": {
           "quantite_trop_grande": "Quantity too high (maximum {{max}}).",
           "prix_obligatoire": "Enter the unit price of this delivery.",
+          "prix_decimal": "The server does not accept a decimal price yet (e.g. 2.5 FCFA per gram): enter a whole price.",
           "defaut": "The delivery could not be recorded. Please try again."
         }
       },

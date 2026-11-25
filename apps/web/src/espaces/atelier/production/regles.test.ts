@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   actionDuCycle,
@@ -21,6 +21,12 @@ import {
   supplementVide,
 } from './regles.ts';
 import type { Consommation } from './types.ts';
+
+// La conversion en unités du prototype (farine en sacs) n'existe qu'en simulation.
+vi.mock('@/simulation', async (original) => ({
+  ...(await original<typeof import('@/simulation')>()),
+  SIMULATION: true,
+}));
 
 const EQUIPE = { responsable: 'Serge', gerant: 'Willy' };
 const PAINS = { BAG: 750, KO: 460, GC: 140 };
@@ -92,7 +98,7 @@ describe('écarts', () => {
     expect(ecartAJustifier(-12.1, limite)).toBe(true);
   });
 
-  it('convertit la consommation en sorties de stock (farine en sacs, sel en kg)', () => {
+  it('simulation : convertit la consommation en sorties de stock (farine en sacs, sel en kg)', () => {
     expect(sortiesDeStock(juste)).toEqual([
       { matiere: 'farine', quantite: 6 },
       { matiere: 'sel', quantite: 3.6 },
