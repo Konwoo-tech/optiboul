@@ -1,6 +1,5 @@
 import { useTranslation } from '@/i18n';
 import { FenetreModale } from '@/ui';
-import { SIMULATION } from '@/simulation';
 import { useId } from 'react';
 
 import styles from './Sauvegardes.module.css';
@@ -46,12 +45,6 @@ export function ModaleRestauration({ date, enCours, erreur, onFermer, onConfirme
           </li>
         ))}
       </ol>
-      {/* Mention de simulation : masquée au banc visuel (`[data-simulation]`), absente du prototype. */}
-      {SIMULATION && (
-        <span className={styles.simule} data-simulation>
-          {t('gestion.sauvegardes.restauration.simule')}
-        </span>
-      )}
       {erreur && (
         <span className={styles.erreurModale} id={idErreur} role="alert">
           {erreur}

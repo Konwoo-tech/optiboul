@@ -1571,7 +1571,6 @@
         "etape1": "Une copie de l’état actuel est faite automatiquement.",
         "etape2": "La copie du {{date}} est restaurée.",
         "etape3": "Les totaux sont vérifiés : sessions, soldes clients, stocks.",
-        "simule": "Simulation : le contrôle des totaux est fictif, aucune donnée n’est réellement restaurée.",
         "annuler": "Annuler",
         "confirmer": "Restaurer cette copie",
         "controles": {
@@ -1584,7 +1583,6 @@
         "locale": "Copie locale faite à {{heure}}",
         "cloud": "Copie cloud envoyée et vérifiée",
         "cloudEnAttente": "Hors ligne : sauvegarde cloud en attente",
-        "restauree": "Restauration terminée et vérifiée (contrôle simulé)",
         "restaureeVerifiee": "Restauration terminée : sessions, soldes clients et stocks vérifiés.",
         "restaureeAvecEcart": "Restauration terminée, mais le contrôle ne concorde pas : {{controles}}.",
         "restaurationEnCours": "Une restauration est déjà en cours.",

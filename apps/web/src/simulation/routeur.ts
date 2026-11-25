@@ -44,7 +44,6 @@ import { contexteSemaines, reinitialiserPlanning } from './planning.ts';
 import { reinitialiserSemaines, repondreSemaines } from './semaines.ts';
 import { lireUtilisateurConnecte, memoriserUtilisateurConnecte } from './session.ts';
 import { repondreTableauDeBord } from './tableauDeBord.ts';
-import { reinitialiserSauvegardes, repondreSauvegardes } from './sauvegardes.ts';
 import { reinitialiserUtilisateurs, repondreUtilisateurs } from './utilisateurs.ts';
 
 /** La session « s'ouvre » au chargement de la page, comme dans la maquette. */
@@ -90,7 +89,6 @@ export function reinitialiserSimulation(): void {
   reinitialiserSemaines();
   reinitialiserNumerosDemandes();
   reinitialiserJournal();
-  reinitialiserSauvegardes();
   reinitialiserParametres();
   memoriserUtilisateurConnecte(null);
 }
@@ -296,7 +294,6 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
         repondreProduitsDesParametres(url, methode) ??
         repondreParametres(url, methode, corps) ??
         repondreUtilisateurs(url, methode, corps) ??
-        repondreSauvegardes(url, methode, corps) ??
         repondreDemandes(methode, chemin, corps) ??
         repondreProduction(methode, chemin, corps) ??
         repondreTableauDeBord(url, methode, corps, CONTEXTE) ??

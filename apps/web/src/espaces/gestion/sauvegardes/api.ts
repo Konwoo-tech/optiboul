@@ -1,6 +1,5 @@
 import {
   ErreurApi,
-  optiboulFetch,
   sauvegardesLancerCreate,
   sauvegardesRestaurerCreate,
   sauvegardesRetrieve,
@@ -8,17 +7,10 @@ import {
   type Sauvegarde,
   type SauvegardeLancee,
 } from '@/api';
-import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { lireSauvegardesReelles, versCopie } from './reel.ts';
 import type { InstantaneSauvegardes, ReponseCopie, ReponseRestauration } from './types.ts';
-
-// En simulation, l'écran lit le faux serveur (`simulation/sauvegardes.ts`) ; sur le vrai serveur,
-// `reel.ts` compose l'instantané à partir des routes.
-const RACINE = SIMULATION ? '/api/v1/simulation/gestion/sauvegardes/' : '';
-
-type Reponse<T> = { data: T };
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleSauvegardes = (utilisateur: string | undefined) =>
@@ -27,18 +19,11 @@ export const cleSauvegardes = (utilisateur: string | undefined) =>
 export function useSauvegardes(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleSauvegardes(utilisateur),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<InstantaneSauvegardes>>(RACINE)).data
-        : lireSauvegardesReelles(),
+    queryFn: lireSauvegardesReelles,
     enabled: Boolean(utilisateur),
     staleTime: 0,
     refetchOnMount: 'always',
   });
-}
-
-async function envoyer<T>(chemin: string): Promise<T> {
-  return (await optiboulFetch<Reponse<T>>(`${RACINE}${chemin}`, { method: 'POST' })).data;
 }
 
 /** Une action : l'écran prend l'instantané renvoyé, et le journal (qui a une ligne de plus) est relu. */
@@ -63,7 +48,7 @@ function useAction<Demande, Resultat extends { instantane: InstantaneSauvegardes
 const ESSAIS_DE_SUIVI = 10;
 
 /**
- * Sur le vrai serveur, « lancer » met la copie en file (202) et renvoie son identifiant : on la suit
+ * « Lancer » met la copie en file (202) et renvoie son identifiant : on la suit
  * (`sauvegardes/{id}/`) jusqu'à sa réussite ou son échec ; trop longue, elle est annoncée « en attente ».
  */
 async function lancerEtAttendre(genre: 'locale' | 'cloud'): Promise<ReponseCopie> {
@@ -85,17 +70,13 @@ async function lancerEtAttendre(genre: 'locale' | 'cloud'): Promise<ReponseCopie
 }
 
 export const useSauvegarderLocale = (utilisateur: string | undefined) =>
-  useAction<void, ReponseCopie>(utilisateur, () =>
-    SIMULATION ? envoyer<ReponseCopie>('locale/') : lancerEtAttendre('locale'),
-  );
+  useAction<void, ReponseCopie>(utilisateur, () => lancerEtAttendre('locale'));
 
 export const useSauvegarderCloud = (utilisateur: string | undefined) =>
-  useAction<void, ReponseCopie>(utilisateur, () =>
-    SIMULATION ? envoyer<ReponseCopie>('cloud/') : lancerEtAttendre('cloud'),
-  );
+  useAction<void, ReponseCopie>(utilisateur, () => lancerEtAttendre('cloud'));
 
 /**
- * Restaure une copie. Sur le vrai serveur, la réponse n'arrive qu'une fois la base remplacée : copie de
+ * Restaure une copie. La réponse n'arrive qu'une fois la base remplacée : copie de
  * sûreté et contrôle des totaux (sessions, soldes clients, stocks). Une même clé d'idempotence rejoue
  * la réponse si la connexion tombe.
  */
@@ -136,14 +117,7 @@ async function restaurerLaCopie(id: string): Promise<ReponseRestauration> {
 }
 
 export const useRestaurer = (utilisateur: string | undefined) =>
-  useAction<string, ReponseRestauration>(
-    utilisateur,
-    (id) =>
-      SIMULATION
-        ? envoyer<ReponseRestauration>(`${encodeURIComponent(id)}/restaurer/`)
-        : restaurerLaCopie(id),
-    true,
-  );
+  useAction<string, ReponseRestauration>(utilisateur, restaurerLaCopie, true);
 
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
 export function codeErreur(erreur: unknown): string | undefined {
