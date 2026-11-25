@@ -72,7 +72,7 @@ export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
     );
   }
 
-  const { copies, derniereLocale, derniereCloud, cloudEnRetard } = instantane;
+  const { copies, derniereLocale, derniereCloud, cloudEnRetard, derniereEchec } = instantane;
   const occupe = [locale, cloud, restaurer].some((m) => m.isPending);
   const date = (instant: string | null) =>
     instant ? libelleDeCopie(instant, i18n.language) : t('gestion.sauvegardes.aucune');
@@ -185,6 +185,15 @@ export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
     <>
       <EnTeteEcran ecran={ecran} />
       <div className={styles.page}>
+        {derniereEchec && (
+          <div className={styles.alerte} role="alert">
+            {t('gestion.sauvegardes.alerteEchec', {
+              genre: t(`gestion.sauvegardes.copies.${derniereEchec.genre}`).toLowerCase(),
+              date: date(derniereEchec.instant),
+              erreur: derniereEchec.erreur,
+            })}
+          </div>
+        )}
         {cloudEnRetard && (
           <div className={styles.alerte} role="alert">
             {derniereCloud
