@@ -6,7 +6,6 @@ import {
   type Semaine,
 } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
-import { SIMULATION, useContexteSimule, type ContexteSimule } from '@/simulation';
 import { useQuery } from '@tanstack/react-query';
 
 const FUSEAU = 'Africa/Douala';
@@ -22,6 +21,23 @@ function heureDe(instant: string | null | undefined): string {
   }).format(new Date(instant));
 }
 
+/** Ce que l'en-tête et l'écran de connexion savent de l'établissement. */
+export type ContexteCoque = {
+  poste: string;
+  gerantDeLaSemaine: string;
+  responsableProduction: string;
+  /** Caissier qui a ouvert la session en cours. */
+  caissierDeSession: string;
+  /** Semaine de travail en cours ; dates ISO. */
+  semaine: { numero: number; du: string; au: string };
+  /** Heure d'ouverture de la session en cours, « HH:MM ». */
+  sessionOuverteDepuis: string;
+  /** Créneau de la session en cours ou de la dernière session ; absent : celui de l'horloge. */
+  sessionType?: 'jour' | 'nuit';
+  /** La session est ouverte (faux : clôturée). Absent : ouverte. */
+  sessionOuverte?: boolean;
+};
+
 type CaisseEnCours = { ouverte_le: string | null; caissiere: { nom: string } } | null;
 type ProchaineLue = { creneau?: string; caisse_en_cours?: CaisseEnCours } | null;
 
@@ -32,7 +48,7 @@ type ProchaineLue = { creneau?: string; caisse_en_cours?: CaisseEnCours } | null
  * non reconnu) est simplement absente. Sans semaine ouverte, il n'y a pas de contexte à montrer.
  */
 // `null` et non `undefined` : une requête ne peut pas rendre `undefined`.
-async function lireContexte(): Promise<ContexteSimule | null> {
+async function lireContexte(): Promise<ContexteCoque | null> {
   const [semaines, prochaine, poste] = await Promise.all([
     optiboulFetch<{ data: { results?: Semaine[] } }>('/api/v1/semaines/?statut=ouverte').catch(
       () => null,
@@ -62,7 +78,7 @@ async function lireContexte(): Promise<ContexteSimule | null> {
  * Avant la connexion : ce que le serveur dit d'un poste de confiance (#307) — la semaine, son
  * gérant et la session ouverte. Hors poste de confiance, il ne dit rien (`contexte` nul).
  */
-async function lireContexteDuPoste(): Promise<ContexteSimule | null> {
+async function lireContexteDuPoste(): Promise<ContexteCoque | null> {
   const reponse = await postesActuelRetrieve().catch(() => null);
   const lu = reponse?.data as PosteActuel | undefined;
   const semaine = lu?.contexte?.semaine;
@@ -82,26 +98,24 @@ async function lireContexteDuPoste(): Promise<ContexteSimule | null> {
 }
 
 /**
- * Le contexte de la coque : sur le vrai serveur après la connexion ; en simulation, celui du faux
- * serveur. Avant la connexion, sur un poste de confiance seulement : celui que le serveur donne
- * pour le poste (#307).
+ * Le contexte de la coque, donné par le serveur après la connexion. Avant la connexion, sur un
+ * poste de confiance seulement : celui que le serveur donne pour le poste (#307).
  */
 export function useContexte() {
   const { utilisateur } = useUtilisateurCourant();
-  const simule = useContexteSimule();
   const reel = useQuery({
     queryKey: ['coque', 'contexte', utilisateur?.url],
     queryFn: lireContexte,
-    enabled: !SIMULATION && Boolean(utilisateur),
+    enabled: Boolean(utilisateur),
     staleTime: ACTUALISATION_MS / 2,
     refetchInterval: ACTUALISATION_MS,
   });
   const duPoste = useQuery({
     queryKey: ['coque', 'contexte-poste'],
     queryFn: lireContexteDuPoste,
-    enabled: !SIMULATION && !utilisateur,
+    enabled: !utilisateur,
     staleTime: ACTUALISATION_MS / 2,
     refetchInterval: ACTUALISATION_MS,
   });
-  return { data: SIMULATION ? simule.data : (reel.data ?? duPoste.data ?? undefined) };
+  return { data: reel.data ?? duPoste.data ?? undefined };
 }

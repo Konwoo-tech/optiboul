@@ -2,7 +2,6 @@ import { useMediaQuery } from '@mantine/hooks';
 import { connexionDeconnexionCreate, useConnexionSessionRetrieve } from '@/api';
 import { memoriserMessageConnexion, useDeconnexionAutomatique } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { configurationSimulee, deconnecterSimulation, SIMULATION } from '@/simulation';
 import { BandeauHorsLigne, LimiteErreur } from '@/ui';
 import { useAppliquerPreferences } from '@/ui/preferences.ts';
 import { useQueryClient } from '@tanstack/react-query';
@@ -24,25 +23,20 @@ export function MiseEnPage() {
   // Poste partagé : une session oubliée se ferme seule. Le délai vient du serveur (connexion par
   // code seulement : `null` pour une connexion par e-mail ou Google, qui n'a pas de minuteur).
   const session = useConnexionSessionRetrieve({
-    query: { enabled: !SIMULATION, staleTime: Infinity, retry: false },
+    query: { staleTime: Infinity, retry: false },
   });
-  const inactiviteMinutes = SIMULATION
-    ? configurationSimulee().inactiviteMinutes
-    : ((session.data?.data as { inactiviteMinutes?: number | null } | undefined)
-        ?.inactiviteMinutes ?? 0);
+  const inactiviteMinutes =
+    (session.data?.data as { inactiviteMinutes?: number | null } | undefined)?.inactiviteMinutes ??
+    0;
 
   // Thème et langue de la personne connectée (mémorisés côté serveur, US-004).
   useAppliquerPreferences();
 
   useDeconnexionAutomatique({
     minutes: inactiviteMinutes,
-    actif: SIMULATION || inactiviteMinutes > 0,
+    actif: inactiviteMinutes > 0,
     onExpire: () => {
       memoriserMessageConnexion(t('connexion.inactivite', { minutes: inactiviteMinutes }));
-      if (SIMULATION) {
-        void deconnecterSimulation('inactivite').then(() => client.invalidateQueries());
-        return;
-      }
       // Le serveur journalise `connexion.expiree` (et non `connexion.fermee`) : #299.
       void connexionDeconnexionCreate({ raison: 'inactivite' }).then(() => client.resetQueries());
     },
@@ -59,11 +53,6 @@ export function MiseEnPage() {
           </Suspense>
         </LimiteErreur>
       </main>
-      {SIMULATION && (
-        <div className={styles.simulation} data-simulation>
-          {t('commun.simulation')}
-        </div>
-      )}
     </div>
   );
 }

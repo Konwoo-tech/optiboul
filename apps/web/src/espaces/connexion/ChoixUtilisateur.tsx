@@ -16,8 +16,6 @@ type Props = {
   identifier: (identification: Identification) => Promise<void>;
   /** Une personne est touchée : le message de déconnexion automatique peut disparaître. */
   onChoisi?: () => void;
-  /** Texte d'aide sous le clavier (codes de démonstration) : seulement en simulation. */
-  aide?: string;
 };
 
 /**
@@ -25,7 +23,7 @@ type Props = {
  * son code.
  * Rend un fragment : les blocs sont les enfants directs de la colonne de droite.
  */
-export function ChoixUtilisateur({ utilisateurs, identifier, onChoisi, aide }: Props) {
+export function ChoixUtilisateur({ utilisateurs, identifier, onChoisi }: Props) {
   const { t } = useTranslation();
   const [choisi, setChoisi] = useState<PersonneDuPoste | null>(null);
   const [code, setCode] = useState('');
@@ -88,7 +86,6 @@ export function ChoixUtilisateur({ utilisateurs, identifier, onChoisi, aide }: P
           onValider={(saisi) => void verifier(saisi)}
           onRetour={revenir}
         />
-        {aide && <div className={styles.demo}>{aide}</div>}
       </div>
     );
   }

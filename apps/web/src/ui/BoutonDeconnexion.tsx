@@ -1,6 +1,5 @@
 import { connexionChangerUtilisateurCreate, connexionDeconnexionCreate } from '@/api';
 import { useTranslation } from '@/i18n';
-import { deconnecterSimulation, SIMULATION } from '@/simulation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
 
@@ -19,7 +18,7 @@ type Props = {
 /**
  * Ferme la session sur le vrai serveur (`POST /connexion/deconnexion/` ou
  * `/connexion/changer-utilisateur/`) puis relit tout : la personne suivante ne voit rien de la
- * précédente. En simulation, il n'y a pas de backend : on referme la session simulée sur place.
+ * précédente.
  */
 export function BoutonDeconnexion({ libelle, className, action = 'deconnexion' }: Props) {
   const { t } = useTranslation();
@@ -31,11 +30,6 @@ export function BoutonDeconnexion({ libelle, className, action = 'deconnexion' }
     if (enCours.current) return;
     enCours.current = true;
     try {
-      if (SIMULATION) {
-        await deconnecterSimulation();
-        await client.invalidateQueries();
-        return;
-      }
       await (action === 'changer'
         ? connexionChangerUtilisateurCreate()
         : connexionDeconnexionCreate());

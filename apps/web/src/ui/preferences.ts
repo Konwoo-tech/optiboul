@@ -1,7 +1,6 @@
 import { getUsersMeRetrieveQueryKey, usersMePartialUpdate, type PatchedPreferences } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
 import { changerLangue, type Langue } from '@/i18n';
-import { SIMULATION } from '@/simulation';
 import { useMantineColorScheme } from '@mantine/core';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef } from 'react';
@@ -22,7 +21,7 @@ export function useAppliquerPreferences() {
   const { setColorScheme, clearColorScheme } = useMantineColorScheme();
   const appliquee = useRef<number | null>(null);
   useEffect(() => {
-    if (SIMULATION || !utilisateur || appliquee.current === utilisateur.id) return;
+    if (!utilisateur || appliquee.current === utilisateur.id) return;
     appliquee.current = utilisateur.id;
     if (utilisateur.langue === 'fr' || utilisateur.langue === 'en') {
       void changerLangue(utilisateur.langue as Langue);
@@ -40,7 +39,7 @@ export function useEnregistrerPreferences() {
   const connecte = Boolean(utilisateur);
   return useCallback(
     (preference: PatchedPreferences) => {
-      if (SIMULATION || !connecte) return;
+      if (!connecte) return;
       void usersMePartialUpdate(preference)
         .then(() =>
           client.setQueryData(
