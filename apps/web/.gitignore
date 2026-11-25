@@ -6,4 +6,3 @@ e2e/test-results/
 e2e/playwright-report/
 .env
 .env.*
-e2e/visuel/sortie/
