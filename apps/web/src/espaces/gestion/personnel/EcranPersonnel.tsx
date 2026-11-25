@@ -1,8 +1,7 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { EcranChargement, EcranErreur, useToast, afficherRefus } from '@/ui';
-import { SIMULATION } from '@/simulation';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import type { Ecran } from '../../../navigation.ts';
@@ -65,6 +64,8 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
   const [reference, setReference] = useState('');
   const [referenceManquante, setReferenceManquante] = useState(false);
   const [erreurServeur, setErreurServeur] = useState<string | null>(null);
+  // Un paiement ne part qu'une fois : l'état « occupé » n'arrive qu'au rendu suivant, un second clic le précède.
+  const paiementEnCours = useRef(false);
 
   const instantane = requete.data;
   // Sans état pour le mois, rien ne se modifie ni ne se paie : seule la préparation est proposée.
@@ -165,7 +166,8 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
     if (referenceRefusee()) return;
     const { reste } = calculerPaie(choisi);
     const montant = montantAPayer(montantPaye, reste);
-    if (montant <= 0) return;
+    if (montant <= 0 || paiementEnCours.current) return;
+    paiementEnCours.current = true;
     payer.mutate(
       {
         employe: choisi.id,
@@ -180,12 +182,16 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
           afficher(t('gestion.personnel.toasts.paiement', { code: reponse.depenses[0] }));
         },
         onError: signaler,
+        onSettled: () => {
+          paiementEnCours.current = false;
+        },
       },
     );
   };
 
   const surPayerLesRestes = () => {
-    if (referenceRefusee()) return;
+    if (referenceRefusee() || paiementEnCours.current) return;
+    paiementEnCours.current = true;
     payerRestes.mutate(
       { mode, ...(mode === 'mobile' ? { reference: reference.trim() } : {}) },
       {
@@ -194,6 +200,9 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
           afficher(t('gestion.personnel.toasts.payes', { count: reponse.depenses.length }));
         },
         onError: signaler,
+        onSettled: () => {
+          paiementEnCours.current = false;
+        },
       },
     );
   };
@@ -245,7 +254,7 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
           onValider={surValider}
           onPayerLesRestes={surPayerLesRestes}
         />
-        {!SIMULATION && profil === 'gerant' && (
+        {profil === 'gerant' && (
           <button
             type="button"
             className={styles.secondaire}

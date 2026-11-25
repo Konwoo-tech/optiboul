@@ -4,7 +4,6 @@ import {
   employesCreate,
   ErreurApi,
   getPaiesLignesBulletinRetrieveUrl,
-  optiboulFetch,
   paiesElementsDestroy,
   paiesLignesElementsCreate,
   paiesLignesPayerCreate,
@@ -14,7 +13,6 @@ import {
   paiesPreparerCreate,
   paiesSoumettreCreate,
 } from '@/api';
-import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { lirePersonnelReel } from './reel.ts';
@@ -26,12 +24,6 @@ import type {
   ReponsePaiement,
 } from './types.ts';
 
-// En simulation, l'écran lit le faux serveur (`simulation/personnel.ts`) ; sur le vrai serveur,
-// `reel.ts` compose l'instantané à partir des routes.
-const RACINE = '/api/v1/simulation/gestion/personnel/';
-
-type Reponse<T> = { data: T };
-
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const clePersonnel = (utilisateur: string | undefined) =>
   ['simulation', 'gestion', 'personnel', utilisateur] as const;
@@ -39,26 +31,12 @@ export const clePersonnel = (utilisateur: string | undefined) =>
 export function usePersonnel(utilisateur: string | undefined) {
   return useQuery({
     queryKey: clePersonnel(utilisateur),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<InstantanePaie>>(RACINE)).data
-        : lirePersonnelReel(),
+    queryFn: lirePersonnelReel,
     enabled: Boolean(utilisateur),
     // La validation se fait aussi depuis l'écran Demandes : on relit à chaque ouverture.
     staleTime: 0,
     refetchOnMount: 'always',
   });
-}
-
-async function envoyer<T>(chemin: string, methode: string, corps?: unknown): Promise<T> {
-  return (
-    await optiboulFetch<Reponse<T>>(`${RACINE}${chemin}`, {
-      method: methode,
-      ...(corps === undefined
-        ? {}
-        : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) }),
-    })
-  ).data;
 }
 
 const refus = (code: string) =>
@@ -74,13 +52,11 @@ type Serveur<Demande> = (demande: Demande, avant: InstantanePaie) => Promise<Ret
  */
 function useActionPaie<Demande, Resultat extends InstantanePaie | ReponsePaiement = InstantanePaie>(
   utilisateur: string | undefined,
-  simulee: (demande: Demande) => Promise<Resultat>,
   surLeServeur: Serveur<Demande>,
 ) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (demande: Demande): Promise<Resultat> => {
-      if (SIMULATION) return simulee(demande);
       const avant = client.getQueryData<InstantanePaie>(clePersonnel(utilisateur));
       if (!avant) throw refus('etat_inconnu');
       const retour = await surLeServeur(demande, avant);
@@ -107,55 +83,38 @@ const etatDe = (avant: InstantanePaie) => {
 };
 
 export const useAjouterLigne = (utilisateur: string | undefined) =>
-  useActionPaie<NouvelAjustement>(
-    utilisateur,
-    (ligne) => envoyer<InstantanePaie>('ajustements/', 'POST', ligne),
-    async (ligne) => {
-      await paiesLignesElementsCreate(ligne.employe, {
-        genre: ligne.type,
-        description: ligne.libelle,
-        montant: ligne.montant,
-      });
-      return {};
-    },
-  );
+  useActionPaie<NouvelAjustement>(utilisateur, async (ligne) => {
+    await paiesLignesElementsCreate(ligne.employe, {
+      genre: ligne.type,
+      description: ligne.libelle,
+      montant: ligne.montant,
+    });
+    return {};
+  });
 export const useRetirerLigne = (utilisateur: string | undefined) =>
-  useActionPaie<string>(
-    utilisateur,
-    (id) => envoyer<InstantanePaie>(`ajustements/${encodeURIComponent(id)}/`, 'DELETE'),
-    async (id) => {
-      await paiesElementsDestroy(id);
-      return {};
-    },
-  );
+  useActionPaie<string>(utilisateur, async (id) => {
+    await paiesElementsDestroy(id);
+    return {};
+  });
 /** Le jour de paie du mois affiché (`PUT /paies/{id}/jour/`), tant que l'état n'est pas soumis. */
 export const useChoisirLeJour = (utilisateur: string | undefined) =>
-  useActionPaie<string>(
-    utilisateur,
-    (jour) => envoyer<InstantanePaie>('jour/', 'PUT', { jour }),
-    async (jour, avant) => {
-      await paiesJourUpdate(etatDe(avant), { jour });
-      return {};
-    },
-  );
+  useActionPaie<string>(utilisateur, async (jour, avant) => {
+    await paiesJourUpdate(etatDe(avant), { jour });
+    return {};
+  });
 /** Prépare l'état d'un mois et fixe son jour de paie. */
 export const usePlanifierLeMois = (utilisateur: string | undefined) =>
-  useActionPaie<{ mois: string; jour: string }>(
-    utilisateur,
-    (demande) => envoyer<InstantanePaie>('calendrier/', 'PUT', demande),
-    async ({ mois, jour }) => {
-      const etat = (await paiesPreparerCreate({ mois: `${mois}-01` })).data as unknown as {
-        id: number;
-      };
-      await paiesJourUpdate(etat.id, { jour });
-      return {};
-    },
-  );
+  useActionPaie<{ mois: string; jour: string }>(utilisateur, async ({ mois, jour }) => {
+    const etat = (await paiesPreparerCreate({ mois: `${mois}-01` })).data as unknown as {
+      id: number;
+    };
+    await paiesJourUpdate(etat.id, { jour });
+    return {};
+  });
 /** Absences (jours) et avances d'une ligne, tant que l'état est en brouillon (réel seulement). */
 export const useModifierLigne = (utilisateur: string | undefined) =>
   useActionPaie<{ employe: string; absences: number; avances: number }>(
     utilisateur,
-    () => Promise.reject(refus('indisponible')),
     async ({ employe, absences, avances }) => {
       await paiesLignesUpdate(employe, { absences: absences.toFixed(1), avances });
       return {};
@@ -163,54 +122,38 @@ export const useModifierLigne = (utilisateur: string | undefined) =>
   );
 /** Prépare le brouillon du mois : une ligne par employé actif (réel seulement). */
 export const usePreparer = (utilisateur: string | undefined) =>
-  useActionPaie<string>(
-    utilisateur,
-    (mois) => envoyer<InstantanePaie>('preparer/', 'POST', { mois }),
-    async (mois) => {
-      await paiesPreparerCreate({ mois: `${mois}-01` });
-      return {};
-    },
-  );
+  useActionPaie<string>(utilisateur, async (mois) => {
+    await paiesPreparerCreate({ mois: `${mois}-01` });
+    return {};
+  });
 export const useSoumettre = (utilisateur: string | undefined) =>
-  useActionPaie<void>(
-    utilisateur,
-    () => envoyer<InstantanePaie>('soumettre/', 'POST'),
-    async (_, avant) => {
-      await paiesSoumettreCreate(etatDe(avant));
-      return {};
-    },
-  );
+  useActionPaie<void>(utilisateur, async (_, avant) => {
+    await paiesSoumettreCreate(etatDe(avant));
+    return {};
+  });
 export const usePayer = (utilisateur: string | undefined) =>
-  useActionPaie<NouveauPaiement, ReponsePaiement>(
-    utilisateur,
-    (demande) => envoyer<ReponsePaiement>('paiements/', 'POST', demande),
-    async (demande) => {
-      const reponse = await paiesLignesPayerCreate(
-        demande.employe,
-        {
-          montant: demande.montant ?? 0,
-          mode: demande.mode,
-          ...(demande.reference ? { reference: demande.reference } : {}),
-        },
-        idempotence(),
-      );
-      return { depenses: [String((reponse.data as { depense: number }).depense)] };
-    },
-  );
+  useActionPaie<NouveauPaiement, ReponsePaiement>(utilisateur, async (demande) => {
+    const reponse = await paiesLignesPayerCreate(
+      demande.employe,
+      {
+        montant: demande.montant ?? 0,
+        mode: demande.mode,
+        ...(demande.reference ? { reference: demande.reference } : {}),
+      },
+      idempotence(),
+    );
+    return { depenses: [String((reponse.data as { depense: number }).depense)] };
+  });
 export const usePayerLesRestes = (utilisateur: string | undefined) =>
-  useActionPaie<PaiementDesRestes, ReponsePaiement>(
-    utilisateur,
-    (demande) => envoyer<ReponsePaiement>('paiements/restes/', 'POST', demande),
-    async (demande, avant) => {
-      const reponse = await paiesPayerToutCreate(
-        etatDe(avant),
-        { mode: demande.mode, ...(demande.reference ? { reference: demande.reference } : {}) },
-        idempotence(),
-      );
-      const payes = (reponse.data as { payes: number }).payes;
-      return { depenses: Array.from({ length: payes }, (_, rang) => String(rang + 1)) };
-    },
-  );
+  useActionPaie<PaiementDesRestes, ReponsePaiement>(utilisateur, async (demande, avant) => {
+    const reponse = await paiesPayerToutCreate(
+      etatDe(avant),
+      { mode: demande.mode, ...(demande.reference ? { reference: demande.reference } : {}) },
+      idempotence(),
+    );
+    const payes = (reponse.data as { payes: number }).payes;
+    return { depenses: Array.from({ length: payes }, (_, rang) => String(rang + 1)) };
+  });
 
 /** Crée un employé (gérant, vrai serveur) : il rejoint l'état de paie du mois suivant. */
 export function useCreerEmploye(utilisateur: string | undefined) {
@@ -229,7 +172,6 @@ export function useCreerEmploye(utilisateur: string | undefined) {
 
 /** Ouvre le bulletin de paie PDF d'une ligne dans un nouvel onglet (sans effet en simulation). */
 export function ouvrirLeBulletin(ligne: string) {
-  if (SIMULATION) return;
   window.open(getPaiesLignesBulletinRetrieveUrl(ligne), '_blank', 'noopener');
 }
 
@@ -240,20 +182,10 @@ const MOTIF_DE_REFUS = 'Refusée depuis l’écran Personnel et paie';
 export function useDeciderLaPaie(utilisateur: string | undefined) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, accord }: { id: string; accord: boolean }) => {
-      if (!SIMULATION) {
-        return accord
-          ? demandesAccorderCreate(Number(id), {})
-          : demandesRefuserCreate(Number(id), { motif: MOTIF_DE_REFUS });
-      }
-      return (
-        await optiboulFetch<Reponse<unknown>>(`/api/v1/simulation/demandes/${id}/decider/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accord }),
-        })
-      ).data;
-    },
+    mutationFn: ({ id, accord }: { id: string; accord: boolean }) =>
+      accord
+        ? demandesAccorderCreate(Number(id), {})
+        : demandesRefuserCreate(Number(id), { motif: MOTIF_DE_REFUS }),
     // Un refus du serveur (déjà décidée, droit) : on relit l'état et les demandes.
     onError: () =>
       Promise.all([

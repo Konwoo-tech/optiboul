@@ -1,5 +1,4 @@
 import { useTranslation } from '@/i18n';
-import { SIMULATION } from '@/simulation';
 import { formaterNombre } from '@/utils';
 import { useId, useRef, useState } from 'react';
 
@@ -224,7 +223,7 @@ export function FicheEmploye({
       {employe.ajustements.length === 0 && (
         <p className={styles.sansAjustement}>{t('gestion.personnel.fiche.aucun')}</p>
       )}
-      {!SIMULATION && modifiable && (
+      {modifiable && (
         <AbsencesAvances
           key={`${employe.id}-${employe.absences}-${employe.avances}`}
           employe={employe}
@@ -331,7 +330,7 @@ export function FicheEmploye({
           </li>
         ))}
       </ul>
-      {!SIMULATION && !instantane.aPreparer && (
+      {!instantane.aPreparer && (
         <button
           type="button"
           className={styles.secondaire}
