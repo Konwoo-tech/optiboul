@@ -9,9 +9,9 @@ beforeAll(async () => {
   await initI18n('fr').changeLanguage('fr');
 });
 
-// Sur le vrai serveur, l'écran compte dans l'unité du stock : farine en kg ; sel, levure et
-// améliorant en g (la simulation garde les unités du prototype : farine en sacs, le reste en kg).
-describe('unités des matières à l’écran (vrai serveur)', () => {
+// L'écran compte dans l'unité du stock du serveur : farine en kg ; sel, levure et
+// améliorant en g.
+describe('unités des matières à l’écran', () => {
   it('farine en kg ; sel, levure et améliorant en g', () => {
     const t = i18n.t.bind(i18n);
     expect(uniteMatiere(t, 'farine')).toBe('kg');

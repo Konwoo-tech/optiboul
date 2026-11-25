@@ -3,9 +3,7 @@ import {
   controlesStockValiderCreate,
   ErreurApi,
   mouvementsStockSaisirCreate,
-  optiboulFetch,
 } from '@/api';
-import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { lireStocksReels } from './reel.ts';
@@ -17,12 +15,6 @@ import type {
   NouvelInventaire,
 } from './types.ts';
 
-// En simulation, l'écran lit le faux serveur (`simulation/stocks.ts`) ; sur le vrai serveur,
-// `reel.ts` compose l'instantané à partir des routes.
-const RACINE = '/api/v1/simulation/atelier/stocks/';
-
-type Reponse<T> = { data: T };
-
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleStocks = (utilisateur: string | undefined) =>
   ['simulation', 'atelier', 'stocks', utilisateur] as const;
@@ -30,25 +22,12 @@ export const cleStocks = (utilisateur: string | undefined) =>
 export function useStocks(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleStocks(utilisateur),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<InstantaneStocks>>(RACINE)).data
-        : lireStocksReels(),
+    queryFn: lireStocksReels,
     enabled: Boolean(utilisateur),
     // Le stock bouge depuis d'autres écrans (dépenses, demandes) : on relit à chaque ouverture.
     staleTime: 0,
     refetchOnMount: 'always',
   });
-}
-
-async function publier<T>(chemin: string, corps: unknown): Promise<T> {
-  return (
-    await optiboulFetch<Reponse<T>>(`${RACINE}${chemin}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(corps),
-    })
-  ).data;
 }
 
 export type MouvementEnregistre = { instantane: InstantaneStocks; mouvement: Mouvement };
@@ -57,7 +36,6 @@ export function useEnregistrerMouvement(utilisateur: string | undefined) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (mouvement: NouveauMouvement): Promise<MouvementEnregistre> => {
-      if (SIMULATION) return publier<MouvementEnregistre>('mouvements/', mouvement);
       // Une perte sort du stock ; une entrée à la main est une correction positive (motif obligatoire).
       await mouvementsStockSaisirCreate(
         {
@@ -87,7 +65,6 @@ export function useEnregistrerInventaire(utilisateur: string | undefined) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (inventaire: NouvelInventaire): Promise<InventaireEnregistre> => {
-      if (SIMULATION) return publier<InventaireEnregistre>('inventaires/', inventaire);
       // Le contrôle du jour : on le commence (liste à compter), puis on valide les quantités comptées.
       const avant = client.getQueryData<InstantaneStocks>(cleStocks(utilisateur));
       const id = avant?.controleDuJourId;
