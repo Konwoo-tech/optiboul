@@ -1255,6 +1255,7 @@
         "receptionner": "Réceptionner",
         "relancer": "Relancer",
         "replanifier": "Replanifier le reliquat",
+        "reliquatPlanifie": "Reliquat replanifié : {{numero}}",
         "vide": "Aucun bon de commande."
       },
       "planifier": {
@@ -1524,7 +1525,8 @@
         },
         "cloturer": {
           "titre": "Clôturer la semaine",
-          "info": "Clôture de la {{semaine}}. Le rapport de passation (caisses, dettes, stock, incidents) sera transmis à {{nom}}, gérant de la semaine suivante.",
+          "info": "Clôture de la {{semaine}}{{point}} Le rapport de passation (caisses, dettes, stock, incidents) sera transmis à {{nom}}, gérant de la semaine suivante.",
+          "infoSansDestinataire": "Clôture de la {{semaine}}{{point}} Le rapport de passation (caisses, dettes, stock, incidents) sera transmis au gérant de la semaine suivante dès qu’il sera affecté.",
           "confirmer": "Clôturer et générer la passation"
         }
       },
@@ -2173,7 +2175,7 @@
           "huile": "litres"
         },
         "conforme": "Écart de {{ecart}} kg : sous le seuil de {{limite}} kg.",
-        "alerte": "Écart de {{ecart}} kg sur les matières pesées, au-delà du seuil de {{seuil}} kg par sac travaillé ({{limite}} kg pour {{sacs}} sacs).",
+        "alerte": "Écart de {{ecart}} kg sur les matières pesées, au-delà du seuil de {{seuil}} kg par sac travaillé ({{limite}} kg pour {{sacs}} sac(s)).",
         "justifier": "Justifier l’écart",
         "motifs": {
           "perte": "Perte",

@@ -146,7 +146,13 @@ export function Receptions({
             {t('gestion.fournisseurs.receptions.receptionner')}
           </button>
         )}
-        {peutModifier && c.statut === 'partielle' && (
+        {c.statut === 'partielle' && c.reliquat && (
+          <div className={styles.sous}>
+            {t('gestion.fournisseurs.receptions.reliquatPlanifie', { numero: c.reliquat })}
+          </div>
+        )}
+        {/* Un manquant déjà replanifié est suivi sur son nouveau bon : plus de relance ni de replanification. */}
+        {peutModifier && c.statut === 'partielle' && !c.reliquat && (
           <div className={styles.actions}>
             <button
               type="button"

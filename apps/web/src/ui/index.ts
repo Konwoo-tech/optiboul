@@ -19,3 +19,4 @@ export { Toasts } from './Toasts.tsx';
 export { TuileKpi } from './TuileKpi.tsx';
 export { useCreneau } from './useCreneau.ts';
 export { useHorloge } from './useHorloge.ts';
+export { afficherRefus, detailDuServeur } from './refus.ts';

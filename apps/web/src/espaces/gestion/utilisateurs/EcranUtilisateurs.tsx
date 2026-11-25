@@ -1,7 +1,7 @@
 import { useUtilisateurCourant } from '@/auth';
 import { SIMULATION } from '@/simulation';
 import { useTranslation } from '@/i18n';
-import { EcranChargement, EcranErreur, useToast } from '@/ui';
+import { EcranChargement, EcranErreur, useToast, afficherRefus } from '@/ui';
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -153,22 +153,23 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
   /** Un refus du serveur (droit, compte propre, inconnu) : on le dit et on relit la liste. */
   const signaler = (erreur: unknown) => {
     const code = codeErreur(erreur);
-    afficher(
-      t(
-        code === 'droit_insuffisant'
-          ? 'gestion.utilisateurs.toasts.droit'
-          : code === 'compte_propre'
-            ? 'gestion.utilisateurs.toasts.comptePropre'
-            : code === 'groupe_existant'
-              ? 'gestion.utilisateurs.groupes.erreurExiste'
-              : code === 'dernier_administrateur'
-                ? 'gestion.utilisateurs.toasts.dernierAdministrateur'
-                : code === 'utilisateur_inconnu' || code === 'groupe_inconnu'
-                  ? 'gestion.utilisateurs.toasts.inconnu'
-                  : code
-                    ? 'gestion.utilisateurs.toasts.impossible'
-                    : 'gestion.utilisateurs.toasts.erreur',
-      ),
+    afficherRefus(
+      afficher,
+      t,
+      erreur,
+      code === 'droit_insuffisant'
+        ? 'gestion.utilisateurs.toasts.droit'
+        : code === 'compte_propre'
+          ? 'gestion.utilisateurs.toasts.comptePropre'
+          : code === 'groupe_existant'
+            ? 'gestion.utilisateurs.groupes.erreurExiste'
+            : code === 'dernier_administrateur'
+              ? 'gestion.utilisateurs.toasts.dernierAdministrateur'
+              : code === 'utilisateur_inconnu' || code === 'groupe_inconnu'
+                ? 'gestion.utilisateurs.toasts.inconnu'
+                : code
+                  ? 'gestion.utilisateurs.toasts.impossible'
+                  : 'gestion.utilisateurs.toasts.erreur',
     );
     void requete.refetch();
   };

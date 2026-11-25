@@ -1,7 +1,7 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { SIMULATION } from '@/simulation';
-import { EcranChargement, EcranErreur, useToast } from '@/ui';
+import { detailDuServeur, EcranChargement, EcranErreur, useToast } from '@/ui';
 import { formaterHeure } from '@/utils';
 import { useNetwork } from '@mantine/hooks';
 import { useRef, useState } from 'react';
@@ -88,6 +88,8 @@ export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
   const messageDErreur = (erreur: unknown) => {
     const code = codeErreur(erreur);
     const cle = code ? MESSAGES_D_ERREUR[code] : undefined;
+    // Un refus que l'écran ne connaît pas : le serveur dit pourquoi.
+    if (!cle) return detailDuServeur(erreur) ?? t('gestion.sauvegardes.toasts.erreur');
     return t(`gestion.sauvegardes.toasts.${cle ?? 'erreur'}`, {
       // Le serveur dit pourquoi une restauration est impossible (outil absent, copie illisible…).
       detail: erreur instanceof Error ? erreur.message : '',

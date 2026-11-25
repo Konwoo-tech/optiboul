@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { EcranChargement, EcranErreur, useToast } from '@/ui';
+import { EcranChargement, EcranErreur, useToast, afficherRefus } from '@/ui';
 import { formaterHeure } from '@/utils';
 import { useState } from 'react';
 import { SIMULATION } from '@/simulation';
@@ -96,16 +96,17 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
   /** Un refus du serveur (règle ou droit) : l'écran se remet à jour et le dit. */
   const signaler = (erreur: unknown) => {
     const code = codeErreur(erreur);
-    afficher(
-      t(
-        code === 'controles_bloquants'
-          ? 'gestion.semaines.toasts.bloquants'
-          : code === 'droit_insuffisant'
-            ? 'gestion.semaines.toasts.droit'
-            : code
-              ? 'gestion.semaines.toasts.impossible'
-              : 'gestion.semaines.toasts.erreur',
-      ),
+    afficherRefus(
+      afficher,
+      t,
+      erreur,
+      code === 'controles_bloquants'
+        ? 'gestion.semaines.toasts.bloquants'
+        : code === 'droit_insuffisant'
+          ? 'gestion.semaines.toasts.droit'
+          : code
+            ? 'gestion.semaines.toasts.impossible'
+            : 'gestion.semaines.toasts.erreur',
     );
     void requete.refetch();
   };
