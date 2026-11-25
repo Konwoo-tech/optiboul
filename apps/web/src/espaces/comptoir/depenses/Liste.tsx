@@ -12,7 +12,12 @@ import {
   type FiltreRattachement,
   type FiltreSemaine,
 } from './regles.ts';
-import { TYPES_RATTACHEMENT, type InstantaneDepenses, type StatutDepense } from './types.ts';
+import {
+  TYPES_RATTACHEMENT,
+  type Depense,
+  type InstantaneDepenses,
+  type StatutDepense,
+} from './types.ts';
 
 const NIVEAU_STATUT: Record<StatutDepense, 'ok' | 'surveiller' | 'bloquant' | 'neutre'> = {
   validee: 'ok',
@@ -29,6 +34,9 @@ type Props = {
   onRattachement: (rattachement: FiltreRattachement) => void;
   /** Chemin de l'écran des demandes, selon l'espace de la personne connectée. */
   cheminDemandes: string;
+  /** Qui peut annuler cette dépense en attente ; absent : personne. */
+  peutAnnuler?: (depense: Depense) => boolean;
+  onAnnuler?: (depense: Depense) => void;
 };
 
 /** Liste filtrable des dépenses, avec la demande de validation liée à chacune. */
@@ -39,6 +47,8 @@ export function Liste({
   onSemaine,
   onRattachement,
   cheminDemandes,
+  peutAnnuler,
+  onAnnuler,
 }: Props) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -131,6 +141,18 @@ export function Liste({
                     onClick={() => void navigate(cheminDemandes)}
                   >
                     {libelleDemande(t, demande, instantane.gerantDeLaSemaine, langue)}
+                  </button>
+                )}
+                {onAnnuler && peutAnnuler?.(depense) && (
+                  <button
+                    type="button"
+                    className={styles.demande}
+                    aria-label={t('comptoir.depenses.annulation.annulerNom', {
+                      numero: numeroDepense(depense.numero),
+                    })}
+                    onClick={() => onAnnuler(depense)}
+                  >
+                    {t('comptoir.depenses.annulation.annuler')}
                   </button>
                 )}
               </div>

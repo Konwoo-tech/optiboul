@@ -9,6 +9,7 @@ import { EnTeteEcran } from '../../EnTeteEcran.tsx';
 import {
   codeErreur,
   useDepenses,
+  useAnnulerDepense,
   useEnregistrerDepense,
   useFixerBudget,
   useFixerPreAutorisations,
@@ -18,6 +19,7 @@ import styles from './Depenses.module.css';
 import { Formulaire } from './Formulaire.tsx';
 import { FenetreReglages } from './FenetreReglages.tsx';
 import { PreAutorisations } from './PreAutorisations.tsx';
+import { FenetreAnnulation } from './FenetreAnnulation.tsx';
 import { Liste } from './Liste.tsx';
 import {
   droitsDepenses,
@@ -25,7 +27,7 @@ import {
   type FiltreRattachement,
   type FiltreSemaine,
 } from './regles.ts';
-import { ACHATS_COURANTS, CATEGORIES, type NouvelleDepense } from './types.ts';
+import { ACHATS_COURANTS, CATEGORIES, type Depense, type NouvelleDepense } from './types.ts';
 
 /**
  * Comptoir › Dépenses (US-110, US-112, US-113) : budget du mois par catégorie, saisie d'une dépense
@@ -35,11 +37,13 @@ import { ACHATS_COURANTS, CATEGORIES, type NouvelleDepense } from './types.ts';
 export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
   const { t } = useTranslation();
   const afficher = useToast();
+  const [aAnnuler, setAAnnuler] = useState<Depense | null>(null);
   const { utilisateur } = useUtilisateurCourant();
   const nom = utilisateur?.name;
   const profil = utilisateur?.profil;
   const requete = useDepenses(nom);
   const enregistrer = useEnregistrerDepense(nom);
+  const annulerDepense = useAnnulerDepense(nom);
   const fixerBudget = useFixerBudget(nom);
   const fixerPlafonds = useFixerPreAutorisations(nom);
   const [reglage, setReglage] = useState<'budget' | 'plafonds' | null>(null);
@@ -142,9 +146,31 @@ export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
             onSemaine={setSemaine}
             onRattachement={setRattachement}
             cheminDemandes={cheminDemandes}
+            peutAnnuler={(d) =>
+              d.statut === 'en-attente' &&
+              (d.par === nom || profil === 'gerant' || profil === 'proprietaire')
+            }
+            onAnnuler={setAAnnuler}
           />
         </div>
       </div>
+      {aAnnuler && (
+        <FenetreAnnulation
+          depense={`DEP-${String(aAnnuler.numero).padStart(4, '0')} · ${aAnnuler.libelle}`}
+          envoiEnCours={annulerDepense.isPending}
+          onFermer={() => setAAnnuler(null)}
+          onConfirmer={async (motif) => {
+            try {
+              await annulerDepense.mutateAsync({ id: aAnnuler.id, motif });
+              setAAnnuler(null);
+              afficher(t('comptoir.depenses.annulation.toast'));
+              return false;
+            } catch {
+              return true;
+            }
+          }}
+        />
+      )}
       {reglage === 'budget' && (
         <FenetreReglages
           titre={t('comptoir.depenses.budget.fixerTitre', { mois: instantane.mois })}
