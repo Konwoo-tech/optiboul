@@ -37,7 +37,8 @@ const FOURNISSEUR = {
   id: 1,
   nom: 'Grands Moulins',
   telephone: '+237 699 10 20 30',
-  conditions: 'Crédit lundi-mardi',
+  conditions: 'credit_lundi_mardi',
+  conditions_libelle: 'Crédit lundi-mardi',
   matieres: ['farine', 'levure'],
   actif: true,
   prochaine_reception: null,
@@ -67,8 +68,14 @@ function serveurFournisseurs() {
       HttpResponse.json(
         page([
           planifiee(7, 'planifiee'),
-          planifiee(6, 'recue', '10.000'),
-          planifiee(5, 'recue', '20.000', 'farine'),
+          {
+            ...planifiee(6, 'recue', '10.000'),
+            reception: 9,
+            recue_quantite: '6.000',
+            recue_par: 'Willy Gérant',
+            recue_le: '2026-11-19T10:15:00+01:00',
+          },
+          { ...planifiee(5, 'recue', '20.000', 'farine'), reception: 8, recue_quantite: '20.000' },
           planifiee(4, 'annulee'),
         ]),
       ),
@@ -79,7 +86,9 @@ function serveurFournisseurs() {
           {
             id: 3,
             reception: 9,
+            planifiee: 6,
             fournisseur: 'Grands Moulins',
+            fournisseur_id: 1,
             matiere: 'levure',
             quantite: '4.000',
             statut: 'a_livrer',
@@ -104,11 +113,32 @@ function serveurFournisseurs() {
             echeance: '2026-11-17',
             statut: 'en_cours',
             en_retard: true,
+            reception_planifiee: null,
+            quantite: null,
+            paye: 0,
+            reste: 88000,
+            paiement: null,
+          },
+          {
+            id: 12,
+            numero: 42,
+            fournisseur: 1,
+            fournisseur_nom: 'Grands Moulins',
+            semaine: 1,
+            farine: false,
+            montant: 15000,
+            echeance: '2026-11-26',
+            statut: 'a_payer',
+            en_retard: false,
+            reception_planifiee: 6,
+            quantite: '6.000',
+            paye: 0,
+            reste: 15000,
+            paiement: null,
           },
         ]),
       ),
     ),
-    http.get('*/api/v1/factures/11/paiements/', () => HttpResponse.json([])),
     http.get('*/api/v1/semaines/', () =>
       HttpResponse.json(page([{ id: 1, code: 'S46', annee: 2026, numero: 46 }])),
     ),
@@ -129,13 +159,19 @@ describe('lecture des fournisseurs sur le vrai serveur', () => {
         credit: true,
       },
     ]);
-    // L'annulée n'apparaît pas ; le bon reçu de levure porte le manquant.
+    // L'annulée n'apparaît pas ; le bon reçu de levure porte le manquant (lien exact, quantité reçue réelle).
     expect(i.commandes.map((c) => [c.numero, c.statut, c.commandee, c.recue])).toEqual([
       ['BC-005', 'recue', 20, 20],
       ['BC-006', 'partielle', 10, 6],
       ['BC-007', 'planifiee', 10, 0],
     ]);
-    expect(i.commandes[1]).toMatchObject({ manquant: 3, idServeur: 6, fournisseur: '1' });
+    expect(i.commandes[1]).toMatchObject({
+      manquant: 3,
+      idServeur: 6,
+      fournisseur: '1',
+      recuePar: 'Willy Gérant',
+      recueLe: { jour: '2026-11-19', heure: '10:15' },
+    });
     expect(i.factures[0]).toMatchObject({
       numero: 'FAC-41',
       statut: 'a-payer',
@@ -144,11 +180,20 @@ describe('lecture des fournisseurs sur le vrai serveur', () => {
       objet: { genre: 'serveur', farine: true, semaine: 46 },
       idServeur: 11,
     });
+    // Une facture de réception dit de quel bon elle vient et ce qui a été reçu.
+    expect(i.factures[1]).toMatchObject({
+      numero: 'FAC-42',
+      montant: 15000,
+      objet: { genre: 'reception', commande: 'BC-006', matiere: 'levure', recue: 6, commandee: 10 },
+    });
     expect(i.jours).toHaveLength(8);
     expect(i.jours[0]).toBe(i.aujourdhui);
   });
 
   it('les conversions : conditions libres, téléphone, matières inconnues, statuts', () => {
+    expect(conditionsDe('credit_lundi_mardi')).toBe('credit-lundi-mardi');
+    expect(conditionsDe('sept_jours')).toBe('sept-jours');
+    expect(conditionsDe('a_la_livraison')).toBe('a-la-livraison');
     expect(conditionsDe('À la livraison')).toBe('a-la-livraison');
     expect(conditionsDe('Paiement à 7 jours')).toBe('sept-jours');
     expect(conditionsDe(undefined)).toBe('a-la-livraison');
@@ -174,75 +219,61 @@ const wrapper =
     createElement(QueryClientProvider, { client }, children);
 
 describe('paiements sur le vrai serveur', () => {
-  it('une facture payée en partie affiche le reste dû, une soldée son paiement', async () => {
+  it('une facture payée en partie affiche le reste dû, une soldée son paiement (sans lecture des paiements)', async () => {
     serveurFournisseurs();
+    const facture = (extra: Record<string, unknown>) => ({
+      fournisseur: 1,
+      fournisseur_nom: 'Grands Moulins',
+      semaine: 1,
+      echeance: '2026-11-20',
+      reception_planifiee: null,
+      quantite: null,
+      paiement: null,
+      ...extra,
+    });
     serveur.use(
       http.get('*/api/v1/factures/', () =>
         HttpResponse.json(
           page([
-            {
+            facture({
               id: 11,
               numero: 41,
-              fournisseur: 1,
-              semaine: 1,
               farine: true,
               montant: 88000,
-              echeance: '2026-11-17',
               statut: 'en_cours',
               en_retard: true,
-            },
-            {
+              paye: 30000,
+              reste: 58000,
+            }),
+            facture({
               id: 12,
               numero: 42,
-              fournisseur: 1,
-              semaine: 1,
               farine: false,
               montant: 5000,
-              echeance: '2026-11-20',
               statut: 'payee',
               en_retard: false,
-            },
-            {
+              paye: 5000,
+              reste: 0,
+              paiement: {
+                id: 2,
+                mode: 'mobile',
+                reference: 'MP123',
+                paye_le: '2026-11-19T10:00:00+01:00',
+                depense: 6,
+              },
+            }),
+            facture({
               id: 13,
               numero: 43,
-              fournisseur: 1,
-              semaine: 1,
               farine: false,
               montant: 7000,
-              echeance: '2026-11-20',
               statut: 'a_payer',
               en_retard: false,
-            },
+              paye: 0,
+              reste: 7000,
+            }),
           ]),
         ),
-      ),
-      http.get('*/api/v1/factures/11/paiements/', () =>
-        HttpResponse.json([
-          {
-            id: 1,
-            facture: 11,
-            montant: 30000,
-            mode: 'banque',
-            reference: '',
-            depense: 5,
-            paye_par: 'Willy',
-            paye_le: '2026-11-18T09:00:00+01:00',
-          },
-        ]),
-      ),
-      http.get('*/api/v1/factures/12/paiements/', () =>
-        HttpResponse.json([
-          {
-            id: 2,
-            facture: 12,
-            montant: 5000,
-            mode: 'mobile',
-            reference: 'MP123',
-            depense: 6,
-            paye_par: 'Willy',
-            paye_le: '2026-11-19T10:00:00+01:00',
-          },
-        ]),
       ),
     );
     const { factures } = await lireFournisseursReels();

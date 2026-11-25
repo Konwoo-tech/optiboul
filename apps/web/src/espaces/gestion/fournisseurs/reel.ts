@@ -1,6 +1,5 @@
 import {
   facturesList,
-  facturesPaiementsList,
   fournisseursList,
   manquantsList,
   receptionsPlanifieesList,
@@ -9,7 +8,6 @@ import {
   type Facture as FactureServeur,
   type Fournisseur as FournisseurServeur,
   type Manquant,
-  type PaiementFournisseur,
   type ReceptionPlanifiee,
 } from '@/api';
 
@@ -27,9 +25,9 @@ import type {
 
 /*
  * Lecture de « Gestion › Fournisseurs » sur le vrai serveur : `fournisseurs/`, `receptions-planifiees/`,
- * `manquants/`, `factures/` et `semaines/` (numéro de semaine des factures). Le serveur ne relie pas un
- * manquant à sa réception planifiée ni une facture à sa réception : l'écran rapproche par fournisseur
- * et matière (voir E44 dans docs/integration-api-ecarts.md).
+ * `manquants/`, `factures/` et `semaines/` (numéro de semaine des factures). Le serveur relie chaque
+ * manquant et chaque facture à son bon (`planifiee`, `reception_planifiee`), donne la quantité reçue
+ * et le reste dû (voir E44 dans docs/integration-api-ecarts.md).
  */
 
 type Page<T> = { data: { results?: T[]; next?: string | null } };
@@ -37,12 +35,28 @@ type Page<T> = { data: { results?: T[]; next?: string | null } };
 const matiereConnue = (code: string): code is Matiere =>
   (MATIERES as readonly string[]).includes(code);
 
+const FUSEAU = 'Africa/Douala';
+const jourDeYaounde = (iso: string) =>
+  new Intl.DateTimeFormat('fr-CA', { timeZone: FUSEAU }).format(new Date(iso));
+const heureDeYaounde = (iso: string) =>
+  new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: FUSEAU }).format(
+    new Date(iso),
+  );
+
 /** « BC-032 » : le numéro du bon est celui de la réception planifiée. */
 export const numeroDeCommande = (id: number) => `BC-${String(id).padStart(3, '0')}`;
 export const numeroDeFacture = (numero: number) => `FAC-${numero}`;
 
-/** Le serveur garde un texte libre ; l'écran connaît trois conditions. */
+const CONDITIONS: Record<string, Conditions> = {
+  credit_lundi_mardi: 'credit-lundi-mardi',
+  sept_jours: 'sept-jours',
+  a_la_livraison: 'a-la-livraison',
+};
+
+/** Les conditions du serveur sont une liste fermée ; un texte libre (anciennes données) est interprété. */
 export function conditionsDe(texte: string | undefined): Conditions {
+  const connue = texte ? CONDITIONS[texte] : undefined;
+  if (connue) return connue;
   const t = (texte ?? '').toLowerCase();
   if (t.includes('lundi') || t.includes('mardi')) return 'credit-lundi-mardi';
   if (/\b7\b|sept|semaine/.test(t)) return 'sept-jours';
@@ -67,35 +81,23 @@ export function versFournisseur(f: FournisseurServeur): Fournisseur {
 
 const nombre = (texte: string | number) => Number(texte);
 
-/**
- * Les bons : une réception planifiée reçue devient « partielle » quand un manquant lui correspond.
- * Le rapprochement prend, pour chaque manquant, la dernière réception reçue du même fournisseur et
- * de la même matière qui portait plus que le manquant.
- */
+/** Les bons : la quantité reçue, qui l'a reçue et quand viennent de la réception ; le manquant se lit par son bon. */
 export function versCommandes(
   planifiees: readonly ReceptionPlanifiee[],
   manquants: readonly Manquant[],
 ): Commande[] {
   const manquantDe = new Map<number, Manquant>();
-  const recues = planifiees.filter((p) => p.statut === 'recue').sort((a, b) => b.id - a.id);
-  for (const m of [...manquants].sort((a, b) => b.id - a.id)) {
-    const cible = recues.find(
-      (p) =>
-        p.fournisseur_nom === m.fournisseur &&
-        p.matiere === m.matiere &&
-        nombre(p.quantite) > nombre(m.quantite) &&
-        !manquantDe.has(p.id),
-    );
-    if (cible) manquantDe.set(cible.id, m);
+  for (const m of [...manquants].sort((x, y) => y.id - x.id)) {
+    if (!manquantDe.has(m.planifiee)) manquantDe.set(m.planifiee, m);
   }
   return planifiees
     .filter((p) => p.statut !== 'annulee' && matiereConnue(p.matiere))
     .map((p): Commande => {
       const manquant = manquantDe.get(p.id);
       const commandee = nombre(p.quantite);
-      const recue =
-        p.statut === 'planifiee' ? 0 : manquant ? commandee - nombre(manquant.quantite) : commandee;
-      const statut = p.statut === 'planifiee' ? 'planifiee' : manquant ? 'partielle' : 'recue';
+      const recue = p.statut === 'planifiee' ? 0 : nombre(p.recue_quantite ?? p.quantite);
+      const statut =
+        p.statut === 'planifiee' ? 'planifiee' : recue < commandee ? 'partielle' : 'recue';
       return {
         numero: numeroDeCommande(p.id),
         fournisseur: String(p.fournisseur),
@@ -105,8 +107,10 @@ export function versCommandes(
         jour: p.prevue_le,
         statut,
         planifieePar: p.planifiee_par,
-        recuePar: '',
-        recueLe: null,
+        recuePar: p.recue_par ?? '',
+        recueLe: p.recue_le
+          ? { jour: jourDeYaounde(p.recue_le), heure: heureDeYaounde(p.recue_le) }
+          : null,
         semaine: '',
         ...(manquant?.replanifiee ? { reliquat: numeroDeCommande(manquant.replanifiee) } : {}),
         idServeur: p.id,
@@ -125,29 +129,38 @@ const STATUTS_FACTURE: Record<string, StatutFacture> = {
 export function versFacture(
   f: FactureServeur,
   semaines: ReadonlyMap<number, number>,
-  paiements: readonly PaiementFournisseur[] = [],
+  planifiees: ReadonlyMap<number, ReceptionPlanifiee> = new Map(),
 ): Facture {
-  const paye = paiements.reduce((somme, p) => somme + p.montant, 0);
-  const dernier = paiements.at(-1);
   const statut = STATUTS_FACTURE[f.statut] ?? 'a-payer';
+  const bon = f.reception_planifiee === null ? undefined : planifiees.get(f.reception_planifiee);
+  const paiement = f.paiement;
   return {
     numero: numeroDeFacture(f.numero),
     fournisseur: String(f.fournisseur),
-    objet: { genre: 'serveur', farine: f.farine, semaine: semaines.get(f.semaine) ?? 0 },
-    // Une facture payée en partie affiche ce qu'il reste à payer (E45).
-    montant: statut === 'payee' ? f.montant : f.montant - paye,
+    objet:
+      bon && matiereConnue(bon.matiere) && f.quantite !== null
+        ? {
+            genre: 'reception',
+            commande: numeroDeCommande(bon.id),
+            matiere: bon.matiere as Matiere,
+            recue: nombre(f.quantite),
+            commandee: nombre(bon.quantite),
+          }
+        : { genre: 'serveur', farine: f.farine, semaine: semaines.get(f.semaine) ?? 0 },
+    // Une facture payée en partie affiche ce qu'il reste à payer (E45) ; soldée, son montant.
+    montant: statut === 'payee' ? f.montant : f.reste,
     echeance: f.echeance,
     statut,
     enRetard: f.en_retard,
     semaine: String(f.semaine),
     idServeur: f.id,
-    ...(statut === 'payee' && dernier
+    ...(statut === 'payee' && paiement
       ? {
-          payeeLe: dernier.paye_le.slice(0, 10),
-          mode: dernier.mode as ModePaiement,
-          ...(dernier.reference ? { reference: dernier.reference } : {}),
-          depense: String(dernier.depense),
-          paiement: dernier.id,
+          payeeLe: jourDeYaounde(paiement.paye_le),
+          mode: paiement.mode as ModePaiement,
+          ...(paiement.reference ? { reference: paiement.reference } : {}),
+          ...(paiement.depense === null ? {} : { depense: String(paiement.depense) }),
+          paiement: paiement.id,
         }
       : {}),
   };
@@ -156,10 +169,6 @@ export function versFacture(
 /** Aujourd'hui à Yaoundé, « AAAA-MM-JJ ». */
 const aujourdhuiLocal = () =>
   new Intl.DateTimeFormat('fr-CA', { timeZone: 'Africa/Douala' }).format(new Date());
-
-/** La route rend une liste simple ou paginée selon la configuration : les deux sont lus. */
-const lesPaiements = (corps: unknown): PaiementFournisseur[] =>
-  Array.isArray(corps) ? corps : ((corps as { results?: PaiementFournisseur[] }).results ?? []);
 
 export async function lireFournisseursReels(): Promise<InstantaneFournisseurs> {
   const [fournisseurs, planifiees, manquants, factures, semaines] = await Promise.all([
@@ -175,12 +184,7 @@ export async function lireFournisseursReels(): Promise<InstantaneFournisseurs> {
     ),
     toutesLesPages((page) => semainesList({ page })),
   ]);
-  // Les paiements ne sont lus que pour les factures déjà entamées ou soldées.
-  const paiements = await Promise.all(
-    factures.map(async (f) =>
-      f.statut === 'a_payer' ? [] : lesPaiements((await facturesPaiementsList(f.id)).data),
-    ),
-  );
+  const bons = new Map(planifiees.map((p) => [p.id, p] as const));
   const numeros = new Map(semaines.map((s) => [s.id, s.numero] as const));
   const aujourdhui = aujourdhuiLocal();
   return {
@@ -191,6 +195,6 @@ export async function lireFournisseursReels(): Promise<InstantaneFournisseurs> {
       planifiees,
       manquants.filter((m) => m.statut !== 'livre'),
     ).sort((a, b) => (a.idServeur ?? 0) - (b.idServeur ?? 0)),
-    factures: factures.map((f, rang) => versFacture(f, numeros, paiements[rang])),
+    factures: factures.map((f) => versFacture(f, numeros, bons)),
   };
 }
