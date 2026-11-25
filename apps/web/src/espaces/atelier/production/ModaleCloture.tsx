@@ -1,5 +1,4 @@
 import { useTranslation } from '@/i18n';
-import { SIMULATION } from '@/simulation';
 import { FenetreModale } from '@/ui';
 import { formaterNombre } from '@/utils';
 
@@ -42,7 +41,7 @@ export function ModaleCloture({
       </p>
       <p className={styles.titreModale}>{t('atelier.production.cloture.sorties')}</p>
       <ul className={styles.sorties}>
-        {sortiesDeStock(consommation, SIMULATION ? 'prototype' : 'serveur').map((sortie) => {
+        {sortiesDeStock(consommation, 'serveur').map((sortie) => {
           const disponible = instantane.stock[sortie.matiere];
           const insuffisant = sortie.quantite > disponible;
           // Le stock ne descend jamais sous zéro : on le dit plutôt que d'afficher un reste négatif.
