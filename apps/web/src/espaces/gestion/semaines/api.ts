@@ -2,6 +2,9 @@ import {
   ErreurApi,
   getSemainesPassationRetrieveUrl,
   semainesAffectationsCreate,
+  semainesCopierPrecedenteCreate,
+  semainesCreate,
+  semainesRotationRetrieve,
   semainesCloturerCreate,
   semainesCloturerForceeCreate,
   semainesOuvrirCreate,
@@ -116,4 +119,30 @@ export function ouvrirLaPassation(idServeur: number) {
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
 export function codeErreur(erreur: unknown): string | undefined {
   return erreur instanceof ErreurApi ? erreur.code : undefined;
+}
+
+/** Planifie une semaine (propriétaire) : `POST /semaines/`, équipe facultative. */
+export const usePlanifierSemaine = (utilisateur: string | undefined) =>
+  useActionSemaines<{ annee: number; numero: number; gerant: string; production: string }>(
+    utilisateur,
+    async ({ annee, numero, gerant, production }) => {
+      await semainesCreate({
+        annee,
+        numero,
+        gerant: gerant ? Number(gerant) : null,
+        production: production ? Number(production) : null,
+      });
+    },
+  );
+
+/** Reprend l'équipe et le planning des caisses de la semaine précédente (propriétaire). */
+export const useCopierSemaine = (utilisateur: string | undefined) =>
+  useActionSemaines<{ semaine: string }>(utilisateur, async ({ semaine }, ids) => {
+    await semainesCopierPrecedenteCreate(idDe(ids, semaine));
+  });
+
+/** Le gérant et le responsable de production que la rotation propose pour une semaine. */
+export async function lireRotation(annee: number, numero: number) {
+  const { data } = await semainesRotationRetrieve({ annee, numero });
+  return data as { gerant: number | null; production: number | null };
 }

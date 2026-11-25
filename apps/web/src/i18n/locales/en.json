@@ -1611,6 +1611,25 @@
         "bloquants": "Close the cash desk and the production before closing the week.",
         "impossible": "This week can no longer be opened or closed: the screen has just been refreshed.",
         "droit": "Your profile does not allow this action."
+      },
+      "planification": {
+        "ajouter": "Plan a week",
+        "titre": "Plan a week",
+        "annee": "Year",
+        "numero": "Week number",
+        "gerant": "Week manager",
+        "production": "Production lead",
+        "note": "The proposed team comes from the rotation; change it or leave it empty for later.",
+        "creer": "Plan the week",
+        "annuler": "Cancel",
+        "toast": "Week {{numero}} planned",
+        "copier": "Copy the previous week",
+        "toastCopiee": "Team and schedule of the previous week copied to week {{numero}}",
+        "erreurs": {
+          "numero": "Invalid year or week number.",
+          "existe": "This week already exists.",
+          "defaut": "The week could not be planned. Try again."
+        }
       }
     },
     "sauvegardes": {

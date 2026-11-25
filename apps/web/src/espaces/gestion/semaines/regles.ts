@@ -163,3 +163,23 @@ export function creneauReel(
 /** Semaine qui contient un jour donné. */
 export const semaineDuJour = (semaines: readonly Semaine[], jour: string): Semaine | undefined =>
   semaines.find((s) => jour >= s.du && jour <= s.au);
+
+/** Année et numéro ISO de la semaine qui suit la dernière planifiée (ou de la semaine courante). */
+export function semaineSuivante(semaines: readonly { du: string }[]): {
+  annee: number;
+  numero: number;
+} {
+  const dernier = semaines.map((s) => s.du).sort()[semaines.length - 1];
+  const lundi = new Date(`${dernier ?? new Date().toISOString().slice(0, 10)}T12:00:00Z`);
+  if (dernier) lundi.setUTCDate(lundi.getUTCDate() + 7);
+  // Le jeudi de la semaine donne son année et son numéro ISO.
+  const jeudi = new Date(lundi);
+  jeudi.setUTCDate(lundi.getUTCDate() + 3 - ((lundi.getUTCDay() + 6) % 7));
+  const debut = new Date(Date.UTC(jeudi.getUTCFullYear(), 0, 4));
+  const numero =
+    1 +
+    Math.round(
+      ((jeudi.getTime() - debut.getTime()) / 86_400_000 - 3 + ((debut.getUTCDay() + 6) % 7)) / 7,
+    );
+  return { annee: jeudi.getUTCFullYear(), numero };
+}

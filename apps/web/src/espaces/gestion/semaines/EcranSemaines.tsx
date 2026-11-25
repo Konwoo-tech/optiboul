@@ -15,7 +15,9 @@ import {
   useOuvrirSemaine,
   ouvrirLaPassation,
   useCloturerDeForce,
+  useCopierSemaine,
   usePlanifier,
+  usePlanifierSemaine,
   useSemaines,
 } from './api.ts';
 import { CarteSemaine } from './CarteSemaine.tsx';
@@ -23,14 +25,19 @@ import { Chiffres } from './Chiffres.tsx';
 import { Controles } from './Controles.tsx';
 import { Historique } from './Historique.tsx';
 import { ModaleCloture, ModaleOuverture } from './Modales.tsx';
+import { ModalePlanification } from './ModalePlanification.tsx';
 import { ModaleForcee } from './ModaleForcee.tsx';
 import { PlanningCaisses } from './PlanningCaisses.tsx';
 import { RapportPassation } from './RapportPassation.tsx';
-import { niveauDuStatut, peutPlanifier, semaineCourante } from './regles.ts';
+import { niveauDuStatut, peutPlanifier, semaineCourante, semaineSuivante } from './regles.ts';
 import styles from './Semaines.module.css';
 import type { Creneau, RoleAffecte } from './types.ts';
 
-type Fenetre = { type: 'ouvrir'; heure: string } | { type: 'cloturer' } | { type: 'forcee' };
+type Fenetre =
+  | { type: 'ouvrir'; heure: string }
+  | { type: 'cloturer' }
+  | { type: 'forcee' }
+  | { type: 'planifier' };
 
 const PARAMETRE = 'semaine';
 
@@ -49,6 +56,8 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
   const requete = useSemaines(nom);
   const affecter = useAffecter(nom);
   const planifier = usePlanifier(nom);
+  const planifierSemaine = usePlanifierSemaine(nom);
+  const copier = useCopierSemaine(nom);
   const ouvrir = useOuvrirSemaine(nom);
   const cloturer = useCloturerSemaine(nom);
   const cloturerDeForce = useCloturerDeForce(nom);
@@ -75,7 +84,7 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
   }
 
   const { semaines, planning, creneaux } = instantane;
-  const occupe = affecter.isPending || planifier.isPending;
+  const occupe = affecter.isPending || planifier.isPending || copier.isPending;
   const langue = i18n.language;
   const demandee = parametres.get(PARAMETRE);
   const choisie = semaines.find((s) => s.id === demandee) ?? semaineCourante(semaines);
@@ -158,32 +167,44 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
     <>
       <EnTeteEcran ecran={ecran} />
       <div className={styles.page}>
-        <fieldset className={styles.puces}>
-          <legend className={styles.invisible}>{t('gestion.semaines.sections')}</legend>
-          {semaines.map((semaine) => (
+        <div className={styles.entetePuces}>
+          <fieldset className={styles.puces}>
+            <legend className={styles.invisible}>{t('gestion.semaines.sections')}</legend>
+            {semaines.map((semaine) => (
+              <button
+                type="button"
+                key={semaine.id}
+                className={`${styles.puce} ${semaine.id === choisie.id ? styles.puceActive : ''}`}
+                aria-pressed={semaine.id === choisie.id}
+                onClick={() => choisir(semaine.id)}
+              >
+                <span className={styles.puceTitre}>
+                  {t('gestion.semaines.puce.titre', { numero: semaine.numero })}
+                </span>
+                <span
+                  className={styles.puceSous}
+                  style={{ color: `var(--ob-${niveauDuStatut(semaine.statut)}-texte)` }}
+                >
+                  {t('gestion.semaines.puce.sous', {
+                    statut: t(`gestion.semaines.statuts.${semaine.statut}`),
+                    du: jourMois(semaine.du, langue),
+                    au: jourMois(semaine.au, langue),
+                  })}
+                </span>
+              </button>
+            ))}
+          </fieldset>
+          {profil === 'proprietaire' && (
             <button
               type="button"
-              key={semaine.id}
-              className={`${styles.puce} ${semaine.id === choisie.id ? styles.puceActive : ''}`}
-              aria-pressed={semaine.id === choisie.id}
-              onClick={() => choisir(semaine.id)}
+              className={styles.principal}
+              onClick={() => setFenetre({ type: 'planifier' })}
             >
-              <span className={styles.puceTitre}>
-                {t('gestion.semaines.puce.titre', { numero: semaine.numero })}
-              </span>
-              <span
-                className={styles.puceSous}
-                style={{ color: `var(--ob-${niveauDuStatut(semaine.statut)}-texte)` }}
-              >
-                {t('gestion.semaines.puce.sous', {
-                  statut: t(`gestion.semaines.statuts.${semaine.statut}`),
-                  du: jourMois(semaine.du, langue),
-                  au: jourMois(semaine.au, langue),
-                })}
-              </span>
+              <span aria-hidden>+ </span>
+              {t('gestion.semaines.planification.ajouter')}
             </button>
-          ))}
-        </fieldset>
+          )}
+        </div>
 
         <div className={styles.rangee}>
           <CarteSemaine
@@ -218,6 +239,28 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
           onChoisir={surPlanifier}
         />
 
+        {profil === 'proprietaire' && choisie.statut === 'planifiee' && (
+          <button
+            type="button"
+            className={styles.forcer}
+            disabled={copier.isPending}
+            onClick={() =>
+              copier.mutate(
+                { semaine: choisie.id },
+                {
+                  onSuccess: () =>
+                    afficher(
+                      t('gestion.semaines.planification.toastCopiee', { numero: choisie.numero }),
+                    ),
+                  onError: signaler,
+                },
+              )
+            }
+          >
+            {t('gestion.semaines.planification.copier')}
+          </button>
+        )}
+
         {choisie.statut === 'ouverte' && cloture && (
           <div className={`${styles.rangee} ${styles.rangeeHaute}`}>
             <Controles controles={cloture.controles} profil={profil} />
@@ -251,6 +294,25 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
         <Historique semaines={semaines} choisie={choisie.id} onChoisir={choisir} />
       </div>
 
+      {fenetre?.type === 'planifier' && (
+        <ModalePlanification
+          proposee={semaineSuivante(semaines)}
+          gerants={instantane.gerants}
+          responsables={instantane.responsables}
+          envoiEnCours={planifierSemaine.isPending}
+          onFermer={() => setFenetre(null)}
+          onConfirmer={async (saisie) => {
+            try {
+              await planifierSemaine.mutateAsync(saisie);
+              setFenetre(null);
+              afficher(t('gestion.semaines.planification.toast', { numero: saisie.numero }));
+              return null;
+            } catch (erreur) {
+              return codeErreur(erreur) === 'semaine_existante' ? 'existe' : 'defaut';
+            }
+          }}
+        />
+      )}
       {fenetre?.type === 'ouvrir' && (
         <ModaleOuverture
           semaine={choisie}
