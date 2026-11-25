@@ -2,7 +2,6 @@ import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { useToast } from '@/ui';
 import { formaterDateCourte, formaterNombre } from '@/utils';
-import { SIMULATION } from '@/simulation';
 import { useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Link } from 'react-router';
 
@@ -268,7 +267,7 @@ export default function EcranDemandes({ ecran }: { ecran: Ecran }) {
         occupe={decider.isPending}
         onDecider={
           demande.statut === 'en-attente' && peutDecider(demande, profil)
-            ? (accord) => (!accord && !SIMULATION ? setRefus(demande) : trancher(demande, accord))
+            ? (accord) => (!accord ? setRefus(demande) : trancher(demande, accord))
             : undefined
         }
       />

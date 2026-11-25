@@ -1,16 +1,8 @@
-import { demandesAccorderCreate, demandesRefuserCreate, optiboulFetch } from '@/api';
+import { demandesAccorderCreate, demandesRefuserCreate } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
-import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { lireDemandesReelles } from './reel.ts';
-import type { ReponseDecision, ReponseDemandes } from './types.ts';
-
-// En simulation, l'écran lit l'API simulée (`/api/v1/simulation/demandes/`) ; sur le vrai serveur,
-// `reel.ts` lit `GET /demandes/`.
-const RACINE = '/api/v1/simulation/demandes/';
-
-type Reponse<T> = { data: T };
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleDemandes = (utilisateur: string | undefined) =>
@@ -20,10 +12,7 @@ export function useDemandes(utilisateur: string | undefined) {
   const { utilisateur: connecte } = useUtilisateurCourant();
   return useQuery({
     queryKey: cleDemandes(utilisateur),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<ReponseDemandes>>(RACINE)).data
-        : lireDemandesReelles(connecte?.profil ?? undefined, connecte?.name ?? undefined),
+    queryFn: () => lireDemandesReelles(connecte?.profil ?? undefined, connecte?.name ?? undefined),
     enabled: Boolean(utilisateur),
     // Une demande peut arriver depuis la session : on relit à chaque ouverture de l'écran.
     staleTime: 0,
@@ -45,23 +34,13 @@ export function useDecider(utilisateur: string | undefined) {
     }: {
       id: string;
       accord: boolean;
-      /** Motif d'un refus (vrai serveur) ; à défaut, un motif par défaut. */
+      /** Motif d'un refus ; à défaut, un motif par défaut. */
       motif?: string;
-    }): Promise<unknown> => {
-      if (!SIMULATION) {
-        // La personne connectée décide : le serveur vérifie qu'elle est valideur de cette demande.
-        return accord
-          ? demandesAccorderCreate(Number(id), {})
-          : demandesRefuserCreate(Number(id), { motif: motif ?? MOTIF_DE_REFUS });
-      }
-      return (
-        await optiboulFetch<Reponse<ReponseDecision>>(`${RACINE}${id}/decider/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accord }),
-        })
-      ).data;
-    },
+    }): Promise<unknown> =>
+      // La personne connectée décide : le serveur vérifie qu'elle est valideur de cette demande.
+      accord
+        ? demandesAccorderCreate(Number(id), {})
+        : demandesRefuserCreate(Number(id), { motif: motif ?? MOTIF_DE_REFUS }),
     onSuccess: () =>
       Promise.all([
         client.invalidateQueries({ queryKey: cleDemandes(utilisateur) }),

@@ -793,7 +793,8 @@
     "validateur": {
       "gerant-ou-proprietaire": "Manager of the week ({{gerant}}) or owner",
       "gerant": "Manager of the week ({{gerant}}) or owner",
-      "proprietaire": "Owner ({{proprietaire}})"
+      "proprietaire": "Owner ({{proprietaire}})",
+      "proprietaireSansNom": "Owner"
     },
     "lien": {
       "client": "Customer {{nom}} · balance {{solde}} FCFA",
