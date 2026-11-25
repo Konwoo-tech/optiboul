@@ -1,56 +1,35 @@
-import { journalList, type LigneJournal } from '@/api';
+import {
+  journalActeursList,
+  journalList,
+  type Acteur,
+  type PaginatedLigneJournalList,
+} from '@/api';
 
-import { depuisLigneApi } from './mapping.ts';
-import { repondAuxFiltres } from './regles.ts';
+import { depuisLigneApi, versParametresApi } from './mapping.ts';
 import { LIMITE_AFFICHEE, type FiltresJournal, type InstantaneJournal } from './types.ts';
 
 /*
- * Lecture de « Gestion › Journal » sur le vrai serveur : `journal/` pagine par curseur et ne filtre
- * ni par nom d'auteur ni par famille d'action de l'écran. La période est envoyée au serveur ; l'auteur
- * et la famille se filtrent ici, sur les dernières actions lues (au plus `PAGES_MAX` pages), et le
- * total est celui des actions lues (voir E50).
+ * Lecture de « Gestion › Journal » sur le vrai serveur (P7, #361) : `journal/` filtre par période,
+ * auteur (identifiant tiré de `journal/acteurs/`) et famille, rend le `total` des lignes filtrées et
+ * le libellé lisible de chaque action. Une seule page de `LIMITE_AFFICHEE` lignes est lue.
  */
-
-/** Nombre maximal de pages de curseur lues pour une recherche. */
-export const PAGES_MAX = 10;
-
-type PageCurseur = { data: { results?: LigneJournal[]; next?: string | null } };
-
-/** Le curseur de la page suivante, tiré de l'adresse `next` renvoyée par le serveur. */
-export function curseurDe(suivante: string | null | undefined): string | undefined {
-  if (!suivante) return undefined;
-  try {
-    return new URL(suivante, 'http://localhost').searchParams.get('cursor') ?? undefined;
-  } catch {
-    return undefined;
-  }
-}
 
 const jourDeYaounde = () =>
   new Intl.DateTimeFormat('fr-CA', { timeZone: 'Africa/Douala' }).format(new Date());
 
 export async function lireJournalReel(filtres: FiltresJournal): Promise<InstantaneJournal> {
-  const lignes: LigneJournal[] = [];
-  let curseur: string | undefined;
-  for (let page = 0; page < PAGES_MAX; page += 1) {
-    const reponse = (await journalList({
-      ...(filtres.du ? { du: filtres.du } : {}),
-      ...(filtres.au ? { au: filtres.au } : {}),
-      ...(curseur ? { cursor: curseur } : {}),
-    })) as unknown as PageCurseur;
-    lignes.push(...(reponse.data.results ?? []));
-    curseur = curseurDe(reponse.data.next);
-    if (!curseur) break;
-  }
-  const entrees = lignes.map(depuisLigneApi);
-  const auteurs = [...new Set(entrees.map((e) => e.auteur).filter(Boolean))].sort((a, b) =>
-    a.localeCompare(b, 'fr'),
-  );
-  const retenues = entrees.filter((e) => repondAuxFiltres(e, filtres));
+  const acteurs = await journalActeursList()
+    .then((r) => (Array.isArray(r.data) ? (r.data as Acteur[]) : []))
+    .catch(() => [] as Acteur[]);
+  const ids = new Map(acteurs.map((a) => [a.nom, a.id] as const));
+  const reponse = (await journalList({
+    ...versParametresApi(filtres, ids),
+    page_size: LIMITE_AFFICHEE,
+  })) as unknown as { data: PaginatedLigneJournalList };
   return {
-    entrees: retenues.slice(0, LIMITE_AFFICHEE),
-    total: retenues.length,
-    auteurs,
+    entrees: reponse.data.results.map(depuisLigneApi),
+    total: reponse.data.total,
+    auteurs: [...new Set(acteurs.map((a) => a.nom))].sort((x, y) => x.localeCompare(y, 'fr')),
     aujourdhui: jourDeYaounde(),
   };
 }

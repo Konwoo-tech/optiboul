@@ -52,6 +52,24 @@ describe('mapping de l’API réelle vers le modèle de l’écran', () => {
     });
   });
 
+  it('prend le libellé lisible du serveur (français, anglais) et l’objet concerné', () => {
+    const e = depuisLigneApi(ligne());
+    expect(e).toMatchObject({
+      texte: 'Caisse fermée',
+      texteEn: 'Cash register closed',
+      objet: 'Caisse de jour du 19/11',
+      type: 'caisse',
+    });
+    // Plus de code d'action à traduire côté écran.
+    expect(e.codeAction).toBeUndefined();
+    // Une ligne sans libellé garde le code.
+    expect(depuisLigneApi(ligne({ libelle: '', libelle_en: '', objet_libelle: '' }))).toMatchObject(
+      {
+        texte: 'caisse.fermeture',
+      },
+    );
+  });
+
   it('une action après minuit UTC tombe le bon jour à Yaoundé', () => {
     expect(depuisLigneApi(ligne({ horodatage: '2026-10-14T23:30:00Z' }))).toMatchObject({
       jour: '2026-10-15',
@@ -105,7 +123,11 @@ describe('mapping de l’API réelle vers le modèle de l’écran', () => {
         { auteur: 'Willy', type: 'caisse', du: '2026-10-01', au: '2026-10-14' },
         ids,
       ),
-    ).toEqual({ auteur: 3, type: 'caisse', du: '2026-10-01', au: '2026-10-14' });
+    ).toEqual({ auteur: 3, famille: 'caisse', du: '2026-10-01', au: '2026-10-14' });
+    // Le serveur range les livraisons dans la famille « caisse » : « session » s'y rabat.
+    expect(versParametresApi({ ...SANS_FILTRE, type: 'session' }, ids)).toEqual({
+      famille: 'caisse',
+    });
     // Un auteur sans identifiant connu n'est pas envoyé.
     expect(versParametresApi({ ...SANS_FILTRE, auteur: 'Inconnu' }, ids)).toEqual({});
   });
