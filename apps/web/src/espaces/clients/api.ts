@@ -12,17 +12,10 @@ import {
 } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
 import { useContexte } from '@/coque/contexte.ts';
-import {
-  SIMULATION,
-  useClientsSimules,
-  useHistoriqueClientSimule,
-  useRelancerClientsSimules,
-  type ClientSimule,
-  type LigneHistoriqueClient,
-  type ListeClientsSimulee,
-} from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
+
+import type { ClientDeLecran, ListeClients, LigneHistoriqueClient } from './types.ts';
 
 const FUSEAU = 'Africa/Douala';
 /** Plafond de dette par défaut (R6) si le serveur ne dit rien : paramètre `plafond_dette_client`. */
@@ -46,7 +39,7 @@ export function dimancheDeLaSemaine(maintenant = new Date()): string {
 }
 
 /** Un client du vrai serveur, tel que l'écran le lit. */
-export function versClientDeLecran(client: Client, relances: ReadonlySet<number>): ClientSimule {
+export function versClientDeLecran(client: Client, relances: ReadonlySet<number>): ClientDeLecran {
   const prix = (client.prix ?? {}) as Record<string, number | null>;
   return {
     id: String(client.id),
@@ -63,7 +56,7 @@ export function versClientDeLecran(client: Client, relances: ReadonlySet<number>
 }
 
 /** Plafond le plus courant parmi les clients : celui qu'affiche « au-delà de … » dans les chiffres. */
-export function plafondCourant(clients: readonly ClientSimule[]): number {
+export function plafondCourant(clients: readonly ClientDeLecran[]): number {
   const nombres = new Map<number, number>();
   for (const client of clients) {
     if (client.plafond !== undefined)
@@ -73,7 +66,7 @@ export function plafondCourant(clients: readonly ClientSimule[]): number {
   return courant ?? PLAFOND_PAR_DEFAUT;
 }
 
-async function lireClients(): Promise<Omit<ListeClientsSimulee, 'echeance'>> {
+async function lireClients(): Promise<Omit<ListeClients, 'echeance'>> {
   const [clients, dettes] = await Promise.all([
     toutesLesPages<Client>((page) => clientsList({ actif: true, page }) as Promise<Page<Client>>),
     clientsDettesRetrieve().catch(() => null),
@@ -92,30 +85,26 @@ async function lireClients(): Promise<Omit<ListeClientsSimulee, 'echeance'>> {
 
 /**
  * Clients, soldes et plafond de dette. Sur le vrai serveur : `GET /clients/` (toutes les pages) et
- * `GET /clients/dettes/` (dernière relance) ; en simulation : le faux serveur. La date limite de
+ * `GET /clients/dettes/` (dernière relance). La date limite de
  * règlement est le dimanche de la semaine ouverte.
  */
 export function useClients(): {
-  data: ListeClientsSimulee | undefined;
+  data: ListeClients | undefined;
   isPending: boolean;
   isError: boolean;
 } {
   const { utilisateur } = useUtilisateurCourant();
   const { data: contexte } = useContexte();
-  const simules = useClientsSimules();
   const reels = useQuery({
     queryKey: ['clients', 'liste', utilisateur?.url],
     queryFn: lireClients,
-    enabled: !SIMULATION && Boolean(utilisateur),
+    enabled: Boolean(utilisateur),
   });
   const echeance = contexte?.semaine.au ?? dimancheDeLaSemaine();
   const data = useMemo(
     () => (reels.data ? { ...reels.data, echeance } : undefined),
     [reels.data, echeance],
   );
-  if (SIMULATION) {
-    return { data: simules.data, isPending: simules.isPending, isError: simules.isError };
-  }
   return { data, isPending: reels.isPending, isError: reels.isError };
 }
 
@@ -151,13 +140,11 @@ async function lireHistorique(id: string): Promise<LigneHistoriqueClient[]> {
 
 /** Livraisons d'un client, de la plus récente à la plus ancienne. */
 export function useHistoriqueClient(id: string | null) {
-  const simule = useHistoriqueClientSimule(id);
-  const reel = useQuery({
+  return useQuery({
     queryKey: ['clients', 'historique', id],
     queryFn: () => lireHistorique(id as string),
-    enabled: !SIMULATION && id !== null,
+    enabled: id !== null,
   });
-  return SIMULATION ? simule : reel;
 }
 
 /** Résultat d'une relance : messages mis en file, clients ignorés (sans téléphone ou sans dette). */
@@ -169,8 +156,7 @@ export type ResultatRelances = { relances: number; ignores: number };
  */
 export function useRelancerClients() {
   const client = useQueryClient();
-  const simule = useRelancerClientsSimules();
-  const reel = useMutation({
+  return useMutation({
     mutationFn: async (ids: string[]): Promise<ResultatRelances> => {
       const nombres = ids.map(Number);
       const reponse =
@@ -182,21 +168,16 @@ export function useRelancerClients() {
     },
     onSuccess: () => client.invalidateQueries({ queryKey: ['clients', 'liste'] }),
   });
-  return SIMULATION ? simule : reel;
 }
 
 /** Envoie le relevé du client par WhatsApp (file d'envoi) ; le serveur répond 409 sans numéro. */
 export function useEnvoyerReleve() {
   return useMutation({
-    // En simulation, rien ne part : l'écran confirme seulement.
-    mutationFn: async (id: string) => {
-      if (!SIMULATION) await clientsEnvoyerReleveCreate(Number(id), {});
-    },
+    mutationFn: (id: string) => clientsEnvoyerReleveCreate(Number(id), {}),
   });
 }
 
 /** Ouvre le relevé PDF (30 derniers jours) dans un nouvel onglet : le navigateur porte la session. */
 export function ouvrirRelevePdf(id: string) {
-  if (SIMULATION) return;
   window.open(getClientsRelevePdfRetrieveUrl(Number(id)), '_blank', 'noopener');
 }

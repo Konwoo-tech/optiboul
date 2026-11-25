@@ -1,4 +1,4 @@
-import type { ClientSimule } from '@/simulation';
+import type { ClientDeLecran } from './types.ts';
 
 import type { Profil } from '../../profils.ts';
 
@@ -35,26 +35,26 @@ export function statutDeSolde(solde: number, plafond: number): StatutClient {
 }
 
 /** Clients qui doivent de l'argent. */
-export const enDette = (clients: readonly ClientSimule[]) => clients.filter((c) => c.solde < 0);
+export const enDette = (clients: readonly ClientDeLecran[]) => clients.filter((c) => c.solde < 0);
 
 /** Le plafond de ce client : le sien s'il en a un, sinon celui de la liste. */
-export const plafondDe = (client: Pick<ClientSimule, 'plafond'>, parDefaut: number): number =>
+export const plafondDe = (client: Pick<ClientDeLecran, 'plafond'>, parDefaut: number): number =>
   client.plafond ?? parDefaut;
 
 /** Clients dont la dette dépasse leur plafond. */
-export const auDelaDuPlafond = (clients: readonly ClientSimule[], plafond: number) =>
+export const auDelaDuPlafond = (clients: readonly ClientDeLecran[], plafond: number) =>
   clients.filter((c) => c.solde < -plafondDe(c, plafond));
 
 /** Total des dettes, négatif (somme des soldes négatifs). */
-export const totalDesDettes = (clients: readonly ClientSimule[]): number =>
+export const totalDesDettes = (clients: readonly ClientDeLecran[]): number =>
   enDette(clients).reduce((somme, c) => somme + c.solde, 0);
 
 /** Clients du filtre, du plus endetté au moins endetté (le tri garde l'ordre d'origine à égalité). */
 export function filtrerClients(
-  clients: readonly ClientSimule[],
+  clients: readonly ClientDeLecran[],
   filtre: FiltreClients,
   plafond: number,
-): ClientSimule[] {
+): ClientDeLecran[] {
   const retenus =
     filtre === 'dette'
       ? enDette(clients)
@@ -66,7 +66,7 @@ export function filtrerClients(
 
 /** Nombre de clients de chaque filtre, affiché sur les boutons de filtre. */
 export function compteursDeFiltres(
-  clients: readonly ClientSimule[],
+  clients: readonly ClientDeLecran[],
   plafond: number,
 ): Record<FiltreClients, number> {
   return {

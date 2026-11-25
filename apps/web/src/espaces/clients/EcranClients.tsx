@@ -1,6 +1,5 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { type ClientSimule, type ListeClientsSimulee } from '@/simulation';
 import { useToast } from '@/ui';
 import { formaterNombre } from '@/utils';
 import { useState } from 'react';
@@ -9,6 +8,7 @@ import { useSearchParams } from 'react-router';
 import type { Ecran } from '../../navigation.ts';
 import { EnTeteEcran } from '../EnTeteEcran.tsx';
 import { useClients, useRelancerClients } from './api.ts';
+import type { ClientDeLecran, ListeClients } from './types.ts';
 import { DetailClient } from './DetailClient.tsx';
 import styles from './EcranClients.module.css';
 import {
@@ -34,7 +34,7 @@ const CLE_FILTRE: Record<FiltreClients, string> = {
 };
 
 type LigneProps = {
-  client: ClientSimule;
+  client: ClientDeLecran;
   plafond: number;
   choisi: boolean;
   relancable: boolean;
@@ -114,7 +114,7 @@ function LigneClient({ client, plafond, choisi, relancable, onChoisir, onRelance
   );
 }
 
-function Chiffres({ donnees }: { donnees: ListeClientsSimulee }) {
+function Chiffres({ donnees }: { donnees: ListeClients }) {
   const { t } = useTranslation();
   const { clients, plafond } = donnees;
   const lignes = [
@@ -198,7 +198,7 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
 
     // Le message suit le résultat : « envoyée » seulement si le serveur l'a confirmé.
     const surErreur = () => afficherToast(t('clients.toastRelanceErreur'));
-    const relancerUn = (client: ClientSimule) =>
+    const relancerUn = (client: ClientDeLecran) =>
       relancer.mutate([client.id], {
         onSuccess: ({ relances }) =>
           relances === 0
@@ -222,7 +222,7 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
           onError: surErreur,
         },
       );
-    const choisir = (client: ClientSimule) => {
+    const choisir = (client: ClientDeLecran) => {
       // Rechoisir le client ouvert referme le détail.
       setFocusDetail(true);
       modifier({ client: choisi?.id === client.id ? null : client.id });
