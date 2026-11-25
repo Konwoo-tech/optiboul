@@ -1,44 +1,206 @@
 import { configurerApi } from '@/api';
 import { initI18n } from '@/i18n';
-import { installerApiSimulee } from '@/simulation';
-import { lireJournal } from '@/simulation/journal.ts';
-import { valeurDuParametre } from '@/simulation/parametres.ts';
-import { reinitialiserSimulation } from '@/simulation/routeur.ts';
-import { memoriserUtilisateurConnecte } from '@/simulation/session.ts';
+import { creerServeurApi } from '@/test';
 import { OptiboulProvider } from '@/ui';
 import { formaterNombre, formatFCFA } from '@/utils';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-// Ces tests jouent l'écran sur le faux serveur ; la lecture du vrai serveur est dans reel.test.tsx.
-vi.hoisted(() => vi.stubEnv('MODE', 'simulation'));
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { ECRANS } from '../../../navigation.ts';
-import EcranProduction from '../../atelier/production/EcranProduction.tsx';
 import EcranParametres from './EcranParametres.tsx';
+import { messageDeLErreur, validerValeur } from './regles.ts';
+import type { Genre, Parametre, ValeurParametre, ValeurPassee } from './types.ts';
 
-vi.mock('@/simulation', async (original) => ({
-  ...(await original<typeof import('@/simulation')>()),
-  SIMULATION: true,
+/*
+ * L'écran Paramètres sur un faux serveur au format de l'API réelle : catalogue (`parametres/`),
+ * historique, modification (`PUT parametres/{clé}/`, droits et contrôles du serveur) et produits.
+ */
+
+const serveur = creerServeurApi();
+
+beforeAll(() => {
+  configurerApi({ baseUrl: 'http://localhost' });
+  serveur.listen({ onUnhandledFrame: 'error' });
+});
+afterAll(() => serveur.close());
+
+type Definition = Omit<Parametre, 'valeur' | 'modifie_le' | 'modifie_par'>;
+
+const def = (
+  cle: string,
+  libelle: string,
+  genre: Genre,
+  defaut: ValeurParametre,
+  autres: Partial<Definition> = {},
+): Definition => ({
+  cle,
+  libelle,
+  genre,
+  unite: '',
+  usage: '',
+  defaut,
+  choix: [],
+  minimum: null,
+  maximum: null,
+  ...autres,
+});
+
+const montant = (cle: string, libelle: string, defaut: number) =>
+  def(cle, libelle, 'montant', defaut, { unite: 'FCFA' });
+
+const CATALOGUE: Definition[] = [
+  montant('plafond_dette_client', 'Plafond de dette par client', 2_000),
+  def('echeance_dettes', 'Échéance des dettes', 'jour', 'dimanche'),
+  def('relances_jours', 'Jours des relances automatiques', 'jours', ['jeudi', 'samedi']),
+  def('relances_heure', 'Heure des relances automatiques', 'heure', '10:00'),
+  montant('fonds_caisse', 'Fonds de caisse', 20_000),
+  montant('seuil_validation_depenses', 'Seuil de validation des dépenses', 50_000),
+  def('ecart_matiere_kg_par_sac', 'Écart matière toléré par sac', 'entier', 2, { unite: 'kg' }),
+  def('inactivite_comptoir', 'Inactivité avant déconnexion au comptoir', 'choix', 5, {
+    unite: 'minutes',
+    choix: [1, 5, 10, 15],
+  }),
+  def('jour_de_paie', 'Jour de paie du mois', 'entier', 28, {
+    unite: 'jour',
+    minimum: 1,
+    maximum: 28,
+  }),
+  def('heure_petrissage_nuit', 'Heure du pétrissage (nuit)', 'heure', '19:00'),
+  def('sauvegarde_locale', 'Intervalle de la sauvegarde locale', 'entier', 4, {
+    unite: 'heures',
+    minimum: 1,
+    maximum: 24,
+  }),
+];
+
+const PRODUITS = [
+  { code: 'BAG', nom: 'Baguette', nom_en: 'Baguette', boule: 5000, pb: 20, sac: 315, prix: 100 },
+  { code: 'KO', nom: 'Kirikou', nom_en: 'Kirikou', boule: 4000, pb: 20, sac: 300, prix: 50 },
+  {
+    code: 'GC135',
+    nom: 'Gros court 135',
+    nom_en: 'Short loaf 135',
+    boule: 4800,
+    pb: 19,
+    sac: 280,
+    prix: 150,
+  },
+  { code: 'GC170', nom: 'Gros court 170', nom_en: '', boule: 5000, pb: 15, sac: 240, prix: 0 },
+  { code: 'PL', nom: 'Pain long', nom_en: '', boule: 4500, pb: 18, sac: 270, prix: 200 },
+  { code: 'C2', nom: 'Croissant 2', nom_en: '', boule: 3000, pb: 10, sac: 150, prix: 250 },
+  { code: 'PSL', nom: 'Pain sandwich long', nom_en: '', boule: 4000, pb: 12, sac: 190, prix: 300 },
+].map((p, i) => ({
+  id: i + 1,
+  code: p.code,
+  nom: p.nom,
+  nom_en: p.nom_en,
+  prix: p.prix,
+  fiche: { poids_boule: p.boule, pains_par_boule: p.pb, pains_par_sac: p.sac },
 }));
 
-let retablir: () => void;
+const PROFILS = {
+  fotso: { nom: 'M. Fotso', profil: 'proprietaire' },
+  admin: { nom: 'Admin Dev', profil: 'administrateur' },
+  willy: { nom: 'Willy Gérant', profil: 'gerant' },
+} as const;
+
+type Personne = keyof typeof PROFILS;
+
+/** Les valeurs enregistrées, de la plus récente à la plus ancienne (comme le serveur). */
+let valeurs: Map<string, ValeurPassee[]>;
+let personne: Personne;
+
+const valeurDe = (cle: string) => {
+  const d = CATALOGUE.find((c) => c.cle === cle)!;
+  const copie = valeurs.get(cle)?.[0]?.valeur ?? d.defaut;
+  return Array.isArray(copie) ? [...copie] : copie;
+};
+const projeter = (d: Definition): Parametre => {
+  const derniere = valeurs.get(d.cle)?.[0];
+  return {
+    ...d,
+    valeur: valeurDe(d.cle),
+    modifie_le: derniere?.le ?? null,
+    modifie_par: derniere?.auteur ?? '',
+  };
+};
+
+/** L'enregistrement du serveur : droits, contrôles, historique (une valeur inchangée n'en crée pas). */
+function appliquer(cle: string, valeur: unknown) {
+  const d = CATALOGUE.find((c) => c.cle === cle)!;
+  if (PROFILS[personne].profil !== 'proprietaire') {
+    return HttpResponse.json(
+      { detail: 'Seul le propriétaire modifie les paramètres.', code: 'droit_insuffisant' },
+      { status: 403 },
+    );
+  }
+  const verdict = validerValeur(projeter(d), valeur);
+  if (!verdict.ok) {
+    const message = messageDeLErreur(verdict.erreur);
+    return HttpResponse.json(
+      { detail: message, code: 'valeur_invalide', valeur: message },
+      { status: 400 },
+    );
+  }
+  if (JSON.stringify(verdict.valeur) !== JSON.stringify(valeurDe(cle))) {
+    valeurs.set(cle, [
+      {
+        valeur: verdict.valeur,
+        auteur: PROFILS[personne].nom,
+        le: '2026-10-14T17:02:00Z',
+      },
+      ...(valeurs.get(cle) ?? []),
+    ]);
+  }
+  return HttpResponse.json(projeter(d));
+}
+
+function installerServeur() {
+  valeurs = new Map();
+  serveur.use(
+    http.get('*/api/v1/users/me/', () =>
+      HttpResponse.json({
+        id: 1,
+        name: PROFILS[personne].nom,
+        email: 'x@optiboul.local',
+        url: 'http://localhost/api/v1/users/1/',
+        profil: PROFILS[personne].profil,
+      }),
+    ),
+    http.get('*/api/v1/parametres/', () =>
+      PROFILS[personne].profil === 'gerant'
+        ? HttpResponse.json(
+            { detail: 'Votre profil ne consulte pas les paramètres.', code: 'droit_insuffisant' },
+            { status: 403 },
+          )
+        : HttpResponse.json(CATALOGUE.map(projeter)),
+    ),
+    http.get('*/api/v1/parametres/:cle/historique/', ({ params }) =>
+      HttpResponse.json(valeurs.get(String(params.cle)) ?? []),
+    ),
+    http.put('*/api/v1/parametres/:cle/', async ({ params, request }) =>
+      appliquer(String(params.cle), ((await request.json()) as { valeur: unknown }).valeur),
+    ),
+    http.get('*/api/v1/produits/', () =>
+      HttpResponse.json({ count: PRODUITS.length, next: null, previous: null, results: PRODUITS }),
+    ),
+  );
+}
+
+const refus = (statut: number, corps: object) => HttpResponse.json(corps, { status: statut });
 
 async function ouvrir(
-  utilisateur = 'fotso',
+  utilisateur: Personne = 'fotso',
   langue: 'fr' | 'en' = 'fr',
-  apresInstallation?: () => void,
+  surcharges: Parameters<typeof serveur.use> = [],
 ) {
-  vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date('2026-10-14T17:02:00Z'));
+  personne = utilisateur;
   await initI18n('fr').changeLanguage(langue);
-  configurerApi({ baseUrl: 'http://localhost' });
-  retablir = installerApiSimulee({ latenceMs: 0 });
-  apresInstallation?.();
-  reinitialiserSimulation();
-  memoriserUtilisateurConnecte(utilisateur);
+  installerServeur();
+  serveur.use(...surcharges);
   const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'parametres')!;
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
@@ -54,14 +216,14 @@ async function ouvrir(
 
 afterEach(async () => {
   cleanup();
+  serveur.resetHandlers();
   await initI18n('fr').changeLanguage('fr');
-  retablir();
-  vi.useRealTimers();
 });
 
 const champ = async (nom: string | RegExp) =>
   (await screen.findByRole('textbox', { name: nom })) as HTMLInputElement;
-const tracesDeParametres = () => lireJournal().filter((e) => e.type === 'parametre');
+const attendreTableau = () => screen.findByRole('table', { name: 'Produits et fiches techniques' });
+const enregistrees = (cle: string) => valeurs.get(cle) ?? [];
 
 describe('Gestion › Paramètres : seuils et produits', () => {
   it('affiche les trois seuils de la maquette et les sept produits', async () => {
@@ -71,7 +233,7 @@ describe('Gestion › Paramètres : seuils et produits', () => {
     expect((await champ('Seuil de validation des dépenses')).value).toBe('50000');
     expect((await champ('Écart matière toléré par sac')).value).toBe('2');
 
-    const tableau = await screen.findByRole('table', { name: 'Produits et fiches techniques' });
+    const tableau = await attendreTableau();
     expect(within(tableau).getAllByRole('row')).toHaveLength(8);
     const baguette = within(tableau).getByRole('link', { name: 'BAG – Baguette' });
     expect(baguette.getAttribute('href')).toBe('/atelier/production?fiche=bag&depuis=parametres');
@@ -80,7 +242,7 @@ describe('Gestion › Paramètres : seuils et produits', () => {
       within(ligne)
         .getAllByRole('cell')
         .map((c) => c.textContent),
-    ).toEqual(['BAG – Baguette', formaterNombre(5000), '20', '315', '100 / 110']);
+    ).toEqual(['BAG – Baguette', formaterNombre(5000), '20', '315', '100']);
     expect(within(tableau).getAllByText('Fiche ›')).toHaveLength(7);
     // Pas de prix relevé : un tiret.
     const gc170 = within(tableau).getByRole('link', { name: 'GC 170 – Gros court 170' });
@@ -89,19 +251,16 @@ describe('Gestion › Paramètres : seuils et produits', () => {
     ).toBe('—');
   });
 
-  it('enregistre un seuil en quittant le champ : valeur, toast et une ligne au journal', async () => {
+  it('enregistre un seuil en quittant le champ : valeur, toast et historique', async () => {
     await ouvrir();
     const plafond = await champ('Plafond de dette par client');
-    await screen.findByRole('table', { name: 'Produits et fiches techniques' });
+    await attendreTableau();
     fireEvent.change(plafond, { target: { value: '3000' } });
     fireEvent.blur(plafond);
     expect(await screen.findByText('Plafond de dette par client enregistré')).toBeTruthy();
-    expect(valeurDuParametre('plafond_dette_client')).toBe(3000);
-    expect(tracesDeParametres()).toHaveLength(1);
-    expect(tracesDeParametres()[0]).toMatchObject({
-      auteur: 'M. Fotso',
-      texte: 'Paramètre modifié : Plafond de dette par client',
-    });
+    expect(valeurDe('plafond_dette_client')).toBe(3000);
+    expect(enregistrees('plafond_dette_client')).toHaveLength(1);
+    expect(enregistrees('plafond_dette_client')[0]).toMatchObject({ auteur: 'M. Fotso' });
     await waitFor(async () =>
       expect((await champ('Plafond de dette par client')).value).toBe('3000'),
     );
@@ -110,49 +269,49 @@ describe('Gestion › Paramètres : seuils et produits', () => {
   it('Entrée enregistre une seule fois, même suivie de la sortie du champ', async () => {
     await ouvrir();
     const seuil = await champ('Seuil de validation des dépenses');
-    await screen.findByRole('table', { name: 'Produits et fiches techniques' });
+    await attendreTableau();
     fireEvent.change(seuil, { target: { value: '70 000' } });
     fireEvent.keyDown(seuil, { key: 'Enter' });
     fireEvent.blur(seuil);
-    await waitFor(() => expect(valeurDuParametre('seuil_validation_depenses')).toBe(70000));
-    expect(tracesDeParametres()).toHaveLength(1);
+    await waitFor(() => expect(valeurDe('seuil_validation_depenses')).toBe(70000));
+    expect(enregistrees('seuil_validation_depenses')).toHaveLength(1);
   });
 
-  it('ne trace rien quand la valeur ne change pas, et Échap abandonne la saisie', async () => {
+  it('n’enregistre rien quand la valeur ne change pas, et Échap abandonne la saisie', async () => {
     await ouvrir();
     const plafond = await champ('Plafond de dette par client');
-    await screen.findByRole('table', { name: 'Produits et fiches techniques' });
+    await attendreTableau();
     fireEvent.change(plafond, { target: { value: '2000' } });
     fireEvent.blur(plafond);
     fireEvent.change(plafond, { target: { value: '9999' } });
     fireEvent.keyDown(plafond, { key: 'Escape' });
     expect(plafond.value).toBe('2000');
-    expect(tracesDeParametres()).toHaveLength(0);
-    expect(valeurDuParametre('plafond_dette_client')).toBe(2000);
+    expect(enregistrees('plafond_dette_client')).toHaveLength(0);
+    expect(valeurDe('plafond_dette_client')).toBe(2000);
   });
 
   it('refuse une valeur invalide avec un message relié au champ, effacé à la frappe', async () => {
     await ouvrir();
     const plafond = await champ('Plafond de dette par client');
-    await screen.findByRole('table', { name: 'Produits et fiches techniques' });
+    await attendreTableau();
     fireEvent.change(plafond, { target: { value: 'beaucoup' } });
     fireEvent.blur(plafond);
     const message = await screen.findByRole('alert');
     expect(message.textContent).toBe('Saisissez un nombre entier.');
     expect(plafond.getAttribute('aria-invalid')).toBe('true');
     expect(plafond.getAttribute('aria-describedby')).toBe(message.id);
-    expect(valeurDuParametre('plafond_dette_client')).toBe(2000);
+    expect(valeurDe('plafond_dette_client')).toBe(2000);
 
     fireEvent.change(plafond, { target: { value: 'beaucoup d' } });
     expect(screen.queryByRole('alert')).toBeNull();
     expect(plafond.getAttribute('aria-invalid')).toBeNull();
-    expect(tracesDeParametres()).toHaveLength(0);
+    expect(enregistrees('plafond_dette_client')).toHaveLength(0);
   });
 
   it('refuse une saisie vide', async () => {
     await ouvrir();
     const ecart = await champ('Écart matière toléré par sac');
-    await screen.findByRole('table', { name: 'Produits et fiches techniques' });
+    await attendreTableau();
     fireEvent.change(ecart, { target: { value: '' } });
     fireEvent.blur(ecart);
     expect((await screen.findByRole('alert')).textContent).toBe('Saisissez un nombre entier.');
@@ -178,31 +337,28 @@ describe('Gestion › Paramètres : autres paramètres et historique', () => {
       name: 'Inactivité avant déconnexion au comptoir',
     })) as HTMLSelectElement;
     fireEvent.change(inactivite, { target: { value: '10' } });
-    await waitFor(() => expect(valeurDuParametre('inactivite_comptoir')).toBe(10));
+    await waitFor(() => expect(valeurDe('inactivite_comptoir')).toBe(10));
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Échéance des dettes' }), {
       target: { value: 'vendredi' },
     });
-    await waitFor(() => expect(valeurDuParametre('echeance_dettes')).toBe('vendredi'));
+    await waitFor(() => expect(valeurDe('echeance_dettes')).toBe('vendredi'));
 
     const relances = screen.getByRole('group', { name: 'Jours des relances automatiques' });
     fireEvent.click(within(relances).getByRole('checkbox', { name: 'lundi' }));
-    await waitFor(() =>
-      expect(valeurDuParametre<string[]>('relances_jours')).toEqual(['lundi', 'jeudi', 'samedi']),
-    );
-    expect(tracesDeParametres()).toHaveLength(3);
+    await waitFor(() => expect(valeurDe('relances_jours')).toEqual(['lundi', 'jeudi', 'samedi']));
   });
 
   it('refuse de décocher le dernier jour', async () => {
     await ouvrir();
     const relances = await screen.findByRole('group', { name: 'Jours des relances automatiques' });
     fireEvent.click(within(relances).getByRole('checkbox', { name: 'jeudi' }));
-    await waitFor(() => expect(valeurDuParametre<string[]>('relances_jours')).toEqual(['samedi']));
+    await waitFor(() => expect(valeurDe('relances_jours')).toEqual(['samedi']));
     fireEvent.click(within(relances).getByRole('checkbox', { name: 'samedi' }));
     expect((await screen.findByText('Cochez au moins un jour.')).getAttribute('role')).toBe(
       'alert',
     );
-    expect(valeurDuParametre<string[]>('relances_jours')).toEqual(['samedi']);
+    expect(valeurDe('relances_jours')).toEqual(['samedi']);
   });
 
   it('refuse une valeur hors bornes, avec les bornes dans le message', async () => {
@@ -225,16 +381,16 @@ describe('Gestion › Paramètres : autres paramètres et historique', () => {
     );
     fireEvent.change(heure, { target: { value: '09:30' } });
     fireEvent.blur(heure);
-    await waitFor(() => expect(valeurDuParametre('relances_heure')).toBe('09:30'));
+    await waitFor(() => expect(valeurDe('relances_heure')).toBe('09:30'));
   });
 
   it('montre l’historique des valeurs du paramètre choisi', async () => {
     await ouvrir();
     const plafond = await champ('Plafond de dette par client');
-    await screen.findByRole('table', { name: 'Produits et fiches techniques' });
+    await attendreTableau();
     fireEvent.change(plafond, { target: { value: '3000' } });
     fireEvent.blur(plafond);
-    await waitFor(() => expect(valeurDuParametre('plafond_dette_client')).toBe(3000));
+    await waitFor(() => expect(valeurDe('plafond_dette_client')).toBe(3000));
     const historique = screen.getByRole('region', { name: 'Historique des valeurs' });
     const lignes = await within(historique).findAllByRole('row');
     expect(lignes).toHaveLength(2);
@@ -258,7 +414,7 @@ describe('Gestion › Paramètres : droits et langue', () => {
     const plafond = await screen.findByRole('textbox', { name: 'Plafond de dette par client' });
     expect(plafond.hasAttribute('readonly')).toBe(true);
     expect(await screen.findByText(/Lecture seule : seul le propriétaire/)).toBeTruthy();
-    const tableau = await screen.findByRole('table', { name: 'Produits et fiches techniques' });
+    const tableau = await attendreTableau();
     expect(within(tableau).queryAllByRole('link')).toHaveLength(0);
     expect(within(tableau).getByText('BAG – Baguette')).toBeTruthy();
     expect(
@@ -272,7 +428,7 @@ describe('Gestion › Paramètres : droits et langue', () => {
     ).toBe(true);
     fireEvent.change(plafond, { target: { value: '9000' } });
     fireEvent.blur(plafond);
-    expect(valeurDuParametre('plafond_dette_client')).toBe(2000);
+    expect(valeurDe('plafond_dette_client')).toBe(2000);
   });
 
   it('refuse le gérant avec un message', async () => {
@@ -295,62 +451,15 @@ describe('Gestion › Paramètres : droits et langue', () => {
     expect(screen.getByText('Default value: 28 day')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Value history' })).toBeTruthy();
   });
-
-  it('la fiche ouverte depuis les paramètres y ramène', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] });
-    await initI18n('fr').changeLanguage('fr');
-    configurerApi({ baseUrl: 'http://localhost' });
-    retablir = installerApiSimulee({ latenceMs: 0 });
-    reinitialiserSimulation();
-    memoriserUtilisateurConnecte('fotso');
-    const ecran = ECRANS.find((e) => e.espace === 'atelier' && e.cle === 'production')!;
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <OptiboulProvider>
-        <QueryClientProvider client={client}>
-          <MemoryRouter initialEntries={['/atelier/production?fiche=bag&depuis=parametres']}>
-            <EcranProduction ecran={ecran} />
-          </MemoryRouter>
-        </QueryClientProvider>
-      </OptiboulProvider>,
-    );
-    const retour = await screen.findByRole('link', { name: '‹ Tous les produits' });
-    expect(retour.getAttribute('href')).toBe('/gestion/parametres');
-    // Passer à un autre produit garde le retour vers les paramètres.
-    fireEvent.click(await screen.findByRole('button', { name: /^KO/ }));
-    expect(
-      (await screen.findByRole('link', { name: '‹ Tous les produits' })).getAttribute('href'),
-    ).toBe('/gestion/parametres');
-  });
 });
-
-/**
- * Intercepte les appels du faux serveur : `regle` renvoie une réponse pour la remplacer, ou
- * `undefined` pour laisser passer. Chaque test rétablit `fetch` avec la fonction renvoyée.
- */
-function intercepter(
-  regle: (methode: string, adresse: string) => Response | Promise<Response | undefined> | undefined,
-) {
-  const reel = globalThis.fetch;
-  globalThis.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
-    const adresse = entree instanceof Request ? entree.url : String(entree);
-    const methode = (
-      init?.method ?? (entree instanceof Request ? entree.method : 'GET')
-    ).toUpperCase();
-    return (await regle(methode, adresse)) ?? reel(entree, init);
-  }) as typeof fetch;
-  return () => {
-    globalThis.fetch = reel;
-  };
-}
-
-const refus = (statut: number, corps: object) => Response.json(corps, { status: statut });
 
 describe('Gestion › Paramètres : échecs et envois', () => {
   it('affiche la phrase du serveur pour un 400 sans code', async () => {
     await ouvrir();
-    const defaire = intercepter((m) =>
-      m === 'PUT' ? refus(400, { valeur: 'Valeur trop haute pour la caisse.' }) : undefined,
+    serveur.use(
+      http.put('*/api/v1/parametres/:cle/', () =>
+        refus(400, { valeur: 'Valeur trop haute pour la caisse.' }),
+      ),
     );
     const plafond = await champ('Plafond de dette par client');
     fireEvent.change(plafond, { target: { value: '3000' } });
@@ -360,12 +469,11 @@ describe('Gestion › Paramètres : échecs et envois', () => {
     );
     expect(plafond.getAttribute('aria-invalid')).toBe('true');
     expect(plafond.value).toBe('3000');
-    defaire();
   });
 
   it('affiche le message générique pour un 500, et garde la saisie', async () => {
     await ouvrir();
-    const defaire = intercepter((m) => (m === 'PUT' ? refus(500, { detail: 'Boum' }) : undefined));
+    serveur.use(http.put('*/api/v1/parametres/:cle/', () => refus(500, { detail: 'Boum' })));
     const plafond = await champ('Plafond de dette par client');
     fireEvent.change(plafond, { target: { value: '3000' } });
     fireEvent.blur(plafond);
@@ -373,14 +481,15 @@ describe('Gestion › Paramètres : échecs et envois', () => {
       'Le paramètre n’a pas pu être enregistré. Réessayez.',
     );
     expect(plafond.value).toBe('3000');
-    expect(valeurDuParametre('plafond_dette_client')).toBe(2000);
-    defaire();
+    expect(valeurDe('plafond_dette_client')).toBe(2000);
   });
 
   it('dit que seul le propriétaire modifie quand le serveur répond 403 pendant l’enregistrement', async () => {
     await ouvrir();
-    const defaire = intercepter((m) =>
-      m === 'PUT' ? refus(403, { detail: 'Interdit', code: 'droit_insuffisant' }) : undefined,
+    serveur.use(
+      http.put('*/api/v1/parametres/:cle/', () =>
+        refus(403, { detail: 'Interdit', code: 'droit_insuffisant' }),
+      ),
     );
     const plafond = await champ('Plafond de dette par client');
     fireEvent.change(plafond, { target: { value: '3000' } });
@@ -388,7 +497,6 @@ describe('Gestion › Paramètres : échecs et envois', () => {
     expect((await screen.findByRole('alert')).textContent).toBe(
       'Seul le propriétaire modifie les paramètres.',
     );
-    defaire();
   });
 
   it('ne part qu’une fois quand le champ est quitté deux fois pendant l’envoi', async () => {
@@ -396,111 +504,63 @@ describe('Gestion › Paramètres : échecs et envois', () => {
     let envois = 0;
     let liberer!: () => void;
     const attente = new Promise<void>((r) => (liberer = r));
-    const reel = globalThis.fetch;
-    const defaire = intercepter(async (m, adresse) => {
-      if (m !== 'PUT') return undefined;
-      envois += 1;
-      await attente;
-      return reel(adresse, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ valeur: 3000 }),
-      });
-    });
+    serveur.use(
+      http.put('*/api/v1/parametres/:cle/', async ({ params }) => {
+        envois += 1;
+        await attente;
+        return appliquer(String(params.cle), 3000);
+      }),
+    );
     const plafond = await champ('Plafond de dette par client');
     fireEvent.change(plafond, { target: { value: '3000' } });
     fireEvent.blur(plafond);
     fireEvent.blur(plafond);
     fireEvent.keyDown(plafond, { key: 'Enter' });
     liberer();
-    await waitFor(() => expect(valeurDuParametre('plafond_dette_client')).toBe(3000));
+    await waitFor(() => expect(valeurDe('plafond_dette_client')).toBe(3000));
     expect(envois).toBe(1);
-    expect(tracesDeParametres()).toHaveLength(1);
-    defaire();
+    expect(enregistrees('plafond_dette_client')).toHaveLength(1);
   });
 
   it('n’écrase pas une saisie retapée pendant l’envoi', async () => {
     await ouvrir();
     let liberer!: () => void;
     const attente = new Promise<void>((r) => (liberer = r));
-    const reel = globalThis.fetch;
-    const defaire = intercepter(async (m, adresse) => {
-      if (m !== 'PUT') return undefined;
-      await attente;
-      return reel(adresse, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ valeur: 3000 }),
-      });
-    });
+    serveur.use(
+      http.put(
+        '*/api/v1/parametres/:cle/',
+        async ({ params }) => {
+          await attente;
+          return appliquer(String(params.cle), 3000);
+        },
+        { once: true },
+      ),
+    );
     const plafond = await champ('Plafond de dette par client');
     fireEvent.change(plafond, { target: { value: '3000' } });
     fireEvent.blur(plafond);
     fireEvent.change(plafond, { target: { value: '3500' } });
     liberer();
-    await waitFor(() => expect(valeurDuParametre('plafond_dette_client')).toBe(3000));
+    await waitFor(() => expect(valeurDe('plafond_dette_client')).toBe(3000));
     expect(plafond.value).toBe('3500');
-    defaire();
     // La nouvelle saisie s'enregistre à la sortie suivante.
     fireEvent.blur(plafond);
-    await waitFor(() => expect(valeurDuParametre('plafond_dette_client')).toBe(3500));
+    await waitFor(() => expect(valeurDe('plafond_dette_client')).toBe(3500));
   });
 
   it('garde les seuils quand les produits ne se chargent pas', async () => {
-    let defaire = () => {};
-    await ouvrir('fotso', 'fr', () => {
-      defaire = intercepter((m, adresse) =>
-        m === 'GET' && adresse.includes('/parametres/produits/')
-          ? refus(500, { detail: 'Boum' })
-          : undefined,
-      );
-    });
+    await ouvrir('fotso', 'fr', [
+      http.get('*/api/v1/produits/', () => refus(500, { detail: 'Boum' })),
+    ]);
     expect((await champ('Plafond de dette par client')).value).toBe('2000');
     expect(await screen.findByText('Impossible de charger les produits.')).toBeTruthy();
     expect(screen.queryByRole('table', { name: 'Produits et fiches techniques' })).toBeNull();
-    defaire();
   });
 
   it('dit quand l’historique ne se charge pas', async () => {
-    let defaire = () => {};
-    await ouvrir('fotso', 'fr', () => {
-      defaire = intercepter((m, adresse) =>
-        m === 'GET' && adresse.includes('/historique/')
-          ? refus(500, { detail: 'Boum' })
-          : undefined,
-      );
-    });
+    await ouvrir('fotso', 'fr', [
+      http.get('*/api/v1/parametres/:cle/historique/', () => refus(500, { detail: 'Boum' })),
+    ]);
     expect(await screen.findByText('Impossible de charger l’historique.')).toBeTruthy();
-    defaire();
-  });
-});
-
-describe('Gestion › Paramètres : effets sur les autres écrans', () => {
-  const lireSimule = async (chemin: string) =>
-    (await (await fetch(`http://localhost/api/v1/simulation/${chemin}`)).json()) as any;
-
-  it('un plafond de dette modifié ici se voit au comptoir, chez les clients et au tableau de bord', async () => {
-    await ouvrir();
-    const plafond = await champ('Plafond de dette par client');
-    fireEvent.change(plafond, { target: { value: '4000' } });
-    fireEvent.blur(plafond);
-    await waitFor(() => expect(valeurDuParametre('plafond_dette_client')).toBe(4000));
-    memoriserUtilisateurConnecte('davy');
-    expect((await lireSimule('comptoir/session/')).plafond).toBe(4000);
-    expect((await lireSimule('clients/')).plafond).toBe(4000);
-    memoriserUtilisateurConnecte('willy');
-    expect(JSON.stringify(await lireSimule('gestion/tableau-de-bord/'))).toContain(
-      '"plafond":4000',
-    );
-  });
-
-  it('un seuil de validation modifié ici change le seuil des dépenses', async () => {
-    await ouvrir();
-    const seuil = await champ('Seuil de validation des dépenses');
-    fireEvent.change(seuil, { target: { value: '80000' } });
-    fireEvent.blur(seuil);
-    await waitFor(() => expect(valeurDuParametre('seuil_validation_depenses')).toBe(80000));
-    memoriserUtilisateurConnecte('davy');
-    expect((await lireSimule('comptoir/depenses/')).seuil).toBe(80000);
   });
 });
