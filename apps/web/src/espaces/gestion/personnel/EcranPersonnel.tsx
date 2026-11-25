@@ -12,7 +12,9 @@ import {
   useAjouterLigne,
   useModifierLigne,
   useChoisirLeJour,
+  lireFicheEmploye,
   useCreerEmploye,
+  useModifierEmploye,
   useDeciderLaPaie,
   usePayer,
   usePayerLesRestes,
@@ -25,7 +27,7 @@ import {
 import { CalendrierPaies } from './CalendrierPaies.tsx';
 import { EtatDePaie } from './EtatDePaie.tsx';
 import { FicheEmploye } from './FicheEmploye.tsx';
-import { ModaleEmploye } from './ModaleEmploye.tsx';
+import { ModaleEmploye, type NouvelEmploye } from './ModaleEmploye.tsx';
 import styles from './Personnel.module.css';
 import { droitsPaie, montantAPayer, calculerPaie, totaux } from './regles.ts';
 import { TableauPaie } from './TableauPaie.tsx';
@@ -55,6 +57,8 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
   const preparer = usePreparer(nom);
   const creerEmploye = useCreerEmploye(nom);
   const [nouvelEmploye, setNouvelEmploye] = useState(false);
+  const modifierEmploye = useModifierEmploye(nom);
+  const [edition, setEdition] = useState<{ id: number; fiche: NouvelEmploye } | null>(null);
   const payer = usePayer(nom);
   const payerRestes = usePayerLesRestes(nom);
   const decider = useDeciderLaPaie(nom);
@@ -117,6 +121,15 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
       },
       { replace: true },
     );
+  };
+
+  /** Lit la fiche de l'employé sur le serveur, puis ouvre la fenêtre de modification. */
+  const ouvrirLaFiche = async (id: number) => {
+    try {
+      setEdition({ id, fiche: await lireFicheEmploye(id) });
+    } catch (erreur) {
+      signaler(erreur);
+    }
   };
 
   /** Un refus du serveur (règle ou droit) : l'écran se remet à jour et le dit. */
@@ -263,6 +276,15 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
             {t('gestion.personnel.employe.ajouter')}
           </button>
         )}
+        {profil === 'gerant' && choisi.employeId !== undefined && (
+          <button
+            type="button"
+            className={styles.secondaire}
+            onClick={() => void ouvrirLaFiche(choisi.employeId as number)}
+          >
+            {t('gestion.personnel.employe.modifierNom', { nom: choisi.nom })}
+          </button>
+        )}
         <div className={styles.rangee}>
           <TableauPaie employes={employes} choisi={choisi.id} onChoisir={choisir} />
           <FicheEmploye
@@ -306,6 +328,26 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
           onPlanifier={(mois, jour) => planifier.mutate({ mois, jour }, { onError: signaler })}
         />
       </div>
+      {edition && (
+        <ModaleEmploye
+          initial={edition.fiche}
+          envoiEnCours={modifierEmploye.isPending}
+          onFermer={() => setEdition(null)}
+          onConfirmer={async (employe) => {
+            try {
+              await modifierEmploye.mutateAsync({
+                id: edition.id,
+                employe: { ...employe, actif: employe.actif ?? true },
+              });
+              setEdition(null);
+              afficher(t('gestion.personnel.employe.toastModifie', { nom: employe.nom }));
+              return null;
+            } catch (erreur) {
+              return codeErreur(erreur) ?? 'defaut';
+            }
+          }}
+        />
+      )}
       {nouvelEmploye && (
         <ModaleEmploye
           envoiEnCours={creerEmploye.isPending}

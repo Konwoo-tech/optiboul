@@ -302,6 +302,49 @@ describe('Gestion › Personnel : brouillon', () => {
   });
 });
 
+describe('Gestion › Personnel : modifier la fiche d’un employé', () => {
+  const AVEC_IDS: InstantanePaie = {
+    ...DEPART,
+    employes: DEPART.employes.map((e, i) => ({ ...e, employeId: 40 + i })),
+  };
+
+  it('le gérant lit la fiche sur le serveur, la modifie, et le serveur reçoit un PATCH', async () => {
+    let corps: Record<string, unknown> | undefined;
+    serveur.use(
+      http.get('*/api/v1/employes/:id/', ({ params }) =>
+        HttpResponse.json({
+          id: Number(params.id),
+          nom: 'Davy',
+          poste: 'Caissière',
+          telephone: '677000001',
+          salaire_base: 90000,
+          actif: true,
+        }),
+      ),
+      http.patch('*/api/v1/employes/:id/', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({});
+      }),
+    );
+    await ouvrir('willy', 'fr', AVEC_IDS);
+    fireEvent.click(ligne('Davy'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Modifier la fiche de Davy' }));
+    const base = await screen.findByLabelText(/^Salaire de base/);
+    expect((base as HTMLInputElement).value).toBe('90000');
+    fireEvent.change(base, { target: { value: '95000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByText('Fiche de Davy modifiée')).toBeTruthy();
+    expect(corps).toMatchObject({ nom: 'Davy', salaire_base: 95000, actif: true });
+  });
+
+  it('le propriétaire ne voit pas le bouton', async () => {
+    await ouvrir('fotso', 'fr', AVEC_IDS);
+    fireEvent.click(ligne('Davy'));
+    await screen.findByText('Jours d’absence (0,5 possible)').catch(() => undefined);
+    expect(screen.queryByRole('button', { name: /^Modifier la fiche de/ })).toBeNull();
+  });
+});
+
 describe('Gestion › Personnel : validation par le propriétaire', () => {
   it('le propriétaire voit Valider et Refuser, pas Soumettre', async () => {
     await ouvrir('fotso', 'fr', SOUMIS);

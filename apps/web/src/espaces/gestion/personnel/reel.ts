@@ -81,6 +81,7 @@ export function versPaiement(p: PaiementSalaire): Paiement {
 export function versEmploye(ligne: LignePaie): Employe {
   return {
     id: String(ligne.id),
+    employeId: ligne.employe_id,
     nom: ligne.employe,
     poste: ligne.poste,
     base: ligne.base,
@@ -153,6 +154,7 @@ export async function lirePersonnelReel(): Promise<InstantanePaie> {
         .filter((e) => e.actif !== false)
         .map((e) => ({
           id: `employe-${e.id}`,
+          employeId: e.id,
           nom: e.nom,
           poste: e.poste ?? '',
           base: e.salaire_base,

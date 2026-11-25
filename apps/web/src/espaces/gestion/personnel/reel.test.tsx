@@ -163,6 +163,7 @@ describe('lecture du personnel et de la paie sur le vrai serveur', () => {
     expect(i.employes).toEqual([
       {
         id: '5',
+        employeId: 1,
         nom: 'Aïcha Boulangère',
         poste: 'Boulangère',
         base: 130000,
