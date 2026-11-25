@@ -1145,7 +1145,12 @@
         "erreurs": {
           "obligatoire": "Nom et salaire de base obligatoires.",
           "defaut": "L’employé n’a pas pu être créé. Réessayez."
-        }
+        },
+        "modifierNom": "Modifier la fiche de {{nom}}",
+        "titreModifier": "Modifier l’employé",
+        "enregistrer": "Enregistrer",
+        "actif": "Employé en poste (décocher pour le retirer du personnel)",
+        "toastModifie": "Fiche de {{nom}} modifiée"
       },
       "retenues": {
         "absences": "Jours d’absence (0,5 possible)",

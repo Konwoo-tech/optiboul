@@ -1145,7 +1145,12 @@
         "erreurs": {
           "obligatoire": "Name and base salary are required.",
           "defaut": "The employee could not be created. Please try again."
-        }
+        },
+        "modifierNom": "Edit {{nom}}'s record",
+        "titreModifier": "Edit the employee",
+        "enregistrer": "Save",
+        "actif": "Employed (untick to remove from staff)",
+        "toastModifie": "{{nom}}'s record updated"
       },
       "retenues": {
         "absences": "Days of absence (0.5 allowed)",

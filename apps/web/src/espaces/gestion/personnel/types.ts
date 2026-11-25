@@ -32,6 +32,8 @@ export type Paiement = {
 
 export type Employe = {
   id: string;
+  /** Identifiant de l'employé sur le serveur (la fiche et la ligne de paie sont distinctes). */
+  employeId?: number;
   nom: string;
   poste: string;
   /** Salaire de base mensuel, FCFA. */

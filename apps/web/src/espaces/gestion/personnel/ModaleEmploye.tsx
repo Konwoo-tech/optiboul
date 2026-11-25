@@ -10,9 +10,13 @@ export type NouvelEmploye = {
   telephone: string;
   /** Salaire de base mensuel, FCFA. */
   base: number;
+  /** Seulement à la modification : l'employé reste-t-il dans le personnel. */
+  actif?: boolean;
 };
 
 type Props = {
+  /** Employé à modifier ; absent : un nouvel employé. */
+  initial?: NouvelEmploye;
   envoiEnCours: boolean;
   /** Renvoie le code d'erreur du serveur, ou `null` quand l'employé est créé. */
   onConfirmer: (employe: NouvelEmploye) => Promise<string | null>;
@@ -20,12 +24,13 @@ type Props = {
 };
 
 /** Fiche d'un nouvel employé : nom, poste, téléphone et salaire de base (réservé au gérant). */
-export function ModaleEmploye({ envoiEnCours, onConfirmer, onFermer }: Props) {
+export function ModaleEmploye({ initial, envoiEnCours, onConfirmer, onFermer }: Props) {
   const { t } = useTranslation();
-  const [nom, setNom] = useState('');
-  const [poste, setPoste] = useState('');
-  const [telephone, setTelephone] = useState('');
-  const [base, setBase] = useState('');
+  const [nom, setNom] = useState(initial?.nom ?? '');
+  const [poste, setPoste] = useState(initial?.poste ?? '');
+  const [telephone, setTelephone] = useState(initial?.telephone ?? '');
+  const [base, setBase] = useState(initial ? String(initial.base) : '');
+  const [actif, setActif] = useState(initial?.actif ?? true);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const envoyer = async (evenement: SubmitEvent<HTMLFormElement>) => {
@@ -39,12 +44,18 @@ export function ModaleEmploye({ envoiEnCours, onConfirmer, onFermer }: Props) {
       poste: poste.trim(),
       telephone: telephone.trim(),
       base: Number(base),
+      ...(initial ? { actif } : {}),
     });
     if (refus) setErreur('defaut');
   };
 
   return (
-    <FenetreModale titre={t('gestion.personnel.employe.titre')} onFermer={onFermer}>
+    <FenetreModale
+      titre={t(
+        initial ? 'gestion.personnel.employe.titreModifier' : 'gestion.personnel.employe.titre',
+      )}
+      onFermer={onFermer}
+    >
       <form className={styles.formulaire} onSubmit={(e) => void envoyer(e)} noValidate>
         <label className={styles.champ}>
           {t('gestion.personnel.employe.nom')}
@@ -89,7 +100,14 @@ export function ModaleEmploye({ envoiEnCours, onConfirmer, onFermer }: Props) {
             }}
           />
         </label>
-        <div className={styles.discret}>{t('gestion.personnel.employe.note')}</div>
+        {initial ? (
+          <label>
+            <input type="checkbox" checked={actif} onChange={(e) => setActif(e.target.checked)} />{' '}
+            {t('gestion.personnel.employe.actif')}
+          </label>
+        ) : (
+          <div className={styles.discret}>{t('gestion.personnel.employe.note')}</div>
+        )}
         {erreur && (
           <div className={styles.erreur} role="alert">
             {t(`gestion.personnel.employe.erreurs.${erreur}`)}
@@ -100,7 +118,9 @@ export function ModaleEmploye({ envoiEnCours, onConfirmer, onFermer }: Props) {
             {t('gestion.personnel.employe.annuler')}
           </button>
           <button type="submit" className={styles.confirmer} disabled={envoiEnCours}>
-            {t('gestion.personnel.employe.creer')}
+            {t(
+              initial ? 'gestion.personnel.employe.enregistrer' : 'gestion.personnel.employe.creer',
+            )}
           </button>
         </div>
       </form>

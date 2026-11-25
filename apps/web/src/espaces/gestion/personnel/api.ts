@@ -2,6 +2,8 @@ import {
   demandesAccorderCreate,
   demandesRefuserCreate,
   employesCreate,
+  employesPartialUpdate,
+  employesRetrieve,
   ErreurApi,
   getPaiesLignesBulletinRetrieveUrl,
   paiesElementsDestroy,
@@ -204,4 +206,38 @@ export function useDeciderLaPaie(utilisateur: string | undefined) {
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
 export function codeErreur(erreur: unknown): string | undefined {
   return erreur instanceof ErreurApi ? erreur.code : undefined;
+}
+
+/** Modifie la fiche d'un employé (gérant) : `PATCH /employes/{id}/`. */
+export function useModifierEmploye(utilisateur: string | undefined) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      employe,
+    }: {
+      id: number;
+      employe: { nom: string; poste: string; telephone: string; base: number; actif: boolean };
+    }) =>
+      employesPartialUpdate(id, {
+        nom: employe.nom,
+        poste: employe.poste,
+        telephone: employe.telephone,
+        salaire_base: employe.base,
+        actif: employe.actif,
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: clePersonnel(utilisateur) }),
+  });
+}
+
+/** La fiche d'un employé sur le serveur, telle que la fenêtre de modification l'affiche. */
+export async function lireFicheEmploye(id: number) {
+  const { data } = await employesRetrieve(id);
+  return {
+    nom: data.nom,
+    poste: data.poste ?? '',
+    telephone: data.telephone ?? '',
+    base: data.salaire_base,
+    actif: data.actif ?? true,
+  };
 }
