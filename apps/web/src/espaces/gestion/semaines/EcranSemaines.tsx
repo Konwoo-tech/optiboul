@@ -3,7 +3,6 @@ import { useTranslation } from '@/i18n';
 import { EcranChargement, EcranErreur, useToast, afficherRefus } from '@/ui';
 import { formaterHeure } from '@/utils';
 import { useState } from 'react';
-import { SIMULATION } from '@/simulation';
 import { useSearchParams } from 'react-router';
 
 import type { Ecran } from '../../../navigation.ts';
@@ -230,7 +229,7 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
         )}
 
         {/* Sur le vrai serveur : le propriétaire force la clôture, et le rapport se télécharge une fois la semaine clôturée. */}
-        {!SIMULATION && choisie.statut === 'ouverte' && profil === 'proprietaire' && (
+        {choisie.statut === 'ouverte' && profil === 'proprietaire' && (
           <button
             type="button"
             className={styles.forcer}
@@ -239,7 +238,7 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
             {t('gestion.semaines.forcee.bouton')}
           </button>
         )}
-        {!SIMULATION && choisie.statut === 'cloturee' && choisie.idServeur !== undefined && (
+        {choisie.statut === 'cloturee' && choisie.idServeur !== undefined && (
           <button
             type="button"
             className={styles.forcer}

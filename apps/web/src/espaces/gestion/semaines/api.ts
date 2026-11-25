@@ -1,6 +1,5 @@
 import {
   ErreurApi,
-  optiboulFetch,
   getSemainesPassationRetrieveUrl,
   semainesAffectationsCreate,
   semainesCloturerCreate,
@@ -8,17 +7,10 @@ import {
   semainesOuvrirCreate,
   semainesPlanningUpdate,
 } from '@/api';
-import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { lireSemainesReelles } from './reel.ts';
 import type { InstantaneSemaines, NouveauCreneau, NouvelleAffectation } from './types.ts';
-
-// En simulation, l'écran lit le faux serveur (`simulation/semaines.ts`) ; sur le vrai serveur,
-// `reel.ts` compose l'instantané à partir des routes.
-const RACINE = '/api/v1/simulation/gestion/semaines/';
-
-type Reponse<T> = { data: T };
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleSemaines = (utilisateur: string | undefined) =>
@@ -27,10 +19,7 @@ export const cleSemaines = (utilisateur: string | undefined) =>
 export function useSemaines(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleSemaines(utilisateur),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<InstantaneSemaines>>(RACINE)).data
-        : lireSemainesReelles(),
+    queryFn: lireSemainesReelles,
     enabled: Boolean(utilisateur),
     // Les caisses, les dépenses et les demandes bougent ailleurs : on relit à chaque ouverture.
     staleTime: 0,
@@ -38,27 +27,15 @@ export function useSemaines(utilisateur: string | undefined) {
   });
 }
 
-async function publier(chemin: string, corps: unknown): Promise<InstantaneSemaines> {
-  return (
-    await optiboulFetch<Reponse<InstantaneSemaines>>(`${RACINE}${chemin}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(corps),
-    })
-  ).data;
-}
-
 /** Une action sur les semaines : l'écran prend l'instantané renvoyé, la coque relit son contexte. */
 function useActionSemaines<Demande>(
   utilisateur: string | undefined,
-  chemin: string,
-  /** La même action sur le vrai serveur ; elle reçoit la semaine visée (identifiant du serveur). */
+  /** L'action sur le serveur ; elle reçoit la semaine visée (identifiant du serveur). */
   surLeServeur: (demande: Demande, idsDesSemaines: Record<string, number>) => Promise<unknown>,
 ) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (demande: Demande): Promise<InstantaneSemaines> => {
-      if (SIMULATION) return publier(chemin, demande);
       const lues = client.getQueryData<InstantaneSemaines>(cleSemaines(utilisateur));
       const ids = Object.fromEntries(
         (lues?.semaines ?? []).flatMap((s) => (s.idServeur ? [[s.id, s.idServeur] as const] : [])),
@@ -90,7 +67,6 @@ export const useAffecter = (utilisateur: string | undefined) => {
   const client = useQueryClient();
   return useActionSemaines<NouvelleAffectation>(
     utilisateur,
-    'affectations/',
     async ({ semaine, role, personne }, ids) => {
       const lues = client.getQueryData<InstantaneSemaines>(cleSemaines(utilisateur));
       const actuelle = lues?.semaines.find((s) => s.id === semaine);
@@ -106,7 +82,6 @@ export const useAffecter = (utilisateur: string | undefined) => {
 export const usePlanifier = (utilisateur: string | undefined) =>
   useActionSemaines<NouveauCreneau>(
     utilisateur,
-    'planning/',
     async ({ semaine, jour, creneau, caissiere }, ids) => {
       await semainesPlanningUpdate(idDe(ids, semaine), {
         jour,
@@ -116,11 +91,11 @@ export const usePlanifier = (utilisateur: string | undefined) =>
     },
   );
 export const useOuvrirSemaine = (utilisateur: string | undefined) =>
-  useActionSemaines<{ semaine: string }>(utilisateur, 'ouvrir/', async ({ semaine }, ids) => {
+  useActionSemaines<{ semaine: string }>(utilisateur, async ({ semaine }, ids) => {
     await semainesOuvrirCreate(idDe(ids, semaine));
   });
 export const useCloturerSemaine = (utilisateur: string | undefined) =>
-  useActionSemaines<{ semaine: string }>(utilisateur, 'cloturer/', async ({ semaine }, ids) => {
+  useActionSemaines<{ semaine: string }>(utilisateur, async ({ semaine }, ids) => {
     await semainesCloturerCreate(idDe(ids, semaine));
   });
 
@@ -128,7 +103,6 @@ export const useCloturerSemaine = (utilisateur: string | undefined) =>
 export const useCloturerDeForce = (utilisateur: string | undefined) =>
   useActionSemaines<{ semaine: string; motif: string }>(
     utilisateur,
-    'cloturer-forcee/',
     async ({ semaine, motif }, ids) => {
       await semainesCloturerForceeCreate(idDe(ids, semaine), { motif });
     },
@@ -136,7 +110,6 @@ export const useCloturerDeForce = (utilisateur: string | undefined) =>
 
 /** Ouvre le rapport de passation (PDF) d'une semaine clôturée dans un nouvel onglet. */
 export function ouvrirLaPassation(idServeur: number) {
-  if (SIMULATION) return;
   window.open(getSemainesPassationRetrieveUrl(idServeur), '_blank', 'noopener');
 }
 
