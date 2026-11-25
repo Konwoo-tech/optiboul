@@ -15,7 +15,7 @@ export type DestinationAlerte = {
   parametres?: Record<string, string>;
 };
 
-/** Les neuf types d'alertes de la maquette (cahier des charges §5.11), tous émis par le faux serveur. */
+/** Les types d'alertes de la maquette (cahier des charges §5.11), plus celles que rédige le serveur. */
 export type Alerte = {
   id: string;
   niveau: NiveauAlerte;
@@ -82,8 +82,8 @@ export type InstantaneTableauDeBord = {
   production: ProductionDuProduit[];
   /** Les plus urgentes d'abord, dans l'ordre de la maquette. */
   alertes: Alerte[];
-  /** Marge estimée du mois (vrai serveur) : recette − matières − charges. Absent en simulation. */
+  /** Marge estimée du mois (vrai serveur) : recette − matières − charges. */
   marge?: { matieres: number; charges: number; marge: number };
-  /** Budget du mois par catégorie (vrai serveur). Absent en simulation. */
+  /** Budget du mois par catégorie (vrai serveur). */
   budget?: { categorie: Categorie; budget: number; realise: number }[];
 };
