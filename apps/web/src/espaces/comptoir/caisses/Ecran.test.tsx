@@ -1,46 +1,274 @@
 import { configurerApi } from '@/api';
-import { initI18n } from '@/i18n';
+import { changerLangue, initI18n } from '@/i18n';
+import { creerServeurApi } from '@/test';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ECRANS } from '../../../navigation.ts';
-import { installerApiSimulee, reinitialiserSimulation } from '../../../simulation/routeur.ts';
-import { memoriserUtilisateurConnecte } from '../../../simulation/session.ts';
 import EcranCaisses from './Ecran.tsx';
 
-// Les caisses ne sont lues qu'en simulation ; la simulation fait aussi office de serveur ici.
-vi.mock('@/simulation', async (original) => ({
-  ...(await original<typeof import('@/simulation')>()),
-  SIMULATION: true,
-}));
+/*
+ * L'écran Caisses sur un faux serveur au format de l'API réelle : `caisses/` (la caissière ne reçoit
+ * que les siennes), `recapitulatif`, `prochaine`, `{id}/especes`, `semaines/` et les quatre actions
+ * (ouvrir, fermer, remettre, rouvrir), dont les réponses font évoluer l'état. La personne connectée
+ * vient de `users/me/`.
+ */
+
+const serveur = creerServeurApi();
 
 const ecran = ECRANS.find((e) => e.espace === 'comptoir' && e.cle === 'caisses')!;
 const NBSP = String.fromCodePoint(0xa0);
 
 beforeAll(() => {
   initI18n();
-  configurerApi({ baseUrl: '' });
+  configurerApi({ baseUrl: 'http://localhost' });
+  serveur.listen({ onUnhandledFrame: 'bypass' });
+});
+afterAll(() => serveur.close());
+
+const PERSONNES: Record<string, { id: number; nom: string; profil: string }> = {
+  davy: { id: 1, nom: 'Davy', profil: 'caissier' },
+  rachel: { id: 2, nom: 'Rachel', profil: 'caissier' },
+  willy: { id: 3, nom: 'Willy', profil: 'gerant' },
+  fotso: { id: 5, nom: 'M. Fotso', profil: 'proprietaire' },
+};
+const personne = (cle: string) => ({ id: PERSONNES[cle]!.id, nom: PERSONNES[cle]!.nom });
+
+type CaisseServeur = {
+  id: number;
+  jour: string;
+  creneau: 'jour' | 'nuit';
+  caissiere: { id: number; nom: string };
+  ouverte_par: { id: number; nom: string };
+  fermee_par: { id: number; nom: string } | null;
+  recette: number;
+  fonds: number;
+  attendu: number | null;
+  compte: number | null;
+  ecart: number | null;
+  statut: 'ouverte' | 'fermee';
+  en_cours: boolean;
+  ouverte_le: string;
+  fermee_le: string | null;
+};
+
+const fermee = (
+  id: number,
+  caissiere: string,
+  jour: string,
+  creneau: 'jour' | 'nuit',
+  ecart: number,
+): CaisseServeur => ({
+  id,
+  jour,
+  creneau,
+  caissiere: personne(caissiere),
+  ouverte_par: personne(caissiere),
+  fermee_par: personne(caissiere),
+  recette: 0,
+  fonds: 20000,
+  attendu: 31500,
+  compte: 31500 + ecart,
+  ecart,
+  statut: 'fermee',
+  en_cours: false,
+  ouverte_le: `${jour}T${creneau === 'jour' ? '06:01' : '18:00'}:00+01:00`,
+  fermee_le: `${jour}T${creneau === 'jour' ? '17:30' : '23:50'}:00+01:00`,
 });
 
-let retablir: () => void;
-beforeEach(() => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async () => new Response('')),
+/** La plus récente d'abord, comme le serveur : la caisse de nuit de Davy est ouverte. */
+const CAISSES = (): CaisseServeur[] => [
+  {
+    ...fermee(6, 'davy', '2026-10-14', 'nuit', 0),
+    fermee_par: null,
+    attendu: null,
+    compte: null,
+    ecart: null,
+    statut: 'ouverte',
+    en_cours: true,
+    ouverte_le: '2026-10-14T18:02:00+01:00',
+    fermee_le: null,
+  },
+  fermee(5, 'rachel', '2026-10-14', 'jour', 0),
+  fermee(4, 'davy', '2026-10-13', 'nuit', -500),
+  fermee(3, 'rachel', '2026-10-13', 'jour', 500),
+  fermee(2, 'davy', '2026-10-12', 'jour', 0),
+  fermee(1, 'rachel', '2026-10-12', 'nuit', 0),
+];
+
+// Recette de chaque caissière, donnée par le récapitulatif (une caisse seule n'a pas de recette).
+const RECETTES: Record<number, number> = { 1: 400_000, 2: 287_050 };
+
+let caisses: CaisseServeur[];
+let connecte: string;
+/** Espèces encaissées dans la caisse ouverte, remises déjà faites. */
+let especes: number;
+let remises: number;
+let appels: string[];
+let semaineOuverte: boolean;
+
+const parId = (id: string | readonly string[] | undefined) =>
+  caisses.find((c) => c.id === Number(id))!;
+const vues = () =>
+  PERSONNES[connecte]!.profil === 'caissier'
+    ? caisses.filter((c) => c.caissiere.id === PERSONNES[connecte]!.id)
+    : caisses;
+
+function installerServeur() {
+  const moi = PERSONNES[connecte]!;
+  serveur.use(
+    http.get('*/api/v1/users/me/', () =>
+      HttpResponse.json({
+        id: moi.id,
+        name: moi.nom,
+        email: 'x@optiboul.local',
+        url: `http://localhost/api/v1/users/${moi.id}/`,
+        profil: moi.profil,
+      }),
+    ),
+    http.get('*/api/v1/caisses/', () => {
+      const liste = vues();
+      return HttpResponse.json({ count: liste.length, next: null, previous: null, results: liste });
+    }),
+    http.get('*/api/v1/caisses/recapitulatif/', () =>
+      HttpResponse.json(
+        [1, 2]
+          .filter((id) => PERSONNES[connecte]!.profil !== 'caissier' || id === moi.id)
+          .map((id) => {
+            const siennes = caisses.filter((c) => c.caissiere.id === id);
+            return {
+              caissiere: personne(id === 1 ? 'davy' : 'rachel'),
+              ouvertures: siennes.length,
+              recette: RECETTES[id],
+              ecart_cumule: siennes.reduce((somme, c) => somme + (c.ecart ?? 0), 0),
+              manques: siennes.filter((c) => (c.ecart ?? 0) < 0).length,
+            };
+          }),
+      ),
+    ),
+    http.get('*/api/v1/caisses/prochaine/', () => {
+      const ouverte = caisses.find((c) => c.en_cours);
+      const derniere = caisses[0]!;
+      return HttpResponse.json({
+        jour: derniere.creneau === 'nuit' ? '2026-10-15' : derniere.jour,
+        creneau: derniere.creneau === 'nuit' ? 'jour' : 'nuit',
+        planifiee: personne('rachel'),
+        fonds_propose: 20000,
+        caisse_en_cours: ouverte ?? null,
+      });
+    }),
+    http.get('*/api/v1/semaines/', () =>
+      HttpResponse.json({
+        count: 1,
+        next: null,
+        previous: null,
+        results: semaineOuverte
+          ? [
+              {
+                id: 1,
+                numero: 42,
+                du: '2026-10-12',
+                au: '2026-10-18',
+                statut: 'ouverte',
+                gerant: personne('willy'),
+                production: null,
+              },
+            ]
+          : [],
+      }),
+    ),
+    http.get('*/api/v1/caisses/:id/especes/', ({ params }) => {
+      const caisse = parId(params.id);
+      return HttpResponse.json({
+        fonds: caisse.fonds,
+        especes,
+        depenses: 0,
+        remises,
+        attendu: caisse.fonds + especes - remises,
+        plafond: 100000,
+        remise_proposee: 0,
+      });
+    }),
+    http.post('*/api/v1/caisses/ouvrir/', async ({ request }) => {
+      const { fonds } = (await request.json()) as { fonds: number };
+      appels.push(`ouvrir ${fonds}`);
+      const nouvelle: CaisseServeur = {
+        ...fermee(7, connecte, '2026-10-15', 'jour', 0),
+        fermee_par: null,
+        attendu: null,
+        compte: null,
+        ecart: null,
+        statut: 'ouverte',
+        en_cours: true,
+        fonds,
+        ouverte_le: '2026-10-15T06:00:00+01:00',
+        fermee_le: null,
+      };
+      caisses.unshift(nouvelle);
+      especes = 0;
+      remises = 0;
+      return HttpResponse.json(nouvelle, { status: 201 });
+    }),
+    http.post('*/api/v1/caisses/:id/fermer/', async ({ params, request }) => {
+      const { compte } = (await request.json()) as { compte: number };
+      appels.push(`fermer ${compte}`);
+      const caisse = parId(params.id);
+      const attendu = caisse.fonds + especes - remises;
+      Object.assign(caisse, {
+        statut: 'fermee',
+        en_cours: false,
+        attendu,
+        compte,
+        ecart: compte - attendu,
+        fermee_par: personne(connecte),
+        fermee_le: '2026-10-14T23:55:00+01:00',
+      });
+      return HttpResponse.json(caisse);
+    }),
+    http.post('*/api/v1/caisses/:id/remettre/', async ({ request }) => {
+      const corps = (await request.json()) as { montant: number; receveur: number | null };
+      appels.push(`remettre ${corps.montant} ${corps.receveur}`);
+      remises += corps.montant;
+      return HttpResponse.json({ attendu: 20000 + especes - remises });
+    }),
+    http.post('*/api/v1/caisses/:id/rouvrir/', async ({ params, request }) => {
+      const { motif } = (await request.json()) as { motif: string };
+      appels.push(`rouvrir ${motif}`);
+      Object.assign(parId(params.id), {
+        statut: 'ouverte',
+        en_cours: true,
+        fermee_le: null,
+        fermee_par: null,
+        attendu: null,
+        compte: null,
+        ecart: null,
+      });
+      return HttpResponse.json({});
+    }),
   );
-  retablir = installerApiSimulee({ latenceMs: 0 });
-  reinitialiserSimulation();
+}
+
+beforeEach(() => {
+  caisses = CAISSES();
+  especes = 2950;
+  remises = 0;
+  appels = [];
+  semaineOuverte = true;
 });
-afterEach(() => {
-  retablir();
-  vi.unstubAllGlobals();
+
+afterEach(async () => {
+  cleanup();
+  serveur.resetHandlers();
+  await changerLangue('fr');
 });
 
 async function monter(utilisateur: string) {
-  memoriserUtilisateurConnecte(utilisateur);
+  connecte = utilisateur;
+  installerServeur();
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <OptiboulProvider>
@@ -113,7 +341,9 @@ describe('Comptoir › Caisses', () => {
       expect(lignesDonnees()).toHaveLength(6);
       expect(screen.getByRole('button', { name: 'Toutes les caissières' })).toBeTruthy();
       expect(screen.getByText('3 ouvertures · 3 fermetures')).toBeTruthy();
-      expect(screen.getByText(`687 050 FCFA`)).toBeTruthy();
+      // La recette vient du récapitulatif du serveur : un total par caissière.
+      expect(screen.getByText('400 000 FCFA')).toBeTruthy();
+      expect(screen.getByText('287 050 FCFA')).toBeTruthy();
       expect(screen.getByText(`−500 FCFA`)).toBeTruthy();
       expect(screen.getByText(`+500 FCFA`)).toBeTruthy();
     });
@@ -185,6 +415,7 @@ describe('Comptoir › Caisses', () => {
       const [premiere] = lignesDonnees();
       expect(cellules(premiere!).at(-1)).toBe('Manque');
       expect(cellules(premiere!).at(-2)).toBe(`−500`);
+      expect(appels).toEqual(['fermer 22450']);
     });
   });
 
@@ -198,6 +429,11 @@ describe('Comptoir › Caisses', () => {
       });
       fireEvent.click(within(fenetre).getByRole('button', { name: 'Fermer la caisse' }));
       const ouvrir = await screen.findByRole('button', { name: 'Ouvrir la caisse · jour 15 oct.' });
+      // La fenêtre de fermeture rend d'abord le focus au titre de la page (son bouton a disparu) :
+      // on attend cet effet avant de replacer le focus sur « Ouvrir la caisse ».
+      await waitFor(() =>
+        expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1 })),
+      );
       ouvrir.focus();
       fireEvent.click(ouvrir);
       return {
@@ -218,7 +454,7 @@ describe('Comptoir › Caisses', () => {
     });
 
     it('n’alerte pas la caissière planifiée', async () => {
-      // Le gérant ferme, puis Rachel (planifiée) ouvre.
+      // Le gérant ferme, puis ouvre : il n'est pas la personne planifiée.
       await fermerPuisOuvrirLaModale('willy');
       expect(screen.getByText(/Vous n’êtes pas la personne planifiée/)).toBeTruthy();
     });
@@ -245,16 +481,14 @@ describe('Comptoir › Caisses', () => {
       // Le bouton « Ouvrir la caisse » a disparu : le focus passe au titre de la page.
       expect(ouvrir.isConnected).toBe(false);
       expect(document.activeElement).toBe(screen.getByRole('heading', { level: 1 }));
+      expect(appels).toEqual(['fermer 22950', 'ouvrir 25000']);
     });
   });
 
   describe('remise au coffre', () => {
     it('est proposée au-delà de 100 000 FCFA, avec la remise de tout sauf le fonds', async () => {
-      memoriserUtilisateurConnecte('davy');
-      await fetch('/api/v1/simulation/caisses/encaissements/', {
-        method: 'POST',
-        body: JSON.stringify({ especes: 80_000 }),
-      });
+      // 80 000 FCFA d'espèces de plus dans la caisse ouverte.
+      especes += 80_000;
       await monter('davy');
       expect(screen.getByText(`Plus de 100 000 FCFA en caisse`)).toBeTruthy();
       fireEvent.click(screen.getByRole('button', { name: 'Remettre au coffre' }));
@@ -278,7 +512,7 @@ describe('Comptoir › Caisses', () => {
       fireEvent.change(within(fenetre).getByLabelText('Montant remis au coffre (FCFA)'), {
         target: { value: '82950' },
       });
-      fireEvent.change(within(fenetre).getByLabelText('Remis à'), { target: { value: 'willy' } });
+      fireEvent.change(within(fenetre).getByLabelText('Remis à'), { target: { value: '3' } });
       fireEvent.click(within(fenetre).getByRole('button', { name: 'Enregistrer la remise' }));
 
       expect(
@@ -288,6 +522,7 @@ describe('Comptoir › Caisses', () => {
       await waitFor(() =>
         expect(screen.queryByRole('button', { name: 'Remettre au coffre' })).toBeNull(),
       );
+      expect(appels).toEqual(['remettre 82950 3']);
     });
   });
 
@@ -327,22 +562,18 @@ describe('Comptoir › Caisses', () => {
       expect(await screen.findByText('Caisse rouverte · tracé dans le journal')).toBeTruthy();
       expect(await screen.findByRole('button', { name: 'Fermer la caisse' })).toBeTruthy();
       expect(screen.queryByRole('button', { name: 'Rouvrir la caisse' })).toBeNull();
+      expect(appels).toEqual(['fermer 22950', 'rouvrir Erreur de comptage']);
     });
   });
 
   it('affiche les textes en anglais', async () => {
-    const { changerLangue } = await import('@/i18n');
     await changerLangue('en');
-    try {
-      await monter('willy');
-      expect(screen.getByRole('button', { name: 'All cashiers' })).toBeTruthy();
-      expect(
-        screen.getByText('Cash desk open · night session Oct 14 · Davy since 18:02'),
-      ).toBeTruthy();
-      expect(screen.getByRole('columnheader', { name: 'Cashier' })).toBeTruthy();
-      expect(screen.getAllByText('Mon Oct 12').length).toBeGreaterThan(0);
-    } finally {
-      await changerLangue('fr');
-    }
+    await monter('willy');
+    expect(screen.getByRole('button', { name: 'All cashiers' })).toBeTruthy();
+    expect(
+      screen.getByText('Cash desk open · night session Oct 14 · Davy since 18:02'),
+    ).toBeTruthy();
+    expect(screen.getByRole('columnheader', { name: 'Cashier' })).toBeTruthy();
+    expect(screen.getAllByText('Mon Oct 12').length).toBeGreaterThan(0);
   });
 });
