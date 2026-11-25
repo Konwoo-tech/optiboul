@@ -1,6 +1,6 @@
-import type { ClientSimule } from '@/simulation';
 import { describe, expect, it } from 'vitest';
 
+import type { ClientDeLecran } from './types.ts';
 import { formaterJourCourt, formaterJourLong } from './formats.ts';
 import {
   auDelaDuPlafond,
@@ -15,7 +15,7 @@ import {
 } from './logique.ts';
 
 const PLAFOND = 2000;
-const client = (id: string, solde: number): ClientSimule => ({
+const client = (id: string, solde: number): ClientDeLecran => ({
   id,
   nom: id,
   type: 'livreur',

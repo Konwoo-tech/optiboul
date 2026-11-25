@@ -1,5 +1,4 @@
 import { useTranslation } from '@/i18n';
-import { type ClientSimule, type LigneHistoriqueClient } from '@/simulation';
 import { useToast } from '@/ui';
 import { formaterNombre } from '@/utils';
 import { useEffect, useRef } from 'react';
@@ -8,9 +7,10 @@ import styles from './EcranClients.module.css';
 import { ouvrirRelevePdf, useEnvoyerReleve, useHistoriqueClient } from './api.ts';
 import { formaterJourCourt, formaterJourLong } from './formats.ts';
 import { LIBELLE_DU_STATUT, NIVEAU_DU_STATUT, plafondDe, statutDeSolde } from './logique.ts';
+import type { ClientDeLecran, LigneHistoriqueClient } from './types.ts';
 
 type Props = {
-  client: ClientSimule;
+  client: ClientDeLecran;
   plafond: number;
   /** Date limite de règlement, `AAAA-MM-JJ`. */
   echeance: string;

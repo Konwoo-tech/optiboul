@@ -1,40 +1,144 @@
 import { configurerApi } from '@/api';
 import { changerLangue, initI18n } from '@/i18n';
-import { installerApiSimulee, reinitialiserSimulation } from '@/simulation/routeur.ts';
-import { memoriserUtilisateurConnecte } from '@/simulation/session.ts';
+import { creerServeurApi } from '@/test';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { delay, http, HttpResponse } from 'msw';
 import { MemoryRouter, useLocation } from 'react-router';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Ecran } from '../../navigation.ts';
 import EcranClients from './EcranClients.tsx';
 
-// L'écran lit le faux serveur en mode simulation : ces tests parcourent ce mode (le vrai serveur est
-// couvert par api.test.tsx).
-vi.hoisted(() => vi.stubEnv('MODE', 'simulation'));
+/*
+ * L'écran Clients et dettes sur un faux serveur au format de l'API réelle : `clients/`,
+ * `clients/dettes/`, `livraisons/`, relances et relevés. La personne connectée vient de `users/me/`.
+ */
 
-const ECRAN: Ecran = { cle: 'clients', espace: 'comptoir', profils: ['caissier'] };
-const espace = (texte: string) => texte.replace(/ /g, ' ');
-
-let retablir: () => void;
+const serveur = creerServeurApi();
 
 beforeAll(() => {
   initI18n('fr');
   configurerApi({ baseUrl: 'http://localhost' });
+  serveur.listen({ onUnhandledFrame: 'bypass' });
 });
-beforeEach(() => {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async () => new Response('')),
+afterAll(() => serveur.close());
+
+const ECRAN: Ecran = { cle: 'clients', espace: 'comptoir', profils: ['caissier'] };
+const espace = (texte: string) => texte.replace(/[\u00a0\u202f]/g, ' ');
+
+const PERSONNES: Record<string, { id: number; nom: string; profil: string }> = {
+  davy: { id: 1, nom: 'Davy', profil: 'caissier' },
+  willy: { id: 3, nom: 'Willy', profil: 'gerant' },
+  fotso: { id: 5, nom: 'M. Fotso', profil: 'proprietaire' },
+};
+
+// id, nom, type, lieu, téléphone, prix BAG, KO, GC135, solde (négatif : le client doit).
+const LIGNES: Array<[number, string, string, string, string, number, number, number, number]> = [
+  [1, 'Alain', 'livreur', 'Marché Etoudi', '6 77 21 45 10', 110, 75, 165, -1250],
+  [2, 'Alex', 'livreur', 'Carrefour Emana', '6 99 08 33 41', 100, 70, 160, 0],
+  [3, 'Ebène', 'livreur', 'Lycée d’Etoudi', '6 55 72 19 08', 100, 70, 160, -2350],
+  [4, 'White', 'livreur', 'Olembé', '6 78 40 12 66', 110, 75, 165, -500],
+  [5, 'Mama Ngono', 'livreur', 'Marché Etoudi', '6 94 15 70 22', 100, 70, 160, 0],
+  [6, 'Junior', 'livreur', 'Messassi', '6 70 66 01 93', 100, 70, 160, -1900],
+  [7, 'Brice', 'livreur', 'Nkolondom', '6 51 38 27 74', 100, 75, 165, -4200],
+  [8, 'Clarisse', 'livreur', 'Emana', '6 97 82 64 05', 100, 70, 160, -300],
+  [9, 'Hervé', 'restaurant', 'Etoudi Château', '6 76 59 30 18', 110, 75, 165, 0],
+  [10, 'Sandrine', 'livreur', 'Olembé', '6 93 24 81 57', 100, 70, 160, -2750],
+  [11, 'Yannick', 'livreur', 'Messassi', '6 58 11 96 42', 100, 70, 160, -800],
+  [12, 'Aïcha', 'hotel', 'Carrefour Emana', '6 90 47 05 36', 100, 70, 160, 0],
+];
+
+const CLIENTS = LIGNES.map(([id, nom, type, lieu, telephone, bag, ko, gc, solde]) => ({
+  id,
+  nom,
+  type,
+  lieu,
+  telephone,
+  prix: { BAG: bag, KO: ko, GC135: gc },
+  solde,
+  plafond_effectif: 2000,
+  actif: true,
+}));
+
+const page = <T,>(results: T[]) => ({ count: results.length, next: null, previous: null, results });
+
+/** Les clients déjà relancés (« dernière relance » de `clients/dettes/`). */
+let relances: Set<number>;
+let appels: string[];
+
+function installerServeur(utilisateur: string) {
+  const p = PERSONNES[utilisateur]!;
+  serveur.use(
+    http.get('*/api/v1/users/me/', () =>
+      HttpResponse.json({
+        id: p.id,
+        name: p.nom,
+        email: 'x@optiboul.local',
+        url: `http://localhost/api/v1/users/${p.id}/`,
+        profil: p.profil,
+      }),
+    ),
+    http.get('*/api/v1/clients/', () => HttpResponse.json(page(CLIENTS))),
+    http.get('*/api/v1/clients/dettes/', () =>
+      HttpResponse.json({
+        clients: CLIENTS.filter((c) => c.solde < 0).map((c) => ({
+          id: c.id,
+          derniere_relance: relances.has(c.id) ? '2026-10-14T10:00:00+01:00' : null,
+        })),
+      }),
+    ),
+    http.get('*/api/v1/livraisons/', ({ request }) => {
+      const client = new URL(request.url).searchParams.get('client');
+      return HttpResponse.json(
+        page(
+          client === '7'
+            ? [
+                {
+                  numero: 128,
+                  jour: '2026-10-13',
+                  creneau: 'nuit',
+                  cree_le: '2026-10-13T21:41:00+01:00',
+                  statut: 'livree',
+                  montant_du: 6000,
+                  recu: 1800,
+                },
+              ]
+            : [],
+        ),
+      );
+    }),
+    http.post('*/api/v1/clients/:id/relancer/', ({ params }) => {
+      appels.push(`relancer ${params.id}`);
+      relances.add(Number(params.id));
+      return HttpResponse.json({ relances: [{ client: Number(params.id) }], ignores: [] });
+    }),
+    http.post('*/api/v1/clients/relancer-groupe/', async ({ request }) => {
+      const { clients } = (await request.json()) as { clients: number[] };
+      appels.push(`relancer-groupe ${clients.length}`);
+      for (const id of clients) relances.add(id);
+      return HttpResponse.json({ relances: clients.map((client) => ({ client })), ignores: [] });
+    }),
+    http.post('*/api/v1/clients/:id/envoyer-releve/', async ({ params }) => {
+      appels.push(`releve ${params.id}`);
+      await delay(0);
+      return HttpResponse.json({});
+    }),
   );
-  retablir = installerApiSimulee({ latenceMs: 0 });
-  reinitialiserSimulation();
+}
+
+beforeEach(() => {
+  relances = new Set();
+  appels = [];
+  // Le dimanche de la semaine est calculé sur la date du jour : mercredi 14 octobre 2026.
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-10-14T17:02:00Z'));
 });
 afterEach(async () => {
-  retablir();
-  vi.unstubAllGlobals();
+  cleanup();
+  serveur.resetHandlers();
+  vi.useRealTimers();
   await changerLangue('fr');
 });
 
@@ -43,8 +147,13 @@ function Adresse() {
   return <output data-testid="adresse">{useLocation().search}</output>;
 }
 
-function ouvrir(utilisateur: string | null, adresse = '/') {
-  memoriserUtilisateurConnecte(utilisateur);
+function ouvrir(
+  utilisateur: string,
+  adresse = '/',
+  surcharges: Parameters<typeof serveur.use> = [],
+) {
+  installerServeur(utilisateur);
+  serveur.use(...surcharges);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <OptiboulProvider>
@@ -123,15 +232,13 @@ describe('Clients et dettes', () => {
     await lignes();
     fireEvent.click(screen.getByRole('button', { name: 'Relancer Brice' }));
     expect(
-      (await screen.findByText(/^Relance WhatsApp envoyée à Brice/)).textContent?.replace(
-        / /g,
-        ' ',
-      ),
+      espace((await screen.findByText(/^Relance WhatsApp envoyée à Brice/)).textContent ?? ''),
     ).toBe('Relance WhatsApp envoyée à Brice : 4 200 FCFA à régler avant dimanche.');
     expect(await screen.findByRole('button', { name: 'Relancé : Brice' })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Relancer les 8 clients en dette' }));
     expect(await screen.findByText('8 relances WhatsApp envoyées')).toBeTruthy();
+    expect(appels).toEqual(['relancer 7', 'relancer-groupe 8']);
   });
 
   it('ouvre le détail d’un client au clic et y place le focus', async () => {
@@ -147,10 +254,11 @@ describe('Clients et dettes', () => {
     expect(screen.getByRole('button', { name: 'Relevé PDF' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Envoyer le relevé par WhatsApp' }));
     expect(await screen.findByText('Relevé envoyé par WhatsApp à Brice')).toBeTruthy();
+    expect(appels).toEqual(['releve 7']);
   });
 
   it('rouvre le client et le filtre demandés dans l’adresse', async () => {
-    ouvrir('willy', '/?filtre=depasse&client=ebene');
+    ouvrir('willy', '/?filtre=depasse&client=3');
     expect(await lignes()).toHaveLength(3);
     expect(await screen.findByRole('heading', { name: 'Ebène', level: 2 })).toBeTruthy();
   });
@@ -159,9 +267,9 @@ describe('Clients et dettes', () => {
     ouvrir('davy');
     const [brice] = await lignes();
     fireEvent.click(brice!);
-    expect(screen.getByTestId('adresse').textContent).toBe('?client=brice');
+    expect(screen.getByTestId('adresse').textContent).toBe('?client=7');
     fireEvent.click(screen.getByRole('button', { name: 'Plafond dépassé · 3' }));
-    expect(screen.getByTestId('adresse').textContent).toBe('?client=brice&filtre=depasse');
+    expect(screen.getByTestId('adresse').textContent).toBe('?client=7&filtre=depasse');
     fireEvent.click((await lignes())[0]!);
     expect(screen.getByTestId('adresse').textContent).toBe('?filtre=depasse');
     expect(screen.queryByRole('heading', { name: 'Brice', level: 2 })).toBeNull();
@@ -179,7 +287,7 @@ describe('Clients et dettes', () => {
   });
 
   it('n’enlève pas le focus à l’arrivée avec ?client= dans l’adresse', async () => {
-    ouvrir('davy', '/?client=brice');
+    ouvrir('davy', '/?client=7');
     const titre = await screen.findByRole('heading', { name: 'Brice', level: 2 });
     expect(document.activeElement).not.toBe(titre);
   });
@@ -200,7 +308,9 @@ describe('Clients et dettes', () => {
   });
 
   it('signale une erreur de chargement', async () => {
-    ouvrir(null);
+    ouvrir('davy', '/', [
+      http.get('*/api/v1/clients/', () => HttpResponse.json({}, { status: 500 })),
+    ]);
     expect((await screen.findByRole('alert')).textContent).toBe(
       'Impossible de charger les clients.',
     );
@@ -209,11 +319,9 @@ describe('Clients et dettes', () => {
   it('une relance qui échoue ne dit pas « envoyée »', async () => {
     ouvrir('willy');
     await lignes();
-    const simule = globalThis.fetch;
-    globalThis.fetch = async (entree, init) =>
-      String(entree instanceof Request ? entree.url : entree).includes('/relancer/')
-        ? new Response('{}', { status: 500 })
-        : simule(entree, init);
+    serveur.use(
+      http.post('*/api/v1/clients/:id/relancer/', () => HttpResponse.json({}, { status: 500 })),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Relancer Brice' }));
     expect(await screen.findByText('La relance a échoué : réessayez.')).toBeTruthy();
     expect(screen.queryByText(/^Relance WhatsApp envoyée/)).toBeNull();
