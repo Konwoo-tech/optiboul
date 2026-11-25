@@ -1,7 +1,8 @@
-import { ErreurApi, parametresUpdate } from '@/api';
+import { ErreurApi, parametresUpdate, produitsPartialUpdate } from '@/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { lireHistoriqueReel, lireParametresReels, lireProduitsReels } from './reel.ts';
+import type { SaisieProduit } from './ModaleProduit.tsx';
 import type { Parametre, ValeurParametre } from './types.ts';
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
@@ -79,4 +80,20 @@ export function phraseDuServeur(erreur: unknown): string | undefined {
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
 export function codeErreur(erreur: unknown): string | undefined {
   return erreur instanceof ErreurApi ? erreur.code : undefined;
+}
+
+/** Modifie un produit du catalogue (propriétaire) : `PATCH /produits/{id}/`. */
+export function useModifierProduit(utilisateur: string | undefined) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, saisie }: { id: number; saisie: SaisieProduit }) =>
+      produitsPartialUpdate(id, {
+        nom: saisie.nom,
+        nom_en: saisie.nomEn,
+        prix: saisie.prix,
+        cuisson_minutes: saisie.cuisson,
+        actif: saisie.actif,
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: cleProduits(utilisateur) }),
+  });
 }

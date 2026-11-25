@@ -65,6 +65,12 @@ export type ProduitParametre = {
   code: string;
   nom: string;
   nomEn: string;
+  /** Identifiant du produit sur le serveur : absent, la ligne n'est pas modifiable. */
+  idServeur?: number;
+  /** Prix de vente de base en FCFA ; `null` : aucun. */
+  prixBase?: number | null;
+  /** Cuisson en minutes ; `null` : inconnue. */
+  cuissonMinutes?: number | null;
   /** Poids d'une boule de pâte, en grammes. */
   boule: number;
   /** Pains par boule. */

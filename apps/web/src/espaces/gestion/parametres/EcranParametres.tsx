@@ -2,7 +2,7 @@ import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { Text } from '@mantine/core';
 import { Carte, EcranChargement, EcranErreur, useToast } from '@/ui';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 import { cheminEcran, ecransDe, type Ecran } from '../../../navigation.ts';
 import { EnTeteEcran } from '../../EnTeteEcran.tsx';
@@ -12,11 +12,13 @@ import {
   phraseDuServeur,
   useModifierParametre,
   useParametres,
+  useModifierProduit,
   useProduits,
 } from './api.ts';
 import type { Enregistrer } from './Champs.tsx';
 import { AutresParametres, HistoriqueDesValeurs } from './Complements.tsx';
 import styles from './Parametres.module.css';
+import { ModaleProduit, type SaisieProduit } from './ModaleProduit.tsx';
 import { Produits } from './Produits.tsx';
 import { ReglesNotification } from './ReglesNotification.tsx';
 import {
@@ -43,6 +45,8 @@ export default function EcranParametres({ ecran }: { ecran: Ecran }) {
   const parametres = useParametres(nom);
   const produits = useProduits(nom);
   const modifier = useModifierParametre(nom);
+  const modifierProduit = useModifierProduit(nom);
+  const [produitOuvert, setProduitOuvert] = useState<string | null>(null);
   // Garde synchrone : deux enregistrements du même paramètre ne partent pas ensemble.
   const enCours = useRef(new Set<string>());
 
@@ -87,6 +91,19 @@ export default function EcranParametres({ ecran }: { ecran: Ecran }) {
     ? (id: string) => `${cheminEcran(production)}?fiche=${id}&depuis=parametres`
     : undefined;
 
+  const produitAModifier = produits.data?.find((p) => p.id === produitOuvert);
+  const enregistrerProduit = async (saisie: SaisieProduit): Promise<string | null> => {
+    if (!produitAModifier?.idServeur) return 'defaut';
+    try {
+      await modifierProduit.mutateAsync({ id: produitAModifier.idServeur, saisie });
+      setProduitOuvert(null);
+      afficher(t('gestion.parametres.produits.toast', { nom: saisie.nom }));
+      return null;
+    } catch (erreur) {
+      return codeErreur(erreur) === 'droit_insuffisant' ? 'droit' : 'defaut';
+    }
+  };
+
   const enregistrer: Enregistrer = async (parametre, valeur) => {
     if (lecture) return 'droit';
     const verdict = validerValeur(parametre, valeur);
@@ -113,7 +130,11 @@ export default function EcranParametres({ ecran }: { ecran: Ecran }) {
       <div className={styles.page}>
         <Seuils parametres={seuils} lecture={lecture} enregistrer={enregistrer} />
         {produits.data ? (
-          <Produits produits={produits.data} cheminFiche={cheminFiche} />
+          <Produits
+            produits={produits.data}
+            cheminFiche={cheminFiche}
+            onModifier={lecture ? undefined : (p) => setProduitOuvert(p.id)}
+          />
         ) : produits.isError ? (
           <Carte role="alert">
             <Text>{t('gestion.parametres.produits.erreurChargement')}</Text>
@@ -126,6 +147,14 @@ export default function EcranParametres({ ecran }: { ecran: Ecran }) {
           <ReglesNotification lecture={lecture} />
         </div>
       </div>
+      {produitAModifier && (
+        <ModaleProduit
+          produit={produitAModifier}
+          envoiEnCours={modifierProduit.isPending}
+          onFermer={() => setProduitOuvert(null)}
+          onConfirmer={enregistrerProduit}
+        />
+      )}
     </>
   );
 }

@@ -295,3 +295,19 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.modifierProduit {
+  position: relative;
+  z-index: 1;
+  margin-left: 10px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
