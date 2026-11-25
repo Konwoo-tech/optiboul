@@ -1,30 +1,111 @@
-import { configurerApi } from '@/api';
+import { configurerApi, ErreurApi } from '@/api';
 import { initI18n } from '@/i18n';
-import { installerApiSimulee } from '@/simulation';
-import { reinitialiserSimulation } from '@/simulation/routeur.ts';
-import { memoriserUtilisateurConnecte } from '@/simulation/session.ts';
+import { creerServeurApi } from '@/test';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
+import { File as NodeFile } from 'node:buffer';
 import { MemoryRouter } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-// Ces tests jouent l'écran sur le faux serveur ; la lecture du vrai serveur est dans reel.test.tsx.
-vi.hoisted(() => vi.stubEnv('MODE', 'simulation'));
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ECRANS } from '../../../navigation.ts';
+import type { Profil } from '../../../profils.ts';
 import EcranDepenses from './EcranDepenses.tsx';
+import { AMPOULES, DEPART, GROSSE } from './instantanes.test-donnees.ts';
+import type { InstantaneDepenses } from './types.ts';
 
-let retablir: () => void;
+/*
+ * L'écran Dépenses rendu depuis des instantanés au format de l'écran ; la composition de
+ * l'instantané à partir des routes du serveur est testée dans reel.test.tsx. L'enregistrement d'une
+ * dépense (`POST /depenses/`, multipart avec le justificatif) appelle un faux serveur au format de
+ * l'API réelle, dont la réponse fait passer le « serveur » à l'instantané suivant. La personne
+ * connectée vient de `users/me/`.
+ */
+
+const lecture = vi.hoisted(() => ({ lireDepensesReelles: vi.fn() }));
+vi.mock('./reel.ts', async (original) => ({
+  ...(await original<typeof import('./reel.ts')>()),
+  lireDepensesReelles: lecture.lireDepensesReelles,
+}));
+
+const serveur = creerServeurApi();
+
+beforeAll(() => {
+  configurerApi({ baseUrl: 'http://localhost' });
+  serveur.listen({ onUnhandledFrame: 'bypass' });
+});
+afterAll(() => serveur.close());
+
+const PERSONNES: Record<string, { id: number; nom: string; profil: Profil }> = {
+  davy: { id: 1, nom: 'Davy', profil: 'caissier' },
+  willy: { id: 3, nom: 'Willy', profil: 'gerant' },
+  serge: { id: 4, nom: 'Serge', profil: 'production' },
+  fotso: { id: 5, nom: 'M. Fotso', profil: 'proprietaire' },
+};
+
+/** L'instantané côté « serveur », la personne connectée, les envois reçus. */
+let etat: InstantaneDepenses;
+let connecte: string;
+let envois: Array<{ categorie: string; libelle: string; montant: string; justificatif: boolean }>;
+
+beforeEach(() => {
+  etat = structuredClone(DEPART);
+  envois = [];
+  lecture.lireDepensesReelles.mockReset();
+  lecture.lireDepensesReelles.mockImplementation(async () => {
+    if (connecte === 'serge') {
+      throw new ErreurApi(403, { detail: 'Refusé.', code: 'droit_insuffisant' });
+    }
+    return structuredClone(etat);
+  });
+});
+
+function installerServeur() {
+  serveur.use(
+    http.get('*/api/v1/users/me/', () => {
+      const p = PERSONNES[connecte]!;
+      return HttpResponse.json({
+        id: p.id,
+        name: p.nom,
+        email: 'x@optiboul.local',
+        url: `http://localhost/api/v1/users/${p.id}/`,
+        profil: p.profil,
+      });
+    }),
+    http.post('*/api/v1/depenses/', async ({ request }) => {
+      // Corps multipart lu comme du texte : un champ par bloc « name="…" ».
+      const texte = await request.text();
+      const champ = (nom: string) =>
+        new RegExp(
+          `name="${nom}"(?:; filename="[^"]*")?\r?\n(?:[^\r\n]+\r?\n)*\r?\n([^\r\n]*)`,
+        ).exec(texte)?.[1] ?? null;
+      envois.push({
+        categorie: String(champ('categorie')),
+        libelle: String(champ('libelle')),
+        montant: String(champ('montant')),
+        justificatif: texte.includes('name="justificatif"'),
+      });
+      if (connecte === 'serge') {
+        return HttpResponse.json(
+          {
+            detail: 'Votre profil ne permet pas d’enregistrer une dépense.',
+            code: 'droit_insuffisant',
+          },
+          { status: 403 },
+        );
+      }
+      const attente = Number(champ('montant')) >= 50000;
+      etat = structuredClone(attente ? GROSSE : AMPOULES);
+      return HttpResponse.json({ id: 17, demande: attente ? 'DEM-022' : null }, { status: 201 });
+    }),
+  );
+}
 
 async function ouvrir(utilisateur = 'davy', langue: 'fr' | 'en' = 'fr') {
-  vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date('2026-10-14T17:02:00Z'));
+  connecte = utilisateur;
   await initI18n('fr').changeLanguage(langue);
-  configurerApi({ baseUrl: 'http://localhost' });
-  retablir = installerApiSimulee({ latenceMs: 0 });
-  reinitialiserSimulation();
-  memoriserUtilisateurConnecte(utilisateur);
+  installerServeur();
   const espace = utilisateur === 'davy' ? 'comptoir' : 'gestion';
   const ecran = ECRANS.find((e) => e.espace === espace && e.cle === 'depenses')!;
   render(
@@ -38,13 +119,14 @@ async function ouvrir(utilisateur = 'davy', langue: 'fr' | 'en' = 'fr') {
       </QueryClientProvider>
     </OptiboulProvider>,
   );
+  if (utilisateur === 'serge') return;
   await screen.findByText(/^DEP-0016/);
 }
 
 afterEach(async () => {
+  cleanup();
+  serveur.resetHandlers();
   await initI18n('fr').changeLanguage('fr');
-  retablir();
-  vi.useRealTimers();
 });
 
 const saisir = (champ: HTMLElement, valeur: string) =>
@@ -99,13 +181,18 @@ describe('Comptoir › Dépenses (caissière)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la dépense' }));
     expect(screen.getByRole('alert').textContent).toBe('Indiquez la quantité entrée en stock.');
     expect(lignes()).toHaveLength(8);
+    expect(envois).toEqual([]);
   });
 
   it('enregistre une dépense : DEP-0017 en tête, formulaire vidé, budget mis à jour', async () => {
     saisir(screen.getByLabelText('Catégorie'), 'electricite');
     saisir(screen.getByLabelText('Libellé'), 'Ampoules');
     saisir(screen.getByLabelText('Montant (FCFA)'), '20 000');
-    fireEvent.click(screen.getByRole('button', { name: 'Prendre le justificatif en photo' }));
+    // Sur le vrai serveur, le justificatif est une photo : l'appareil ou la galerie fournit le fichier.
+    fireEvent.change(screen.getByTestId('justificatif'), {
+      // Le File de Node (et non celui de jsdom) traverse le corps multipart du faux serveur.
+      target: { files: [new NodeFile(['x'], 'ticket.jpg', { type: 'image/jpeg' })] },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la dépense' }));
     await screen.findByText('DEP-0017 · Ampoules');
     expect(lignes()).toHaveLength(9);
@@ -120,6 +207,9 @@ describe('Comptoir › Dépenses (caissière)', () => {
     // 148 500 + 20 000 sur 180 000 : 93 % du budget d'électricité, « à surveiller ».
     const electricite = screen.getByText('Électricité', { selector: 'span' }).closest('li')!;
     expect(within(electricite).getByText('À surveiller')).toBeTruthy();
+    expect(envois).toEqual([
+      { categorie: 'electricite', libelle: 'Ampoules', montant: '20000', justificatif: true },
+    ]);
   });
 
   it('au-delà du seuil, la dépense attend le gérant de la semaine', async () => {
@@ -143,7 +233,7 @@ describe('Comptoir › Dépenses (caissière)', () => {
     expect(screen.getByText('0 dépenses · 0 FCFA')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Toutes les semaines' }));
     expect(lignes()).toHaveLength(2);
-    expect(screen.getByText('Stock · Levure +5 kg', { exact: false })).toBeTruthy();
+    expect(screen.getByText(/Stock · Levure \+5\s?000 g/)).toBeTruthy();
     expect(screen.getByText(/Stock · Bois \+1 chargements/)).toBeTruthy();
   });
 
@@ -167,8 +257,8 @@ describe('Comptoir › Dépenses (caissière)', () => {
   it('range une erreur du serveur dans la zone d’alerte', async () => {
     saisir(screen.getByLabelText('Libellé'), 'Sel');
     saisir(screen.getByLabelText('Montant (FCFA)'), '1000');
-    // Le serveur est interrogé : on simule un rejet après la validation locale.
-    memoriserUtilisateurConnecte('serge');
+    // Le serveur est interrogé : il rejette après la validation locale.
+    connecte = 'serge';
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la dépense' }));
     await waitFor(() =>
       expect(screen.getByRole('alert').textContent).toBe(
@@ -210,31 +300,14 @@ describe('Comptoir › Dépenses (anglais)', () => {
     expect(screen.getByRole('heading', { name: 'New expense' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save expense' })).toBeTruthy();
     expect(screen.getByText('8 expenses · 381 500 FCFA')).toBeTruthy();
-    expect(screen.getByText('Stock · Yeast +5 kg', { exact: false })).toBeTruthy();
+    expect(screen.getByText(/Stock · Yeast \+5,?000 g/)).toBeTruthy();
     expect(screen.getAllByText('Pending').length).toBeGreaterThan(0);
   });
 });
 
 describe('Comptoir › Dépenses (accès refusé)', () => {
   it('affiche l’écran d’erreur quand le serveur répond 403', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] });
-    initI18n('fr');
-    configurerApi({ baseUrl: 'http://localhost' });
-    retablir = installerApiSimulee({ latenceMs: 0 });
-    reinitialiserSimulation();
-    memoriserUtilisateurConnecte('serge');
-    const ecran = ECRANS.find((e) => e.espace === 'comptoir' && e.cle === 'depenses')!;
-    render(
-      <OptiboulProvider>
-        <QueryClientProvider
-          client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-        >
-          <MemoryRouter>
-            <EcranDepenses ecran={ecran} />
-          </MemoryRouter>
-        </QueryClientProvider>
-      </OptiboulProvider>,
-    );
+    await ouvrir('serge');
     expect(await screen.findByText('Impossible de charger les dépenses.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Enregistrer la dépense' })).toBeNull();
   });
@@ -258,7 +331,7 @@ describe('Comptoir › Dépenses (erreurs de saisie)', () => {
   it('efface l’erreur du serveur dès qu’on modifie un champ', async () => {
     saisir(screen.getByLabelText('Libellé'), 'Sel');
     saisir(screen.getByLabelText('Montant (FCFA)'), '1000');
-    memoriserUtilisateurConnecte('serge');
+    connecte = 'serge';
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer la dépense' }));
     await waitFor(() => expect(screen.getByRole('alert').textContent).not.toBe(''));
     saisir(screen.getByLabelText('Libellé'), 'Sel fin');
