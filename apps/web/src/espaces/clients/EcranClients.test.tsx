@@ -241,6 +241,60 @@ describe('Clients et dettes', () => {
     expect(appels).toEqual(['relancer 7', 'relancer-groupe 8']);
   });
 
+  it('la caissière n’a pas de bouton « Nouveau client »', async () => {
+    ouvrir('davy');
+    await lignes();
+    expect(screen.queryByRole('button', { name: 'Nouveau client' })).toBeNull();
+  });
+
+  it('le gérant crée un client avec ses prix propres ; un numéro invalide est refusé avant l’envoi', async () => {
+    let corps: Record<string, unknown> | undefined;
+    ouvrir('willy', '/', [
+      http.post('*/api/v1/clients/', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ...CLIENTS[0], id: 99, nom: corps.nom }, { status: 201 });
+      }),
+    ]);
+    await lignes();
+    fireEvent.click(screen.getByRole('button', { name: 'Nouveau client' }));
+    fireEvent.change(await screen.findByLabelText('Nom du client'), {
+      target: { value: ' Chez Léa ' },
+    });
+    fireEvent.change(screen.getByLabelText(/^Type de client/), { target: { value: 'restaurant' } });
+    fireEvent.change(screen.getByLabelText(/^Lieu/), { target: { value: 'Etoudi' } });
+    fireEvent.change(screen.getByLabelText(/^Téléphone/), { target: { value: '577' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer le client' }));
+    expect((await screen.findByRole('alert')).textContent).toMatch(/Numéro invalide/);
+    expect(corps).toBeUndefined();
+
+    fireEvent.change(screen.getByLabelText(/^Téléphone/), { target: { value: '677001234' } });
+    fireEvent.change(screen.getByLabelText('Prix de la baguette'), { target: { value: '105' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer le client' }));
+    expect(await screen.findByText('Client Chez Léa créé')).toBeTruthy();
+    expect(corps).toEqual({
+      nom: 'Chez Léa',
+      type: 'restaurant',
+      lieu: 'Etoudi',
+      telephone: '677001234',
+      tarifs: { BAG: 105 },
+    });
+  });
+
+  it('un refus du serveur à la création laisse la fenêtre ouverte avec un message', async () => {
+    ouvrir('willy', '/', [
+      http.post('*/api/v1/clients/', () =>
+        HttpResponse.json({ detail: 'Erreur.' }, { status: 500 }),
+      ),
+    ]);
+    await lignes();
+    fireEvent.click(screen.getByRole('button', { name: 'Nouveau client' }));
+    fireEvent.change(await screen.findByLabelText('Nom du client'), { target: { value: 'Alain' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer le client' }));
+    expect((await screen.findByRole('alert')).textContent).toMatch(
+      /nom du client est obligatoire|n’a pas pu/,
+    );
+  });
+
   it('ouvre le détail d’un client au clic et y place le focus', async () => {
     ouvrir('davy');
     const [brice] = await lignes();

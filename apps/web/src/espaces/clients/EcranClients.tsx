@@ -1,4 +1,5 @@
 import { useUtilisateurCourant } from '@/auth';
+import { ErreurApi } from '@/api';
 import { useTranslation } from '@/i18n';
 import { useToast } from '@/ui';
 import { formaterNombre } from '@/utils';
@@ -7,7 +8,8 @@ import { useSearchParams } from 'react-router';
 
 import type { Ecran } from '../../navigation.ts';
 import { EnTeteEcran } from '../EnTeteEcran.tsx';
-import { useClients, useRelancerClients } from './api.ts';
+import { useClients, useCreerClient, useRelancerClients } from './api.ts';
+import { ModaleClient } from './ModaleClient.tsx';
 import type { ClientDeLecran, ListeClients } from './types.ts';
 import { DetailClient } from './DetailClient.tsx';
 import styles from './EcranClients.module.css';
@@ -160,6 +162,8 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
   const { utilisateur } = useUtilisateurCourant();
   const { data, isPending, isError } = useClients();
   const relancer = useRelancerClients();
+  const creer = useCreerClient();
+  const [nouveau, setNouveau] = useState(false);
   const [parametres, definirParametres] = useSearchParams();
   const [focusDetail, setFocusDetail] = useState(false);
 
@@ -250,6 +254,11 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
               </button>
             ))}
           </fieldset>
+          {relancable && (
+            <button type="button" className={styles.nouveauClient} onClick={() => setNouveau(true)}>
+              {t('clients.nouveau.ajouter')}
+            </button>
+          )}
           {relancable && dettes.length > 0 && (
             <button type="button" className={styles.relancerTous} onClick={relancerTous}>
               {t('clients.relancerTous', { count: dettes.length })}
@@ -293,6 +302,27 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
     <>
       <EnTeteEcran ecran={ecran} />
       {contenu}
+      {nouveau && (
+        <ModaleClient
+          envoiEnCours={creer.isPending}
+          onFermer={() => setNouveau(false)}
+          onConfirmer={async (client) => {
+            try {
+              await creer.mutateAsync(client);
+              setNouveau(false);
+              afficherToast(t('clients.nouveau.toast', { nom: client.nom }));
+              return null;
+            } catch (erreur) {
+              if (erreur instanceof ErreurApi && erreur.status === 400) {
+                const champs = Object.keys((erreur.details ?? {}) as object);
+                if (champs.includes('telephone')) return 'telephone';
+                if (champs.includes('nom')) return 'nom';
+              }
+              return 'defaut';
+            }
+          }}
+        />
+      )}
     </>
   );
 }

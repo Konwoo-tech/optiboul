@@ -282,7 +282,28 @@
     "toastReleve": "Relevé envoyé par WhatsApp à {{nom}}",
     "toastReleveErreur": "Le relevé de {{nom}} n'a pas pu être envoyé (numéro manquant ?).",
     "erreur": "Impossible de charger les clients.",
-    "chargement": "Chargement des clients…"
+    "chargement": "Chargement des clients…",
+    "nouveau": {
+      "ajouter": "Nouveau client",
+      "titre": "Nouveau client",
+      "nom": "Nom du client",
+      "type": "Type de client",
+      "lieu": "Lieu de livraison",
+      "telephone": "Téléphone WhatsApp (9 chiffres, commence par 6)",
+      "plafond": "Plafond de dette propre (FCFA, facultatif)",
+      "noteTarifs": "Prix propres du client, en FCFA (laissez vide pour le prix de base).",
+      "prixBag": "Prix de la baguette",
+      "prixKo": "Prix du pain KO",
+      "prixGc": "Prix du gros pain 135",
+      "creer": "Créer le client",
+      "annuler": "Annuler",
+      "toast": "Client {{nom}} créé",
+      "erreurs": {
+        "nom": "Le nom du client est obligatoire.",
+        "telephone": "Numéro invalide : 9 chiffres commençant par 6, ou vide.",
+        "defaut": "Le client n’a pas pu être créé. Réessayez."
+      }
+    }
   },
   "comptoir": {
     "caisses": {
