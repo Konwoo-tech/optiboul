@@ -1611,6 +1611,25 @@
         "bloquants": "Fermez la caisse et clôturez la production avant de clôturer la semaine.",
         "impossible": "Cette semaine ne peut plus être ouverte ou clôturée : l’écran vient d’être actualisé.",
         "droit": "Votre profil ne permet pas cette action."
+      },
+      "planification": {
+        "ajouter": "Planifier une semaine",
+        "titre": "Planifier une semaine",
+        "annee": "Année",
+        "numero": "Numéro de semaine",
+        "gerant": "Gérant de la semaine",
+        "production": "Responsable de production",
+        "note": "L’équipe proposée vient de la rotation ; vous pouvez la changer ou la laisser vide pour plus tard.",
+        "creer": "Planifier la semaine",
+        "annuler": "Annuler",
+        "toast": "Semaine {{numero}} planifiée",
+        "copier": "Copier la semaine précédente",
+        "toastCopiee": "Équipe et planning de la semaine précédente repris pour la semaine {{numero}}",
+        "erreurs": {
+          "numero": "Année ou numéro de semaine invalide.",
+          "existe": "Cette semaine existe déjà.",
+          "defaut": "La semaine n’a pas pu être planifiée. Réessayez."
+        }
       }
     },
     "sauvegardes": {

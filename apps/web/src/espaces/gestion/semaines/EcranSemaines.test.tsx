@@ -262,6 +262,35 @@ describe('Gestion › Semaines : autres semaines et autres profils', () => {
   });
 });
 
+describe('Gestion › Semaines : planifier une semaine', () => {
+  it('le propriétaire planifie la semaine suivante avec l’équipe proposée par la rotation', async () => {
+    let corps: Record<string, unknown> | undefined;
+    serveur.use(
+      http.get('*/api/v1/semaines/rotation/', () =>
+        HttpResponse.json({ gerant: 3, production: 4 }),
+      ),
+      http.post('*/api/v1/semaines/', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ semaine: { id: 99 }, conflits: [] }, { status: 201 });
+      }),
+    );
+    await ouvrir('fotso');
+    fireEvent.click(screen.getByRole('button', { name: 'Planifier une semaine' }));
+    expect(((await screen.findByLabelText('Numéro de semaine')) as HTMLInputElement).value).toBe(
+      '45',
+    );
+    expect((screen.getByLabelText('Année') as HTMLInputElement).value).toBe('2026');
+    fireEvent.click(screen.getByRole('button', { name: 'Planifier la semaine' }));
+    expect(await screen.findByText('Semaine 45 planifiée')).toBeTruthy();
+    expect(corps).toMatchObject({ annee: 2026, numero: 45 });
+  });
+
+  it('le gérant ne planifie pas de semaine', async () => {
+    await ouvrir('willy');
+    expect(screen.queryByRole('button', { name: 'Planifier une semaine' })).toBeNull();
+  });
+});
+
 describe('Gestion › Semaines : clôture et ouverture', () => {
   it('clôture la semaine 42 une fois tout fermé : contrôles verts, fenêtre, passation', async () => {
     await ouvrir('willy', 'fr', '', FERME);
