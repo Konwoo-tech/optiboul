@@ -1,6 +1,7 @@
 import {
   ErreurApi,
   groupesCreate,
+  groupesPartialUpdate,
   utilisateursActivationCreate,
   utilisateursCreate,
   utilisateursDebloquerCreate,
@@ -123,6 +124,20 @@ export const useCreerUnGroupe = (utilisateur: string | undefined) =>
   useAction<NouveauGroupe>(utilisateur, async (g) => {
     try {
       await groupesCreate({ nom: g.nom, profil: g.profil, description: g.description });
+    } catch (erreur) {
+      throw enErreurDeGroupe(erreur);
+    }
+    return {};
+  });
+
+export const useModifierUnGroupe = (utilisateur: string | undefined) =>
+  useAction<{ id: string; groupe: NouveauGroupe }>(utilisateur, async ({ id, groupe }) => {
+    try {
+      await groupesPartialUpdate(Number(id), {
+        nom: groupe.nom,
+        profil: groupe.profil,
+        description: groupe.description,
+      });
     } catch (erreur) {
       throw enErreurDeGroupe(erreur);
     }

@@ -507,6 +507,26 @@ describe('Gestion › Utilisateurs : groupes', () => {
     expect(groupes.at(-1)).toMatchObject({ nom: 'Livreurs', profil: 'gerant' });
   });
 
+  it('modifie un groupe : fenêtre reprise sur ses valeurs, PATCH, message', async () => {
+    let corps: Record<string, unknown> | undefined;
+    serveur.use(
+      http.patch('*/api/v1/groupes/:id/', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ id: 1 });
+      }),
+    );
+    await ouvrir('fr', '?onglet=groupes');
+    await screen.findByRole('heading', { name: 'Nouveau groupe' });
+    fireEvent.click(screen.getAllByRole('button', { name: /^Modifier le groupe/ })[0]!);
+    const fenetre = within(await screen.findByRole('dialog'));
+    const champ = fenetre.getByLabelText('Nom du groupe') as HTMLInputElement;
+    expect(champ.value.length).toBeGreaterThan(0);
+    fireEvent.change(champ, { target: { value: 'Équipe du matin' } });
+    fireEvent.click(fenetre.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByText('Groupe Équipe du matin modifié')).toBeTruthy();
+    expect(corps).toMatchObject({ nom: 'Équipe du matin' });
+  });
+
   it('dit le refus du serveur pour un nom en double', async () => {
     await ouvrir('fr', '?onglet=groupes');
     await screen.findByRole('heading', { name: 'Nouveau groupe' });

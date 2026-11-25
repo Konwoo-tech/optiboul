@@ -1781,7 +1781,20 @@
         "erreurNom": "Enter the group name.",
         "erreurExiste": "A group already has this name.",
         "erreurNomLong": "The group name is at most {{max}} characters long.",
-        "erreurDescriptionLongue": "The description is at most {{max}} characters long."
+        "erreurDescriptionLongue": "The description is at most {{max}} characters long.",
+        "modifierNom": "Edit group {{nom}}",
+        "modifierTitre": "Edit the group",
+        "modifier": {
+          "bouton": "Edit",
+          "enregistrer": "Save",
+          "annuler": "Cancel",
+          "toast": "Group {{nom}} updated",
+          "erreurs": {
+            "nom": "The group name is required.",
+            "existe": "This group name already exists.",
+            "defaut": "The group could not be updated. Try again."
+          }
+        }
       },
       "formulaire": {
         "etape1": "1. Identity",

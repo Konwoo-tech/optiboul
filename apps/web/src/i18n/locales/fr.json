@@ -1781,7 +1781,20 @@
         "erreurNom": "Indiquez le nom du groupe.",
         "erreurExiste": "Un groupe porte déjà ce nom.",
         "erreurNomLong": "Le nom du groupe ne dépasse pas {{max}} caractères.",
-        "erreurDescriptionLongue": "La description ne dépasse pas {{max}} caractères."
+        "erreurDescriptionLongue": "La description ne dépasse pas {{max}} caractères.",
+        "modifierNom": "Modifier le groupe {{nom}}",
+        "modifierTitre": "Modifier le groupe",
+        "modifier": {
+          "bouton": "Modifier",
+          "enregistrer": "Enregistrer",
+          "annuler": "Annuler",
+          "toast": "Groupe {{nom}} modifié",
+          "erreurs": {
+            "nom": "Le nom du groupe est obligatoire.",
+            "existe": "Ce nom de groupe existe déjà.",
+            "defaut": "Le groupe n’a pas pu être modifié. Réessayez."
+          }
+        }
       },
       "formulaire": {
         "etape1": "1. Identité",
