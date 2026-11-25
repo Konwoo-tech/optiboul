@@ -584,6 +584,20 @@
         "attente": "{{numero}} · en attente du {{validateur}}",
         "acceptee": "{{numero}} · validée par {{nom}} · {{date}} {{heure}}",
         "refusee": "{{numero}} · refusée par {{nom}} · {{date}} {{heure}}"
+      },
+      "annulation": {
+        "titre": "Annuler la dépense",
+        "motif": "Motif de l’annulation",
+        "note": "Seule une dépense encore en attente peut être annulée ; sa demande est close.",
+        "retour": "Retour",
+        "confirmer": "Annuler la dépense",
+        "annuler": "Annuler",
+        "annulerNom": "Annuler la dépense {{numero}}",
+        "toast": "Dépense annulée",
+        "erreurs": {
+          "motif": "Le motif est obligatoire.",
+          "serveur": "La dépense n’a pas pu être annulée : elle a peut-être déjà été traitée."
+        }
       }
     },
     "session": {

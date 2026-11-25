@@ -1,4 +1,10 @@
-import { budgetsFixerUpdate, depensesCreate, ErreurApi, preAutorisationsFixerUpdate } from '@/api';
+import {
+  depensesAnnulerCreate,
+  budgetsFixerUpdate,
+  depensesCreate,
+  ErreurApi,
+  preAutorisationsFixerUpdate,
+} from '@/api';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 
 import { lireDepensesReelles, versCodeCategorie } from './reel.ts';
@@ -116,4 +122,17 @@ export function useEnregistrerDepense(utilisateur: string | undefined) {
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
 export function codeErreur(erreur: unknown): string | undefined {
   return erreur instanceof ErreurApi ? erreur.code : undefined;
+}
+
+/** Annule une dépense encore en attente, avec son motif : `POST /depenses/{id}/annuler/`. */
+export function useAnnulerDepense(utilisateur: string | undefined) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, motif }: { id: string; motif: string }) =>
+      depensesAnnulerCreate(Number(id), { motif }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: cleDepenses(utilisateur) });
+      void client.invalidateQueries({ queryKey: ['ecran', 'gestion', 'demandes'] });
+    },
+  });
 }

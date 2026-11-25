@@ -281,6 +281,27 @@ describe('Comptoir › Dépenses (gérant)', () => {
   });
 });
 
+describe('Comptoir › Dépenses : annuler une dépense en attente', () => {
+  it('le gérant annule la réparation du pétrin avec un motif ; sans motif, la fenêtre refuse', async () => {
+    let corps: Record<string, unknown> | undefined;
+    serveur.use(
+      http.post('*/api/v1/depenses/:id/annuler/', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ id: 14 });
+      }),
+    );
+    await ouvrir('willy');
+    expect(screen.getAllByRole('button', { name: /^Annuler la dépense DEP-/ })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler la dépense DEP-0014' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Annuler la dépense' }));
+    expect((await screen.findByRole('alert')).textContent).toMatch(/motif est obligatoire/);
+    saisir(screen.getByLabelText('Motif de l’annulation'), 'Doublon');
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler la dépense' }));
+    expect(await screen.findByText('Dépense annulée')).toBeTruthy();
+    expect(corps).toEqual({ motif: 'Doublon' });
+  });
+});
+
 describe('Comptoir › Dépenses (propriétaire)', () => {
   beforeEach(() => ouvrir('fotso'));
 

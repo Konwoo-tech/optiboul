@@ -584,6 +584,20 @@
         "attente": "{{numero}} · awaiting the {{validateur}}",
         "acceptee": "{{numero}} · approved by {{nom}} · {{date}} {{heure}}",
         "refusee": "{{numero}} · refused by {{nom}} · {{date}} {{heure}}"
+      },
+      "annulation": {
+        "titre": "Cancel the expense",
+        "motif": "Reason for cancelling",
+        "note": "Only a pending expense can be cancelled; its request is closed.",
+        "retour": "Back",
+        "confirmer": "Cancel the expense",
+        "annuler": "Cancel",
+        "annulerNom": "Cancel expense {{numero}}",
+        "toast": "Expense cancelled",
+        "erreurs": {
+          "motif": "The reason is required.",
+          "serveur": "The expense could not be cancelled: it may already have been handled."
+        }
       }
     },
     "session": {
