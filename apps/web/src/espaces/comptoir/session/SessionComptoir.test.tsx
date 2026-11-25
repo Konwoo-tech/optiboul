@@ -1,30 +1,298 @@
-import { configurerApi } from '@/api';
+import { configurerApi, ErreurApi } from '@/api';
 import { initI18n } from '@/i18n';
-import { installerApiSimulee } from '@/simulation';
-import { reinitialiserSimulation } from '@/simulation/routeur.ts';
-import { memoriserUtilisateurConnecte } from '@/simulation/session.ts';
+import { creerServeurApi } from '@/test';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Ces tests jouent l'écran sur le faux serveur ; la lecture du vrai serveur est dans reel.test.ts.
-vi.hoisted(() => vi.stubEnv('MODE', 'simulation'));
-
+import { DEPART } from './instantane.test-donnees.ts';
 import SessionComptoir from './SessionComptoir.tsx';
+import type { DemandePlafond, InstantaneSession, Livraison, Quantites } from './types.ts';
 
-let retablir: () => void;
+/*
+ * L'écran Session rendu depuis un instantané au format de l'écran ; la composition de l'instantané à
+ * partir des routes du serveur est testée dans reel.test.tsx. Chaque écriture (commande, livraison,
+ * décision, mouvement, clôture) appelle un faux serveur au format de l'API réelle, dont la réponse
+ * fait évoluer l'instantané relu ensuite. La personne connectée vient de `users/me/`.
+ */
+
+const lecture = vi.hoisted(() => ({ lireSessionReelle: vi.fn() }));
+vi.mock('./reel.ts', async (original) => ({
+  ...(await original<typeof import('./reel.ts')>()),
+  lireSessionReelle: lecture.lireSessionReelle,
+  // Le faux serveur répond directement une livraison au format de l'écran.
+  versLivraison: (livraison: unknown) => livraison,
+}));
+
+const serveur = creerServeurApi();
+
+beforeAll(() => {
+  configurerApi({ baseUrl: 'http://localhost' });
+  serveur.listen({ onUnhandledFrame: 'bypass' });
+});
+afterAll(() => serveur.close());
+
+const PERSONNES: Record<string, { id: number; nom: string; profil: string }> = {
+  davy: { id: 1, nom: 'Davy', profil: 'caissier' },
+  willy: { id: 3, nom: 'Willy', profil: 'gerant' },
+  fotso: { id: 5, nom: 'M. Fotso', profil: 'proprietaire' },
+};
+
+/** L'instantané côté « serveur », la personne connectée, les appels reçus. */
+let etat: InstantaneSession;
+let connecte: string;
+let appels: string[];
+/** Livraison au-delà du plafond, gardée jusqu'à la décision (202). */
+let enAttente: { demande: DemandePlafond; livraison: Livraison } | null;
+
+const heure = '18:02';
+const fcfa = (q: Quantites, p: Quantites) => q.BAG * p.BAG + q.KO * p.KO + q.GC * p.GC;
+
+beforeEach(() => {
+  etat = structuredClone(DEPART);
+  appels = [];
+  enAttente = null;
+  lecture.lireSessionReelle.mockReset();
+  lecture.lireSessionReelle.mockImplementation(async () => {
+    if (connecte === 'serge') {
+      throw new ErreurApi(403, { detail: 'Refusé.', code: 'droit_insuffisant' });
+    }
+    return structuredClone(etat);
+  });
+});
+
+const parClient = (id: string | number) => etat.clients.find((c) => c.id === String(id))!;
+
+function creerLivraison(corps: {
+  client: number;
+  lignes: { BAG: number; KO: number; GC135: number };
+  paiement: { mode: string; montant: number; reference: string } | null;
+}): Livraison {
+  const client = parClient(corps.client);
+  const quantites: Quantites = {
+    BAG: corps.lignes.BAG,
+    KO: corps.lignes.KO,
+    GC: corps.lignes.GC135,
+  };
+  const du = fcfa(quantites, client.prix);
+  const recu = corps.paiement?.montant ?? 0;
+  const numero = etat.numeroProchainBon;
+  return {
+    id: `d${numero}`,
+    numero,
+    clientId: client.id,
+    nom: client.nom,
+    quantites,
+    prix: client.prix,
+    du,
+    recu,
+    mode: (corps.paiement?.mode ?? 'especes') as Livraison['mode'],
+    reference: corps.paiement?.reference ?? '',
+    reste: recu - du,
+    soldeAvant: client.solde,
+    soldeApres: client.solde + recu - du,
+    heure,
+    par: PERSONNES[connecte]!.nom,
+    autorisePar: '',
+  };
+}
+
+function enregistrer(livraison: Livraison) {
+  parClient(livraison.clientId).solde = livraison.soldeApres;
+  etat.livraisons.unshift(livraison);
+  etat.numeroProchainBon += 1;
+  etat.dernierBon = livraison.id;
+}
+
+function installerServeur() {
+  const moi = PERSONNES[connecte]!;
+  serveur.use(
+    http.get('*/api/v1/users/me/', () =>
+      HttpResponse.json({
+        id: moi.id,
+        name: moi.nom,
+        email: 'x@optiboul.local',
+        url: `http://localhost/api/v1/users/${moi.id}/`,
+        profil: moi.profil,
+      }),
+    ),
+    http.post('*/api/v1/commandes/', async ({ request }) => {
+      const corps = (await request.json()) as {
+        client: number;
+        lignes: { BAG: number; KO: number; GC135: number };
+      };
+      appels.push(`commande ${corps.client} ${JSON.stringify(corps.lignes)}`);
+      const texte = (n: number) => (n ? String(n) : '');
+      etat.commandes[String(corps.client)] = {
+        BAG: texte(corps.lignes.BAG),
+        KO: texte(corps.lignes.KO),
+        GC: texte(corps.lignes.GC135),
+      };
+      return HttpResponse.json({});
+    }),
+    http.post('*/api/v1/commandes/relancer-habituels/', async ({ request }) => {
+      const { clients } = (await request.json()) as { clients: number[] };
+      appels.push(`relancer ${clients.join(',')}`);
+      for (const id of clients) etat.relances[String(id)] = heure;
+      return HttpResponse.json({});
+    }),
+    http.post('*/api/v1/commandes/reprendre-habituelle/', async ({ request }) => {
+      const { client } = (await request.json()) as { client: number };
+      appels.push(`reprendre ${client}`);
+      const h = etat.habituelles[String(client)]!;
+      etat.commandes[String(client)] = { BAG: String(h.BAG), KO: String(h.KO), GC: String(h.GC) };
+      return HttpResponse.json({});
+    }),
+    http.post('*/api/v1/livraisons/', async ({ request }) => {
+      const corps = (await request.json()) as Parameters<typeof creerLivraison>[0] & {
+        demander_autorisation?: string;
+      };
+      const livraison = creerLivraison(corps);
+      if (livraison.soldeApres < -etat.plafond) {
+        if (!corps.demander_autorisation) {
+          return HttpResponse.json(
+            { detail: 'Plafond de dette dépassé.', code: 'plafond_depasse' },
+            { status: 409 },
+          );
+        }
+        // Le gérant ou le propriétaire qui demande est livré d'emblée (201), sans autre valideur.
+        if (moi.profil !== 'caissier') {
+          const livree = { ...livraison, autorisePar: moi.nom };
+          appels.push(`livraison autorisée ${livraison.clientId}`);
+          enregistrer(livree);
+          return HttpResponse.json(livree, { status: 201 });
+        }
+        const demande: DemandePlafond = {
+          id: '22',
+          numero: 22,
+          clientId: livraison.clientId,
+          clientNom: livraison.nom,
+          soldeApres: livraison.soldeApres,
+          plafond: etat.plafond,
+          par: moi.nom,
+          jour: '2026-10-14',
+          heure,
+          statut: 'en-attente',
+        };
+        etat.demandes.unshift(demande);
+        enAttente = { demande, livraison };
+        appels.push('livraison en attente');
+        return HttpResponse.json({}, { status: 202 });
+      }
+      appels.push(`livraison ${livraison.clientId} ${livraison.du} ${livraison.recu}`);
+      enregistrer(livraison);
+      return HttpResponse.json(livraison, { status: 201 });
+    }),
+    http.post('*/api/v1/demandes/:id/accorder/', async ({ request }) => {
+      const corps = (await request.json()) as { code_gerant?: { code: string } };
+      if (corps.code_gerant && corps.code_gerant.code !== '1234') {
+        return HttpResponse.json(
+          { detail: 'Code incorrect.', code: 'code_incorrect' },
+          { status: 403 },
+        );
+      }
+      appels.push('accorder');
+      const attente = enAttente;
+      if (attente) {
+        Object.assign(attente.demande, { statut: 'acceptee', decidePar: 'Willy', decideA: heure });
+        enregistrer({ ...attente.livraison, autorisePar: 'Willy' });
+        enAttente = null;
+      }
+      return HttpResponse.json({});
+    }),
+    http.post('*/api/v1/demandes/:id/refuser/', async ({ request }) => {
+      const corps = (await request.json()) as { code_gerant?: { code: string } };
+      if (corps.code_gerant && corps.code_gerant.code !== '1234') {
+        return HttpResponse.json(
+          { detail: 'Code incorrect.', code: 'code_incorrect' },
+          { status: 403 },
+        );
+      }
+      appels.push('refuser');
+      if (enAttente) {
+        Object.assign(enAttente.demande, { statut: 'refusee', decidePar: 'Willy', decideA: heure });
+        enAttente = null;
+      }
+      return HttpResponse.json({});
+    }),
+    http.post('*/api/v1/mouvements-internes/', async ({ request }) => {
+      const corps = (await request.json()) as {
+        genre: string;
+        produit: string;
+        quantite: number;
+        motif: string;
+      };
+      appels.push(`mouvement ${corps.genre} ${corps.produit} ${corps.quantite}`);
+      const type =
+        (
+          { vente_guichet: 'vente-guichet', reste_en_salle: 'reste-en-salle' } as Record<
+            string,
+            string
+          >
+        )[corps.genre] ?? corps.genre;
+      etat.mouvements.unshift({
+        id: `m${etat.mouvements.length + 1}`,
+        type: type as never,
+        produit: (corps.produit === 'GC135' ? 'GC' : corps.produit) as never,
+        quantite: corps.quantite,
+        motif: corps.motif,
+        par: moi.nom,
+        heure,
+      });
+      return HttpResponse.json({}, { status: 201 });
+    }),
+    http.post('*/api/v1/caisses/:id/fermer/', async ({ request }) => {
+      const { compte } = (await request.json()) as { compte: number };
+      appels.push(`fermer ${compte}`);
+      Object.assign(etat.session, {
+        statut: 'cloturee',
+        clotureeA: heure,
+        cloturePar: moi.nom,
+        especesComptees: String(compte),
+      });
+      etat.prochaine = { jour: '2026-10-15', type: 'jour' };
+      return HttpResponse.json({});
+    }),
+    http.get('*/api/v1/caisses/prochaine/', () =>
+      HttpResponse.json({
+        jour: '2026-10-15',
+        creneau: 'jour',
+        planifiee: null,
+        fonds_propose: 20000,
+        caisse_en_cours: null,
+      }),
+    ),
+    http.post('*/api/v1/caisses/ouvrir/', async ({ request }) => {
+      const { fonds } = (await request.json()) as { fonds: number };
+      appels.push(`ouvrir ${fonds}`);
+      etat.session = {
+        ...etat.session,
+        caisseId: '7',
+        type: 'jour',
+        date: '2026-10-15',
+        statut: 'ouverte',
+        ouverteA: heure,
+        ouvertePar: moi.nom,
+        clotureeA: '',
+        cloturePar: '',
+        especesComptees: '',
+        fonds,
+      };
+      delete etat.prochaine;
+      return HttpResponse.json({}, { status: 201 });
+    }),
+  );
+}
 
 async function ouvrir(utilisateur = 'davy') {
-  // 18 h 02 à Yaoundé, le 14 octobre : la session de nuit du prototype. Seule la date est figée.
+  connecte = utilisateur;
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-10-14T17:02:00Z'));
   initI18n('fr');
-  configurerApi({ baseUrl: 'http://localhost' });
-  retablir = installerApiSimulee({ latenceMs: 0 });
-  reinitialiserSimulation();
-  memoriserUtilisateurConnecte(utilisateur);
+  installerServeur();
   render(
     <OptiboulProvider>
       <QueryClientProvider
@@ -40,7 +308,8 @@ async function ouvrir(utilisateur = 'davy') {
 }
 
 afterEach(() => {
-  retablir();
+  cleanup();
+  serveur.resetHandlers();
   vi.useRealTimers();
 });
 
@@ -111,6 +380,7 @@ describe('Comptoir › Session en cours', () => {
         expect(document.activeElement).toBe(screen.getByLabelText('Rechercher un client')),
       );
       expect(screen.getByText('Bon n° 147 · 18:02 · Espèces', { exact: false })).toBeTruthy();
+      expect(appels).toEqual(['livraison 9 11550 11550']);
     });
 
     it('Entrée dans la recherche choisit le premier client trouvé', async () => {
@@ -159,6 +429,7 @@ describe('Comptoir › Session en cours', () => {
       touche(window, 'F4');
       expect(document.activeElement).toBe(champsDeLaFiche()[3]);
       expect(screen.queryByText(/Livraison enregistrée/)).toBeNull();
+      expect(appels).toEqual([]);
     });
 
     it('F8 ne fait rien tant qu’aucun bon n’existe', () => {
@@ -219,7 +490,7 @@ describe('Comptoir › Session en cours', () => {
       ).toBe('false');
     });
 
-    it('la caissière demande au gérant, qui saisit son code', async () => {
+    it('la caissière envoie la livraison en attente, le gérant saisit son code', async () => {
       await depasserLePlafond();
       fireEvent.click(screen.getByRole('button', { name: 'Demander l’autorisation du gérant' }));
 
@@ -227,6 +498,7 @@ describe('Comptoir › Session en cours', () => {
       expect(
         within(fenetre).getByText(/Brice : −6 200 FCFA \/ 2 000 FCFA de plafond/),
       ).toBeTruthy();
+      expect(appels).toEqual(['livraison en attente']);
       const code = within(fenetre).getByLabelText('Code du gérant');
       await waitFor(() => expect(document.activeElement).toBe(code));
 
@@ -243,12 +515,9 @@ describe('Comptoir › Session en cours', () => {
       expect(
         await screen.findByText('Accordé · Livraison au-delà du plafond : Brice'),
       ).toBeTruthy();
-      expect(screen.getByText(/Dépassement autorisé par Willy à 18:02/)).toBeTruthy();
-      const valider = screen.getByRole('button', { name: 'Valider la livraison (autorisée)' });
-      expect(valider.getAttribute('aria-disabled')).toBe('false');
-
-      fireEvent.click(valider);
-      expect(await screen.findByText('Livraison enregistrée · Brice · bon n° 147')).toBeTruthy();
+      // L'accord crée la livraison sur le serveur : elle apparaît dans la liste.
+      await waitFor(() => expect(screen.getByText('Bon n° 147', { exact: false })).toBeTruthy());
+      expect(appels).toEqual(['livraison en attente', 'accorder']);
     });
 
     it('« Laisser en attente » garde la demande, que le gérant retrouve ensuite', async () => {
@@ -256,10 +525,10 @@ describe('Comptoir › Session en cours', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Demander l’autorisation du gérant' }));
       fireEvent.click(await screen.findByRole('button', { name: 'Laisser en attente' }));
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-      expect(screen.getByText(/Demande envoyée au gérant à 18:02/)).toBeTruthy();
-
-      fireEvent.click(screen.getByRole('button', { name: 'Le gérant saisit son code' }));
-      expect(await screen.findByRole('dialog', { name: 'Autorisation du gérant' })).toBeTruthy();
+      // La livraison est déjà posée en attente sur le serveur : la saisie repart à zéro.
+      expect(screen.getByText('Aucune livraison en cours')).toBeTruthy();
+      expect(screen.queryByText('Bon n° 147', { exact: false })).toBeNull();
+      expect(appels).toEqual(['livraison en attente']);
     });
 
     it('un refus ne débloque pas la livraison', async () => {
@@ -269,7 +538,9 @@ describe('Comptoir › Session en cours', () => {
       saisir(within(fenetre).getByLabelText('Code du gérant'), '1234');
       fireEvent.click(within(fenetre).getByRole('button', { name: 'Refuser' }));
       expect(await screen.findByText('Refusé · Livraison au-delà du plafond : Brice')).toBeTruthy();
-      expect(screen.getByText('Plafond de 2 000 FCFA dépassé')).toBeTruthy();
+      // Refusée : la livraison n'est jamais créée.
+      expect(screen.queryByText('Bon n° 147', { exact: false })).toBeNull();
+      expect(appels).toEqual(['livraison en attente', 'refuser']);
     });
   });
 
@@ -289,6 +560,7 @@ describe('Comptoir › Session en cours', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Reprendre l’habituel de Brice' }));
       expect(await screen.findByText('Commande de Brice ajoutée')).toBeTruthy();
       expect(await screen.findByText('2 clients habituels n’ont pas encore commandé')).toBeTruthy();
+      expect(appels).toEqual(['relancer 7,10,11', 'reprendre 7']);
     });
 
     it('calcule le total des pains et les sacs à pétrir', async () => {
@@ -301,6 +573,7 @@ describe('Comptoir › Session en cours', () => {
     });
 
     it('saisir une commande met à jour le montant estimé et le plan', async () => {
+      vi.useRealTimers();
       const champ = (await screen.findByLabelText('Commande BAG de Brice')) as HTMLInputElement;
       saisir(champ, '315');
       await waitFor(() => expect(champ.value).toBe('315'));
@@ -308,6 +581,10 @@ describe('Comptoir › Session en cours', () => {
       expect(await screen.findByText('31 500')).toBeTruthy();
       saisir(champ, 'abc4');
       await waitFor(() => expect(champ.value).toBe('4'));
+      // L'envoi suit la frappe, une fois qu'elle s'arrête (600 ms).
+      await waitFor(() => expect(appels.some((a) => a.startsWith('commande 7'))).toBe(true), {
+        timeout: 3000,
+      });
     });
 
     it('Entrée passe au champ suivant du tableau', async () => {
@@ -335,6 +612,7 @@ describe('Comptoir › Session en cours', () => {
       expect(
         await screen.findByText('Motif obligatoire : précisez la raison du mouvement.'),
       ).toBeTruthy();
+      expect(appels).toEqual([]);
     });
 
     it('ajoute un mouvement à la liste de la session', async () => {
@@ -350,6 +628,7 @@ describe('Comptoir › Session en cours', () => {
       expect(await screen.findByText('Retours · 8 KO')).toBeTruthy();
       expect(screen.getByText('Mouvement ajouté aux totaux de la session')).toBeTruthy();
       expect(screen.getByText(/Retour du client · Davy · 18:02/)).toBeTruthy();
+      expect(appels).toEqual(['mouvement retours KO 8']);
     });
   });
 
@@ -406,6 +685,7 @@ describe('Comptoir › Session en cours', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Ouvrir la session de jour du 15 oct.' }));
       expect(await screen.findByText('Session ouverte · soldes clients repris')).toBeTruthy();
       expect(await screen.findByText('Session de jour du 15 oct.')).toBeTruthy();
+      expect(appels).toEqual(['fermer 22950', 'ouvrir 20000']);
     });
 
     it('Annuler dans la confirmation laisse la session ouverte', async () => {
@@ -417,6 +697,7 @@ describe('Comptoir › Session en cours', () => {
       fireEvent.click(within(fenetre).getByRole('button', { name: 'Annuler' }));
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
       expect(screen.getByRole('button', { name: 'Clôturer la session' })).toBeTruthy();
+      expect(appels).toEqual([]);
     });
   });
 
@@ -449,16 +730,11 @@ describe('profils', () => {
     saisir(await screen.findByLabelText('BAG livrés'), '30');
     fireEvent.click(screen.getByRole('button', { name: 'Autoriser le dépassement' }));
     expect(await screen.findByText('Dépassement autorisé et tracé')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Valider la livraison (autorisée)' })).toBeTruthy();
+    expect(appels).toEqual(['livraison autorisée 7']);
   });
 });
 
 describe('droits et clavier', () => {
-  afterEach(() => {
-    retablir();
-    vi.useRealTimers();
-  });
-
   /** Une livraison enregistrée (F4) puis son bon ouvert (F8). */
   async function ouvrirUnBon() {
     await choisir(/^Alex/);
@@ -500,22 +776,5 @@ describe('droits et clavier', () => {
     liste.remove();
     touche(window, 'Escape');
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-  });
-
-  it('une autorisation ne couvre pas une livraison qui dépasse davantage', async () => {
-    await ouvrir('willy');
-    fireEvent.click(screen.getByRole('button', { name: /^Brice/ }));
-    saisir(await screen.findByLabelText('BAG livrés'), '30');
-    saisir(champsDeLaFiche()[3]!, '1000');
-    fireEvent.click(screen.getByRole('button', { name: 'Autoriser le dépassement' }));
-    await screen.findByText('Dépassement autorisé et tracé');
-    const valider = screen.getByRole('button', { name: 'Valider la livraison (autorisée)' });
-    expect(valider.getAttribute('aria-disabled')).toBe('false');
-
-    saisir(quantite('BAG'), '40');
-    const bloque = screen.getByRole('button', { name: 'Valider la livraison' });
-    expect(bloque.getAttribute('aria-disabled')).toBe('true');
-    expect(bloque.getAttribute('aria-describedby')).toBe('raison-blocage');
-    expect(document.getElementById('raison-blocage')).toBeTruthy();
   });
 });

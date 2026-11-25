@@ -5,8 +5,7 @@ import { useCallback, useState, type KeyboardEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import { dateCourte, nomDeSession } from './affichage.ts';
-import { SIMULATION } from '@/simulation';
-import { codeErreur, ECRITURES, useActionsSession, useSessionComptoir } from './api.ts';
+import { codeErreur, useActionsSession, useSessionComptoir } from './api.ts';
 import { formaterNombre, lireEntier } from './calculs.ts';
 import { FenetreReouverture } from '../caisses/FenetreReouverture.tsx';
 import { Cloture } from './Cloture.tsx';
@@ -64,10 +63,9 @@ export default function SessionComptoir() {
   const peutSaisir = ouverte && (profil === 'caissier' || profil === 'gerant');
   // Le propriétaire consulte : il ne saisit, ne relance et ne clôture pas (cahier des charges §3.3).
   const peutRelancer = peutSaisir;
-  // Zone par zone : sur le vrai serveur, certaines écritures arrivent aux étapes suivantes.
-  const peutLivrer = peutSaisir && ECRITURES.livraisons;
-  const peutMouvementer = peutSaisir && ECRITURES.mouvements;
-  const peutCloturer = peutSaisir && ECRITURES.cloture;
+  const peutLivrer = peutSaisir;
+  const peutMouvementer = peutSaisir;
+  const peutCloturer = peutSaisir;
 
   const surErreur = useCallback(
     (erreur: unknown) => {
@@ -178,12 +176,9 @@ export default function SessionComptoir() {
           heure: session.rouverteA,
         })
       : null;
-  const peutRouvrir = !ouverte && direction && ECRITURES.cloture;
+  const peutRouvrir = !ouverte && direction;
   const peutOuvrirLaSuivante =
-    !ouverte &&
-    !suivanteDejaFermee &&
-    (profil === 'caissier' || profil === 'gerant') &&
-    ECRITURES.cloture;
+    !ouverte && !suivanteDejaFermee && (profil === 'caissier' || profil === 'gerant');
 
   const agir = (action: () => Promise<unknown>) => action().catch(surErreur);
 
@@ -238,11 +233,7 @@ export default function SessionComptoir() {
                 <button
                   type="button"
                   className={styles.rouvrir}
-                  onClick={() =>
-                    SIMULATION
-                      ? void agir(() => actions.rouvrir())
-                      : setFenetre({ type: 'reouverture' })
-                  }
+                  onClick={() => setFenetre({ type: 'reouverture' })}
                 >
                   {t('comptoir.session.bandeau.rouvrir')}
                 </button>

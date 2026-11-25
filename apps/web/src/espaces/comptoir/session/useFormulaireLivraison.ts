@@ -1,4 +1,3 @@
-import { SIMULATION } from '@/simulation';
 import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
 
 import type { ActionsSession } from './api.ts';
@@ -104,7 +103,7 @@ export function useFormulaireLivraison({
         recu: formulaire.recu,
         mode: formulaire.mode,
         reference: formulaire.reference,
-        paiementSeul: !SIMULATION,
+        paiementSeul: true,
         plafond: instantane?.plafond ?? 0,
         soldeAutorise: autorisation ? autorisation.soldeApres : null,
         peutSaisir,
@@ -210,7 +209,7 @@ export function useFormulaireLivraison({
   const demanderAutorisation = useCallback(async () => {
     if (!client) return;
     try {
-      const reponse = await actions.demanderAutorisation(client.id, calcul.soldeApres, {
+      const reponse = await actions.demanderAutorisation(client.id, {
         clientId: client.id,
         quantites: {
           BAG: lireEntier(formulaire.saisies.BAG),
@@ -225,21 +224,12 @@ export function useFormulaireLivraison({
       cle.current = null;
       // Sur le vrai serveur, la livraison est déjà posée en attente : la saisie repart à zéro, pour
       // qu'on ne la renvoie pas une seconde fois une fois l'accord donné.
-      if (!SIMULATION) reinitialiser();
+      reinitialiser();
       surAutorisation(reponse);
     } catch (erreur) {
       surErreur(erreur);
     }
-  }, [
-    actions,
-    calcul.recu,
-    calcul.soldeApres,
-    client,
-    formulaire,
-    reinitialiser,
-    surAutorisation,
-    surErreur,
-  ]);
+  }, [actions, calcul.recu, client, formulaire, reinitialiser, surAutorisation, surErreur]);
 
   return {
     recherche,

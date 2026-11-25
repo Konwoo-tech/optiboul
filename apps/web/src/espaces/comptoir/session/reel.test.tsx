@@ -534,11 +534,7 @@ describe('livraisons et accords de plafond sur le vrai serveur', () => {
         return HttpResponse.json({ ...LIVRAISON, statut: 'en_attente' }, { status: 202 });
       }),
     );
-    const reponse = await actionsSession(client, 'Davy').demanderAutorisation(
-      '1',
-      -3000,
-      livraison,
-    );
+    const reponse = await actionsSession(client, 'Davy').demanderAutorisation('1', livraison);
     expect(corps?.demander_autorisation).toBeTruthy();
     expect(reponse.autorise).toBe(false);
     expect(reponse.demande).toMatchObject({ id: '12', clientId: '1', statut: 'en-attente' });
@@ -551,11 +547,7 @@ describe('livraisons et accords de plafond sur le vrai serveur', () => {
     serveur.use(
       http.post('*/api/v1/livraisons/', () => HttpResponse.json(LIVRAISON, { status: 201 })),
     );
-    const reponse = await actionsSession(client, 'Willy').demanderAutorisation(
-      '1',
-      -3000,
-      livraison,
-    );
+    const reponse = await actionsSession(client, 'Willy').demanderAutorisation('1', livraison);
     expect(reponse.autorise).toBe(true);
     expect(reponse.demande).toBeUndefined();
   });
@@ -677,7 +669,7 @@ describe('demande d’un gérant', () => {
     const reponse = await actionsSession(client, 'Willy', {
       id: '3',
       profil: 'gerant',
-    }).demanderAutorisation('1', -3000, {
+    }).demanderAutorisation('1', {
       clientId: '1',
       quantites: { BAG: 10, KO: 0, GC: 0 },
       mode: 'especes',
