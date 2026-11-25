@@ -1,43 +1,178 @@
 import { configurerApi } from '@/api';
 import { initI18n } from '@/i18n';
-import { installerApiSimulee } from '@/simulation';
-import { reinitialiserSimulation } from '@/simulation/routeur.ts';
-import { memoriserUtilisateurConnecte } from '@/simulation/session.ts';
+import { creerServeurApi } from '@/test';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Ces tests jouent l'écran sur le faux serveur ; la lecture du vrai serveur est dans reel.test.tsx.
-vi.hoisted(() => vi.stubEnv('MODE', 'simulation'));
+import { ErreurApi } from '@/api';
 
 import { ECRANS } from '../../../navigation.ts';
-import EcranDemandes from '../../comptoir/demandes/Ecran.tsx';
 import EcranPersonnel from './EcranPersonnel.tsx';
+import { DEPART, SOUMIS, VALIDE } from './instantanes.test-donnees.ts';
+import { calculerPaie } from './regles.ts';
+import type { InstantanePaie, ModePaiement } from './types.ts';
 
-// L'écran Demandes ne lit qu'en simulation ; la simulation fait aussi office de serveur ici.
-vi.mock('@/simulation', async (original) => ({
-  ...(await original<typeof import('@/simulation')>()),
-  SIMULATION: true,
-}));
+/*
+ * L'écran Personnel et paie rendu depuis des instantanés au format de l'écran ; la composition de
+ * l'instantané à partir des routes du serveur est testée dans reel.test.tsx. Les actions (lignes,
+ * jour, soumission, décision, paiements) appellent un faux serveur au format de l'API réelle, dont
+ * les réponses font évoluer l'état. La personne connectée vient de `users/me/`.
+ */
 
-let retablir: () => void;
+const lecture = vi.hoisted(() => ({ lirePersonnelReel: vi.fn() }));
+vi.mock('./reel.ts', () => lecture);
+
+const serveur = creerServeurApi();
+
+beforeAll(() => {
+  configurerApi({ baseUrl: 'http://localhost' });
+  serveur.listen({ onUnhandledFrame: 'bypass' });
+});
+afterAll(() => serveur.close());
+
+const PERSONNES = {
+  willy: { id: 3, nom: 'Willy', profil: 'gerant' },
+  fotso: { id: 5, nom: 'M. Fotso', profil: 'proprietaire' },
+  davy: { id: 1, nom: 'Davy', profil: 'caissier' },
+} as const;
+
+/** L'état de paie côté « serveur », et la personne connectée. */
+let etat: InstantanePaie;
+let connecte: keyof typeof PERSONNES;
+let appels: string[];
+let ajouts: number;
+let depenses: number;
+
+beforeEach(() => {
+  appels = [];
+  ajouts = 0;
+  depenses = 0;
+  lecture.lirePersonnelReel.mockReset();
+  lecture.lirePersonnelReel.mockImplementation(async () => {
+    if (connecte === 'davy') {
+      throw new ErreurApi(403, { detail: 'Refusé.', code: 'droit_insuffisant' });
+    }
+    return structuredClone(etat);
+  });
+});
+
+const employeDe = (id: string | readonly string[] | undefined) =>
+  etat.employes.find((e) => e.id === String(id))!;
+
+/** Le reste d'un employé selon l'écran : ce que le serveur lui fait payer. */
+const resteDe = (id: string) => calculerPaie(employeDe(id)).reste;
+
+function payer(id: string, montant: number, mode: ModePaiement, reference?: string) {
+  employeDe(id).paiements.push({
+    montant,
+    mode,
+    ...(reference ? { reference } : {}),
+    date: '2026-10-14',
+    par: PERSONNES[connecte].nom,
+  });
+  depenses += 1;
+  etat.statut = etat.employes.every((e) => calculerPaie(e).reste <= 0) ? 'payee' : 'en-paiement';
+}
+
+function installerServeur() {
+  serveur.use(
+    http.get('*/api/v1/users/me/', () => {
+      const p = PERSONNES[connecte];
+      return HttpResponse.json({
+        id: p.id,
+        name: p.nom,
+        email: 'x@optiboul.local',
+        url: `http://localhost/api/v1/users/${p.id}/`,
+        profil: p.profil,
+      });
+    }),
+    http.post('*/api/v1/paies/lignes/:id/elements/', async ({ params, request }) => {
+      const corps = (await request.json()) as {
+        genre: 'gain' | 'penalite';
+        description: string;
+        montant: number;
+      };
+      ajouts += 1;
+      employeDe(params.id).ajustements.push({
+        id: String(900 + ajouts),
+        type: corps.genre,
+        libelle: corps.description,
+        montant: corps.montant,
+        date: '2026-10-14',
+        par: PERSONNES[connecte].nom,
+      });
+      return HttpResponse.json({}, { status: 201 });
+    }),
+    http.delete('*/api/v1/paies/elements/:id/', ({ params }) => {
+      for (const e of etat.employes) {
+        e.ajustements = e.ajustements.filter((a) => a.id !== String(params.id));
+      }
+      return new HttpResponse(null, { status: 204 });
+    }),
+    http.put('*/api/v1/paies/:id/jour/', async ({ request }) => {
+      etat.jourDePaie = ((await request.json()) as { jour: string }).jour;
+      return HttpResponse.json({});
+    }),
+    http.post('*/api/v1/paies/:id/soumettre/', () => {
+      appels.push('soumettre');
+      etat.statut = 'soumis';
+      etat.soumisPar = PERSONNES[connecte].nom;
+      etat.demande = { id: '22', numero: 22 };
+      return HttpResponse.json({});
+    }),
+    http.post('*/api/v1/demandes/:id/accorder/', () => {
+      appels.push('accorder');
+      if (etat.statut !== 'soumis') {
+        return HttpResponse.json(
+          { detail: 'Cette demande est déjà décidée.', code: 'demande_deja_decidee' },
+          { status: 409 },
+        );
+      }
+      etat.statut = 'valide';
+      etat.validePar = PERSONNES[connecte].nom;
+      etat.valideA = '17:02';
+      etat.demande = null;
+      return HttpResponse.json({});
+    }),
+    http.post('*/api/v1/demandes/:id/refuser/', () => {
+      appels.push('refuser');
+      etat.statut = 'brouillon';
+      etat.demande = null;
+      return HttpResponse.json({});
+    }),
+    http.post('*/api/v1/paies/lignes/:id/payer/', async ({ params, request }) => {
+      appels.push('payer');
+      const corps = (await request.json()) as {
+        montant: number;
+        mode: ModePaiement;
+        reference?: string;
+      };
+      payer(String(params.id), corps.montant, corps.mode, corps.reference);
+      return HttpResponse.json({ depense: depenses });
+    }),
+    http.post('*/api/v1/paies/:id/payer-tout/', async ({ request }) => {
+      appels.push('payer-tout');
+      const corps = (await request.json()) as { mode: ModePaiement; reference?: string };
+      const aPayer = etat.employes.filter((e) => calculerPaie(e).reste > 0);
+      for (const e of aPayer) payer(e.id, calculerPaie(e).reste, corps.mode, corps.reference);
+      return HttpResponse.json({ payes: aPayer.length });
+    }),
+  );
+}
 
 async function ouvrir(
-  utilisateur = 'willy',
+  utilisateur: keyof typeof PERSONNES = 'willy',
   langue: 'fr' | 'en' = 'fr',
-  avant?: () => Promise<void>,
+  depart: InstantanePaie = DEPART,
 ) {
-  vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date('2026-10-14T17:02:00Z'));
+  connecte = utilisateur;
+  etat = structuredClone(depart);
   await initI18n('fr').changeLanguage(langue);
-  configurerApi({ baseUrl: 'http://localhost' });
-  retablir = installerApiSimulee({ latenceMs: 0 });
-  reinitialiserSimulation();
-  memoriserUtilisateurConnecte('willy');
-  await avant?.();
-  memoriserUtilisateurConnecte(utilisateur);
+  installerServeur();
   const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'personnel')!;
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
@@ -49,29 +184,17 @@ async function ouvrir(
       </QueryClientProvider>
     </OptiboulProvider>,
   );
+  if (utilisateur === 'davy') return;
   await screen.findByRole('heading', {
     name: /État de paie · Octobre 2026|Payroll · October 2026/,
   });
 }
 
 afterEach(async () => {
+  cleanup();
+  serveur.resetHandlers();
   await initI18n('fr').changeLanguage('fr');
-  retablir();
-  vi.useRealTimers();
 });
-
-const appel = (chemin: string, methode: string, corps: object = {}) =>
-  fetch(`/api/v1/simulation/${chemin}`, { method: methode, body: JSON.stringify(corps) });
-
-/** Le gérant soumet, le propriétaire valide : le paiement est ouvert. */
-async function validerLaPaie() {
-  await appel('gestion/personnel/soumettre/', 'POST');
-  memoriserUtilisateurConnecte('fotso');
-  const { demandes } = await (await appel('demandes/', 'GET')).json();
-  const demande = demandes.find((d: { type: string }) => d.type === 'paie');
-  await appel(`demandes/${demande.id}/decider/`, 'POST', { accord: true });
-  memoriserUtilisateurConnecte('willy');
-}
 
 const ligne = (prenom: string) => screen.getByRole('button', { name: new RegExp(`^${prenom}`) });
 
@@ -158,25 +281,31 @@ describe('Gestion › Personnel : brouillon', () => {
       ).toBe('2026-10-30'),
     );
   });
+
+  it('sur le vrai serveur, le gérant saisit absences et avances et télécharge le bulletin', async () => {
+    await ouvrir();
+    fireEvent.click(ligne('Davy'));
+    expect(await screen.findByText('Jours d’absence (0,5 possible)')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Bulletin de paie (PDF)' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Ajouter un employé/ })).toBeTruthy();
+  });
 });
 
 describe('Gestion › Personnel : validation par le propriétaire', () => {
-  const soumise = () => appel('gestion/personnel/soumettre/', 'POST').then(() => undefined);
-
   it('le propriétaire voit Valider et Refuser, pas Soumettre', async () => {
-    await ouvrir('fotso', 'fr', soumise);
+    await ouvrir('fotso', 'fr', SOUMIS);
     expect(screen.getByRole('button', { name: 'Valider l’état de paie' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Refuser' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Soumettre au propriétaire' })).toBeNull();
   });
 
   it('le gérant n’a pas de bouton de validation', async () => {
-    await ouvrir('willy', 'fr', soumise);
+    await ouvrir('willy', 'fr', SOUMIS);
     expect(screen.queryByRole('button', { name: 'Valider l’état de paie' })).toBeNull();
   });
 
   it('le propriétaire valide : l’état passe à « Validé par M. Fotso · à payer »', async () => {
-    await ouvrir('fotso', 'fr', soumise);
+    await ouvrir('fotso', 'fr', SOUMIS);
     fireEvent.click(screen.getByRole('button', { name: 'Valider l’état de paie' }));
     expect(
       (await screen.findAllByText('Validé par M. Fotso · à payer', { selector: 'span' })).length,
@@ -185,21 +314,35 @@ describe('Gestion › Personnel : validation par le propriétaire', () => {
       screen.getByText('Le gérant effectue les paiements une fois l’état validé.'),
     ).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Payer/ })).toBeNull();
+    expect(appels).toEqual(['accorder']);
   });
 
   it('le refus ramène l’état en brouillon', async () => {
-    await ouvrir('fotso', 'fr', soumise);
+    await ouvrir('fotso', 'fr', SOUMIS);
     fireEvent.click(screen.getByRole('button', { name: 'Refuser' }));
     expect(
       (await screen.findAllByText('Brouillon · préparé par le gérant', { selector: 'span' }))
         .length,
     ).toBeGreaterThan(0);
+    expect(appels).toEqual(['refuser']);
+  });
+
+  it('une décision refusée par le serveur (déjà tranchée) relit l’état', async () => {
+    await ouvrir('fotso', 'fr', SOUMIS);
+    // Le propriétaire a décidé ailleurs entre-temps : la même demande n'est plus en attente.
+    etat = structuredClone(DEPART);
+    fireEvent.click(screen.getByRole('button', { name: 'Valider l’état de paie' }));
+    expect(
+      (await screen.findAllByText('Brouillon · préparé par le gérant', { selector: 'span' }))
+        .length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'Valider l’état de paie' })).toBeNull();
   });
 });
 
 describe('Gestion › Personnel : paiement', () => {
   it('paye partiellement Davy : dépense créée, reste affiché, bouton lié à sa note', async () => {
-    await ouvrir('willy', 'fr', validerLaPaie);
+    await ouvrir('willy', 'fr', VALIDE);
     fireEvent.click(ligne('Davy'));
     const bouton = await screen.findByRole('button', { name: 'Payer Davy' });
     const note = document.getElementById(bouton.getAttribute('aria-describedby')!)!;
@@ -225,23 +368,24 @@ describe('Gestion › Personnel : paiement', () => {
   });
 
   it('payer tous les restes solde les huit salaires', async () => {
-    await ouvrir('willy', 'fr', validerLaPaie);
+    await ouvrir('willy', 'fr', VALIDE);
     fireEvent.click(screen.getByRole('button', { name: /^Payer tous les restes · 470.885 FCFA$/ }));
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: /Payer tous les restes/ })).toBeNull(),
     );
     expect(screen.getAllByText('Payée', { selector: 'span' }).length).toBeGreaterThan(1);
+    expect(etat.employes.map((e) => resteDe(e.id))).toEqual(Array(8).fill(0));
   });
 
   it('un double clic sur Payer n’enregistre qu’un paiement', async () => {
-    await ouvrir('willy', 'fr', validerLaPaie);
+    await ouvrir('willy', 'fr', VALIDE);
     fireEvent.click(ligne('Davy'));
     const bouton = await screen.findByRole('button', { name: 'Payer Davy' });
     fireEvent.click(bouton);
     fireEvent.click(bouton);
     await screen.findByText('14 oct. · 52 192 FCFA · Espèces · par Willy');
-    const { employes } = await (await appel('gestion/personnel/', 'GET')).json();
-    expect(employes.find((e: { id: string }) => e.id === 'davy').paiements).toHaveLength(1);
+    expect(appels.filter((a) => a === 'payer')).toHaveLength(1);
+    expect(employeDe('12').paiements).toHaveLength(1);
   });
 });
 
@@ -260,23 +404,7 @@ describe('Gestion › Personnel : anglais et erreurs', () => {
   });
 
   it('un profil sans droit voit l’erreur de chargement et peut réessayer', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] });
-    await initI18n('fr').changeLanguage('fr');
-    configurerApi({ baseUrl: 'http://localhost' });
-    retablir = installerApiSimulee({ latenceMs: 0 });
-    reinitialiserSimulation();
-    memoriserUtilisateurConnecte('davy');
-    const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'personnel')!;
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <OptiboulProvider>
-        <QueryClientProvider client={client}>
-          <MemoryRouter>
-            <EcranPersonnel ecran={ecran} />
-          </MemoryRouter>
-        </QueryClientProvider>
-      </OptiboulProvider>,
-    );
+    await ouvrir('davy');
     expect(await screen.findByRole('button', { name: /Réessayer/ })).toBeTruthy();
     expect(screen.queryByText('470 885 FCFA')).toBeNull();
   });
@@ -284,7 +412,7 @@ describe('Gestion › Personnel : anglais et erreurs', () => {
 
 describe('Gestion › Personnel : mobile money, R7', () => {
   it('exige la référence : erreur liée au champ, effacée à la saisie, rien n’est payé', async () => {
-    await ouvrir('willy', 'fr', validerLaPaie);
+    await ouvrir('willy', 'fr', VALIDE);
     fireEvent.click(ligne('Davy'));
     fireEvent.click(await screen.findByRole('button', { name: 'Mobile money' }));
     fireEvent.click(screen.getByRole('button', { name: 'Payer Davy' }));
@@ -295,6 +423,7 @@ describe('Gestion › Personnel : mobile money, R7', () => {
     const champ = screen.getByLabelText(/Référence de la transaction/);
     expect(champ.getAttribute('aria-invalid')).toBe('true');
     expect(champ.getAttribute('aria-describedby')).toBe(alerte.id);
+    expect(appels).toEqual([]);
     fireEvent.change(champ, { target: { value: 'MP240114' } });
     expect(screen.queryByRole('alert')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Payer Davy' }));
@@ -304,86 +433,11 @@ describe('Gestion › Personnel : mobile money, R7', () => {
   });
 
   it('payer tous les restes en mobile money sans référence ne paie personne', async () => {
-    await ouvrir('willy', 'fr', validerLaPaie);
+    await ouvrir('willy', 'fr', VALIDE);
     fireEvent.click(screen.getByRole('button', { name: 'Mobile money' }));
     fireEvent.click(screen.getByRole('button', { name: /^Payer tous les restes/ }));
     expect(await screen.findByRole('alert')).toBeTruthy();
-    const { employes } = await (await appel('gestion/personnel/', 'GET')).json();
-    expect(employes.every((e: { paiements: unknown[] }) => e.paiements.length === 0)).toBe(true);
-  });
-});
-
-describe('Gestion › Personnel : décision depuis Demandes', () => {
-  async function ouvrirDemandes(utilisateur: string) {
-    memoriserUtilisateurConnecte(utilisateur);
-    const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'demandes')!;
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    return render(
-      <OptiboulProvider>
-        <QueryClientProvider client={client}>
-          <MemoryRouter initialEntries={['/gestion/demandes']}>
-            <EcranDemandes ecran={ecran} />
-          </MemoryRouter>
-        </QueryClientProvider>
-      </OptiboulProvider>,
-    );
-  }
-
-  it('le gérant ne peut pas trancher la demande de paie ; le propriétaire valide, Personnel affiche « Validé »', async () => {
-    await ouvrir('willy');
-    fireEvent.click(screen.getByRole('button', { name: 'Soumettre au propriétaire' }));
-    await waitFor(() =>
-      expect(screen.queryByRole('button', { name: 'Soumettre au propriétaire' })).toBeNull(),
-    );
-    cleanup();
-
-    const gerant = await ouvrirDemandes('willy');
-    expect(await screen.findByText('État de paie · Octobre 2026')).toBeTruthy();
-    const ligneDePaie = screen.getByText('État de paie · Octobre 2026').closest('li')!;
-    expect(within(ligneDePaie).getByText(/À valider par : Propriétaire/)).toBeTruthy();
-    expect(within(ligneDePaie).getByText('En attente')).toBeTruthy();
-    expect(within(ligneDePaie).queryByRole('button', { name: /^Valider DEM-/ })).toBeNull();
-    expect(within(ligneDePaie).queryByRole('button', { name: /^Refuser DEM-/ })).toBeNull();
-    gerant.unmount();
-
-    await ouvrirDemandes('fotso');
-    const titre = await screen.findByText('État de paie · Octobre 2026');
-    const demande = titre.closest('li')!;
-    fireEvent.click(within(demande).getByRole('button', { name: /^Valider DEM-/ }));
-    expect(await screen.findByText(/Accordée par M\. Fotso/)).toBeTruthy();
-    cleanup();
-
-    memoriserUtilisateurConnecte('willy');
-    const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'personnel')!;
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <OptiboulProvider>
-        <QueryClientProvider client={client}>
-          <MemoryRouter initialEntries={['/gestion/personnel']}>
-            <EcranPersonnel ecran={ecran} />
-          </MemoryRouter>
-        </QueryClientProvider>
-      </OptiboulProvider>,
-    );
-    expect(
-      (await screen.findAllByText('Validé par M. Fotso · à payer', { selector: 'span' })).length,
-    ).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: /^Payer tous les restes/ })).toBeTruthy();
-  });
-
-  it('une décision refusée par le serveur (déjà tranchée) relit l’état', async () => {
-    await ouvrir('fotso', 'fr', () =>
-      appel('gestion/personnel/soumettre/', 'POST').then(() => undefined),
-    );
-    // Le propriétaire a décidé ailleurs entre-temps : la même demande n'est plus en attente.
-    const { demandes } = await (await appel('demandes/', 'GET')).json();
-    const demande = demandes.find((d: { type: string }) => d.type === 'paie');
-    await appel(`demandes/${demande.id}/decider/`, 'POST', { accord: false });
-    fireEvent.click(screen.getByRole('button', { name: 'Valider l’état de paie' }));
-    expect(
-      (await screen.findAllByText('Brouillon · préparé par le gérant', { selector: 'span' }))
-        .length,
-    ).toBeGreaterThan(0);
-    expect(screen.queryByRole('button', { name: 'Valider l’état de paie' })).toBeNull();
+    expect(appels).toEqual([]);
+    expect(etat.employes.every((e) => e.paiements.length === 0)).toBe(true);
   });
 });
