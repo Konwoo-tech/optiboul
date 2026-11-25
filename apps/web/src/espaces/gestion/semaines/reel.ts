@@ -3,14 +3,18 @@ import {
   clientsDettesRetrieve,
   depensesList,
   mouvementsStockEtatList,
+  semainesBilanRetrieve,
   semainesControlesClotureList,
   semainesList,
+  semainesPersonnesRetrieve,
   semainesPlanningRetrieve,
   toutesLesPages,
   usersMeRetrieve,
+  type BilanSemaine,
   type Caisse,
   type Depense,
   type LigneEtat,
+  type PersonnesAffectables,
   type Semaine as SemaineServeur,
 } from '@/api';
 import type { PersonneDuPoste } from '@/auth/connexion.ts';
@@ -35,9 +39,9 @@ import type {
 
 /*
  * Lecture de « Gestion › Semaines » sur le vrai serveur : `semaines/`, `{id}/planning/`, les caisses
- * (créneaux réels), les dépenses (indicateurs), `{id}/controles-cloture/` pour la semaine ouverte. Les
- * personnes à affecter viennent de la liste du poste de confiance (le serveur ne liste pas les
- * utilisateurs aux gérants ni au propriétaire) ; à défaut, des personnes déjà connues de l'écran.
+ * (créneaux réels), `{id}/bilan/` (chiffres d'une semaine), `{id}/controles-cloture/` pour la semaine
+ * ouverte. Les personnes à affecter viennent de `semaines/personnes/` ; à défaut (accès refusé), de la
+ * liste du poste de confiance puis des personnes déjà affectées.
  */
 
 type Page<T> = { data: { results?: T[]; next?: string | null } };
@@ -116,6 +120,8 @@ type ControleServeur = {
   cle: string;
   niveau: string;
   detail?: string;
+  factures?: { numero: string; libelle: string }[];
+  numeros?: number[];
   session?: { type: string; jour: string; par: string; heure: string };
   clients?: number;
   total?: number;
@@ -154,20 +160,30 @@ export function versControles(lignes: readonly ControleServeur[], responsable: s
       controles.push({
         cle: 'factures',
         niveau: l.niveau === 'ok' ? 'ok' : 'surveiller',
-        factures: [],
+        factures: (l.factures ?? []).map((f) => ({ numero: f.numero, libelle: f.libelle })),
       });
     } else if (l.cle.startsWith('demande')) {
       controles.push({
         cle: 'demandes',
         niveau: l.niveau === 'ok' ? 'ok' : 'surveiller',
-        numeros: [],
+        numeros: l.numeros ?? [],
       });
     }
   }
   return controles;
 }
 
-/** Indicateurs d'une semaine, d'après ses caisses et ses dépenses (le serveur n'a pas de bilan par semaine). */
+/** Les chiffres d'une semaine, tels que `semaines/{id}/bilan/` les donne. */
+export const versBilan = (b: BilanSemaine): Indicateurs => ({
+  recette: b.recette,
+  depenses: { nombre: b.depenses.nombre, montant: b.depenses.montant },
+  productions: { nombre: b.productions.nombre, sacs: b.productions.sacs },
+  ecartCumule: b.ecart_caisse_cumule,
+  caisses: b.caisses,
+  receptions: b.receptions,
+});
+
+/** Indicateurs d'une semaine recomposés d'après ses caisses et ses dépenses, si le bilan est illisible. */
 export function indicateursDeLaSemaine(
   caisses: readonly Caisse[],
   depenses: readonly Depense[],
@@ -210,7 +226,7 @@ export function passationPrevue(
 
 /** Compose l'instantané de l'écran des semaines à partir des routes du serveur. */
 export async function lireSemainesReelles(): Promise<InstantaneSemaines> {
-  const [moi, semaines, caisses, depenses, poste, dettes, etat] = await Promise.all([
+  const [moi, semaines, caisses, depenses, personnes, dettes, etat] = await Promise.all([
     usersMeRetrieve().then(
       (r) => r.data as unknown as { url: string; name: string; profil: Profil },
     ),
@@ -223,9 +239,9 @@ export async function lireSemainesReelles(): Promise<InstantaneSemaines> {
     toutesLesPages<Depense>((page) => depensesList({ page }) as Promise<Page<Depense>>).catch(
       () => [] as Depense[],
     ),
-    connexionUtilisateursList()
-      .then((r) => r.data as unknown as PersonneDuPoste[])
-      .catch(() => [] as PersonneDuPoste[]),
+    semainesPersonnesRetrieve()
+      .then((r) => r.data as unknown as PersonnesAffectables)
+      .catch(() => null),
     clientsDettesRetrieve()
       .then((r) => r.data as unknown as { total: number })
       .catch(() => null),
@@ -252,12 +268,19 @@ export async function lireSemainesReelles(): Promise<InstantaneSemaines> {
   );
 
   const indicateurs: Record<string, Indicateurs> = {};
-  for (const s of semaines) {
-    indicateurs[s.code] = indicateursDeLaSemaine(
-      caisses.filter((c) => c.semaine === s.id),
-      depenses.filter((d) => d.semaine === s.id),
-    );
-  }
+  await Promise.all(
+    semaines.map(async (s) => {
+      const bilan = await semainesBilanRetrieve(s.id)
+        .then((r) => r.data as unknown as BilanSemaine)
+        .catch(() => null);
+      indicateurs[s.code] = bilan
+        ? versBilan(bilan)
+        : indicateursDeLaSemaine(
+            caisses.filter((c) => c.semaine === s.id),
+            depenses.filter((d) => d.semaine === s.id),
+          );
+    }),
+  );
 
   const clotures: Record<string, Cloture> = {};
   if (ouverte) {
@@ -279,10 +302,25 @@ export async function lireSemainesReelles(): Promise<InstantaneSemaines> {
     };
   }
 
-  const parProfil = (profils: readonly string[]): Personne[] =>
-    poste
+  // Sans accès à la liste des personnes affectables, la liste du poste de confiance (comptoir).
+  const poste = personnes
+    ? []
+    : await connexionUtilisateursList()
+        .then((r) => r.data as unknown as PersonneDuPoste[])
+        .catch(() => [] as PersonneDuPoste[]);
+  const parProfil = (profils: readonly string[]): Personne[] => {
+    if (personnes) {
+      const liste = profils.includes('gerant')
+        ? personnes.gerants
+        : profils.includes('production')
+          ? personnes.responsables
+          : personnes.caissieres;
+      return liste.map((p) => ({ id: String(p.id), nom: p.nom, profil: profils[0] as Profil }));
+    }
+    return poste
       .filter((p) => profils.includes(p.profil))
       .map((p) => ({ id: String(p.id), nom: p.nom, profil: p.profil }));
+  };
   const connues = new Map<string, Personne>();
   for (const s of lues) {
     for (const p of [s.gerant, s.production]) if (p) connues.set(p.id, p);

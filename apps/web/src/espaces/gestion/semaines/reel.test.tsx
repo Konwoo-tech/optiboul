@@ -108,6 +108,37 @@ function serveurSemaines() {
         ]),
       ),
     ),
+    http.get('*/api/v1/semaines/personnes/', () =>
+      HttpResponse.json({
+        gerants: [
+          { id: 3, nom: 'Willy Gérant' },
+          { id: 6, nom: 'Rachel Gérante' },
+        ],
+        responsables: [{ id: 5, nom: 'Serge Production' }],
+        caissieres: [{ id: 4, nom: 'Davy Caisse' }],
+      }),
+    ),
+    http.get('*/api/v1/semaines/:id/bilan/', ({ params }) =>
+      HttpResponse.json(
+        params.id === '1'
+          ? {
+              recette: 116200,
+              depenses: { nombre: 8, montant: 160000 },
+              productions: { nombre: 2, sacs: 9 },
+              ecart_caisse_cumule: -600,
+              caisses: 3,
+              receptions: 1,
+            }
+          : {
+              recette: 0,
+              depenses: { nombre: 0, montant: 0 },
+              productions: { nombre: 0, sacs: 0 },
+              ecart_caisse_cumule: 0,
+              caisses: 0,
+              receptions: 0,
+            },
+      ),
+    ),
     http.get('*/api/v1/connexion/utilisateurs/', () =>
       HttpResponse.json([
         { id: 3, nom: 'Willy Gérant', profil: 'gerant' },
@@ -180,11 +211,16 @@ describe('lecture des semaines sur le vrai serveur', () => {
         enCours: false,
       },
     ]);
-    expect(i.indicateurs.S46).toMatchObject({
-      depenses: { nombre: 1, montant: 8000 },
+    // Les chiffres viennent du bilan du serveur (recette, productions et réceptions comprises).
+    expect(i.indicateurs.S46).toEqual({
+      recette: 116200,
+      depenses: { nombre: 8, montant: 160000 },
+      productions: { nombre: 2, sacs: 9 },
       ecartCumule: -600,
-      caisses: 1,
+      caisses: 3,
+      receptions: 1,
     });
+    expect(i.indicateurs.S47?.recette).toBe(0);
     expect(i.clotures.S46?.controles.map((c) => [c.cle, c.niveau])).toEqual([
       ['caisse', 'bloquant'],
       ['dettes', 'surveiller'],
@@ -200,9 +236,12 @@ describe('lecture des semaines sur le vrai serveur', () => {
     expect(i.clotures.S47).toBeUndefined();
   });
 
-  it('sans la liste du poste de confiance, les personnes déjà affectées restent proposées', async () => {
+  it('sans accès aux personnes affectables, le poste de confiance puis les personnes déjà affectées', async () => {
     serveurSemaines();
     serveur.use(
+      http.get('*/api/v1/semaines/personnes/', () =>
+        HttpResponse.json({ detail: 'x', code: 'droit_insuffisant' }, { status: 403 }),
+      ),
       http.get('*/api/v1/connexion/utilisateurs/', () =>
         HttpResponse.json({ detail: 'x', code: 'poste_non_reconnu' }, { status: 403 }),
       ),
@@ -211,6 +250,22 @@ describe('lecture des semaines sur le vrai serveur', () => {
     expect(i.gerants.map((p) => p.nom)).toEqual(['Willy Gérant']);
     expect(i.responsables.map((p) => p.nom)).toEqual(['Serge Production']);
     expect(i.caissieres).toEqual([]);
+  });
+
+  it('sans bilan lisible, les chiffres sont recomposés depuis les caisses et les dépenses', async () => {
+    serveurSemaines();
+    serveur.use(
+      http.get('*/api/v1/semaines/:id/bilan/', () =>
+        HttpResponse.json({ detail: 'x', code: 'introuvable' }, { status: 404 }),
+      ),
+    );
+    const i = await lireSemainesReelles();
+    expect(i.indicateurs.S46).toMatchObject({
+      recette: 0,
+      depenses: { nombre: 1, montant: 8000 },
+      ecartCumule: -600,
+      caisses: 1,
+    });
   });
 
   it('les conversions : semaine, créneau, planning, contrôles inconnus écartés', () => {
@@ -223,13 +278,25 @@ describe('lecture des semaines sur le vrai serveur', () => {
     expect(
       versControles(
         [
-          { cle: 'factures_en_retard', niveau: 'surveiller' },
-          { cle: 'demandes_en_attente', niveau: 'ok' },
+          {
+            cle: 'factures_en_retard',
+            niveau: 'surveiller',
+            factures: [{ numero: 'FAC-41', libelle: 'Moulin du Centre' }],
+          },
+          { cle: 'demandes_en_attente', niveau: 'surveiller', numeros: [12, 13] },
         ],
         'Serge',
       ),
     ).toEqual([
-      { cle: 'factures', niveau: 'surveiller', factures: [] },
+      {
+        cle: 'factures',
+        niveau: 'surveiller',
+        factures: [{ numero: 'FAC-41', libelle: 'Moulin du Centre' }],
+      },
+      { cle: 'demandes', niveau: 'surveiller', numeros: [12, 13] },
+    ]);
+    // Sans détail du serveur : listes vides.
+    expect(versControles([{ cle: 'demandes_en_attente', niveau: 'ok' }], 'Serge')).toEqual([
       { cle: 'demandes', niveau: 'ok', numeros: [] },
     ]);
     expect(indicateursDeLaSemaine([], [])).toMatchObject({
