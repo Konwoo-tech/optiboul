@@ -8,10 +8,10 @@ import { uniteMatiere } from './affichage.ts';
 beforeAll(async () => {
   await initI18n('fr').changeLanguage('fr');
 });
+
 // L'écran compte dans l'unité du stock du serveur : farine en kg ; sel, levure et
 // améliorant en g.
 describe('unités des matières à l’écran', () => {
-describe('unités des matières à l’écran (vrai serveur)', () => {
   it('farine en kg ; sel, levure et améliorant en g', () => {
     const t = i18n.t.bind(i18n);
     expect(uniteMatiere(t, 'farine')).toBe('kg');
