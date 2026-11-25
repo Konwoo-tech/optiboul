@@ -3,7 +3,7 @@ import { FenetreModale } from '@/ui';
 import { useState, type SubmitEvent } from 'react';
 
 import styles from '../comptoir/caisses/Fenetres.module.css';
-import type { TypeClient } from './types.ts';
+import type { ClientDeLecran, TypeClient } from './types.ts';
 
 const TYPES_DE_CLIENT: readonly TypeClient[] = ['livreur', 'restaurant', 'hotel', 'particulier'];
 
@@ -19,13 +19,17 @@ export type NouveauClient = {
   type: TypeClient;
   lieu: string;
   telephone: string;
-  /** Plafond propre en FCFA ; absent : le plafond commun. */
-  plafond?: number;
-  /** Code du produit → prix en FCFA, pour les seuls prix renseignés. */
-  tarifs: Record<string, number>;
+  /** Plafond propre en FCFA ; absent : le plafond commun ; `null` (modification) : le retirer. */
+  plafond?: number | null;
+  /** Code du produit → prix en FCFA ; `null` (modification) : retirer le prix propre. */
+  tarifs: Record<string, number | null>;
+  /** Seulement à la modification : le client reste-t-il au catalogue. */
+  actif?: boolean;
 };
 
 type Props = {
+  /** Client à modifier ; absent : un nouveau client. */
+  client?: ClientDeLecran;
   envoiEnCours: boolean;
   /** Renvoie la clé du message d'erreur, ou `null` quand le client est créé. */
   onConfirmer: (client: NouveauClient) => Promise<string | null>;
@@ -36,31 +40,38 @@ type Props = {
 const telephoneValide = (valeur: string) => valeur === '' || /^6\d{8}$/.test(valeur);
 
 /** Fiche d'un nouveau client : identité, plafond de dette et prix propres (gérant, propriétaire). */
-export function ModaleClient({ envoiEnCours, onConfirmer, onFermer }: Props) {
+export function ModaleClient({ client, envoiEnCours, onConfirmer, onFermer }: Props) {
   const { t } = useTranslation();
-  const [nom, setNom] = useState('');
-  const [type, setType] = useState<TypeClient>('livreur');
-  const [lieu, setLieu] = useState('');
-  const [telephone, setTelephone] = useState('');
-  const [plafond, setPlafond] = useState('');
-  const [prix, setPrix] = useState<Record<string, string>>({});
+  const [nom, setNom] = useState(client?.nom ?? '');
+  const [type, setType] = useState<TypeClient>(client?.type ?? 'livreur');
+  const [lieu, setLieu] = useState(client?.lieu ?? '');
+  const [telephone, setTelephone] = useState(client?.telephone.replace(/\D/g, '') ?? '');
+  const [plafond, setPlafond] = useState(
+    client?.plafondPropre == null ? '' : String(client.plafondPropre),
+  );
+  const [prix, setPrix] = useState<Record<string, string>>(
+    Object.fromEntries(Object.entries(client?.tarifsPropres ?? {}).map(([c, p]) => [c, String(p)])),
+  );
+  const [actif, setActif] = useState(client?.actif ?? true);
   const [erreur, setErreur] = useState<string | null>(null);
 
   const envoyer = async (evenement: SubmitEvent<HTMLFormElement>) => {
     evenement.preventDefault();
     if (!nom.trim()) return setErreur('nom');
     if (!telephoneValide(telephone)) return setErreur('telephone');
-    const tarifs: Record<string, number> = {};
+    const tarifs: Record<string, number | null> = {};
     for (const { code } of PRODUITS_TARIFES) {
       if (prix[code]) tarifs[code] = Number(prix[code]);
+      else if (client) tarifs[code] = null;
     }
     const refus = await onConfirmer({
       nom: nom.trim(),
       type,
       lieu: lieu.trim(),
       telephone,
-      ...(plafond ? { plafond: Number(plafond) } : {}),
+      ...(plafond ? { plafond: Number(plafond) } : client ? { plafond: null } : {}),
       tarifs,
+      ...(client ? { actif } : {}),
     });
     if (refus) setErreur(refus);
   };
@@ -68,7 +79,10 @@ export function ModaleClient({ envoiEnCours, onConfirmer, onFermer }: Props) {
   const chiffres = (valeur: string) => valeur.replace(/\D/g, '');
 
   return (
-    <FenetreModale titre={t('clients.nouveau.titre')} onFermer={onFermer}>
+    <FenetreModale
+      titre={t(client ? 'clients.nouveau.titreModifier' : 'clients.nouveau.titre')}
+      onFermer={onFermer}
+    >
       <form className={styles.formulaire} onSubmit={(e) => void envoyer(e)} noValidate>
         <label className={styles.champ}>
           {t('clients.nouveau.nom')}
@@ -141,6 +155,12 @@ export function ModaleClient({ envoiEnCours, onConfirmer, onFermer }: Props) {
             />
           </label>
         ))}
+        {client && (
+          <label>
+            <input type="checkbox" checked={actif} onChange={(e) => setActif(e.target.checked)} />{' '}
+            {t('clients.nouveau.actif')}
+          </label>
+        )}
         {erreur && (
           <div className={styles.erreur} role="alert">
             {t(`clients.nouveau.erreurs.${erreur}`)}
@@ -151,7 +171,7 @@ export function ModaleClient({ envoiEnCours, onConfirmer, onFermer }: Props) {
             {t('clients.nouveau.annuler')}
           </button>
           <button type="submit" className={styles.confirmer} disabled={envoiEnCours}>
-            {t('clients.nouveau.creer')}
+            {t(client ? 'clients.nouveau.enregistrer' : 'clients.nouveau.creer')}
           </button>
         </div>
       </form>

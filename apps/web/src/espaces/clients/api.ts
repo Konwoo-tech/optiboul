@@ -1,5 +1,6 @@
 import {
   clientsCreate,
+  clientsPartialUpdate,
   clientsDettesRetrieve,
   clientsEnvoyerReleveCreate,
   clientsList,
@@ -53,6 +54,9 @@ export function versClientDeLecran(client: Client, relances: ReadonlySet<number>
     solde: client.solde,
     relance: relances.has(client.id),
     plafond: client.plafond_effectif,
+    plafondPropre: client.plafond ?? null,
+    tarifsPropres: (client.tarifs ?? {}) as Record<string, number>,
+    actif: client.actif ?? true,
   };
 }
 
@@ -183,18 +187,33 @@ export function ouvrirRelevePdf(id: string) {
   window.open(getClientsRelevePdfRetrieveUrl(Number(id)), '_blank', 'noopener');
 }
 
+/** Les champs envoyés à la création ou à la modification d'un client. */
+type CorpsClient = {
+  nom: string;
+  type: string;
+  lieu: string;
+  telephone: string;
+  plafond?: number | null;
+  tarifs: Record<string, number | null>;
+  actif?: boolean;
+};
+
 /** Crée un client (gérant, propriétaire) : `POST /clients/`, prix propres compris. */
 export function useCreerClient() {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (nouveau: {
-      nom: string;
-      type: string;
-      lieu: string;
-      telephone: string;
-      plafond?: number;
-      tarifs: Record<string, number>;
-    }) => clientsCreate(nouveau as Parameters<typeof clientsCreate>[0]),
+    mutationFn: (nouveau: CorpsClient) =>
+      clientsCreate(nouveau as Parameters<typeof clientsCreate>[0]),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['clients', 'liste'] }),
+  });
+}
+
+/** Modifie un client : `PATCH /clients/{id}/` ; un prix `null` retire le prix propre. */
+export function useModifierClient() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, corps }: { id: string; corps: CorpsClient }) =>
+      clientsPartialUpdate(Number(id), corps as Parameters<typeof clientsPartialUpdate>[1]),
     onSuccess: () => client.invalidateQueries({ queryKey: ['clients', 'liste'] }),
   });
 }

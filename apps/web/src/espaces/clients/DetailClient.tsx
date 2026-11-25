@@ -17,6 +17,8 @@ type Props = {
   /** Le focus vient sur le nom seulement après une action de la personne, pas à l'arrivée. */
   prendreFocus: boolean;
   onFermer: () => void;
+  /** Gérant et propriétaire modifient la fiche ; absent : lecture seule. */
+  onModifier?: () => void;
 };
 
 /** « 14 oct. · 21:41 » pour la session du jour, « 13 oct. · nuit » ou « · jour » pour les sessions passées. */
@@ -40,7 +42,14 @@ function quand(
  * relevé (PDF, WhatsApp). Le focus vient sur le nom quand on change de
  * client, pour qu'un lecteur d'écran annonce le détail.
  */
-export function DetailClient({ client, plafond, echeance, prendreFocus, onFermer }: Props) {
+export function DetailClient({
+  client,
+  plafond,
+  echeance,
+  prendreFocus,
+  onFermer,
+  onModifier,
+}: Props) {
   const { t, i18n } = useTranslation();
   const afficherToast = useToast();
   const envoyerReleve = useEnvoyerReleve();
@@ -115,6 +124,11 @@ export function DetailClient({ client, plafond, echeance, prendreFocus, onFermer
         ))}
       </ul>
       <div className={styles.actions}>
+        {onModifier && (
+          <button type="button" className={styles.pdf} onClick={onModifier}>
+            {t('clients.nouveau.modifier')}
+          </button>
+        )}
         <button
           type="button"
           className={styles.pdf}

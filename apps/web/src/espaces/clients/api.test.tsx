@@ -156,6 +156,9 @@ describe('lecture des clients sur le vrai serveur', () => {
         solde: -1140,
         relance: true,
         plafond: 2000,
+        plafondPropre: null,
+        tarifsPropres: { BAG: 110, KO: 75, GC135: 165 },
+        actif: true,
       },
       expect.objectContaining({
         id: '2',
