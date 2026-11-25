@@ -11,7 +11,9 @@ import {
   caissesProchaineRetrieve,
   caissesRouvrirCreate,
   mouvementsInternesCreate,
+  commandesAnnulerCreate,
   commandesRelancerHabituelsCreate,
+  commandesReprendreVeilleCreate,
   commandesReprendreHabituelleCreate,
   ErreurApi,
 } from '@/api';
@@ -205,6 +207,27 @@ export function actionsSession(
           jour: session()?.date,
           creneau: session()?.type,
         }).then(relire),
+      ),
+    /** Annule la commande d'un client pour la session (la caisse doit être ouverte). */
+    annulerCommande: (clientId: string) =>
+      ranger(
+        (async () => {
+          const id = client.getQueryData<InstantaneSession>(cle)?.idsCommandes?.[clientId];
+          if (!id) return indisponible();
+          await commandesAnnulerCreate(Number(id));
+          return relire();
+        })(),
+      ),
+    /** Reprend les commandes du même créneau la veille ; rend le nombre de commandes reprises. */
+    reprendreVeille: () =>
+      ranger(
+        (async () => {
+          const reponse = await commandesReprendreVeilleCreate({
+            jour: session()?.date,
+            creneau: session()?.type,
+          });
+          return { ...(await relire()), reprises: (reponse.data as { reprises: number }).reprises };
+        })(),
       ),
     livrer: (livraison: NouvelleLivraison) =>
       ranger(

@@ -155,9 +155,11 @@ export function rangerCommandes(
   habituels: readonly Habituel[],
 ) {
   const saisies: Record<string, Saisies> = {};
+  const idsCommandes: Record<string, string> = {};
   for (const client of clients) saisies[client.id] = saisiesVides();
   for (const commande of commandes) {
     saisies[String(commande.client.id)] = versSaisies(commande.lignes);
+    idsCommandes[String(commande.client.id)] = String(commande.id);
   }
   const habituelles: Record<string, Quantites> = {};
   const relances: Record<string, string> = {};
@@ -166,7 +168,7 @@ export function rangerCommandes(
     habituelles[id] = versQuantites(habituel.commande);
     if (habituel.rappel) relances[id] = heureDeYaounde(habituel.rappel.cree_le);
   }
-  return { commandes: saisies, habituelles, relances };
+  return { commandes: saisies, idsCommandes, habituelles, relances };
 }
 
 /** La session telle que l'écran la lit : la dernière caisse, ouverte ou fermée. */

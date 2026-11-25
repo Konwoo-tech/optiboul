@@ -61,6 +61,20 @@ export function Commandes({
     afficher(t('comptoir.session.commandes.toasts.commandeAjoutee', { nom }));
   };
 
+  const annuler = async (nom: string, id: string) => {
+    await actions.annulerCommande(id);
+    afficher(t('comptoir.session.commandes.toasts.commandeAnnulee', { nom }));
+  };
+
+  const reprendreVeille = async () => {
+    const { reprises } = await actions.reprendreVeille();
+    afficher(
+      reprises > 0
+        ? t('comptoir.session.commandes.toasts.veilleReprise', { count: reprises })
+        : t('comptoir.session.commandes.toasts.veilleVide'),
+    );
+  };
+
   /** Entrée passe au champ suivant du tableau (la ligne suivante après KO → GC). */
   const entreePasseAuSuivant = (evenement: KeyboardEvent<HTMLInputElement>) => {
     if (evenement.key !== 'Enter') return;
@@ -156,11 +170,22 @@ export function Commandes({
             </div>
             <div className={styles.sousTitre}>{t('comptoir.session.commandes.sousTitre')}</div>
           </div>
-          {peutVoirLePlan && (
-            <button type="button" className={styles.voirPlan} onClick={onVoirLePlan}>
-              {t('comptoir.session.commandes.voirPlan')}
-            </button>
-          )}
+          <div className={styles.entetActions}>
+            {peutSaisir && (
+              <button
+                type="button"
+                className={styles.voirPlan}
+                onClick={() => void reprendreVeille()}
+              >
+                {t('comptoir.session.commandes.reprendreVeille')}
+              </button>
+            )}
+            {peutVoirLePlan && (
+              <button type="button" className={styles.voirPlan} onClick={onVoirLePlan}>
+                {t('comptoir.session.commandes.voirPlan')}
+              </button>
+            )}
+          </div>
         </div>
         <div className={styles.defilement}>
           <div
@@ -180,7 +205,21 @@ export function Commandes({
             </div>
             {clients.map((client) => (
               <div className={`${styles.grille} ${styles.grilleLigne}`} key={client.id}>
-                <span className={styles.client}>{client.nom}</span>
+                <span className={styles.client}>
+                  {client.nom}
+                  {peutSaisir && instantane.idsCommandes?.[client.id] && (
+                    <button
+                      type="button"
+                      className={styles.annulerCommande}
+                      aria-label={t('comptoir.session.commandes.annulerCommande', {
+                        nom: client.nom,
+                      })}
+                      onClick={() => void annuler(client.nom, client.id)}
+                    >
+                      <span aria-hidden>×</span>
+                    </button>
+                  )}
+                </span>
                 {PRODUITS.map((produit) => (
                   <input
                     key={produit.cle}

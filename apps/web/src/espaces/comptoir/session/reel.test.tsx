@@ -438,6 +438,33 @@ describe('écritures des commandes sur le vrai serveur', () => {
     expect(client.getQueryData<InstantaneSession>(cleSession('Davy'))?.livraisons).toHaveLength(1);
   });
 
+  it('annule la commande d’un client par son identifiant serveur et reprend la veille', async () => {
+    const client = new QueryClient();
+    serveurSession();
+    let annulee = '';
+    let veille: unknown;
+    serveur.use(
+      http.post('*/api/v1/commandes/:id/annuler/', ({ params }) => {
+        annulee = String(params.id);
+        return new HttpResponse(null, { status: 204 });
+      }),
+      http.post('*/api/v1/commandes/reprendre-veille/', async ({ request }) => {
+        veille = await request.json();
+        return HttpResponse.json({ reprises: 2, commandes: [] });
+      }),
+    );
+    client.setQueryData(cleSession('Davy'), { ...instantaneDe(), idsCommandes: { 3: '5' } });
+    const actions = actionsSession(client, 'Davy');
+    await actions.annulerCommande('3');
+    const reprise = await actions.reprendreVeille();
+    expect(annulee).toBe('5');
+    expect(veille).toEqual({ jour: '2026-11-13', creneau: 'jour' });
+    expect(reprise.reprises).toBe(2);
+    expect(client.getQueryData<InstantaneSession>(cleSession('Davy'))?.idsCommandes?.['3']).toBe(
+      '5',
+    );
+  });
+
   it('refuse de fermer ou de rouvrir sans caisse identifiée, sans appeler le serveur', async () => {
     const client = new QueryClient();
     const actions = actionsSession(client, 'Davy');

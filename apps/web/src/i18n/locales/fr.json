@@ -634,8 +634,14 @@
         "toasts": {
           "relancesEnvoyees": "{{count}} messages WhatsApp envoyés",
           "relanceEnvoyee": "Message WhatsApp envoyé à {{nom}}",
-          "commandeAjoutee": "Commande de {{nom}} ajoutée"
-        }
+          "commandeAjoutee": "Commande de {{nom}} ajoutée",
+          "commandeAnnulee": "Commande de {{nom}} annulée",
+          "veilleReprise_one": "{{count}} commande reprise de la veille",
+          "veilleReprise_other": "{{count}} commandes reprises de la veille",
+          "veilleVide": "Aucune commande à reprendre de la veille"
+        },
+        "reprendreVeille": "Reprendre la veille",
+        "annulerCommande": "Annuler la commande de {{nom}}"
       },
       "livraisons": {
         "recherche": "Client : premières lettres…",
