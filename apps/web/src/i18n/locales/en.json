@@ -282,7 +282,28 @@
     "toastReleve": "Statement sent via WhatsApp to {{nom}}",
     "toastReleveErreur": "The statement for {{nom}} could not be sent (missing number?).",
     "erreur": "Unable to load customers.",
-    "chargement": "Loading customers…"
+    "chargement": "Loading customers…",
+    "nouveau": {
+      "ajouter": "New customer",
+      "titre": "New customer",
+      "nom": "Customer name",
+      "type": "Customer type",
+      "lieu": "Delivery place",
+      "telephone": "WhatsApp phone (9 digits, starts with 6)",
+      "plafond": "Own debt ceiling (FCFA, optional)",
+      "noteTarifs": "Customer's own prices in FCFA (leave empty for the base price).",
+      "prixBag": "Baguette price",
+      "prixKo": "KO bread price",
+      "prixGc": "Large loaf 135 price",
+      "creer": "Create the customer",
+      "annuler": "Cancel",
+      "toast": "Customer {{nom}} created",
+      "erreurs": {
+        "nom": "The customer name is required.",
+        "telephone": "Invalid number: 9 digits starting with 6, or empty.",
+        "defaut": "The customer could not be created. Try again."
+      }
+    }
   },
   "comptoir": {
     "caisses": {

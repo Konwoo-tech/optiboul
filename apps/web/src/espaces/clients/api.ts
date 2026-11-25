@@ -1,4 +1,5 @@
 import {
+  clientsCreate,
   clientsDettesRetrieve,
   clientsEnvoyerReleveCreate,
   clientsList,
@@ -180,4 +181,20 @@ export function useEnvoyerReleve() {
 /** Ouvre le relevé PDF (30 derniers jours) dans un nouvel onglet : le navigateur porte la session. */
 export function ouvrirRelevePdf(id: string) {
   window.open(getClientsRelevePdfRetrieveUrl(Number(id)), '_blank', 'noopener');
+}
+
+/** Crée un client (gérant, propriétaire) : `POST /clients/`, prix propres compris. */
+export function useCreerClient() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (nouveau: {
+      nom: string;
+      type: string;
+      lieu: string;
+      telephone: string;
+      plafond?: number;
+      tarifs: Record<string, number>;
+    }) => clientsCreate(nouveau as Parameters<typeof clientsCreate>[0]),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['clients', 'liste'] }),
+  });
 }
