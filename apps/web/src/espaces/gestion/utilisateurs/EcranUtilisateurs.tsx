@@ -12,12 +12,14 @@ import {
   useDebloquer,
   useChangerDeGroupe,
   useCreerUnGroupe,
+  useModifierUnGroupe,
   useCreerUtilisateur,
   erreursDeChamps,
   useReinitialiserLeCode,
   useUtilisateurs,
 } from './api.ts';
 import { ListeUtilisateurs } from './ListeUtilisateurs.tsx';
+import { ModaleGroupe } from './ModaleGroupe.tsx';
 import { NouvelUtilisateur } from './NouvelUtilisateur.tsx';
 import {
   aDesErreurs,
@@ -30,6 +32,7 @@ import {
 import type {
   Canal,
   ErreursUtilisateur,
+  Groupe,
   NouveauGroupe,
   NouvelUtilisateur as Brouillon,
   Utilisateur,
@@ -68,6 +71,8 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
   const reinitialiser = useReinitialiserLeCode(nom);
   const activer = useActiver(nom);
   const creerGroupe = useCreerUnGroupe(nom);
+  const modifierGroupe = useModifierUnGroupe(nom);
+  const [groupeEdite, setGroupeEdite] = useState<Groupe | null>(null);
   const creer = useCreerUtilisateur(nom);
   const debloquer = useDebloquer(nom);
   const [codesSecours, setCodesSecours] = useState<string[]>([]);
@@ -258,6 +263,19 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
       });
     });
 
+  const surModifierGroupe = async (modification: NouveauGroupe): Promise<string | null> => {
+    if (!groupeEdite) return 'defaut';
+    try {
+      await modifierGroupe.mutateAsync({ id: groupeEdite.id, groupe: modification });
+      setGroupeEdite(null);
+      afficher(t('gestion.utilisateurs.groupes.modifier.toast', { nom: modification.nom }));
+      return null;
+    } catch (erreur) {
+      const code = codeErreur(erreur);
+      return code === 'groupe_existant' ? 'existe' : code === 'nom_obligatoire' ? 'nom' : 'defaut';
+    }
+  };
+
   const nouveau = (groupe = '') => {
     setBrouillon({ ...BROUILLON_VIDE, groupe });
     setErreurs({});
@@ -354,6 +372,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
               occupe={occupe}
               onAjouterMembre={(g) => nouveau(g)}
               onCreer={surCreerGroupe}
+              onModifier={(g) => setGroupeEdite(g)}
             />
           )}
           {onglet === 'nouveau' && (
@@ -409,6 +428,15 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
           )}
         </div>
       </div>
+      {groupeEdite && (
+        <ModaleGroupe
+          groupe={groupeEdite}
+          groupes={groupes}
+          envoiEnCours={modifierGroupe.isPending}
+          onFermer={() => setGroupeEdite(null)}
+          onConfirmer={surModifierGroupe}
+        />
+      )}
     </>
   );
 }

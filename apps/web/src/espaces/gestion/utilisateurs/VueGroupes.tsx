@@ -27,10 +27,19 @@ type Props = {
    * afficher sous le champ (la saisie est gardée). Texte vide : refus déjà signalé ailleurs.
    */
   onCreer: (groupe: NouveauGroupe) => Promise<string | null>;
+  /** Ouvre la fenêtre de modification du groupe. */
+  onModifier?: (groupe: Groupe) => void;
 };
 
 /** Onglet « Groupes » : une carte par groupe et le formulaire d'un nouveau groupe (US-021). */
-export function VueGroupes({ groupes, utilisateurs, occupe, onAjouterMembre, onCreer }: Props) {
+export function VueGroupes({
+  groupes,
+  utilisateurs,
+  occupe,
+  onAjouterMembre,
+  onCreer,
+  onModifier,
+}: Props) {
   const { t, i18n } = useTranslation();
   const idErreur = useId();
   const [nom, setNom] = useState('');
@@ -106,6 +115,16 @@ export function VueGroupes({ groupes, utilisateurs, occupe, onAjouterMembre, onC
             >
               + {t('gestion.utilisateurs.groupes.ajouterMembre')}
             </button>
+            {onModifier && (
+              <button
+                type="button"
+                className={`${styles.petit} ${styles.ajouterMembre}`}
+                aria-label={t('gestion.utilisateurs.groupes.modifierNom', { nom: nomLocalise })}
+                onClick={() => onModifier(g)}
+              >
+                {t('gestion.utilisateurs.groupes.modifier.bouton')}
+              </button>
+            )}
           </section>
         );
       })}
