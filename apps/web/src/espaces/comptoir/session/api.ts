@@ -36,7 +36,7 @@ import type {
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleSession = (utilisateur: string | undefined) =>
-  ['simulation', 'comptoir', 'session', utilisateur] as const;
+  ['ecran', 'comptoir', 'session', utilisateur] as const;
 
 export function useSessionComptoir(utilisateur: string | undefined) {
   return useQuery({
@@ -134,7 +134,7 @@ export function actionsSession(
     const reponse = await demande;
     client.setQueryData(cle, reponse.instantane);
     // Les notifications suivent la session (commandes manquantes) : on les relit.
-    void client.invalidateQueries({ queryKey: ['simulation', 'notifications'] });
+    void client.invalidateQueries({ queryKey: ['ecran', 'notifications'] });
     void client.invalidateQueries({ queryKey: ['coque', 'notifications'] });
     return reponse;
   };

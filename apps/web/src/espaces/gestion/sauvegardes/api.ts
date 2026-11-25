@@ -14,7 +14,7 @@ import type { InstantaneSauvegardes, ReponseCopie, ReponseRestauration } from '.
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleSauvegardes = (utilisateur: string | undefined) =>
-  ['simulation', 'gestion', 'sauvegardes', utilisateur] as const;
+  ['ecran', 'gestion', 'sauvegardes', utilisateur] as const;
 
 export function useSauvegardes(utilisateur: string | undefined) {
   return useQuery({
@@ -38,7 +38,7 @@ function useAction<Demande, Resultat extends { instantane: InstantaneSauvegardes
     mutationFn: action,
     onSuccess: (resultat) => {
       client.setQueryData(cleSauvegardes(utilisateur), resultat.instantane);
-      void client.invalidateQueries({ queryKey: ['simulation', 'gestion', 'journal'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'gestion', 'journal'] });
       if (toutRelire) void client.invalidateQueries();
     },
   });

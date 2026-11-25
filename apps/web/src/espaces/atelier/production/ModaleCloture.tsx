@@ -41,7 +41,7 @@ export function ModaleCloture({
       </p>
       <p className={styles.titreModale}>{t('atelier.production.cloture.sorties')}</p>
       <ul className={styles.sorties}>
-        {sortiesDeStock(consommation, 'serveur').map((sortie) => {
+        {sortiesDeStock(consommation).map((sortie) => {
           const disponible = instantane.stock[sortie.matiere];
           const insuffisant = sortie.quantite > disponible;
           // Le stock ne descend jamais sous zéro : on le dit plutôt que d'afficher un reste négatif.

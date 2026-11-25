@@ -125,13 +125,19 @@ export function useFormulaireLivraison({
     [champs],
   );
 
-  /** Recommence : plus de client, champs vides, la recherche reprend le focus (F2, Échap). */
-  const reinitialiser = useCallback(() => {
-    cle.current = null;
-    setFormulaire(VIDE);
-    setRecherche('');
-    focaliser(champs.recherche);
-  }, [champs]);
+  /**
+   * Recommence : plus de client, champs vides, la recherche reprend le focus (F2, Échap), sauf quand
+   * une fenêtre s'ouvre aussitôt (le code du gérant) : le focus lui revient.
+   */
+  const reinitialiser = useCallback(
+    (avecFocus = true) => {
+      cle.current = null;
+      setFormulaire(VIDE);
+      setRecherche('');
+      if (avecFocus === true) focaliser(champs.recherche);
+    },
+    [champs],
+  );
 
   /** Toute modification de la saisie change l'envoi : il faut une nouvelle clé. */
   const modifier = (changement: (avant: Formulaire) => Formulaire) => {
@@ -224,7 +230,7 @@ export function useFormulaireLivraison({
       cle.current = null;
       // Sur le vrai serveur, la livraison est déjà posée en attente : la saisie repart à zéro, pour
       // qu'on ne la renvoie pas une seconde fois une fois l'accord donné.
-      reinitialiser();
+      reinitialiser(!reponse.demande);
       surAutorisation(reponse);
     } catch (erreur) {
       surErreur(erreur);

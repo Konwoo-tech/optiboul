@@ -44,7 +44,7 @@ export type ProchaineOuverture = {
 
 /** La caisse ouverte, connue de tous les profils de l'écran (qui l'a ouverte, quand). */
 export type CaisseOuverte = {
-  /** Identifiant de la caisse sur le vrai serveur (la simulation n'en a pas besoin). */
+  /** Identifiant de la caisse sur le serveur. */
   id?: string;
   jour: string;
   type: TypeSession;

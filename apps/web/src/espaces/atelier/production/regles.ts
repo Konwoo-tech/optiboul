@@ -147,19 +147,17 @@ export type ReglageMatiere = {
   fixe?: number;
   /** Kilogrammes que pèse une unité de saisie ; 0 : la matière n'entre pas dans l'écart en kg. */
   kgParUnite: number;
-  /** Unités de stock sorties pour une unité de saisie (farine : kg → sacs de 50 kg). */
-  stockParUnite: number;
 };
 
 /** Consommation théorique de la recette et conversion vers le stock (maquette : MATS, prodOuts). */
 export const MATIERES_PESEES: Record<Matiere, ReglageMatiere> = {
-  farine: { unite: 'kg', parSac: 50, kgParUnite: 1, stockParUnite: 1 / 50 },
-  sel: { unite: 'g', parSac: 600, kgParUnite: 0.001, stockParUnite: 0.001 },
-  levure: { unite: 'g', parSac: 450, kgParUnite: 0.001, stockParUnite: 0.001 },
-  ameliorant: { unite: 'g', parSac: 300, kgParUnite: 0.001, stockParUnite: 0.001 },
-  glace: { unite: 'sachets', parSac: 5, kgParUnite: 0, stockParUnite: 1 },
-  bois: { unite: 'chargements', fixe: 1, kgParUnite: 0, stockParUnite: 1 },
-  huile: { unite: 'litres', fixe: 3, kgParUnite: 0, stockParUnite: 1 },
+  farine: { unite: 'kg', parSac: 50, kgParUnite: 1 },
+  sel: { unite: 'g', parSac: 600, kgParUnite: 0.001 },
+  levure: { unite: 'g', parSac: 450, kgParUnite: 0.001 },
+  ameliorant: { unite: 'g', parSac: 300, kgParUnite: 0.001 },
+  glace: { unite: 'sachets', parSac: 5, kgParUnite: 0 },
+  bois: { unite: 'chargements', fixe: 1, kgParUnite: 0 },
+  huile: { unite: 'litres', fixe: 3, kgParUnite: 0 },
 };
 
 export const MATIERES_CONSOMMEES = /* @__PURE__ */ Object.keys(MATIERES_PESEES) as Matiere[];
@@ -201,20 +199,15 @@ export const consommationComplete = (consommation: Consommation): boolean =>
   MATIERES_CONSOMMEES.every((matiere) => consommation[matiere] !== null);
 
 /**
- * Sorties de stock d'une clôture : la consommation réelle, dans l'unité du stock. `prototype` (la
- * simulation) compte la farine en sacs et le reste en kg ; `serveur` garde l'unité de la consommation
- * (farine en kg, sel, levure, améliorant en g), qui est celle du stock du vrai serveur.
+ * Sorties de stock d'une clôture : la consommation réelle, dans l'unité de la consommation (farine
+ * en kg, sel, levure, améliorant en g), qui est celle du stock du serveur.
  */
-export function sortiesDeStock(
-  consommation: Consommation,
-  unites: 'prototype' | 'serveur' = 'prototype',
-): SortieDeStock[] {
+export function sortiesDeStock(consommation: Consommation): SortieDeStock[] {
   const sorties: SortieDeStock[] = [];
   for (const matiere of MATIERES_CONSOMMEES) {
     const valeur = consommation[matiere];
     if (valeur === null) continue;
-    const facteur = unites === 'serveur' ? 1 : MATIERES_PESEES[matiere].stockParUnite;
-    const quantite = Math.round(valeur * facteur * 100) / 100;
+    const quantite = Math.round(valeur * 100) / 100;
     if (quantite > 0) sorties.push({ matiere, quantite });
   }
   return sorties;

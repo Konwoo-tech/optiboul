@@ -50,8 +50,7 @@ export default defineConfig({
     ),
   },
   preview: { port: 5173, strictPort: true },
-  // Pas de cartes sources dans le paquet servi : elles contiendraient tout le code source en clair
-  // (y compris, en mode simulation, comptes et codes de démonstration).
+  // Pas de cartes sources dans le paquet servi : elles contiendraient tout le code source en clair.
   build: { outDir: 'dist', sourcemap: false },
   test: {
     environment: 'jsdom',

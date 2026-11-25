@@ -15,7 +15,6 @@ import {
   motDEcart,
   peutSaisir,
   resteAProduire,
-  sortiesDeStock,
   supplementEnDemande,
   supplementPossible,
   supplementVide,
@@ -90,18 +89,6 @@ describe('écarts', () => {
     expect(ecartAJustifier(12, limite)).toBe(false);
     expect(ecartAJustifier(12.1, limite)).toBe(true);
     expect(ecartAJustifier(-12.1, limite)).toBe(true);
-  });
-
-  it('simulation : convertit la consommation en sorties de stock (farine en sacs, sel en kg)', () => {
-    expect(sortiesDeStock(juste)).toEqual([
-      { matiere: 'farine', quantite: 6 },
-      { matiere: 'sel', quantite: 3.6 },
-      { matiere: 'levure', quantite: 2.7 },
-      { matiere: 'ameliorant', quantite: 1.8 },
-      { matiere: 'glace', quantite: 30 },
-      { matiere: 'bois', quantite: 1 },
-      { matiere: 'huile', quantite: 3 },
-    ]);
   });
 });
 

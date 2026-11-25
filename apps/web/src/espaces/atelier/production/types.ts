@@ -122,14 +122,14 @@ export type InstantaneProduction = {
   justification: Justification | null;
   /** Écart de matière toléré par sac travaillé, en kg (R10). */
   seuilEcartKg: number;
-  /** Stock actuel de chaque matière, dans l'unité du stock (serveur : farine en kg, sel, levure, améliorant en g ; simulation : farine en sacs). */
+  /** Stock actuel de chaque matière, dans l'unité du stock (farine en kg, sel, levure, améliorant en g). */
   stock: Record<Matiere, number>;
   demandeEnAttente: DemandeProduction | null;
   /** Plus anciennes d'abord. */
   historique: LigneHistorique[];
-  /** Identifiant de la production ouverte sur le vrai serveur (la simulation n'en a pas besoin). */
+  /** Identifiant de la production ouverte sur le serveur. */
   productionId?: string;
-  /** Absente en simulation, où le réalisé se saisit en total. */
+  /** La dernière fournée enregistrée, la seule que le serveur permet d'annuler. */
   derniereFournee?: DerniereFournee | null;
 };
 
@@ -154,7 +154,7 @@ export type Recette = {
 export type FicheProduit = {
   /** Identifiant d'adresse : `?fiche=gc135`. */
   id: string;
-  /** Identifiant du produit sur le vrai serveur (la simulation n'en a pas besoin). */
+  /** Identifiant du produit sur le serveur. */
   idServeur?: number;
   /** Code affiché sur la pastille : « GC 135 ». */
   code: string;

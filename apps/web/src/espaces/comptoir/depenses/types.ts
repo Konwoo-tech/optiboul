@@ -133,7 +133,7 @@ export type InstantaneDepenses = {
   depenses: Depense[];
   demandes: DemandeDepense[];
   fournisseurs: Fournisseur[];
-  /** Achats courants pré-autorisés de la semaine ; absent en simulation (le prototype n'en a pas). */
+  /** Achats courants pré-autorisés de la semaine . */
   preAutorisations?: PreAutorisation[];
 };
 
@@ -150,6 +150,6 @@ export type NouvelleDepense = {
   quantite?: number;
   /** Identifiant du fournisseur ; absent : achat au marché. */
   fournisseur?: string;
-  /** Photo du justificatif (vrai serveur) ; en simulation, `photo` seul tient lieu de justificatif. */
+  /** Photo du justificatif. */
   justificatif?: File;
 };

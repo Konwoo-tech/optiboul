@@ -6,7 +6,7 @@ import type { FiltresJournal } from './types.ts';
 
 /** La clé contient la personne connectée et les filtres : rien ne fuit d'un compte à l'autre. */
 export const cleJournal = (utilisateur: string | undefined, filtres: FiltresJournal) =>
-  ['simulation', 'gestion', 'journal', utilisateur, filtres] as const;
+  ['ecran', 'gestion', 'journal', utilisateur, filtres] as const;
 
 export function useJournal(
   utilisateur: string | undefined,

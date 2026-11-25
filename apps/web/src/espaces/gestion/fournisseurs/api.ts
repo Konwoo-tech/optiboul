@@ -21,7 +21,7 @@ import type {
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleFournisseurs = (utilisateur: string | undefined) =>
-  ['simulation', 'gestion', 'fournisseurs', utilisateur] as const;
+  ['ecran', 'gestion', 'fournisseurs', utilisateur] as const;
 
 export function useFournisseurs(utilisateur: string | undefined) {
   return useQuery({

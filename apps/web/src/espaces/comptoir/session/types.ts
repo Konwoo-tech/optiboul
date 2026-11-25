@@ -81,7 +81,7 @@ export type DemandePlafond = {
 };
 
 export type SessionCaisse = {
-  /** Identifiant de la caisse sur le vrai serveur (la simulation n'en a pas besoin). */
+  /** Identifiant de la caisse sur le serveur. */
   caisseId?: string;
   type: Creneau;
   /** Jour de la session, ISO « 2026-10-14 ». */

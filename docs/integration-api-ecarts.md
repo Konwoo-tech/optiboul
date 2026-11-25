@@ -1,6 +1,6 @@
 # Intégration du front avec l'API : manques et écarts
 
-Document vivant. Il consigne, au fil de l'intégration de `apps/web` avec les vrais services de `apps/api`, tout ce qui **manque** à l'API ou **diffère** de ce que le front attendait (le faux serveur du mode simulation). Une entrée est ajoutée à chaque constat ; son statut est mis à jour quand l'équipe API répond.
+Document vivant. Il consigne, au fil de l'intégration de `apps/web` avec les vrais services de `apps/api`, tout ce qui **manque** à l'API ou **diffère** de ce que le front attendait (l'ancien faux serveur du mode simulation, retiré depuis). Une entrée est ajoutée à chaque constat ; son statut est mis à jour quand l'équipe API répond.
 
 Règles :
 
@@ -142,7 +142,7 @@ Trois scripts PowerShell de `docs/api-local/` posent les variables de session eu
 
 ### Front sur l'API réelle
 
-Depuis `apps/web` (le mode simulation n'est pas activé : les écrans déjà intégrés parlent à l'API) :
+Depuis `apps/web` (les écrans parlent à l'API) :
 
 ```powershell
 $env:COREPACK_ENABLE_STRICT = "0"
@@ -153,7 +153,7 @@ npx --yes pnpm@12.9.1 exec vite --port 5175 --strictPort
 
 - `OPTIBOUL_POSTE_COOKIE` : le comptoir se connecte depuis un poste de confiance (cookie HttpOnly `optiboul_poste`). Le navigateur de développement n'en a pas ; le proxy de Vite l'ajoute aux requêtes vers l'API, sans toucher aux cookies de session. Sans cette variable, l'écran de connexion propose l'adresse e-mail (avec le mot de passe du compte).
 - Le deuxième facteur envoie un SMS : sans Celery, il n'est pas envoyé et **rien ne s'affiche à l'écran**. Le code à six chiffres (valable 5 minutes) se lit avec `.\docs\api-local\dernier-code.ps1`.
-- Les écrans pas encore intégrés (tout sauf la connexion et la coque pour l'instant) affichent « écran prévu » avec l'API réelle ; ils restent complets en mode simulation (`vite --mode simulation`).
+- Tous les écrans construits parlent à l'API réelle ; le mode simulation (`vite --mode simulation`) a été retiré (#260). Les écrans sans route restent affichés « écran prévu ».
 
 ### Données de démonstration sur le vrai backend
 

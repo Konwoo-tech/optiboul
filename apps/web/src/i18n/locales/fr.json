@@ -71,7 +71,6 @@
     "changerUtilisateur": "Changer d’utilisateur",
     "deconnexion": "Se déconnecter",
     "bientot": "Écran prévu au backlog",
-    "simulation": "Mode simulation · données de démonstration",
     "chargement": "Chargement…"
   },
   "espaces": {
@@ -128,8 +127,6 @@
     "oublie": "Mot de passe oublié ?",
     "afficher": "Afficher",
     "masquer": "Masquer",
-    "demoTitre": "Profils de démonstration",
-    "demoAstuce": "Touchez un profil pour remplir le formulaire",
     "googleTitre": "Choisissez un compte",
     "googleSous": "pour continuer vers OptiBoul ERP",
     "googleNote": "Seuls les comptes Google ajoutés par l’administrateur peuvent se connecter.",
@@ -623,7 +620,6 @@
         "dette": "Dette",
         "plafondDepasseCourt": "Plafond dépassé",
         "verrouillee": "La session est clôturée : la saisie est verrouillée.",
-        "bientot": "La saisie des livraisons sur le serveur arrive bientôt : les livraisons de la session s’affichent en lecture seule.",
         "lectureSeule": "Lecture seule : votre profil consulte la session sans saisir.",
         "aucuneTitre": "Aucune livraison en cours",
         "aucuneSous": "Sélectionnez un client à gauche ou tapez les premières lettres de son nom pour commencer.",

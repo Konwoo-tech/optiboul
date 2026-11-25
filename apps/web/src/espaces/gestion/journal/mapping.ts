@@ -6,9 +6,8 @@ import { TYPES_ACTION, type EntreeJournal, type FiltresJournal, type TypeAction 
 
 /*
  * Seule couche qui connaît le contrat de l'API réelle du journal (`LigneJournal`,
- * `JournalListParams`, `/api/v1/journal/`). Le faux serveur (`simulation/journal.ts`) parle le
- * modèle de l'écran (`EntreeJournal`, `FiltresJournal`) ; quand le backend sera branché, seul ce
- * fichier et `api.ts` changent, pas l'écran.
+ * `JournalListParams`, `/api/v1/journal/`). L'écran parle le modèle de l'écran
+ * (`EntreeJournal`, `FiltresJournal`) : si le contrat change, seul ce fichier et `reel.ts` changent.
  *
  * Vague P7 (#361) : le serveur donne le `total` des lignes filtrées, filtre par `famille`, liste les
  * acteurs (`journal/acteurs/`) et rend chaque ligne avec son libellé lisible (français et anglais),
