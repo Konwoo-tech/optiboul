@@ -10,8 +10,7 @@ type Props = { ouvert: boolean; onFermer: () => void };
 
 /**
  * Tiroir des notifications de la personne connectée, repris de la maquette. Chaque fonction
- * (commandes, production, stocks…) y ajoute les siennes : celles du vrai serveur, ou en simulation
- * celles du faux serveur.
+ * (commandes, production, stocks…) y ajoute les siennes, celles du serveur.
  */
 export function PanneauNotifications({ ouvert, onFermer }: Props) {
   const { t } = useTranslation();

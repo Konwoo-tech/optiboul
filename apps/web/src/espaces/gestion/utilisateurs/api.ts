@@ -20,7 +20,7 @@ import type {
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleUtilisateurs = (utilisateur: string | undefined) =>
-  ['simulation', 'gestion', 'utilisateurs', utilisateur] as const;
+  ['ecran', 'gestion', 'utilisateurs', utilisateur] as const;
 
 export function useUtilisateurs(utilisateur: string | undefined) {
   return useQuery({
@@ -56,9 +56,9 @@ function useAction<
         'instantane' in resultat ? resultat.instantane : resultat,
       );
       // La liste de l'écran de connexion, les affectations de semaine et le contexte en dépendent.
-      void client.invalidateQueries({ queryKey: ['simulation', 'utilisateurs'] });
-      void client.invalidateQueries({ queryKey: ['simulation', 'contexte'] });
-      void client.invalidateQueries({ queryKey: ['simulation', 'gestion', 'semaines'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'utilisateurs'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'contexte'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'gestion', 'semaines'] });
     },
   });
 }

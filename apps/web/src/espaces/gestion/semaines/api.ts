@@ -14,7 +14,7 @@ import type { InstantaneSemaines, NouveauCreneau, NouvelleAffectation } from './
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleSemaines = (utilisateur: string | undefined) =>
-  ['simulation', 'gestion', 'semaines', utilisateur] as const;
+  ['ecran', 'gestion', 'semaines', utilisateur] as const;
 
 export function useSemaines(utilisateur: string | undefined) {
   return useQuery({
@@ -47,7 +47,7 @@ function useActionSemaines<Demande>(
       client.setQueryData(cleSemaines(utilisateur), instantane);
       // L'ouverture et la clôture changent la semaine, le gérant et le responsable de l'en-tête,
       // et la caissière prévue sur le prochain créneau de la caisse.
-      void client.invalidateQueries({ queryKey: ['simulation', 'contexte'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'contexte'] });
       void client.invalidateQueries({ queryKey: ['coque', 'contexte'] });
       void client.invalidateQueries({ queryKey: ['comptoir', 'caisses'] });
     },

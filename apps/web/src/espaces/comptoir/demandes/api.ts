@@ -6,7 +6,7 @@ import { lireDemandesReelles } from './reel.ts';
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleDemandes = (utilisateur: string | undefined) =>
-  ['simulation', 'demandes', utilisateur] as const;
+  ['ecran', 'demandes', utilisateur] as const;
 
 export function useDemandes(utilisateur: string | undefined) {
   const { utilisateur: connecte } = useUtilisateurCourant();
@@ -44,18 +44,18 @@ export function useDecider(utilisateur: string | undefined) {
     onSuccess: () =>
       Promise.all([
         client.invalidateQueries({ queryKey: cleDemandes(utilisateur) }),
-        client.invalidateQueries({ queryKey: ['simulation', 'comptoir', 'session'] }),
+        client.invalidateQueries({ queryKey: ['ecran', 'comptoir', 'session'] }),
         // Accorder ou refuser une dépense change son statut, le budget, la clôture et la caisse.
-        client.invalidateQueries({ queryKey: ['simulation', 'comptoir', 'depenses'] }),
+        client.invalidateQueries({ queryKey: ['ecran', 'comptoir', 'depenses'] }),
         client.invalidateQueries({ queryKey: ['comptoir', 'caisses'] }),
         // Un inventaire accordé ajuste le stock et change de statut.
-        client.invalidateQueries({ queryKey: ['simulation', 'atelier', 'stocks'] }),
+        client.invalidateQueries({ queryKey: ['ecran', 'atelier', 'stocks'] }),
         // Une augmentation de production accordée s'ajoute au plan, et ses notifications partent.
-        client.invalidateQueries({ queryKey: ['simulation', 'atelier', 'production'] }),
-        client.invalidateQueries({ queryKey: ['simulation', 'notifications'] }),
+        client.invalidateQueries({ queryKey: ['ecran', 'atelier', 'production'] }),
+        client.invalidateQueries({ queryKey: ['ecran', 'notifications'] }),
         client.invalidateQueries({ queryKey: ['coque', 'notifications'] }),
         // Un état de paie accordé ouvre le paiement ; refusé, il revient en brouillon.
-        client.invalidateQueries({ queryKey: ['simulation', 'gestion', 'personnel'] }),
+        client.invalidateQueries({ queryKey: ['ecran', 'gestion', 'personnel'] }),
       ]),
   });
 }

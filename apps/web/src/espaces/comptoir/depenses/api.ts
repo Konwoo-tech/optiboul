@@ -7,7 +7,7 @@ import type { DemandeDepense, Depense, InstantaneDepenses, NouvelleDepense } fro
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleDepenses = (utilisateur: string | undefined) =>
-  ['simulation', 'comptoir', 'depenses', utilisateur] as const;
+  ['ecran', 'comptoir', 'depenses', utilisateur] as const;
 
 export function useDepenses(utilisateur: string | undefined) {
   return useQuery({
@@ -108,7 +108,7 @@ export function useEnregistrerDepense(utilisateur: string | undefined) {
       client.setQueryData(cleDepenses(utilisateur), reponse.instantane);
       // Une dépense payée en caisse change les espèces attendues de la caisse et de la clôture.
       void client.invalidateQueries({ queryKey: ['comptoir', 'caisses'] });
-      void client.invalidateQueries({ queryKey: ['simulation', 'comptoir', 'session'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'comptoir', 'session'] });
     },
   });
 }

@@ -184,7 +184,7 @@ function useActionCaisse<Demande extends object, Resultat = undefined>(
     onSuccess: () =>
       Promise.all([
         client.invalidateQueries({ queryKey: cleCaisses(utilisateur) }),
-        client.invalidateQueries({ queryKey: ['simulation', 'contexte'] }),
+        client.invalidateQueries({ queryKey: ['ecran', 'contexte'] }),
         client.invalidateQueries({ queryKey: ['coque', 'contexte'] }),
       ]),
   });

@@ -26,7 +26,7 @@ import type {
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const clePersonnel = (utilisateur: string | undefined) =>
-  ['simulation', 'gestion', 'personnel', utilisateur] as const;
+  ['ecran', 'gestion', 'personnel', utilisateur] as const;
 
 export function usePersonnel(utilisateur: string | undefined) {
   return useQuery({
@@ -68,10 +68,10 @@ function useActionPaie<Demande, Resultat extends InstantanePaie | ReponsePaiemen
       const instantane = 'instantane' in resultat ? resultat.instantane : resultat;
       client.setQueryData(clePersonnel(utilisateur), instantane);
       // Soumettre crée une demande, payer crée des dépenses « Salaires » (budget, semaine).
-      void client.invalidateQueries({ queryKey: ['simulation', 'demandes'] });
-      void client.invalidateQueries({ queryKey: ['simulation', 'comptoir', 'depenses'] });
-      void client.invalidateQueries({ queryKey: ['simulation', 'gestion', 'semaines'] });
-      void client.invalidateQueries({ queryKey: ['simulation', 'gestion', 'tableau-de-bord'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'demandes'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'comptoir', 'depenses'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'gestion', 'semaines'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'gestion', 'tableau-de-bord'] });
     },
   });
 }
@@ -170,7 +170,7 @@ export function useCreerEmploye(utilisateur: string | undefined) {
   });
 }
 
-/** Ouvre le bulletin de paie PDF d'une ligne dans un nouvel onglet (sans effet en simulation). */
+/** Ouvre le bulletin de paie PDF d'une ligne dans un nouvel onglet. */
 export function ouvrirLeBulletin(ligne: string) {
   window.open(getPaiesLignesBulletinRetrieveUrl(ligne), '_blank', 'noopener');
 }
@@ -190,13 +190,13 @@ export function useDeciderLaPaie(utilisateur: string | undefined) {
     onError: () =>
       Promise.all([
         client.invalidateQueries({ queryKey: clePersonnel(utilisateur) }),
-        client.invalidateQueries({ queryKey: ['simulation', 'demandes'] }),
+        client.invalidateQueries({ queryKey: ['ecran', 'demandes'] }),
       ]),
     onSuccess: () =>
       Promise.all([
         client.invalidateQueries({ queryKey: clePersonnel(utilisateur) }),
-        client.invalidateQueries({ queryKey: ['simulation', 'demandes'] }),
-        client.invalidateQueries({ queryKey: ['simulation', 'notifications'] }),
+        client.invalidateQueries({ queryKey: ['ecran', 'demandes'] }),
+        client.invalidateQueries({ queryKey: ['ecran', 'notifications'] }),
       ]),
   });
 }

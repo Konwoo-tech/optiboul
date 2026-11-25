@@ -5,7 +5,7 @@ import { lireTableauDeBordReel } from './reel.ts';
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleTableauDeBord = (utilisateur: string | undefined) =>
-  ['simulation', 'gestion', 'tableau-de-bord', utilisateur] as const;
+  ['ecran', 'gestion', 'tableau-de-bord', utilisateur] as const;
 
 export function useTableauDeBord(utilisateur: string | undefined) {
   return useQuery({

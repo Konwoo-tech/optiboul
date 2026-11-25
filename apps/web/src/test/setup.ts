@@ -1,13 +1,6 @@
 import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
 
-import { declarerComptesDeDepart } from '../simulation/comptes.ts';
-import { COMPTES_SIMULES, GROUPES_SIMULES } from '../simulation/donnees.ts';
-
-// Les comptes de démonstration sont déclarés par le routeur simulé ; les tests qui lisent un module
-// de simulation sans passer par lui les trouvent ici.
-declarerComptesDeDepart(COMPTES_SIMULES, GROUPES_SIMULES);
-
 // Sans les « globals » de Vitest, Testing Library ne nettoie pas seule le DOM entre deux tests.
 afterEach(cleanup);
 

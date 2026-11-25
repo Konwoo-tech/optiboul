@@ -17,7 +17,7 @@ import type {
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleStocks = (utilisateur: string | undefined) =>
-  ['simulation', 'atelier', 'stocks', utilisateur] as const;
+  ['ecran', 'atelier', 'stocks', utilisateur] as const;
 
 export function useStocks(utilisateur: string | undefined) {
   return useQuery({
@@ -87,9 +87,9 @@ export function useEnregistrerInventaire(utilisateur: string | undefined) {
     },
     onSuccess: (reponse) => {
       client.setQueryData(cleStocks(utilisateur), reponse.instantane);
-      void client.invalidateQueries({ queryKey: ['simulation', 'demandes'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'demandes'] });
       // Le rappel « Contrôle de stock à faire aujourd'hui » disparaît une fois le comptage fait.
-      void client.invalidateQueries({ queryKey: ['simulation', 'notifications'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'notifications'] });
     },
   });
 }

@@ -36,7 +36,7 @@ export type ReponseIdentification =
       via: Via;
     };
 
-/** Ce que la connexion demande au serveur, réel ou simulé. */
+/** Ce que la connexion demande au serveur. */
 export type ServiceConnexion = {
   /** Première étape : qui êtes-vous ? Ouvre la session, ou attend la double authentification. */
   identifier: (identification: Identification) => Promise<ReponseIdentification>;

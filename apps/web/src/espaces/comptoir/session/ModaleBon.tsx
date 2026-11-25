@@ -15,7 +15,7 @@ type Props = {
   onFermer: () => void;
 };
 
-/** Bon de livraison : aperçu du ticket, envoi par WhatsApp ou PDF (simulés). */
+/** Bon de livraison : aperçu du ticket, envoi par WhatsApp ou PDF. */
 export function ModaleBon({ livraison, session, echeanceDettes, onFermer }: Props) {
   const { t, i18n } = useTranslation();
   const afficher = useToast();

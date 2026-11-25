@@ -42,10 +42,10 @@ export const RAFRAICHISSEMENT_MS = 15_000;
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleProduction = (utilisateur: string | undefined) =>
-  ['simulation', 'atelier', 'production', utilisateur] as const;
+  ['ecran', 'atelier', 'production', utilisateur] as const;
 
 export const cleFiches = (utilisateur: string | undefined) =>
-  ['simulation', 'atelier', 'fiches', utilisateur] as const;
+  ['ecran', 'atelier', 'fiches', utilisateur] as const;
 
 export function useProduction(utilisateur: string | undefined) {
   return useQuery({
@@ -74,8 +74,8 @@ export function actionsDe(client: QueryClient, utilisateur: string | undefined) 
     const reponse = await demande;
     client.setQueryData(cle, reponse.instantane);
     // Chaque étape du cycle prévient l'équipe, et un supplément devient une demande.
-    void client.invalidateQueries({ queryKey: ['simulation', 'notifications'] });
-    void client.invalidateQueries({ queryKey: ['simulation', 'demandes'] });
+    void client.invalidateQueries({ queryKey: ['ecran', 'notifications'] });
+    void client.invalidateQueries({ queryKey: ['ecran', 'demandes'] });
     return reponse;
   };
   /** Session visée : celle que le plan a désignée. */
@@ -188,7 +188,7 @@ export function actionsDe(client: QueryClient, utilisateur: string | undefined) 
         })(),
       );
       // La clôture crée les sorties de stock : l'écran Stocks les relit à l'ouverture.
-      void client.invalidateQueries({ queryKey: ['simulation', 'atelier', 'stocks'] });
+      void client.invalidateQueries({ queryKey: ['ecran', 'atelier', 'stocks'] });
       return reponse;
     },
     ajouterUnSupplement: (supplement: NouveauSupplement) =>

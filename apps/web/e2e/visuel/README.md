@@ -1,5 +1,7 @@
 # Contrôle visuel : prototype contre application
 
+> **Banc suspendu (retrait de la simulation, #260).** Il lançait l'application en mode simulation (`vite --mode simulation`), sur de fausses données identiques à celles du prototype. Ce mode n'existe plus : l'application ne parle qu'au vrai serveur, dont les données ne sont pas celles du prototype. Les scénarios et les seuils sont conservés tels quels ; le banc ne redevient utilisable qu'avec un jeu de démonstration côté serveur (ou une API de démonstration) qui reproduit les données du prototype. Voir la décision en attente dans la pull request du retrait.
+
 Le banc compare, pixel par pixel, le prototype de design (`docs/design/claude-design/OptiBoul ERP v2.dc.html`) et l'application lancée en mode simulation. Le prototype est la référence visuelle : tout écart est un défaut de l'application, sauf écart assumé et justifié par écrit.
 
 ## Lancer

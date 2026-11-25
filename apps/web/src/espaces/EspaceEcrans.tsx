@@ -10,10 +10,6 @@ type EcranLivre = ComponentType<{ ecran: Ecran }>;
 
 /**
  * Tous les écrans construits sont branchés sur le vrai serveur (intégration par étapes, ticket #292).
- * ATTENTION : un écran qui ne lirait que l'API simulée doit être gardé par
- * `import.meta.env.MODE === 'simulation' ? lazy(() => import(...)) : null` : un `lazy(import(...))`
- * sans garde l'embarquerait dans le paquet de production. `pnpm verifier:fuite`, à lancer après
- * `pnpm build`, détecte une fuite.
  */
 
 /**

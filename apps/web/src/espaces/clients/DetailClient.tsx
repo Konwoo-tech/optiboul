@@ -37,7 +37,7 @@ function quand(
 
 /**
  * Volet de droite : solde, échéance, tarifs, historique des livraisons, et les deux envois du
- * relevé (PDF, WhatsApp), simulés par un message. Le focus vient sur le nom quand on change de
+ * relevé (PDF, WhatsApp). Le focus vient sur le nom quand on change de
  * client, pour qu'un lecteur d'écran annonce le détail.
  */
 export function DetailClient({ client, plafond, echeance, prendreFocus, onFermer }: Props) {

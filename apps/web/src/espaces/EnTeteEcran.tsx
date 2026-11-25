@@ -6,8 +6,8 @@ import { formaterDateCourte } from '@/utils';
 import { cleTitre, type Ecran } from '../navigation.ts';
 
 /**
- * En-tête d'un écran de l'espace : son titre et, en simulation, la ligne « semaine · gérant ·
- * production » (ou « ouverte à … par … » pour la session en cours), comme la maquette.
+ * En-tête d'un écran de l'espace : son titre et la ligne « semaine · gérant · production » (ou
+ * « ouverte à … par … » pour la session en cours), comme la maquette.
  */
 export function EnTeteEcran({
   ecran,

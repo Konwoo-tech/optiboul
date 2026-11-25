@@ -6,11 +6,11 @@ import type { Parametre, ValeurParametre } from './types.ts';
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleParametres = (utilisateur: string | undefined) =>
-  ['simulation', 'gestion', 'parametres', utilisateur] as const;
+  ['ecran', 'gestion', 'parametres', utilisateur] as const;
 export const cleProduits = (utilisateur: string | undefined) =>
-  ['simulation', 'gestion', 'parametres', 'produits', utilisateur] as const;
+  ['ecran', 'gestion', 'parametres', 'produits', utilisateur] as const;
 export const cleHistorique = (utilisateur: string | undefined, cle: string) =>
-  ['simulation', 'gestion', 'parametres', 'historique', utilisateur, cle] as const;
+  ['ecran', 'gestion', 'parametres', 'historique', utilisateur, cle] as const;
 
 export function useParametres(utilisateur: string | undefined) {
   return useQuery({
@@ -59,7 +59,7 @@ export function useModifierParametre(utilisateur: string | undefined) {
       });
       // Les autres écrans lisent ces seuils (plafond de dette, validation des dépenses…) et le
       // journal reçoit la ligne : on les relit à leur prochaine ouverture.
-      void client.invalidateQueries({ queryKey: ['simulation'], refetchType: 'none' });
+      void client.invalidateQueries({ queryKey: ['ecran'], refetchType: 'none' });
     },
   });
 }
