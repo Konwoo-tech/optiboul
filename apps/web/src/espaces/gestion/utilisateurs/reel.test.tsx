@@ -14,7 +14,12 @@ import {
   useDebloquer,
   useReinitialiserLeCode,
 } from './api.ts';
-import { enErreurDeChamps, lireUtilisateursReels, telephoneDuServeur } from './reel.ts';
+import {
+  enErreurDeChamps,
+  lireUtilisateursReels,
+  telephoneDeLEcran,
+  telephoneDuServeur,
+} from './reel.ts';
 
 const serveur = creerServeurApi();
 
@@ -32,6 +37,9 @@ const COMPTE = (id: number, name: string, groupe: number, profil: string | null,
   email: `${name.toLowerCase().replace(/\W/g, '')}@gmail.com`,
   groupe,
   profil,
+  telephone: '+237677412018',
+  canal: 'sms',
+  dernier_acces: '2026-11-24T08:50:00+01:00',
   is_active: true,
   bloque: false,
   bloque_jusqua: null,
@@ -121,7 +129,39 @@ describe('actions sur le vrai serveur', () => {
     ({ children }: { children: ReactNode }) =>
       createElement(QueryClientProvider, { client }, children);
 
-  it('crée un compte, change de groupe, définit un code, débloque, crée un groupe', async () => {
+  it('lit le téléphone, le canal du second facteur, le dernier accès et l’activation', async () => {
+    serveurUtilisateurs();
+    serveur.use(
+      http.get('*/api/v1/utilisateurs/', () =>
+        HttpResponse.json(
+          page([
+            COMPTE(4, 'Davy Caisse', 2, 'caissier', {
+              is_active: false,
+              canal: 'whatsapp',
+              dernier_acces: null,
+            }),
+            COMPTE(5, 'Serge', 2, 'caissier'),
+          ]),
+        ),
+      ),
+    );
+    const i = await lireUtilisateursReels();
+    expect(i.utilisateurs[0]).toMatchObject({
+      actif: false,
+      canal: 'whatsapp',
+      dernierAcces: '',
+      telephone: '6 77 41 20 18',
+    });
+    expect(i.utilisateurs[1]).toMatchObject({
+      actif: true,
+      canal: 'sms',
+      dernierAcces: '2026-11-24T08:50:00+01:00',
+    });
+    expect(telephoneDeLEcran('+237677412018')).toBe('6 77 41 20 18');
+    expect(telephoneDeLEcran('')).toBe('');
+  });
+
+  it('crée un compte, change de groupe, réinitialise le code, débloque, crée un groupe', async () => {
     serveurUtilisateurs();
     const recus: { chemin: string; corps: unknown }[] = [];
     const noter =
@@ -146,7 +186,7 @@ describe('actions sur le vrai serveur', () => {
         '*/api/v1/utilisateurs/4/groupe/',
         noter('groupe', COMPTE(4, 'Davy Caisse', 6, 'caissier')),
       ),
-      http.post('*/api/v1/utilisateurs/4/code/', noter('code', null)),
+      http.post('*/api/v1/utilisateurs/4/reinitialiser-code/', noter('code', null)),
       http.post(
         '*/api/v1/utilisateurs/4/debloquer/',
         noter('debloquer', COMPTE(4, 'Davy Caisse', 2, 'caissier')),
@@ -177,7 +217,7 @@ describe('actions sur le vrai serveur', () => {
         invitation: true,
       });
       await groupe.result.current.mutateAsync({ id: '4', groupe: '6' });
-      await code.result.current.mutateAsync({ id: '4', code: '4821' });
+      await code.result.current.mutateAsync({ id: '4' });
       await debloquer.result.current.mutateAsync('4');
       await nouveauGroupe.result.current.mutateAsync({
         nom: 'Nuit',
@@ -201,7 +241,8 @@ describe('actions sur le vrai serveur', () => {
         },
       },
       { chemin: 'groupe', corps: { groupe: 6 } },
-      { chemin: 'code', corps: { code: '4821' } },
+      // Le serveur génère le code et l'envoie : rien n'est transmis par l'écran.
+      { chemin: 'code', corps: null },
       { chemin: 'debloquer', corps: null },
       { chemin: 'groupes', corps: { nom: 'Nuit', profil: 'caissier', description: '' } },
     ]);
@@ -229,12 +270,43 @@ describe('actions sur le vrai serveur', () => {
     ).rejects.toMatchObject({ code: 'champs_invalides' });
   });
 
-  it('désactiver un compte n’existe pas sur le serveur', async () => {
+  it('désactive puis réactive un compte (POST /utilisateurs/{id}/activation/)', async () => {
+    serveurUtilisateurs();
+    const corps: unknown[] = [];
+    serveur.use(
+      http.post('*/api/v1/utilisateurs/4/activation/', async ({ request }) => {
+        corps.push(await request.json());
+        return HttpResponse.json(COMPTE(4, 'Davy Caisse', 2, 'caissier'));
+      }),
+    );
     const { result } = renderHook(() => useActiver('Admin Dev'), {
       wrapper: wrapper(new QueryClient()),
     });
-    await expect(result.current.mutateAsync({ id: '4', actif: false })).rejects.toMatchObject({
-      code: 'indisponible',
+    await act(async () => {
+      await result.current.mutateAsync({ id: '4', actif: false });
+      await result.current.mutateAsync({ id: '4', actif: true });
+    });
+    expect(corps).toEqual([{ actif: false }, { actif: true }]);
+  });
+
+  it('refuse de désactiver son propre compte ou le dernier administrateur, avec le code du serveur', async () => {
+    serveurUtilisateurs();
+    serveur.use(
+      http.post('*/api/v1/utilisateurs/1/activation/', () =>
+        HttpResponse.json({ detail: 'x', code: 'compte_propre' }, { status: 409 }),
+      ),
+      http.post('*/api/v1/utilisateurs/9/activation/', () =>
+        HttpResponse.json({ detail: 'x', code: 'dernier_administrateur' }, { status: 409 }),
+      ),
+    );
+    const { result } = renderHook(() => useActiver('Admin Dev'), {
+      wrapper: wrapper(new QueryClient()),
+    });
+    await expect(result.current.mutateAsync({ id: '1', actif: false })).rejects.toMatchObject({
+      code: 'compte_propre',
+    });
+    await expect(result.current.mutateAsync({ id: '9', actif: false })).rejects.toMatchObject({
+      code: 'dernier_administrateur',
     });
   });
 });

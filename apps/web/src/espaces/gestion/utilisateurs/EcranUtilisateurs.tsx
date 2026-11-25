@@ -19,7 +19,6 @@ import {
   useUtilisateurs,
 } from './api.ts';
 import { ListeUtilisateurs } from './ListeUtilisateurs.tsx';
-import { ModaleCode } from './ModaleCode.tsx';
 import { NouvelUtilisateur } from './NouvelUtilisateur.tsx';
 import {
   aDesErreurs,
@@ -72,7 +71,6 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
   const creerGroupe = useCreerUnGroupe(nom);
   const creer = useCreerUtilisateur(nom);
   const debloquer = useDebloquer(nom);
-  const [codePour, setCodePour] = useState<Utilisateur | null>(null);
   const [codesSecours, setCodesSecours] = useState<string[]>([]);
   const [parametres, setParametres] = useSearchParams();
   const [filtre, setFiltre] = useState('all');
@@ -197,25 +195,15 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
     );
   };
 
-  const surReinitialiser = (u: Utilisateur, code?: string) => {
-    // Sur le vrai serveur, l'administrateur choisit le code : une fenêtre le demande d'abord.
-    if (!SIMULATION && code === undefined) {
-      setCodePour(u);
-      return;
-    }
+  const surReinitialiser = (u: Utilisateur) => {
     exclusif((fin) =>
       reinitialiser.mutate(
-        { id: u.id, ...(code ? { code } : {}) },
+        { id: u.id },
         {
           onSettled: fin,
-          onSuccess: () => {
-            setCodePour(null);
-            afficher(t('gestion.utilisateurs.toasts.codeReinitialise', { nom: u.nom }));
-          },
-          onError: (erreur) => {
-            setCodePour(null);
-            signaler(erreur);
-          },
+          onSuccess: () =>
+            afficher(t('gestion.utilisateurs.toasts.codeReinitialise', { nom: u.nom })),
+          onError: signaler,
         },
       ),
     );
@@ -415,20 +403,12 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
               onGroupe={surGroupe}
               onReinitialiser={(u) => surReinitialiser(u)}
               onActiver={surActiver}
-              peutActiver={SIMULATION}
+              peutActiver
               {...(SIMULATION ? {} : { onDebloquer: surDebloquer })}
             />
           )}
         </div>
       </div>
-      {codePour && (
-        <ModaleCode
-          nom={codePour.nom}
-          envoiEnCours={reinitialiser.isPending}
-          onFermer={() => setCodePour(null)}
-          onConfirmer={(code) => surReinitialiser(codePour, code)}
-        />
-      )}
     </>
   );
 }

@@ -2,10 +2,11 @@ import {
   ErreurApi,
   groupesCreate,
   optiboulFetch,
-  utilisateursCodeCreate,
+  utilisateursActivationCreate,
   utilisateursCreate,
   utilisateursDebloquerCreate,
   utilisateursGroupeCreate,
+  utilisateursReinitialiserCodeCreate,
 } from '@/api';
 import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -137,18 +138,18 @@ export const useChangerDeGroupe = (utilisateur: string | undefined) =>
       return {};
     },
   );
-/** Simulation : réinitialise le code ; sur le vrai serveur, l'administrateur en définit un (4 chiffres). */
+/** Réinitialise le code : le serveur en génère un (4 chiffres) et l'envoie à la personne par son canal. */
 export const useReinitialiserLeCode = (utilisateur: string | undefined) =>
-  useAction<{ id: string; code?: string }>(
+  useAction<{ id: string }>(
     utilisateur,
     ({ id }) =>
       envoyer<InstantaneUtilisateurs>(`${encodeURIComponent(id)}/reinitialiser-code/`, 'POST'),
-    async ({ id, code }) => {
-      await utilisateursCodeCreate(Number(id), { code: code ?? '' });
+    async ({ id }) => {
+      await utilisateursReinitialiserCodeCreate(Number(id));
       return {};
     },
   );
-/** Le serveur n'a pas de désactivation de compte (M2). */
+/** Désactive ou réactive un compte (refus : `compte_propre`, `dernier_administrateur`). */
 export const useActiver = (utilisateur: string | undefined) =>
   useAction<{ id: string; actif: boolean }>(
     utilisateur,
@@ -156,7 +157,10 @@ export const useActiver = (utilisateur: string | undefined) =>
       envoyer<InstantaneUtilisateurs>(`${encodeURIComponent(d.id)}/activation/`, 'PUT', {
         actif: d.actif,
       }),
-    () => Promise.reject(refus('indisponible')),
+    async ({ id, actif }) => {
+      await utilisateursActivationCreate(Number(id), { actif });
+      return {};
+    },
   );
 /** Lève le blocage d'un compte après trop de codes faux (vrai serveur seulement). */
 export const useDebloquer = (utilisateur: string | undefined) =>
