@@ -78,10 +78,9 @@ export default function EcranJournal({ ecran }: { ecran: Ecran }) {
   return (
     <>
       <EnTeteEcran ecran={ecran} />
-      {/* Absent de la maquette (US-024) : masqué dans le banc visuel. */}
+      {/* Absent de la maquette (US-024). */}
       <form
         className={styles.filtres}
-        data-filtres-journal
         aria-label={t('gestion.journal.filtres.titre')}
         onSubmit={(e) => e.preventDefault()}
       >

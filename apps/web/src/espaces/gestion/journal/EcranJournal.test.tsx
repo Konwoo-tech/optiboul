@@ -354,12 +354,6 @@ describe('Gestion › Journal : filtres', () => {
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.getByLabelText('Au').getAttribute('aria-invalid')).toBe('false');
   });
-
-  it('le bloc des filtres porte l’attribut que le banc visuel masque', async () => {
-    await ouvrir();
-    await lignes();
-    expect(document.querySelector('[data-filtres-journal]')).not.toBeNull();
-  });
 });
 
 describe('Gestion › Journal : droits et erreurs', () => {
