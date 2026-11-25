@@ -50,7 +50,11 @@ export function ChoixUtilisateur({ utilisateurs, identifier, onChoisi }: Props) 
       try {
         await identifier({ methode: 'code', utilisateur: choisi.id, code: saisi });
       } catch (e) {
-        setErreur(e instanceof ErreurApi ? t('connexion.codeIncorrect') : t('erreur.injoignable'));
+        setErreur(
+          e instanceof ErreurApi
+            ? t(e.code === 'compte_bloque' ? 'connexion.compteBloque' : 'connexion.codeIncorrect')
+            : t('erreur.injoignable'),
+        );
         setCode('');
       } finally {
         enCours.current = false;

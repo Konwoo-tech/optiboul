@@ -143,7 +143,9 @@ describe('lecture des stocks sur le vrai serveur', () => {
       genre: 'reception',
       fournisseur: 'Moulin',
     });
-    expect(o({ genre: 'production', motif: 'nuit du 13' })).toMatchObject({
+    expect(
+      o({ genre: 'production', motif: '', cree_le: '2026-11-25T19:02:00+01:00' }),
+    ).toMatchObject({
       genre: 'production',
       creneau: 'nuit',
     });

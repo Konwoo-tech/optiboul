@@ -458,19 +458,19 @@ for (const voulu of [
   {
     nom: "Moulin du Centre",
     telephone: "677001201",
-    conditions: "Paiement à 30 jours",
+    conditions: "sept_jours",
     matieres: ["farine", "sel"],
   },
   {
     nom: "Marché d'Etoudi",
     telephone: "677001202",
-    conditions: "Comptant",
+    conditions: "a_la_livraison",
     matieres: ["levure", "bois", "glace"],
   },
   {
     nom: "Huilerie Ngoa",
     telephone: "677001203",
-    conditions: "Comptant",
+    conditions: "a_la_livraison",
     matieres: ["huile"],
   },
 ]) {
