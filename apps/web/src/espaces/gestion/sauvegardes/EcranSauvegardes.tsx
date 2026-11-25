@@ -1,6 +1,5 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { SIMULATION } from '@/simulation';
 import { detailDuServeur, EcranChargement, EcranErreur, useToast } from '@/ui';
 import { formaterHeure } from '@/utils';
 import { useNetwork } from '@mantine/hooks';
@@ -24,6 +23,7 @@ import type { Copie } from './types.ts';
 const MESSAGES_D_ERREUR: Record<string, string> = {
   droit_insuffisant: 'droit',
   copie_inconnue: 'inconnue',
+  sauvegarde_inconnue: 'inconnue',
   restauration_en_cours: 'restaurationEnCours',
   restauration_impossible: 'impossible',
   restauration_session_perdue: 'sessionPerdue',
@@ -34,8 +34,6 @@ const MESSAGES_D_ERREUR: Record<string, string> = {
  * Gestion › Sauvegardes (US-142, US-143) : l'état des copies locale et cloud, la sauvegarde à la
  * demande, la liste des copies et la restauration guidée. Réservé à l'administrateur. Hors ligne,
  * la copie cloud n'est pas lancée : l'écran le dit (le reste fonctionne).
- *
- * Le contrôle des totaux annoncé à la restauration est fictif en simulation (voir le faux serveur).
  */
 export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
   const { t, i18n } = useTranslation();
@@ -161,15 +159,11 @@ export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
                     .map((c) => t(`gestion.sauvegardes.restauration.controles.${c.cle}`))
                     .join(', '),
                 })
-              : t(
-                  SIMULATION
-                    ? 'gestion.sauvegardes.toasts.restauree'
-                    : 'gestion.sauvegardes.toasts.restaureeVerifiee',
-                ),
+              : t('gestion.sauvegardes.toasts.restaureeVerifiee'),
           );
         },
         onError: (erreur) => {
-          if (codeErreur(erreur) === 'copie_inconnue') {
+          if (['copie_inconnue', 'sauvegarde_inconnue'].includes(codeErreur(erreur) ?? '')) {
             fermerLaModale();
             afficher(messageDErreur(erreur));
           } else {
