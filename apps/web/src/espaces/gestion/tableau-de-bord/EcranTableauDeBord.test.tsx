@@ -1,41 +1,142 @@
 import { configurerApi } from '@/api';
 import { initI18n } from '@/i18n';
-import { installerApiSimulee } from '@/simulation';
-import { reinitialiserSimulation } from '@/simulation/routeur.ts';
-import { memoriserUtilisateurConnecte } from '@/simulation/session.ts';
+import { creerServeurApi } from '@/test';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { MemoryRouter, useLocation } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-// Ces tests jouent l'écran sur le faux serveur ; la lecture du vrai serveur est dans reel.test.tsx.
-vi.hoisted(() => vi.stubEnv('MODE', 'simulation'));
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ECRANS } from '../../../navigation.ts';
 import EcranTableauDeBord from './EcranTableauDeBord.tsx';
+import type { InstantaneTableauDeBord } from './types.ts';
 
-let retablir: () => void;
+/*
+ * L'écran Tableau de bord rendu depuis un instantané au format de l'écran ; la composition de cet
+ * instantané à partir des routes du serveur est testée dans reel.test.tsx. La personne connectée
+ * (droits) vient de `users/me/`, sur un faux serveur au format de l'API réelle.
+ */
+
+const lecture = vi.hoisted(() => ({ lireTableauDeBordReel: vi.fn() }));
+vi.mock('./reel.ts', () => lecture);
+
+const serveur = creerServeurApi();
+
+beforeAll(() => {
+  configurerApi({ baseUrl: 'http://localhost' });
+  serveur.listen({ onUnhandledFrame: 'bypass' });
+});
+afterAll(() => serveur.close());
+
+const BARRES = [
+  312400, 98000, 150200, 201300, 87650, 120000, 352300, 140100, 99900, 180250, 76400, 134800,
+  165000, 58450,
+];
+
+const INSTANTANE: InstantaneTableauDeBord = {
+  mois: '2026-10',
+  recette: { encaissee: 4_231_400, due: 4_398_500 },
+  dettesClients: { montant: 14_050, clients: 8, auDessusDuPlafond: 3 },
+  dettesFournisseurs: { montant: 2_334_900, facturesEnRetard: 2 },
+  semaine: { numero: 42, du: '2026-10-12', au: '2026-10-18', gerant: 'Willy', production: 'Serge' },
+  recettesParNuit: BARRES.map((montant, rang) => ({
+    jour: `2026-10-${String(rang + 1).padStart(2, '0')}`,
+    montant,
+  })),
+  production: [
+    { produit: 'BAG', pains: 34_120 },
+    { produit: 'KO', pains: 15_400 },
+    { produit: 'GC 135', pains: 4_300 },
+    { produit: 'GC 170', pains: 620 },
+    { produit: 'PL', pains: 1_150 },
+    { produit: 'C 2', pains: 80 },
+    { produit: 'PSL', pains: 0 },
+  ],
+  alertes: [
+    {
+      id: 'a1',
+      niveau: 'bloquant',
+      destination: { espace: 'gestion', ecran: 'fournisseurs', parametres: { onglet: 'dettes' } },
+      type: 'facture-en-retard',
+      numero: 'FAC-41',
+      montant: 1_405_800,
+    },
+    {
+      id: 'a2',
+      niveau: 'bloquant',
+      destination: { espace: 'gestion', ecran: 'fournisseurs', parametres: { onglet: 'dettes' } },
+      type: 'facture-en-retard',
+      numero: 'FAC-0198',
+      montant: 40_000,
+    },
+    {
+      id: 'a3',
+      niveau: 'bloquant',
+      destination: { espace: 'gestion', ecran: 'clients', parametres: { filtre: 'depasse' } },
+      type: 'clients-au-dela-du-plafond',
+      clients: 3,
+      plafond: 2_000,
+    },
+    {
+      id: 'a4',
+      niveau: 'bloquant',
+      destination: { espace: 'gestion', ecran: 'depenses' },
+      type: 'budget-depasse',
+      categorie: 'technique',
+    },
+    {
+      id: 'a5',
+      niveau: 'surveiller',
+      destination: { espace: 'gestion', ecran: 'fournisseurs' },
+      type: 'manquant-fournisseur',
+      commande: 'BC-032',
+      matiere: 'levure',
+      manque: 4,
+    },
+    {
+      id: 'a6',
+      niveau: 'surveiller',
+      destination: { espace: 'gestion', ecran: 'semaines' },
+      type: 'manque-de-caisse',
+      jour: '2026-10-12',
+      creneau: 'nuit',
+      caissiere: 'Davy',
+      ecart: -500,
+    },
+    {
+      id: 'a7',
+      niveau: 'surveiller',
+      destination: { espace: 'gestion', ecran: 'demandes' },
+      type: 'demandes-en-attente',
+      nombre: 1,
+    },
+  ],
+};
 
 function Adresse() {
   const { pathname, search } = useLocation();
   return <output data-testid="adresse">{`${pathname}${search}`}</output>;
 }
 
-async function ouvrir(
-  utilisateur: string | null = 'willy',
-  langue: 'fr' | 'en' = 'fr',
-  /** Gestes joués sur le faux serveur avant l'ouverture de l'écran. */
-  avant?: () => Promise<void>,
-) {
+/** `profil` : le profil de la personne connectée ; `null` : personne (401). */
+async function ouvrir(profil: string | null = 'gerant', langue: 'fr' | 'en' = 'fr') {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-10-14T17:02:00Z'));
   await initI18n('fr').changeLanguage(langue);
-  configurerApi({ baseUrl: 'http://localhost' });
-  retablir = installerApiSimulee({ latenceMs: 0 });
-  reinitialiserSimulation();
-  memoriserUtilisateurConnecte(utilisateur);
-  await avant?.();
+  serveur.use(
+    http.get('*/api/v1/users/me/', () =>
+      profil === null
+        ? HttpResponse.json({ detail: 'x', code: 'non_authentifie' }, { status: 401 })
+        : HttpResponse.json({
+            id: 3,
+            name: 'Willy',
+            email: 'w@optiboul.local',
+            url: 'http://localhost/api/v1/users/3/',
+            profil,
+          }),
+    ),
+  );
   const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'tableau-de-bord')!;
   render(
     <OptiboulProvider>
@@ -52,10 +153,14 @@ async function ouvrir(
 }
 
 afterEach(async () => {
+  cleanup();
+  serveur.resetHandlers();
+  lecture.lireTableauDeBordReel.mockReset();
+  lecture.lireTableauDeBordReel.mockResolvedValue(INSTANTANE);
   await initI18n('fr').changeLanguage('fr');
-  retablir();
   vi.useRealTimers();
 });
+lecture.lireTableauDeBordReel.mockResolvedValue(INSTANTANE);
 
 /** Texte lu, espaces insécables des montants comme espaces simples. */
 const lu = (element: Element | null | undefined) =>
@@ -99,7 +204,7 @@ describe('Gestion › Tableau de bord (gérant)', () => {
     expect(barres).toHaveLength(14);
     expect(etiquette(barres[0])).toBe('1 : 312 400 FCFA');
     expect(etiquette(barres[13])).toBe('14 : 58 450 FCFA');
-    expect(barres[13]!.getAttribute('title')?.replace(/ /g, ' ')).toBe('58 450 FCFA');
+    expect(barres[13]!.getAttribute('title')?.replace(/[  ]/g, ' ')).toBe('58 450 FCFA');
     expect(barres[13]!.querySelector('div')!.className).toMatch(/barreCourante/);
     expect(barres[12]!.querySelector('div')!.className).not.toMatch(/barreCourante/);
     // La plus haute (352 300) remplit la colonne.
@@ -121,7 +226,7 @@ describe('Gestion › Tableau de bord (gérant)', () => {
       'GC 1354 300',
       'GC 170620',
       'PL1 150',
-      'C280',
+      'C 280',
       'PSL0',
     ]);
   });
@@ -169,33 +274,11 @@ describe('Gestion › Tableau de bord (gérant)', () => {
       expect(screen.getByRole('region', { name: nom })).toBeTruthy();
     }
   });
-
-  it('suit la session : une livraison à crédit change les chiffres', async () => {
-    await ouvrir('willy', 'fr', async () => {
-      memoriserUtilisateurConnecte('davy');
-      await fetch('http://localhost/api/v1/simulation/comptoir/session/livraisons/', {
-        method: 'POST',
-        body: JSON.stringify({
-          clientId: 'alex',
-          quantites: { BAG: 50, KO: 0, GC: 0 },
-          mode: 'especes',
-          recu: 4000,
-          reference: '',
-        }),
-      });
-      memoriserUtilisateurConnecte('willy');
-    });
-    const liste = await screen.findByRole('list', { name: 'Indicateurs du mois' });
-    const [recette, dettes] = within(liste).getAllByRole('listitem');
-    expect(lu(recette)).toBe('Recette encaissée · octobre4 235 400 FCFATaux d’encaissement 96,2 %');
-    expect(lu(dettes)).toBe('Dettes clients−15 050 FCFA9 clients · 3 au-delà du plafond');
-    expect(screen.getByText('Le 14 (jaune) est la session en cours : 62 450 FCFA')).toBeTruthy();
-  });
 });
 
 describe('Gestion › Tableau de bord (propriétaire)', () => {
   it('voit la même chose, sans aucun bouton d’action', async () => {
-    await ouvrir('fotso');
+    await ouvrir('proprietaire');
     const alertes = await screen.findByRole('region', { name: 'Alertes' });
     expect(within(alertes).getAllByRole('link')).toHaveLength(7);
     // Rien à saisir ni à décider : seuls les liens des alertes agissent.
@@ -207,12 +290,26 @@ describe('Gestion › Tableau de bord (propriétaire)', () => {
 });
 
 describe('Gestion › Tableau de bord (droits)', () => {
-  it.each(['davy', 'serge', 'admin'])('refuse %s sans rien montrer', async (utilisateur) => {
-    await ouvrir(utilisateur);
+  it.each(['caissier', 'production', 'administrateur'])(
+    'refuse le profil %s sans rien montrer',
+    async (profil) => {
+      await ouvrir(profil);
+      const alerte = await screen.findByRole('alert');
+      expect(lu(alerte)).toBe(
+        'Le tableau de bord complet est réservé au gérant et au propriétaire.',
+      );
+      expect(screen.queryByRole('region', { name: 'Alertes' })).toBeNull();
+      expect(screen.queryByText(/FCFA/)).toBeNull();
+    },
+  );
+
+  it('refuse un gérant que le serveur refuse (403)', async () => {
+    lecture.lireTableauDeBordReel.mockRejectedValue(
+      Object.assign(new (await import('@/api')).ErreurApi(403, { code: 'droit_insuffisant' })),
+    );
+    await ouvrir('gerant');
     const alerte = await screen.findByRole('alert');
     expect(lu(alerte)).toBe('Le tableau de bord complet est réservé au gérant et au propriétaire.');
-    expect(screen.queryByRole('region', { name: 'Alertes' })).toBeNull();
-    expect(screen.queryByText(/FCFA/)).toBeNull();
   });
 });
 
@@ -227,14 +324,8 @@ describe('Gestion › Tableau de bord (sans session)', () => {
 
 describe('Gestion › Tableau de bord (erreur)', () => {
   it('propose de réessayer quand le serveur ne répond pas, puis affiche les chiffres', async () => {
-    await ouvrir('willy', 'fr', async () => {
-      const simule = globalThis.fetch;
-      let pannes = 1;
-      globalThis.fetch = async (entree, init) =>
-        String(entree).includes('/tableau-de-bord/') && pannes-- > 0
-          ? Response.json({ detail: 'Panne', code: 'panne' }, { status: 500 })
-          : simule(entree, init);
-    });
+    lecture.lireTableauDeBordReel.mockRejectedValueOnce(new Error('Panne'));
+    await ouvrir();
     const alerte = await screen.findByRole('alert');
     expect(lu(alerte)).toContain('Impossible de charger le tableau de bord.');
     expect(screen.queryByRole('region', { name: 'Alertes' })).toBeNull();
@@ -246,7 +337,7 @@ describe('Gestion › Tableau de bord (erreur)', () => {
 
 describe('Gestion › Tableau de bord (anglais)', () => {
   it('traduit les titres, les indicateurs et les alertes', async () => {
-    await ouvrir('willy', 'en');
+    await ouvrir('gerant', 'en');
     const liste = await screen.findByRole('list', { name: 'Key figures of the month' });
     const [recette, dettes, fournisseurs, semaine] = within(liste).getAllByRole('listitem');
     expect(lu(recette)).toBe('Takings · October4 231 400 FCFACollection rate 96.2 %');

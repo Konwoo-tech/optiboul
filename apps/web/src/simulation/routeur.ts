@@ -43,7 +43,6 @@ import { consigner, reinitialiserJournal, repondreJournal } from './journal.ts';
 import { contexteSemaines, reinitialiserPlanning } from './planning.ts';
 import { reinitialiserSemaines, repondreSemaines } from './semaines.ts';
 import { lireUtilisateurConnecte, memoriserUtilisateurConnecte } from './session.ts';
-import { repondreTableauDeBord } from './tableauDeBord.ts';
 import { reinitialiserUtilisateurs, repondreUtilisateurs } from './utilisateurs.ts';
 
 /** La session « s'ouvre » au chargement de la page, comme dans la maquette. */
@@ -296,7 +295,6 @@ export function repondre(url: URL, methode: string, corps: Corps): Response {
         repondreUtilisateurs(url, methode, corps) ??
         repondreDemandes(methode, chemin, corps) ??
         repondreProduction(methode, chemin, corps) ??
-        repondreTableauDeBord(url, methode, corps, CONTEXTE) ??
         probleme(404, 'non_simule', `Pas encore simulé : ${methode} ${chemin}`)
       );
   }
