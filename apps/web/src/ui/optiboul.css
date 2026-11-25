@@ -7,3 +7,30 @@
 .mantine-Tabs-tab {
   min-height: 44px;
 }
+
+/*
+ * Survol des boutons : un léger assombrissement montre qu'on peut cliquer (souris seulement ;
+ * rien sur un écran tactile). Les boutons désactivés ne réagissent pas.
+ */
+button {
+  transition: filter 0.12s ease;
+}
+
+@media (hover: hover) {
+  button:not(:disabled):not([aria-disabled='true']):hover {
+    filter: brightness(0.93);
+  }
+}
+
+/* La barre latérale foncée a ses propres survols (éclaircissement). */
+@media (hover: hover) {
+  aside button:hover {
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button {
+    transition: none;
+  }
+}
