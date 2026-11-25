@@ -1305,7 +1305,8 @@
         "relancer": "Relancer",
         "replanifier": "Replanifier le reliquat",
         "reliquatPlanifie": "Reliquat replanifié : {{numero}}",
-        "vide": "Aucun bon de commande."
+        "vide": "Aucun bon de commande.",
+        "annuler": "Annuler"
       },
       "planifier": {
         "titre": "Planifier une réception",
@@ -1403,7 +1404,8 @@
         "recuPret": "Reçu PDF prêt",
         "erreur": "L’action n’a pas pu être enregistrée. Réessayez.",
         "dejaFait": "Cette ligne a déjà été traitée. La liste est à jour.",
-        "semaineFermee": "Aucune semaine n’est ouverte : ouvrez-en une dans Gestion › Semaines."
+        "semaineFermee": "Aucune semaine n’est ouverte : ouvrez-en une dans Gestion › Semaines.",
+        "annulee": "Bon {{numero}} annulé"
       },
       "fiche": {
         "ajouter": "Nouveau fournisseur",

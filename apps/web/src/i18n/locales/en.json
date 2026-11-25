@@ -1305,7 +1305,8 @@
         "relancer": "Remind",
         "replanifier": "Reschedule remainder",
         "reliquatPlanifie": "Remainder rescheduled: {{numero}}",
-        "vide": "No purchase orders."
+        "vide": "No purchase orders.",
+        "annuler": "Cancel"
       },
       "planifier": {
         "titre": "Schedule a delivery",
@@ -1403,7 +1404,8 @@
         "recuPret": "PDF receipt ready",
         "erreur": "The action could not be saved. Please try again.",
         "dejaFait": "This line has already been handled. The list is up to date.",
-        "semaineFermee": "No week is open: open one in Management › Weeks."
+        "semaineFermee": "No week is open: open one in Management › Weeks.",
+        "annulee": "Order {{numero}} cancelled"
       },
       "fiche": {
         "ajouter": "New supplier",

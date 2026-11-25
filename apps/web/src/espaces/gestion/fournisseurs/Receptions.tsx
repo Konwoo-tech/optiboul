@@ -31,6 +31,7 @@ type Props = {
   /** Une action est en cours d'envoi : les boutons sont verrouillés. */
   enCours: boolean;
   onReceptionner: (commande: Commande) => void;
+  onAnnuler: (commande: Commande) => void;
   onRelancer: (commande: Commande) => void;
   onReplanifier: (commande: Commande) => void;
   /** Renvoie le code de l'erreur du serveur, ou `null` quand la réception est planifiée. */
@@ -43,6 +44,7 @@ export function Receptions({
   peutModifier,
   enCours,
   onReceptionner,
+  onAnnuler,
   onRelancer,
   onReplanifier,
   onPlanifier,
@@ -136,15 +138,26 @@ export function Receptions({
           )}
         </div>
         {peutModifier && planifiee && (
-          <button
-            type="button"
-            className={styles.principal}
-            aria-disabled={enCours}
-            aria-label={`${t('gestion.fournisseurs.receptions.receptionner')} ${c.numero}`}
-            onClick={() => !enCours && onReceptionner(c)}
-          >
-            {t('gestion.fournisseurs.receptions.receptionner')}
-          </button>
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.principal}
+              aria-disabled={enCours}
+              aria-label={`${t('gestion.fournisseurs.receptions.receptionner')} ${c.numero}`}
+              onClick={() => !enCours && onReceptionner(c)}
+            >
+              {t('gestion.fournisseurs.receptions.receptionner')}
+            </button>
+            <button
+              type="button"
+              className={styles.secondaire}
+              aria-disabled={enCours}
+              aria-label={`${t('gestion.fournisseurs.receptions.annuler')} ${c.numero}`}
+              onClick={() => !enCours && onAnnuler(c)}
+            >
+              {t('gestion.fournisseurs.receptions.annuler')}
+            </button>
+          </div>
         )}
         {c.statut === 'partielle' && c.reliquat && (
           <div className={styles.sous}>
