@@ -1541,6 +1541,7 @@
     "sauvegardes": {
       "erreurChargement": "Unable to read the backups. Try again.",
       "alerte": "No cloud copy for over 48 h (last: {{date}}).",
+      "alerteEchec": "The last {{genre}} backup failed on {{date}}: {{erreur}}",
       "alerteJamais": "No cloud copy has been made yet.",
       "locale": {
         "titre": "Local copy",

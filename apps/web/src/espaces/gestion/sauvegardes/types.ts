@@ -29,6 +29,8 @@ export type InstantaneSauvegardes = {
   derniereCloud: string | null;
   /** Aucune copie cloud depuis plus de `seuilAlerteHeures` (alerte « En retard »). */
   cloudEnRetard: boolean;
+  /** Dernière copie en échec, si elle est plus récente que la dernière réussie du même genre. */
+  derniereEchec: { genre: GenreCopie; instant: string; erreur: string } | null;
   seuilAlerteHeures: number;
 };
 

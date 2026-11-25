@@ -89,6 +89,7 @@ function instantane(): InstantaneSauvegardes {
     derniereLocale: derniere('locale'),
     derniereCloud,
     cloudEnRetard: cloudEnRetard(derniereCloud, new Date()),
+    derniereEchec: null,
     seuilAlerteHeures: SEUIL_ALERTE_CLOUD_HEURES,
   };
 }

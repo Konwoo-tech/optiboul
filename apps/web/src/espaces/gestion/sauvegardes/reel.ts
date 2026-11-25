@@ -48,6 +48,13 @@ export async function lireSauvegardesReelles(): Promise<InstantaneSauvegardes> {
     derniereLocale: etat.derniere_locale,
     derniereCloud: etat.derniere_cloud,
     cloudEnRetard: etat.cloud_en_retard,
+    derniereEchec: etat.derniere_echec
+      ? {
+          genre: etat.derniere_echec.genre as GenreCopie,
+          instant: etat.derniere_echec.le,
+          erreur: etat.derniere_echec.erreur,
+        }
+      : null,
     seuilAlerteHeures: etat.seuil_alerte_heures,
   };
 }

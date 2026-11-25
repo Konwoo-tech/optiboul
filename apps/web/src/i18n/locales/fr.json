@@ -1541,6 +1541,7 @@
     "sauvegardes": {
       "erreurChargement": "Impossible de lire les sauvegardes. Réessayez.",
       "alerte": "Aucune copie cloud depuis plus de 48 h (dernière : {{date}}).",
+      "alerteEchec": "La dernière copie {{genre}} a échoué le {{date}} : {{erreur}}",
       "alerteJamais": "Aucune copie cloud n’a encore été faite.",
       "locale": {
         "titre": "Copie locale",

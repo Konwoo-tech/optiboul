@@ -44,6 +44,31 @@ const ETAT = {
 };
 
 describe('lecture des sauvegardes sur le vrai serveur', () => {
+  it('signale la dernière copie en échec avec son erreur', async () => {
+    serveur.use(
+      http.get('*/api/v1/sauvegardes/', () =>
+        HttpResponse.json(page([COPIE(1, 'locale', 'planifiee')])),
+      ),
+      http.get('*/api/v1/sauvegardes/etat/', () =>
+        HttpResponse.json({
+          ...ETAT,
+          derniere_echec: {
+            id: 9,
+            genre: 'cloud',
+            le: '2026-11-19T04:00:00+01:00',
+            erreur: 'Cloud injoignable',
+          },
+        }),
+      ),
+    );
+    const i = await lireSauvegardesReelles();
+    expect(i.derniereEchec).toEqual({
+      genre: 'cloud',
+      instant: '2026-11-19T04:00:00+01:00',
+      erreur: 'Cloud injoignable',
+    });
+  });
+
   it('compose les copies réussies (récentes d’abord), l’état et l’alerte cloud', async () => {
     serveur.use(
       http.get('*/api/v1/sauvegardes/', () =>
