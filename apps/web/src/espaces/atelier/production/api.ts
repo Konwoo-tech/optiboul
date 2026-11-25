@@ -1,6 +1,5 @@
 import {
   ErreurApi,
-  optiboulFetch,
   productionsCloturerCreate,
   productionsFourneeDestroy,
   productionsConsommationUpdate,
@@ -10,7 +9,6 @@ import {
   productionsSupplementCreate,
   productionsValiderCreate,
 } from '@/api';
-import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
@@ -34,19 +32,13 @@ import type {
 } from './types.ts';
 
 /*
- * Accès aux données de « Atelier › Production ». En simulation, elles viennent du faux serveur
- * (`/api/v1/simulation/atelier/production/…`, voir `simulation/production.ts`) ; sur le vrai serveur,
- * `reel.ts` compose l'instantané. Chaque action renvoie l'état complet de la production, que l'on
- * range dans le cache de TanStack Query.
+ * Accès aux données de « Atelier › Production » : `reel.ts` compose l'instantané à partir des routes
+ * du serveur. Chaque action écrit sur le serveur, puis relit l'état complet de la production, que
+ * l'on range dans le cache de TanStack Query.
  */
-
-const RACINE = '/api/v1/simulation/atelier/production/';
-const ENTETES = { 'Content-Type': 'application/json' };
 
 /** Le reste à produire se rafraîchit sur les postes ouverts en moins de 15 s (US-088). */
 export const RAFRAICHISSEMENT_MS = 15_000;
-
-type Reponse<T> = { data: T };
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleProduction = (utilisateur: string | undefined) =>
@@ -55,22 +47,10 @@ export const cleProduction = (utilisateur: string | undefined) =>
 export const cleFiches = (utilisateur: string | undefined) =>
   ['simulation', 'atelier', 'fiches', utilisateur] as const;
 
-async function envoyer<T>(methode: 'POST' | 'PUT', chemin: string, corps?: object): Promise<T> {
-  const reponse = await optiboulFetch<Reponse<T>>(`${RACINE}${chemin}`, {
-    method: methode,
-    headers: ENTETES,
-    body: corps ? JSON.stringify(corps) : undefined,
-  });
-  return reponse.data;
-}
-
 export function useProduction(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleProduction(utilisateur),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<InstantaneProduction>>(RACINE)).data
-        : lireProductionReelle(),
+    queryFn: lireProductionReelle,
     enabled: Boolean(utilisateur),
     // Les commandes, le stock et les demandes bougent depuis d'autres écrans.
     staleTime: 0,
@@ -98,13 +78,13 @@ export function actionsDe(client: QueryClient, utilisateur: string | undefined) 
     void client.invalidateQueries({ queryKey: ['simulation', 'demandes'] });
     return reponse;
   };
-  /** Session visée sur le vrai serveur : celle que le plan a désignée. */
+  /** Session visée : celle que le plan a désignée. */
   const session = () => {
     const lue = client.getQueryData<InstantaneProduction>(cle);
     return lue ? { jour: lue.session.date, creneau: lue.session.type as never } : {};
   };
   const lue = () => client.getQueryData<InstantaneProduction>(cle);
-  /** Après une écriture sur le vrai serveur : on relit l'instantané complet. */
+  /** Après une écriture : on relit l'instantané complet. */
   const relire = async () => ({ instantane: await lireProductionReelle() });
   const sansProduction = () =>
     Promise.reject(
@@ -138,97 +118,74 @@ export function actionsDe(client: QueryClient, utilisateur: string | undefined) 
         .map(([matiere, valeur]) => [matiere, String(valeur)]),
     );
   return {
-    proposerLePlan: () =>
-      ranger(
-        SIMULATION
-          ? envoyer<AvecInstantane>('POST', 'plan/proposer/')
-          : productionsProposerCreate(session()).then(relire),
-      ),
-    validerLePlan: () =>
-      ranger(
-        SIMULATION
-          ? envoyer<AvecInstantane>('POST', 'plan/valider/')
-          : productionsValiderCreate(session()).then(relire),
-      ),
-    ouvrir: () =>
-      ranger(
-        SIMULATION
-          ? envoyer<AvecInstantane>('POST', 'ouvrir/')
-          : productionsOuvrirCreate(session()).then(relire),
-      ),
+    proposerLePlan: () => ranger(productionsProposerCreate(session()).then(relire)),
+    validerLePlan: () => ranger(productionsValiderCreate(session()).then(relire)),
+    ouvrir: () => ranger(productionsOuvrirCreate(session()).then(relire)),
     enregistrerLeRealise: (realise: Realise) =>
       ranger(
-        SIMULATION
-          ? envoyer<AvecInstantane>('PUT', 'realise/', realise)
-          : (async () => {
-              const id = lue()?.productionId;
-              if (!id) return sansProduction();
-              await fournees(Number(id), realise);
-              return relire();
-            })(),
+        (async () => {
+          const id = lue()?.productionId;
+          if (!id) return sansProduction();
+          await fournees(Number(id), realise);
+          return relire();
+        })(),
       ),
-    /** Annule la dernière fournée (le serveur refuse toute autre) ; réservé au vrai serveur. */
+    /** Annule la dernière fournée (le serveur refuse toute autre). */
     annulerLaDerniereFournee: (numero: number) =>
       ranger(
         (async () => {
           const id = lue()?.productionId;
-          if (SIMULATION || !id) return sansProduction();
+          if (!id) return sansProduction();
           await productionsFourneeDestroy(Number(id), numero);
           return relire();
         })(),
       ),
     enregistrerLaConsommation: (consommation: Consommation) =>
       ranger(
-        SIMULATION
-          ? envoyer<AvecInstantane>('PUT', 'consommation/', consommation)
-          : (async () => {
-              const id = lue()?.productionId;
-              if (!id) return sansProduction();
-              await productionsConsommationUpdate(Number(id), {
-                quantites: quantitesServeur(consommation),
-                ...justificationsDeLaProduction(id, consommation),
-              });
-              return relire();
-            })(),
+        (async () => {
+          const id = lue()?.productionId;
+          if (!id) return sansProduction();
+          await productionsConsommationUpdate(Number(id), {
+            quantites: quantitesServeur(consommation),
+            ...justificationsDeLaProduction(id, consommation),
+          });
+          return relire();
+        })(),
       ),
     justifier: (justification: { motif: MotifEcart; texte: string; consommation: Consommation }) =>
       ranger(
-        SIMULATION
-          ? envoyer<AvecInstantane>('POST', 'justification/', justification)
-          : (async () => {
-              const id = lue()?.productionId;
-              if (!id) return sansProduction();
-              const quantites = quantitesServeur(justification.consommation);
-              // Le serveur garde une justification par matière (R10) : le motif et le texte, pour chacune.
-              const texte = texteDeJustification(justification);
-              await productionsConsommationUpdate(Number(id), {
-                quantites,
-                justifications: Object.fromEntries(Object.keys(quantites).map((m) => [m, texte])),
-              });
-              retenirJustification(id, { motif: justification.motif, texte: justification.texte });
-              return relire();
-            })(),
+        (async () => {
+          const id = lue()?.productionId;
+          if (!id) return sansProduction();
+          const quantites = quantitesServeur(justification.consommation);
+          // Le serveur garde une justification par matière (R10) : le motif et le texte, pour chacune.
+          const texte = texteDeJustification(justification);
+          await productionsConsommationUpdate(Number(id), {
+            quantites,
+            justifications: Object.fromEntries(Object.keys(quantites).map((m) => [m, texte])),
+          });
+          retenirJustification(id, { motif: justification.motif, texte: justification.texte });
+          return relire();
+        })(),
       ),
     cloturer: async (valeurs: { realise: Realise; consommation: Consommation }) => {
       const reponse = await ranger(
-        SIMULATION
-          ? envoyer<ReponseCloture>('POST', 'cloturer/', valeurs)
-          : (async () => {
-              const id = lue()?.productionId;
-              if (!id) return sansProduction();
-              await fournees(Number(id), valeurs.realise);
-              await productionsConsommationUpdate(Number(id), {
-                quantites: quantitesServeur(valeurs.consommation),
-                ...justificationsDeLaProduction(id, valeurs.consommation),
-              });
-              await productionsCloturerCreate(Number(id));
-              const apres = await relire();
-              // La clôture sort de stock ce qui a été consommé.
-              const sorties = Object.entries(valeurs.consommation)
-                .filter(([, v]) => v !== null && v > 0)
-                .map(([matiere, quantite]) => ({ matiere, quantite: quantite as number }));
-              return { ...apres, sorties } as ReponseCloture;
-            })(),
+        (async () => {
+          const id = lue()?.productionId;
+          if (!id) return sansProduction();
+          await fournees(Number(id), valeurs.realise);
+          await productionsConsommationUpdate(Number(id), {
+            quantites: quantitesServeur(valeurs.consommation),
+            ...justificationsDeLaProduction(id, valeurs.consommation),
+          });
+          await productionsCloturerCreate(Number(id));
+          const apres = await relire();
+          // La clôture sort de stock ce qui a été consommé.
+          const sorties = Object.entries(valeurs.consommation)
+            .filter(([, v]) => v !== null && v > 0)
+            .map(([matiere, quantite]) => ({ matiere, quantite: quantite as number }));
+          return { ...apres, sorties } as ReponseCloture;
+        })(),
       );
       // La clôture crée les sorties de stock : l'écran Stocks les relit à l'ouverture.
       void client.invalidateQueries({ queryKey: ['simulation', 'atelier', 'stocks'] });
@@ -236,32 +193,26 @@ export function actionsDe(client: QueryClient, utilisateur: string | undefined) 
     },
     ajouterUnSupplement: (supplement: NouveauSupplement) =>
       ranger(
-        SIMULATION
-          ? envoyer<AvecInstantane & { demande?: { id: string; numero: number } }>(
-              'POST',
-              'supplement/',
-              supplement,
-            )
-          : (async () => {
-              const reponse = await productionsSupplementCreate({
-                ...session(),
-                supplement: Object.fromEntries(
-                  (Object.keys(CODE_SERVEUR) as (keyof Quantites)[]).map((p) => [
-                    CODE_SERVEUR[p],
-                    supplement.sacs[p],
-                  ]),
-                ),
-                motif: supplement.motif as never,
-              });
-              const apres = await relire();
-              const demande = (reponse.data as { demande?: string | null }).demande;
-              return {
-                ...apres,
-                ...(demande
-                  ? { demande: { id: demande, numero: Number(demande.replace(/\D/g, '')) } }
-                  : {}),
-              };
-            })(),
+        (async () => {
+          const reponse = await productionsSupplementCreate({
+            ...session(),
+            supplement: Object.fromEntries(
+              (Object.keys(CODE_SERVEUR) as (keyof Quantites)[]).map((p) => [
+                CODE_SERVEUR[p],
+                supplement.sacs[p],
+              ]),
+            ),
+            motif: supplement.motif as never,
+          });
+          const apres = await relire();
+          const demande = (reponse.data as { demande?: string | null }).demande;
+          return {
+            ...apres,
+            ...(demande
+              ? { demande: { id: demande, numero: Number(demande.replace(/\D/g, '')) } }
+              : {}),
+          };
+        })(),
       ),
   };
 }
@@ -276,10 +227,7 @@ export function useActionsProduction(utilisateur: string | undefined): ActionsPr
 export function useFiches(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleFiches(utilisateur),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<InstantaneFiches>>(`${RACINE}fiches/`)).data
-        : lireFichesReelles(),
+    queryFn: lireFichesReelles,
     enabled: Boolean(utilisateur),
     // Les prix suivent les achats en stock.
     staleTime: 0,
@@ -297,16 +245,7 @@ export function useModifierFiche(utilisateur: string | undefined) {
       id: string;
       recette: ModificationFiche;
     }): Promise<InstantaneFiches> => {
-      if (SIMULATION) {
-        return (
-          await optiboulFetch<Reponse<InstantaneFiches>>(`${RACINE}fiches/${id}/`, {
-            method: 'PUT',
-            headers: ENTETES,
-            body: JSON.stringify(recette),
-          })
-        ).data;
-      }
-      // Sur le vrai serveur, une modification crée une nouvelle version de la fiche du produit.
+      // Une modification crée une nouvelle version de la fiche du produit.
       const lues = client.getQueryData<InstantaneFiches>(cleFiches(utilisateur));
       const fiche = lues?.fiches.find((f) => f.id === id);
       if (!fiche?.idServeur || !lues) {
