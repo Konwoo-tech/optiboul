@@ -1255,6 +1255,7 @@
         "receptionner": "Receive",
         "relancer": "Remind",
         "replanifier": "Reschedule remainder",
+        "reliquatPlanifie": "Remainder rescheduled: {{numero}}",
         "vide": "No purchase orders."
       },
       "planifier": {
@@ -1524,7 +1525,8 @@
         },
         "cloturer": {
           "titre": "Close the week",
-          "info": "Closing {{semaine}}. The handover report (cash desks, debts, stock, incidents) will be sent to {{nom}}, next week’s manager.",
+          "info": "Closing {{semaine}}{{point}} The handover report (cash desks, debts, stock, incidents) will be sent to {{nom}}, next week’s manager.",
+          "infoSansDestinataire": "Closing {{semaine}}{{point}} The handover report (cash desks, debts, stock, incidents) will be sent to next week’s manager once assigned.",
           "confirmer": "Close and generate handover"
         }
       },
@@ -2173,7 +2175,7 @@
           "huile": "litres"
         },
         "conforme": "Gap of {{ecart}} kg: below the {{limite}} kg threshold.",
-        "alerte": "Gap of {{ecart}} kg on weighed materials, above the {{seuil}} kg per sack threshold ({{limite}} kg for {{sacs}} sacks).",
+        "alerte": "Gap of {{ecart}} kg on weighed materials, above the {{seuil}} kg per sack threshold ({{limite}} kg for {{sacs}} sack(s)).",
         "justifier": "Explain the gap",
         "motifs": {
           "perte": "Loss",

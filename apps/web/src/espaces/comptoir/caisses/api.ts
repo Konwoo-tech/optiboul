@@ -101,9 +101,12 @@ export async function lireCaisses(moi: string): Promise<ReponseCaisses> {
   ]);
   const gerant = semaines?.data.results?.[0]?.gerant;
   const ouverte = caisses.find((c) => c.en_cours);
-  // Le détail des espèces n'est donné qu'aux personnes qui peuvent voir la caisse ouverte.
-  const especes = ouverte
-    ? await caissesEspecesRetrieve(ouverte.id)
+  // Le détail des espèces (fonds, encaissé, dépenses, remises) de la caisse ouverte, ou à défaut de la
+  // dernière fermée : le récapitulatif de clôture annonce ses dépenses. Réservé à qui peut voir la caisse.
+  const caisseDuDetail =
+    ouverte ?? caisses.toSorted((a, b) => b.ouverte_le.localeCompare(a.ouverte_le))[0];
+  const especes = caisseDuDetail
+    ? await caissesEspecesRetrieve(caisseDuDetail.id)
         .then((r) => r.data as DetailEspeces & { plafond: number })
         .catch(() => null)
     : null;
@@ -120,6 +123,7 @@ export async function lireCaisses(moi: string): Promise<ReponseCaisses> {
   const sessions = caisses
     .toSorted((a, b) => a.ouverte_le.localeCompare(b.ouverte_le))
     .map((c) => versSessionDeCaisse(c, c.en_cours ? detail : null));
+  // `detail` appartient à la caisse ouverte, sinon à la dernière fermée (lu par l'écran Session).
   const triees = [...sessions.filter((s) => !s.enCours), ...sessions.filter((s) => s.enCours)];
   const personnes = new Map<string, { id: string; nom: string }>();
   for (const { caissiere } of recapitulatif) {

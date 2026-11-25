@@ -189,8 +189,24 @@ describe('lecture des caisses sur le vrai serveur', () => {
     );
     const reponse = await lireCaisses('4');
     expect(reponse.caisseOuverte).toBeNull();
+    // Aucun détail lisible pour cette caisse fermée : rien d'inventé.
     expect(reponse.detail).toBeNull();
     expect(reponse.rouvrable).toBe(true);
+  });
+
+  it('sans caisse ouverte, le détail des espèces est celui de la dernière fermée (dépenses du récapitulatif)', async () => {
+    serveurCaisses();
+    serveur.use(
+      http.get('*/api/v1/caisses/', () =>
+        HttpResponse.json({ count: 1, next: null, previous: null, results: [FERMEE] }),
+      ),
+      http.get('*/api/v1/caisses/1/especes/', () =>
+        HttpResponse.json({ ...ESPECES, depenses: 3000, attendu: 18600 }),
+      ),
+    );
+    const reponse = await lireCaisses('4');
+    expect(reponse.caisseOuverte).toBeNull();
+    expect(reponse.detail).toMatchObject({ depenses: 3000, attendu: 18600 });
   });
 
   it('une caisse sans attendu ni espèces garde le fonds comme attendu', () => {

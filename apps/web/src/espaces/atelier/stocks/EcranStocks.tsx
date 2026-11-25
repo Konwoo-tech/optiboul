@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { EcranChargement, EcranErreur, useToast } from '@/ui';
+import { afficherRefus, EcranChargement, EcranErreur, useToast } from '@/ui';
 import { useCallback, useState, type KeyboardEvent } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -110,12 +110,13 @@ export default function EcranStocks({ ecran }: { ecran: Ecran }) {
         ),
       );
     } catch (erreur) {
-      afficher(
-        t(
-          codeErreur(erreur) === 'inventaire_en_attente'
-            ? 'atelier.stocks.inventaires.toasts.enAttente'
-            : 'atelier.stocks.inventaires.toasts.erreur',
-        ),
+      afficherRefus(
+        afficher,
+        t,
+        erreur,
+        codeErreur(erreur) === 'inventaire_en_attente'
+          ? 'atelier.stocks.inventaires.toasts.enAttente'
+          : 'atelier.stocks.inventaires.toasts.erreur',
       );
     }
   };

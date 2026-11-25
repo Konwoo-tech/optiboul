@@ -2,7 +2,7 @@ import { useUtilisateurCourant } from '@/auth';
 import { ErreurApi } from '@/api';
 import { useTranslation } from '@/i18n';
 import { SIMULATION } from '@/simulation';
-import { EcranChargement, EcranErreur, useToast } from '@/ui';
+import { EcranChargement, EcranErreur, useToast, afficherRefus } from '@/ui';
 import { formaterNombre } from '@/utils';
 import { useCallback, useState, type KeyboardEvent } from 'react';
 import { useSearchParams } from 'react-router';
@@ -143,14 +143,15 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
       'commande_inconnue',
       'facture_inconnue',
     ].includes(code ?? '');
-    afficher(
-      t(
-        code === 'semaine_non_ouverte'
-          ? 'gestion.fournisseurs.toasts.semaineFermee'
-          : perimee
-            ? 'gestion.fournisseurs.toasts.dejaFait'
-            : 'gestion.fournisseurs.toasts.erreur',
-      ),
+    afficherRefus(
+      afficher,
+      t,
+      erreur,
+      code === 'semaine_non_ouverte'
+        ? 'gestion.fournisseurs.toasts.semaineFermee'
+        : perimee
+          ? 'gestion.fournisseurs.toasts.dejaFait'
+          : 'gestion.fournisseurs.toasts.erreur',
     );
   };
 

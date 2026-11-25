@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { EcranChargement, EcranErreur, useToast } from '@/ui';
+import { EcranChargement, EcranErreur, useToast, afficherRefus } from '@/ui';
 import { SIMULATION } from '@/simulation';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -121,18 +121,19 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
   /** Un refus du serveur (règle ou droit) : l'écran se remet à jour et le dit. */
   const signaler = (erreur: unknown) => {
     const code = codeErreur(erreur);
-    afficher(
-      t(
-        code === 'droit_insuffisant'
-          ? 'gestion.personnel.toasts.droit'
-          : code === 'etat_verrouille'
-            ? 'gestion.personnel.toasts.verrouille'
-            : code === 'paiement_ferme'
-              ? 'gestion.personnel.toasts.paiementFerme'
-              : code
-                ? 'gestion.personnel.toasts.impossible'
-                : 'gestion.personnel.toasts.erreur',
-      ),
+    afficherRefus(
+      afficher,
+      t,
+      erreur,
+      code === 'droit_insuffisant'
+        ? 'gestion.personnel.toasts.droit'
+        : code === 'etat_verrouille'
+          ? 'gestion.personnel.toasts.verrouille'
+          : code === 'paiement_ferme'
+            ? 'gestion.personnel.toasts.paiementFerme'
+            : code
+              ? 'gestion.personnel.toasts.impossible'
+              : 'gestion.personnel.toasts.erreur',
     );
     void requete.refetch();
   };

@@ -83,11 +83,18 @@ export function ModaleCloture({
   return (
     <FenetreModale titre={t('gestion.semaines.modales.cloturer.titre')} onFermer={onFermer}>
       <p className={styles.information}>
-        {t('gestion.semaines.modales.cloturer.info', {
-          // La maquette met la semaine en minuscules en français seulement.
-          semaine: langue === 'en' ? libelle : libelle.toLowerCase(),
-          nom: destinataire,
-        })}
+        {t(
+          destinataire && destinataire !== '—'
+            ? 'gestion.semaines.modales.cloturer.info'
+            : 'gestion.semaines.modales.cloturer.infoSansDestinataire',
+          {
+            // La maquette met la semaine en minuscules en français seulement.
+            semaine: langue === 'en' ? libelle : libelle.toLowerCase(),
+            // Le libellé se termine déjà par un point (« 6 déc. ») : pas de second point.
+            point: libelle.endsWith('.') ? '' : '.',
+            nom: destinataire,
+          },
+        )}
       </p>
       <div className={styles.boutons}>
         <button type="button" className={styles.annuler} onClick={onFermer}>
