@@ -8,7 +8,7 @@ import { useSearchParams } from 'react-router';
 
 import type { Ecran } from '../../navigation.ts';
 import { EnTeteEcran } from '../EnTeteEcran.tsx';
-import { useClients, useCreerClient, useRelancerClients } from './api.ts';
+import { useClients, useCreerClient, useModifierClient, useRelancerClients } from './api.ts';
 import { ModaleClient } from './ModaleClient.tsx';
 import type { ClientDeLecran, ListeClients } from './types.ts';
 import { DetailClient } from './DetailClient.tsx';
@@ -150,6 +150,16 @@ function Chiffres({ donnees }: { donnees: ListeClients }) {
   );
 }
 
+/** Le message d'une création ou d'une modification refusée : le champ en cause, sinon un message général. */
+function refusDeSaisie(erreur: unknown): string {
+  if (erreur instanceof ErreurApi && erreur.status === 400) {
+    const champs = Object.keys((erreur.details ?? {}) as object);
+    if (champs.includes('telephone')) return 'telephone';
+    if (champs.includes('nom')) return 'nom';
+  }
+  return 'defaut';
+}
+
 /**
  * Clients et dettes (US-060 à US-064), le même écran dans le comptoir (caissière) et dans la
  * gestion (gérant, propriétaire). Seuls le gérant et le propriétaire relancent. Le filtre et le
@@ -163,7 +173,9 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
   const { data, isPending, isError } = useClients();
   const relancer = useRelancerClients();
   const creer = useCreerClient();
+  const modifierClient = useModifierClient();
   const [nouveau, setNouveau] = useState(false);
+  const [edition, setEdition] = useState<string | null>(null);
   const [parametres, definirParametres] = useSearchParams();
   const [focusDetail, setFocusDetail] = useState(false);
 
@@ -185,6 +197,7 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
       { replace: true },
     );
 
+  const clientEdite = data?.clients.find((c) => c.id === edition);
   let contenu;
   if (isError) {
     contenu = (
@@ -287,6 +300,7 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
               echeance={echeance}
               prendreFocus={focusDetail}
               onFermer={fermer}
+              onModifier={relancable ? () => setEdition(choisi.id) : undefined}
             />
           ) : (
             <div className={styles.detail}>
@@ -313,12 +327,24 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
               afficherToast(t('clients.nouveau.toast', { nom: client.nom }));
               return null;
             } catch (erreur) {
-              if (erreur instanceof ErreurApi && erreur.status === 400) {
-                const champs = Object.keys((erreur.details ?? {}) as object);
-                if (champs.includes('telephone')) return 'telephone';
-                if (champs.includes('nom')) return 'nom';
-              }
-              return 'defaut';
+              return refusDeSaisie(erreur);
+            }
+          }}
+        />
+      )}
+      {clientEdite && (
+        <ModaleClient
+          client={clientEdite}
+          envoiEnCours={modifierClient.isPending}
+          onFermer={() => setEdition(null)}
+          onConfirmer={async (corps) => {
+            try {
+              await modifierClient.mutateAsync({ id: clientEdite.id, corps });
+              setEdition(null);
+              afficherToast(t('clients.nouveau.toastModifie', { nom: corps.nom }));
+              return null;
+            } catch (erreur) {
+              return refusDeSaisie(erreur);
             }
           }}
         />

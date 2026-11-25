@@ -18,6 +18,11 @@ export type ClientDeLecran = {
   relance: boolean;
   /** Plafond propre à ce client ; absent : celui de la liste. */
   plafond?: number;
+  /** Plafond fixé pour ce client seul ; `null` : celui de la liste. */
+  plafondPropre?: number | null;
+  /** Prix propres du client (code du produit → FCFA), sans les prix de base. */
+  tarifsPropres?: Record<string, number>;
+  actif?: boolean;
 };
 
 export type ListeClients = {

@@ -302,7 +302,12 @@
         "nom": "Le nom du client est obligatoire.",
         "telephone": "Numéro invalide : 9 chiffres commençant par 6, ou vide.",
         "defaut": "Le client n’a pas pu être créé. Réessayez."
-      }
+      },
+      "modifier": "Modifier la fiche",
+      "titreModifier": "Modifier le client",
+      "enregistrer": "Enregistrer",
+      "actif": "Client actif (décocher pour le retirer de la liste)",
+      "toastModifie": "Client {{nom}} modifié"
     }
   },
   "comptoir": {

@@ -295,6 +295,38 @@ describe('Clients et dettes', () => {
     );
   });
 
+  it('le gérant modifie la fiche d’un client : valeurs reprises, PATCH, prix propre retiré', async () => {
+    let corps: Record<string, unknown> | undefined;
+    ouvrir('willy', '/?client=1', [
+      http.patch('*/api/v1/clients/:id/', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json(CLIENTS[0]);
+      }),
+    ]);
+    await lignes();
+    fireEvent.click(await screen.findByRole('button', { name: 'Modifier la fiche' }));
+    expect(((await screen.findByLabelText('Nom du client')) as HTMLInputElement).value).toBe(
+      'Alain',
+    );
+    fireEvent.change(screen.getByLabelText(/^Lieu/), { target: { value: 'Marché central' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByText('Client Alain modifié')).toBeTruthy();
+    expect(corps).toMatchObject({
+      nom: 'Alain',
+      lieu: 'Marché central',
+      plafond: null,
+      tarifs: { BAG: null, KO: null, GC135: null },
+      actif: true,
+    });
+  });
+
+  it('la caissière ne modifie pas la fiche d’un client', async () => {
+    ouvrir('davy', '/?client=1');
+    await lignes();
+    await screen.findByRole('button', { name: 'Relevé PDF' });
+    expect(screen.queryByRole('button', { name: 'Modifier la fiche' })).toBeNull();
+  });
+
   it('ouvre le détail d’un client au clic et y place le focus', async () => {
     ouvrir('davy');
     const [brice] = await lignes();

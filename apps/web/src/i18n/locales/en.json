@@ -302,7 +302,12 @@
         "nom": "The customer name is required.",
         "telephone": "Invalid number: 9 digits starting with 6, or empty.",
         "defaut": "The customer could not be created. Try again."
-      }
+      },
+      "modifier": "Edit details",
+      "titreModifier": "Edit the customer",
+      "enregistrer": "Save",
+      "actif": "Active customer (untick to remove from the list)",
+      "toastModifie": "Customer {{nom}} updated"
     }
   },
   "comptoir": {
