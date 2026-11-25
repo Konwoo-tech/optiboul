@@ -268,14 +268,21 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
             ))}
           </fieldset>
           {relancable && (
-            <button type="button" className={styles.nouveauClient} onClick={() => setNouveau(true)}>
-              {t('clients.nouveau.ajouter')}
-            </button>
-          )}
-          {relancable && dettes.length > 0 && (
-            <button type="button" className={styles.relancerTous} onClick={relancerTous}>
-              {t('clients.relancerTous', { count: dettes.length })}
-            </button>
+            <div className={styles.actionsBarre}>
+              {dettes.length > 0 && (
+                <button type="button" className={styles.relancerTous} onClick={relancerTous}>
+                  {t('clients.relancerTous', { count: dettes.length })}
+                </button>
+              )}
+              <button
+                type="button"
+                className={styles.nouveauClient}
+                onClick={() => setNouveau(true)}
+              >
+                <span aria-hidden>+ </span>
+                {t('clients.nouveau.ajouter')}
+              </button>
+            </div>
           )}
         </div>
         <div className={styles.corps}>

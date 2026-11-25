@@ -11,22 +11,16 @@ type Props = {
   instantane: InstantaneFournisseurs;
   /** Le gérant crée et modifie les fiches ; le propriétaire les consulte. */
   peutModifier: boolean;
-  onNouveau: () => void;
   onModifier: (fournisseur: Fournisseur) => void;
 };
 
-export function Fiches({ instantane, peutModifier, onNouveau, onModifier }: Props) {
+export function Fiches({ instantane, peutModifier, onModifier }: Props) {
   const { t, i18n } = useTranslation();
   const langue = i18n.language;
   const impayees = facturesImpayees(instantane.factures);
 
   return (
     <>
-      {peutModifier && (
-        <button type="button" className={styles.secondaire} onClick={onNouveau}>
-          {t('gestion.fournisseurs.fiche.ajouter')}
-        </button>
-      )}
       <ul className={styles.fiches} aria-label={t('gestion.fournisseurs.fiches.liste')}>
         {instantane.fournisseurs.map((f) => {
           const dues = impayees.filter((i) => i.fournisseur === f.id);

@@ -42,6 +42,32 @@
   color: var(--ob-encre);
 }
 
+.entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.principal {
+  min-height: 48px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.principal:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
 .onglets {
   display: flex;
   gap: 4px;

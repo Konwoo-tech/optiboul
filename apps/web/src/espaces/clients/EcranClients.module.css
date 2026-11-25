@@ -84,10 +84,10 @@ output.message {
 .relancerTous {
   min-height: 48px;
   padding: 0 18px;
-  border: none;
+  border: 1.5px solid var(--ob-marque);
   border-radius: 12px;
-  background: #f2b705;
-  color: #2e1a10;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
   font-family: inherit;
   font-size: 15px;
   font-weight: 800;
@@ -385,13 +385,20 @@ output.message {
   white-space: nowrap;
 }
 
+.actionsBarre {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-left: auto;
+}
+
 .nouveauClient {
   min-height: 48px;
-  padding: 0 18px;
-  border: 1.5px solid var(--ob-ligne-champ);
+  padding: 0 20px;
+  border: none;
   border-radius: 12px;
-  background: var(--ob-surface);
-  color: var(--ob-marque);
+  background: #f2b705;
+  color: #2e1a10;
   font-family: inherit;
   font-size: 15px;
   font-weight: 800;
