@@ -1,6 +1,5 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- bouton à rôle « checkbox » : case de la maquette */
 import { useTranslation } from '@/i18n';
-import { MOT_DE_PASSE_DEMO, SIMULATION } from '@/simulation';
 import { useEffect, useId, useRef } from 'react';
 
 import { Mot, Pastille } from './Pastille.tsx';
@@ -83,14 +82,7 @@ export function NouvelUtilisateur(props: Props) {
           </div>
         </div>
         <div className={styles.faitTexte}>
-          {SIMULATION
-            ? t('gestion.utilisateurs.cree.texte', {
-                nom: cree.nom,
-                motDePasse: MOT_DE_PASSE_DEMO,
-                canal: NOM_DU_CANAL[cree.canal],
-                telephone: cree.telephone,
-              })
-            : t('gestion.utilisateurs.cree.texteReel', { nom: cree.nom })}
+          {t('gestion.utilisateurs.cree.texteReel', { nom: cree.nom })}
         </div>
         {props.codesSecours && props.codesSecours.length > 0 && (
           <div className={styles.faitTexte}>
@@ -336,9 +328,6 @@ export function NouvelUtilisateur(props: Props) {
         <h3 className={styles.apercuSection}>{t('gestion.utilisateurs.apercu.connexion')}</h3>
         <div className={styles.connexion}>
           {t('gestion.utilisateurs.apercu.google', { email: brouillon.email.trim() || '…' })}
-        </div>
-        <div className={styles.connexion}>
-          {t('gestion.utilisateurs.apercu.emailMotDePasse', { motDePasse: MOT_DE_PASSE_DEMO })}
         </div>
         <div className={styles.connexion}>
           {t('gestion.utilisateurs.apercu.doubleAuthentification', {

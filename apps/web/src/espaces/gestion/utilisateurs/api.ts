@@ -1,14 +1,12 @@
 import {
   ErreurApi,
   groupesCreate,
-  optiboulFetch,
   utilisateursActivationCreate,
   utilisateursCreate,
   utilisateursDebloquerCreate,
   utilisateursGroupeCreate,
   utilisateursReinitialiserCodeCreate,
 } from '@/api';
-import { SIMULATION } from '@/simulation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { enErreurDeChamps, lireUtilisateursReels, telephoneDuServeur } from './reel.ts';
@@ -20,12 +18,6 @@ import type {
   ReponseCreation,
 } from './types.ts';
 
-// En simulation, l'écran lit le faux serveur (`simulation/utilisateurs.ts`) ; sur le vrai serveur,
-// `reel.ts` compose l'instantané à partir des routes.
-const RACINE = SIMULATION ? '/api/v1/simulation/gestion/utilisateurs/' : '';
-
-type Reponse<T> = { data: T };
-
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleUtilisateurs = (utilisateur: string | undefined) =>
   ['simulation', 'gestion', 'utilisateurs', utilisateur] as const;
@@ -33,29 +25,12 @@ export const cleUtilisateurs = (utilisateur: string | undefined) =>
 export function useUtilisateurs(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleUtilisateurs(utilisateur),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<InstantaneUtilisateurs>>(RACINE)).data
-        : lireUtilisateursReels(),
+    queryFn: lireUtilisateursReels,
     enabled: Boolean(utilisateur),
     staleTime: 0,
     refetchOnMount: 'always',
   });
 }
-
-async function envoyer<T>(chemin: string, methode: string, corps?: unknown): Promise<T> {
-  return (
-    await optiboulFetch<Reponse<T>>(`${RACINE}${chemin}`, {
-      method: methode,
-      ...(corps === undefined
-        ? {}
-        : { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) }),
-    })
-  ).data;
-}
-
-const refus = (code: string) =>
-  new ErreurApi(409, { code, detail: 'Action indisponible sur le serveur.' });
 
 /** Une action sur les comptes : l'écran prend l'instantané renvoyé et relit ce qui en dépend. */
 function useAction<
@@ -63,14 +38,12 @@ function useAction<
   Resultat extends InstantaneUtilisateurs | ReponseCreation = InstantaneUtilisateurs,
 >(
   utilisateur: string | undefined,
-  simulee: (demande: Demande) => Promise<Resultat>,
-  /** La même action sur le vrai serveur ; l'instantané est relu ensuite. */
+  /** L'action sur le serveur ; l'instantané est relu ensuite. */
   surLeServeur: (demande: Demande) => Promise<Partial<ReponseCreation>>,
 ) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (demande: Demande): Promise<Resultat> => {
-      if (SIMULATION) return simulee(demande);
       const retour = await surLeServeur(demande);
       const instantane = await lireUtilisateursReels();
       return (retour.utilisateur === undefined
@@ -91,101 +64,70 @@ function useAction<
 }
 
 export const useCreerUtilisateur = (utilisateur: string | undefined) =>
-  useAction<NouvelUtilisateur, ReponseCreation>(
-    utilisateur,
-    (nouveau) => envoyer<ReponseCreation>('', 'POST', nouveau),
-    async (nouveau) => {
-      let creee;
-      try {
-        creee = (
-          await utilisateursCreate({
-            nom: nouveau.nom,
-            email: nouveau.email,
-            telephone: telephoneDuServeur(nouveau.telephone),
-            groupe: Number(nouveau.groupe),
-            canal: nouveau.canal,
-          })
-        ).data as unknown as { id: number; codesSecours?: string[] };
-      } catch (erreur) {
-        throw enErreurDeChamps(erreur);
-      }
-      // Le serveur ne rend ni le téléphone ni le canal : on garde ceux de la saisie pour l'écran de succès.
-      return {
-        utilisateur: {
-          id: String(creee.id),
+  useAction<NouvelUtilisateur, ReponseCreation>(utilisateur, async (nouveau) => {
+    let creee;
+    try {
+      creee = (
+        await utilisateursCreate({
           nom: nouveau.nom,
-          profil: 'caissier',
           email: nouveau.email,
-          telephone: nouveau.telephone,
-          groupe: nouveau.groupe,
-          actif: true,
-          dernierAcces: '',
+          telephone: telephoneDuServeur(nouveau.telephone),
+          groupe: Number(nouveau.groupe),
           canal: nouveau.canal,
-        },
-        codesSecours: creee.codesSecours ?? [],
-      };
-    },
-  );
+        })
+      ).data as unknown as { id: number; codesSecours?: string[] };
+    } catch (erreur) {
+      throw enErreurDeChamps(erreur);
+    }
+    // Le serveur ne rend ni le téléphone ni le canal : on garde ceux de la saisie pour l'écran de succès.
+    return {
+      utilisateur: {
+        id: String(creee.id),
+        nom: nouveau.nom,
+        profil: 'caissier',
+        email: nouveau.email,
+        telephone: nouveau.telephone,
+        groupe: nouveau.groupe,
+        actif: true,
+        dernierAcces: '',
+        canal: nouveau.canal,
+      },
+      codesSecours: creee.codesSecours ?? [],
+    };
+  });
 export const useChangerDeGroupe = (utilisateur: string | undefined) =>
-  useAction<{ id: string; groupe: string }>(
-    utilisateur,
-    (d) =>
-      envoyer<InstantaneUtilisateurs>(`${encodeURIComponent(d.id)}/groupe/`, 'PUT', {
-        groupe: d.groupe,
-      }),
-    async (d) => {
-      await utilisateursGroupeCreate(Number(d.id), { groupe: Number(d.groupe) });
-      return {};
-    },
-  );
+  useAction<{ id: string; groupe: string }>(utilisateur, async (d) => {
+    await utilisateursGroupeCreate(Number(d.id), { groupe: Number(d.groupe) });
+    return {};
+  });
 /** Réinitialise le code : le serveur en génère un (4 chiffres) et l'envoie à la personne par son canal. */
 export const useReinitialiserLeCode = (utilisateur: string | undefined) =>
-  useAction<{ id: string }>(
-    utilisateur,
-    ({ id }) =>
-      envoyer<InstantaneUtilisateurs>(`${encodeURIComponent(id)}/reinitialiser-code/`, 'POST'),
-    async ({ id }) => {
-      await utilisateursReinitialiserCodeCreate(Number(id));
-      return {};
-    },
-  );
+  useAction<{ id: string }>(utilisateur, async ({ id }) => {
+    await utilisateursReinitialiserCodeCreate(Number(id));
+    return {};
+  });
 /** Désactive ou réactive un compte (refus : `compte_propre`, `dernier_administrateur`). */
 export const useActiver = (utilisateur: string | undefined) =>
-  useAction<{ id: string; actif: boolean }>(
-    utilisateur,
-    (d) =>
-      envoyer<InstantaneUtilisateurs>(`${encodeURIComponent(d.id)}/activation/`, 'PUT', {
-        actif: d.actif,
-      }),
-    async ({ id, actif }) => {
-      await utilisateursActivationCreate(Number(id), { actif });
-      return {};
-    },
-  );
-/** Lève le blocage d'un compte après trop de codes faux (vrai serveur seulement). */
+  useAction<{ id: string; actif: boolean }>(utilisateur, async ({ id, actif }) => {
+    await utilisateursActivationCreate(Number(id), { actif });
+    return {};
+  });
+/** Lève le blocage d'un compte après trop de codes faux. */
 export const useDebloquer = (utilisateur: string | undefined) =>
-  useAction<string>(
-    utilisateur,
-    () => Promise.reject(refus('indisponible')),
-    async (id) => {
-      await utilisateursDebloquerCreate(Number(id));
-      return {};
-    },
-  );
+  useAction<string>(utilisateur, async (id) => {
+    await utilisateursDebloquerCreate(Number(id));
+    return {};
+  });
 
 export const useCreerUnGroupe = (utilisateur: string | undefined) =>
-  useAction<NouveauGroupe>(
-    utilisateur,
-    (g) => envoyer<InstantaneUtilisateurs>('groupes/', 'POST', g),
-    async (g) => {
-      try {
-        await groupesCreate({ nom: g.nom, profil: g.profil, description: g.description });
-      } catch (erreur) {
-        throw enErreurDeGroupe(erreur);
-      }
-      return {};
-    },
-  );
+  useAction<NouveauGroupe>(utilisateur, async (g) => {
+    try {
+      await groupesCreate({ nom: g.nom, profil: g.profil, description: g.description });
+    } catch (erreur) {
+      throw enErreurDeGroupe(erreur);
+    }
+    return {};
+  });
 
 /** Un refus de validation du serveur sur un groupe devient le code que l'écran sait lire. */
 function enErreurDeGroupe(erreur: unknown): unknown {

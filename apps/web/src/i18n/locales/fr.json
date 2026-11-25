@@ -1727,7 +1727,6 @@
         "choisirGroupe": "Choisissez un groupe pour voir les accès.",
         "connexion": "Connexion",
         "google": "Continuer avec Google : {{email}}",
-        "emailMotDePasse": "E-mail et mot de passe provisoire « {{motDePasse}} »",
         "doubleAuthentification": "Double authentification par {{canal}} au {{telephone}}"
       },
       "code": {
@@ -1742,7 +1741,6 @@
         "titre": "Compte créé",
         "texteReel": "{{nom}} peut maintenant se connecter. Définissez son code à 4 chiffres depuis la liste (« Réinitialiser le code »). Conservez les codes de secours ci-dessous : ils ne seront plus affichés.",
         "codesSecours": "Codes de secours",
-        "texte": "{{nom}} apparaît maintenant sur l’écran de connexion. Mot de passe provisoire : {{motDePasse}}, à changer à la première connexion. Le code de vérification arrivera par {{canal}} au +237 {{telephone}}.",
         "voirListe": "Voir dans la liste",
         "autre": "Créer un autre utilisateur"
       }
