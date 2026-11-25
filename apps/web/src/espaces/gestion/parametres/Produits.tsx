@@ -17,10 +17,13 @@ const prixObserves = (prix: ProduitParametre['prix']): string =>
 export function Produits({
   produits,
   cheminFiche,
+  onModifier,
 }: {
   produits: ProduitParametre[];
   /** Adresse de la fiche d'un produit ; absent : la ligne n'ouvre rien. */
   cheminFiche?: (id: string) => string;
+  /** Le propriétaire modifie un produit ; absent : lecture seule. */
+  onModifier?: (produit: ProduitParametre) => void;
 }) {
   const { t, i18n } = useTranslation();
   const titre = useId();
@@ -63,6 +66,16 @@ export function Produits({
                     </Link>
                   ) : (
                     <span className={styles.nomProduit}>{nom}</span>
+                  )}
+                  {onModifier && p.idServeur !== undefined && (
+                    <button
+                      type="button"
+                      className={styles.modifierProduit}
+                      aria-label={t('gestion.parametres.produits.modifierNom', { nom })}
+                      onClick={() => onModifier(p)}
+                    >
+                      {tp('modifier')}
+                    </button>
                   )}
                 </span>
                 <span role="cell" className={styles.droite}>

@@ -242,7 +242,7 @@ describe('Gestion › Paramètres : seuils et produits', () => {
       within(ligne)
         .getAllByRole('cell')
         .map((c) => c.textContent),
-    ).toEqual(['BAG – Baguette', formaterNombre(5000), '20', '315', '100']);
+    ).toEqual(['BAG – BaguetteModifier', formaterNombre(5000), '20', '315', '100']);
     expect(within(tableau).getAllByText('Fiche ›')).toHaveLength(7);
     // Pas de prix relevé : un tiret.
     const gc170 = within(tableau).getByRole('link', { name: 'GC 170 – Gros court 170' });
@@ -315,6 +315,40 @@ describe('Gestion › Paramètres : seuils et produits', () => {
     fireEvent.change(ecart, { target: { value: '' } });
     fireEvent.blur(ecart);
     expect((await screen.findByRole('alert')).textContent).toBe('Saisissez un nombre entier.');
+  });
+});
+
+describe('Gestion › Paramètres : modifier un produit', () => {
+  it('le propriétaire modifie le prix de base de la baguette : PATCH puis message', async () => {
+    let corps: Record<string, unknown> | undefined;
+    await ouvrir('fotso', 'fr', [
+      http.patch('*/api/v1/produits/:id/', async ({ params, request }) => {
+        corps = { id: params.id, ...((await request.json()) as object) };
+        return HttpResponse.json({ id: 1 });
+      }),
+    ]);
+    await attendreTableau();
+    fireEvent.click(screen.getByRole('button', { name: 'Modifier BAG – Baguette' }));
+    const prix = await screen.findByLabelText(/^Prix de vente de base/);
+    fireEvent.change(prix, { target: { value: '110' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByText('Produit Baguette modifié')).toBeTruthy();
+    expect(corps).toMatchObject({ id: '1', nom: 'Baguette', prix: 110, actif: true });
+  });
+
+  it('un nom vide est refusé avant l’envoi', async () => {
+    await ouvrir('fotso');
+    await attendreTableau();
+    fireEvent.click(screen.getByRole('button', { name: 'Modifier KO – Kirikou' }));
+    fireEvent.change(await screen.findByLabelText('Nom'), { target: { value: '  ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect((await screen.findByRole('alert')).textContent).toMatch(/nom du produit/);
+  });
+
+  it('l’administrateur consulte : aucun bouton Modifier', async () => {
+    await ouvrir('admin');
+    await attendreTableau();
+    expect(screen.queryByRole('button', { name: /^Modifier BAG/ })).toBeNull();
   });
 });
 

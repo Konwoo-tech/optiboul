@@ -1801,7 +1801,24 @@
         "painsSac": "Pains / sac",
         "prix": "Prix observés (FCFA)",
         "fiche": "Fiche ›",
-        "erreurChargement": "Impossible de charger les produits."
+        "erreurChargement": "Impossible de charger les produits.",
+        "modifier": "Modifier",
+        "modifierNom": "Modifier {{nom}}",
+        "modifierTitre": "Modifier le produit {{code}}",
+        "nom": "Nom",
+        "nomEn": "Nom en anglais",
+        "prixBase": "Prix de vente de base (FCFA, facultatif)",
+        "noteTarifs": "Le prix propre d’un client le remplace à la livraison.",
+        "cuisson": "Cuisson (minutes, facultatif)",
+        "actif": "Produit actif (décocher pour le retirer du catalogue)",
+        "enregistrer": "Enregistrer",
+        "annuler": "Annuler",
+        "toast": "Produit {{nom}} modifié",
+        "erreurs": {
+          "nom": "Le nom du produit est obligatoire.",
+          "droit": "Seul le propriétaire modifie les produits.",
+          "defaut": "Le produit n’a pas pu être enregistré. Réessayez."
+        }
       },
       "notifications": {
         "titre": "Règles de notification",

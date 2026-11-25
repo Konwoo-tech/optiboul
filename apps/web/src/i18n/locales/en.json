@@ -1801,7 +1801,24 @@
         "painsSac": "Loaves / sack",
         "prix": "Observed prices (FCFA)",
         "fiche": "Sheet ›",
-        "erreurChargement": "Could not load the products."
+        "erreurChargement": "Could not load the products.",
+        "modifier": "Edit",
+        "modifierNom": "Edit {{nom}}",
+        "modifierTitre": "Edit product {{code}}",
+        "nom": "Name",
+        "nomEn": "English name",
+        "prixBase": "Base selling price (FCFA, optional)",
+        "noteTarifs": "A customer's own price replaces it at delivery.",
+        "cuisson": "Baking (minutes, optional)",
+        "actif": "Active product (untick to remove it from the catalogue)",
+        "enregistrer": "Save",
+        "annuler": "Cancel",
+        "toast": "Product {{nom}} updated",
+        "erreurs": {
+          "nom": "The product name is required.",
+          "droit": "Only the owner edits products.",
+          "defaut": "The product could not be saved. Try again."
+        }
       },
       "notifications": {
         "titre": "Notification rules",
