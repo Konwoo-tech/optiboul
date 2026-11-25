@@ -1,36 +1,284 @@
 import { configurerApi } from '@/api';
 import { initI18n } from '@/i18n';
-import { installerApiSimulee } from '@/simulation';
-import { reinitialiserSimulation } from '@/simulation/routeur.ts';
-import { memoriserUtilisateurConnecte } from '@/simulation/session.ts';
-import { journalUtilisateurs } from '@/simulation/utilisateurs.ts';
+import { creerServeurApi } from '@/test';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-
-// Ces tests jouent l'écran sur le faux serveur ; la lecture du vrai serveur est dans reel.test.tsx.
-vi.hoisted(() => vi.stubEnv('MODE', 'simulation'));
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { ECRANS } from '../../../navigation.ts';
 import EcranUtilisateurs from './EcranUtilisateurs.tsx';
 
-vi.mock('@/simulation', async (original) => ({
-  ...(await original<typeof import('@/simulation')>()),
-  SIMULATION: true,
-}));
+/*
+ * L'écran Utilisateurs sur un faux serveur au format de l'API réelle : comptes (`utilisateurs/`),
+ * groupes (`groupes/`), création, changement de groupe, code, activation, avec les droits et les
+ * refus du serveur.
+ */
 
-let retablir: () => void;
+const serveur = creerServeurApi();
 
-async function ouvrir(utilisateur = 'admin', langue: 'fr' | 'en' = 'fr', chemin = '') {
-  vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date('2026-10-14T17:02:00Z'));
-  await initI18n('fr').changeLanguage(langue);
+beforeAll(() => {
   configurerApi({ baseUrl: 'http://localhost' });
-  retablir = installerApiSimulee({ latenceMs: 0 });
-  reinitialiserSimulation();
-  memoriserUtilisateurConnecte(utilisateur);
+  serveur.listen({ onUnhandledFrame: 'error' });
+});
+afterAll(() => serveur.close());
+
+type CompteServeur = {
+  id: number;
+  name: string;
+  email: string;
+  groupe: number;
+  profil: string;
+  telephone: string;
+  canal: 'sms' | 'whatsapp';
+  dernier_acces: string | null;
+  is_active: boolean;
+  bloque: boolean;
+  bloque_jusqua: string | null;
+};
+type GroupeServeur = {
+  id: number;
+  nom: string;
+  profil: string;
+  description: string;
+  membres: number;
+};
+
+const compte = (
+  id: number,
+  name: string,
+  profil: string,
+  groupe: number,
+  courriel: string,
+  telephone: string,
+  acces: string,
+): CompteServeur => ({
+  id,
+  name,
+  email: `${courriel}@gmail.com`,
+  groupe,
+  profil,
+  telephone,
+  canal: 'whatsapp',
+  dernier_acces: acces,
+  is_active: true,
+  bloque: false,
+  bloque_jusqua: null,
+});
+
+const COMPTES = (): CompteServeur[] => [
+  compte(1, 'Davy', 'caissier', 1, 'davy.boulfaubourg', '+237677412018', '2026-10-14T18:02:00'),
+  compte(2, 'Rachel', 'caissier', 2, 'rachel.boulfaubourg', '+237699528703', '2026-10-14T06:01:00'),
+  compte(3, 'Willy', 'gerant', 3, 'willy.boulfaubourg', '+237655186490', '2026-10-14T17:40:00'),
+  compte(4, 'Serge', 'production', 4, 'serge.boulfaubourg', '+237670332571', '2026-10-14T17:55:00'),
+  compte(
+    5,
+    'M. Fotso',
+    'proprietaire',
+    5,
+    'fotso.boulfaubourg',
+    '+237694601145',
+    '2026-10-13T22:10:00',
+  ),
+  compte(
+    6,
+    'Support OptiBoul',
+    'administrateur',
+    6,
+    'support.optiboul',
+    '+237658720936',
+    '2026-10-10T09:30:00',
+  ),
+  compte(7, 'Patrick', 'gerant', 3, 'patrick.boulfaubourg', '+237677901452', '2026-10-11T21:40:00'),
+  compte(
+    8,
+    'Christelle',
+    'gerant',
+    3,
+    'christelle.boulfaubourg',
+    '+237699316827',
+    '2026-10-04T18:10:00',
+  ),
+  compte(
+    9,
+    'Ignace',
+    'production',
+    4,
+    'ignace.boulfaubourg',
+    '+237655840319',
+    '2026-10-13T19:02:00',
+  ),
+];
+
+const GROUPES = (): GroupeServeur[] => [
+  {
+    id: 1,
+    nom: 'Caisse – équipe de nuit',
+    profil: 'caissier',
+    description: 'Livraisons.',
+    membres: 0,
+  },
+  {
+    id: 2,
+    nom: 'Caisse – équipe de jour',
+    profil: 'caissier',
+    description: 'Sessions de jour.',
+    membres: 0,
+  },
+  {
+    id: 3,
+    nom: 'Gérants de la semaine',
+    profil: 'gerant',
+    description: 'Gérant en rotation.',
+    membres: 0,
+  },
+  {
+    id: 4,
+    nom: 'Production',
+    profil: 'production',
+    description: 'Plan de production.',
+    membres: 0,
+  },
+  { id: 5, nom: 'Direction', profil: 'proprietaire', description: 'Vue complète.', membres: 0 },
+  {
+    id: 6,
+    nom: 'Support informatique',
+    profil: 'administrateur',
+    description: 'Comptes.',
+    membres: 0,
+  },
+];
+
+let comptes: CompteServeur[];
+let groupes: GroupeServeur[];
+/** La personne connectée (identifiant du compte). */
+let moi: number;
+let ecritures: string[];
+let lectures: number;
+
+const refus = (statut: number, code: string, detail = 'Refusé.') =>
+  HttpResponse.json({ detail, code }, { status: statut });
+const page = <T,>(results: T[]) => ({ count: results.length, next: null, previous: null, results });
+const administrateur = () => comptes.find((c) => c.id === moi)?.profil === 'administrateur';
+const droitInsuffisant = () => refus(403, 'droit_insuffisant');
+
+const groupesAvecMembres = () =>
+  groupes.map((g) => ({ ...g, membres: comptes.filter((c) => c.groupe === g.id).length }));
+
+function installerServeur() {
+  comptes = COMPTES();
+  groupes = GROUPES();
+  moi = 6;
+  ecritures = [];
+  lectures = 0;
+  serveur.use(
+    http.get('*/api/v1/users/me/', () => {
+      const c = comptes.find((x) => x.id === moi)!;
+      return HttpResponse.json({
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        url: `http://localhost/api/v1/users/${c.id}/`,
+        profil: c.profil,
+      });
+    }),
+    http.get('*/api/v1/utilisateurs/', () => {
+      lectures += 1;
+      return administrateur() ? HttpResponse.json(page(comptes)) : droitInsuffisant();
+    }),
+    http.get('*/api/v1/groupes/', () =>
+      administrateur() ? HttpResponse.json(page(groupesAvecMembres())) : droitInsuffisant(),
+    ),
+    http.post('*/api/v1/utilisateurs/', async ({ request }) => {
+      ecritures.push('POST');
+      if (!administrateur()) return droitInsuffisant();
+      const corps = (await request.json()) as {
+        nom: string;
+        email: string;
+        telephone: string;
+        groupe: number;
+        canal: 'sms' | 'whatsapp';
+      };
+      if (comptes.some((c) => c.email.toLowerCase() === corps.email.toLowerCase())) {
+        return HttpResponse.json(
+          { email: ['Cette adresse Gmail a déjà un compte.'] },
+          { status: 400 },
+        );
+      }
+      const groupe = groupes.find((g) => g.id === corps.groupe)!;
+      const cree = {
+        ...compte(
+          comptes.length + 1,
+          corps.nom,
+          groupe.profil,
+          groupe.id,
+          corps.email.replace('@gmail.com', ''),
+          corps.telephone,
+          '',
+        ),
+        canal: corps.canal,
+        dernier_acces: null,
+      };
+      comptes.push(cree);
+      return HttpResponse.json(
+        { ...cree, codesSecours: ['AAAA-1111', 'BBBB-2222'] },
+        { status: 201 },
+      );
+    }),
+    http.post('*/api/v1/utilisateurs/:id/groupe/', async ({ params, request }) => {
+      ecritures.push('POST');
+      if (!administrateur()) return droitInsuffisant();
+      const cible = comptes.find((c) => c.id === Number(params.id));
+      if (!cible) return refus(404, 'utilisateur_inconnu');
+      if (cible.id === moi) return refus(409, 'compte_propre');
+      const { groupe } = (await request.json()) as { groupe: number };
+      const g = groupes.find((x) => x.id === groupe)!;
+      cible.groupe = g.id;
+      cible.profil = g.profil;
+      return HttpResponse.json(cible);
+    }),
+    http.post('*/api/v1/utilisateurs/:id/reinitialiser-code/', ({ params }) => {
+      ecritures.push('POST');
+      if (!administrateur()) return droitInsuffisant();
+      return comptes.some((c) => c.id === Number(params.id))
+        ? new HttpResponse(null, { status: 204 })
+        : refus(404, 'utilisateur_inconnu');
+    }),
+    http.post('*/api/v1/utilisateurs/:id/activation/', async ({ params, request }) => {
+      ecritures.push('POST');
+      if (!administrateur()) return droitInsuffisant();
+      const cible = comptes.find((c) => c.id === Number(params.id));
+      if (!cible) return refus(404, 'utilisateur_inconnu');
+      if (cible.id === moi) return refus(409, 'compte_propre');
+      cible.is_active = ((await request.json()) as { actif: boolean }).actif;
+      return HttpResponse.json(cible);
+    }),
+    http.post('*/api/v1/groupes/', async ({ request }) => {
+      ecritures.push('POST');
+      if (!administrateur()) return droitInsuffisant();
+      const corps = (await request.json()) as { nom: string; profil: string; description: string };
+      if (groupes.some((g) => g.nom.toLowerCase() === corps.nom.toLowerCase())) {
+        return HttpResponse.json({ nom: ['Un groupe porte déjà ce nom.'] }, { status: 400 });
+      }
+      const cree = { id: groupes.length + 1, ...corps, membres: 0 };
+      groupes.push(cree);
+      return HttpResponse.json(cree, { status: 201 });
+    }),
+  );
+}
+
+async function ouvrir(
+  langue: 'fr' | 'en' = 'fr',
+  chemin = '',
+  surcharges: Parameters<typeof serveur.use> = [],
+  connecte = 6,
+) {
+  await initI18n('fr').changeLanguage(langue);
+  installerServeur();
+  moi = connecte;
+  serveur.use(...surcharges);
   const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'utilisateurs')!;
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
@@ -46,9 +294,8 @@ async function ouvrir(utilisateur = 'admin', langue: 'fr' | 'en' = 'fr', chemin 
 
 afterEach(async () => {
   cleanup();
+  serveur.resetHandlers();
   await initI18n('fr').changeLanguage('fr');
-  retablir();
-  vi.useRealTimers();
 });
 
 const onglet = (nom: RegExp) => screen.getByRole('tab', { name: nom });
@@ -70,7 +317,7 @@ describe('Gestion › Utilisateurs : liste', () => {
     expect(screen.getByRole('table', { name: 'Droits par profil' })).toBeTruthy();
   });
 
-  it('filtre par groupe et dit quand un groupe est vide', async () => {
+  it('filtre par groupe', async () => {
     await ouvrir();
     fireEvent.click(await screen.findByRole('button', { name: 'Production · 2' }));
     const liste = screen.getByRole('list', { name: 'Utilisateurs' });
@@ -89,16 +336,16 @@ describe('Gestion › Utilisateurs : liste', () => {
     expect(screen.getByRole('button', { name: /Désactiver le compte de Davy/ })).toBeTruthy();
   });
 
-  it('change un utilisateur de groupe : toast, profil mis à jour, journal', async () => {
+  it('change un utilisateur de groupe : toast et profil mis à jour', async () => {
     await ouvrir();
-    fireEvent.change(await screen.findByLabelText('Groupe de Davy'), { target: { value: 'g3' } });
+    fireEvent.change(await screen.findByLabelText('Groupe de Davy'), { target: { value: '3' } });
     expect(
       await screen.findByText('Davy → Gérants de la semaine · droits « Gérant de la semaine »'),
     ).toBeTruthy();
     await waitFor(() =>
       expect(screen.getByText(/^Davy ·/).textContent).toContain('Gérant de la semaine'),
     );
-    expect(journalUtilisateurs()[0]?.quoi).toContain('Davy → Gérants de la semaine');
+    expect(comptes.find((c) => c.name === 'Davy')?.groupe).toBe(3);
   });
 
   it('réinitialise le code et désactive puis réactive un compte', async () => {
@@ -114,84 +361,64 @@ describe('Gestion › Utilisateurs : liste', () => {
   it('dit le refus du serveur quand le profil ne permet pas l’action', async () => {
     await ouvrir();
     await screen.findByLabelText('Groupe de Davy');
-    memoriserUtilisateurConnecte('willy');
+    moi = 3;
     fireEvent.click(screen.getByRole('button', { name: 'Réinitialiser le code de Rachel' }));
     expect(await screen.findByText('Votre profil ne permet pas cette action.')).toBeTruthy();
   });
 
   it('s’affiche en anglais', async () => {
-    await ouvrir('admin', 'en');
+    await ouvrir('en');
     expect(await screen.findByRole('tab', { name: 'Users · 9' })).toBeTruthy();
     expect(screen.getByText(/last access Oct 14 18:02/, { exact: false })).toBeTruthy();
     expect(screen.getByRole('table', { name: 'Rights by profile' })).toBeTruthy();
   });
 });
 
-/** Les appels qui modifient (pas les lectures) reçoivent cette réponse du « serveur ». */
-function repondreAuxEcritures(reponse: () => Response) {
-  const reel = globalThis.fetch;
-  const ecritures: string[] = [];
-  globalThis.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
-    const methode = (init?.method ?? 'GET').toUpperCase();
-    if (methode === 'GET') return reel(entree, init);
-    ecritures.push(methode);
-    return reponse();
-  }) as typeof fetch;
-  return ecritures;
-}
-
-const refus = (status: number, code: string) => () =>
-  Response.json({ detail: 'Refusé.', code }, { status });
-
 describe('Gestion › Utilisateurs : refus du serveur', () => {
   const textes: Array<[number, string, string]> = [
     [409, 'compte_propre', 'Vous ne pouvez pas modifier votre propre compte.'],
     [409, 'dernier_administrateur', 'Il doit rester au moins un administrateur actif.'],
     [404, 'utilisateur_inconnu', 'Cet utilisateur n’existe plus. La liste a été relue.'],
-    [409, 'autre_conflit', 'Action impossible. La liste a été relue.'],
+    // Un refus métier sans message propre à l'écran : la phrase du serveur.
+    [409, 'autre_conflit', 'Refusé.'],
     [403, 'droit_insuffisant', 'Votre profil ne permet pas cette action.'],
   ];
 
-  it.each(textes)('dit le refus %i %s et relit la liste', async (status, code, texte) => {
+  it.each(textes)('dit le refus %i %s et relit la liste', async (statut, code, texte) => {
     await ouvrir();
     await screen.findByLabelText('Groupe de Davy');
-    const reel = globalThis.fetch;
-    let relues = 0;
-    const ecritures = repondreAuxEcritures(refus(status, code));
-    const enveloppe = globalThis.fetch;
-    globalThis.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
-      if ((init?.method ?? 'GET').toUpperCase() === 'GET') relues += 1;
-      return enveloppe(entree, init);
-    }) as typeof fetch;
+    const avant = lectures;
+    serveur.use(
+      http.post('*/api/v1/utilisateurs/:id/reinitialiser-code/', () => {
+        ecritures.push('POST');
+        return refus(statut, code);
+      }),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Réinitialiser le code de Rachel' }));
     expect(await screen.findByText(texte)).toBeTruthy();
     expect(ecritures).toEqual(['POST']);
-    await waitFor(() => expect(relues).toBeGreaterThan(0));
-    globalThis.fetch = reel;
+    await waitFor(() => expect(lectures).toBeGreaterThan(avant));
   });
 
   it('dit une erreur réseau et relit la liste', async () => {
     await ouvrir();
     await screen.findByLabelText('Groupe de Davy');
-    const reel = globalThis.fetch;
-    let relues = 0;
-    globalThis.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
-      if ((init?.method ?? 'GET').toUpperCase() === 'GET') {
-        relues += 1;
-        return reel(entree, init);
-      }
-      throw new TypeError('Failed to fetch');
-    }) as typeof fetch;
+    const avant = lectures;
+    serveur.use(http.post('*/api/v1/utilisateurs/:id/activation/', () => HttpResponse.error()));
     fireEvent.click(screen.getByRole('button', { name: 'Désactiver le compte de Rachel' }));
     expect(await screen.findByText('Une erreur est survenue. Réessayez.')).toBeTruthy();
-    await waitFor(() => expect(relues).toBeGreaterThan(0));
-    globalThis.fetch = reel;
+    await waitFor(() => expect(lectures).toBeGreaterThan(avant));
   });
 
   it('ne lance qu’une écriture pour deux clics rapprochés, et garde le focus', async () => {
     await ouvrir();
     const bouton = await screen.findByRole('button', { name: 'Réinitialiser le code de Rachel' });
-    const ecritures = repondreAuxEcritures(() => new Response('{}', { status: 500 }));
+    serveur.use(
+      http.post('*/api/v1/utilisateurs/:id/reinitialiser-code/', () => {
+        ecritures.push('POST');
+        return HttpResponse.json({}, { status: 500 });
+      }),
+    );
     bouton.focus();
     fireEvent.click(bouton);
     fireEvent.click(bouton);
@@ -205,9 +432,14 @@ describe('Gestion › Utilisateurs : refus du serveur', () => {
   it('ne lance qu’un changement de groupe pour deux changements rapprochés', async () => {
     await ouvrir();
     const choix = await screen.findByLabelText('Groupe de Davy');
-    const ecritures = repondreAuxEcritures(refus(409, 'compte_propre'));
-    fireEvent.change(choix, { target: { value: 'g3' } });
-    fireEvent.change(choix, { target: { value: 'g2' } });
+    serveur.use(
+      http.post('*/api/v1/utilisateurs/:id/groupe/', () => {
+        ecritures.push('POST');
+        return refus(409, 'compte_propre');
+      }),
+    );
+    fireEvent.change(choix, { target: { value: '3' } });
+    fireEvent.change(choix, { target: { value: '2' } });
     await screen.findByText('Vous ne pouvez pas modifier votre propre compte.');
     expect(ecritures).toHaveLength(1);
   });
@@ -215,34 +447,11 @@ describe('Gestion › Utilisateurs : refus du serveur', () => {
 
 describe('Gestion › Utilisateurs : chargement', () => {
   it('propose « Réessayer » quand la lecture échoue, puis affiche la liste', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] });
-    await initI18n('fr').changeLanguage('fr');
-    configurerApi({ baseUrl: 'http://localhost' });
-    retablir = installerApiSimulee({ latenceMs: 0 });
-    reinitialiserSimulation();
-    memoriserUtilisateurConnecte('admin');
-    const reel = globalThis.fetch;
-    let echecs = 1;
-    globalThis.fetch = (async (entree: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(entree instanceof Request ? entree.url : entree);
-      if (echecs > 0 && url.includes('/gestion/utilisateurs/')) {
-        echecs -= 1;
-        return new Response('{}', { status: 500 });
-      }
-      return reel(entree, init);
-    }) as typeof fetch;
-    const ecran = ECRANS.find((e) => e.espace === 'gestion' && e.cle === 'utilisateurs')!;
-    render(
-      <OptiboulProvider>
-        <QueryClientProvider
-          client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-        >
-          <MemoryRouter initialEntries={['/gestion/utilisateurs']}>
-            <EcranUtilisateurs ecran={ecran} />
-          </MemoryRouter>
-        </QueryClientProvider>
-      </OptiboulProvider>,
-    );
+    await ouvrir('fr', '', [
+      http.get('*/api/v1/utilisateurs/', () => HttpResponse.json({}, { status: 500 }), {
+        once: true,
+      }),
+    ]);
     expect(await screen.findByText('Impossible de lire les utilisateurs. Réessayez.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
     expect(await screen.findByRole('tab', { name: 'Utilisateurs · 9' })).toBeTruthy();
@@ -251,7 +460,7 @@ describe('Gestion › Utilisateurs : chargement', () => {
 
 describe('Gestion › Utilisateurs : groupes', () => {
   it('liste les groupes avec leurs membres', async () => {
-    await ouvrir('admin', 'fr', '?onglet=groupes');
+    await ouvrir('fr', '?onglet=groupes');
     expect(await screen.findByRole('heading', { name: 'Gérants de la semaine' })).toBeTruthy();
     const carte = screen.getByRole('region', { name: 'Gérants de la semaine' });
     expect(within(carte).getByText('3 membres')).toBeTruthy();
@@ -262,7 +471,7 @@ describe('Gestion › Utilisateurs : groupes', () => {
   });
 
   it('« Ajouter un membre » ouvre le formulaire avec le groupe choisi', async () => {
-    await ouvrir('admin', 'fr', '?onglet=groupes');
+    await ouvrir('fr', '?onglet=groupes');
     fireEvent.click(
       await screen.findByRole('button', { name: 'Ajouter un membre au groupe Direction' }),
     );
@@ -273,7 +482,7 @@ describe('Gestion › Utilisateurs : groupes', () => {
   });
 
   it('crée un groupe, efface l’erreur à la saisie, refuse un nom vide ou en double', async () => {
-    await ouvrir('admin', 'fr', '?onglet=groupes');
+    await ouvrir('fr', '?onglet=groupes');
     await screen.findByRole('heading', { name: 'Nouveau groupe' });
     fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
     const alerte = screen.getByRole('alert');
@@ -295,15 +504,13 @@ describe('Gestion › Utilisateurs : groupes', () => {
       expect((screen.getByLabelText('Nom du groupe') as HTMLInputElement).value).toBe(''),
     );
     expect(onglet(/Groupes · 7/)).toBeTruthy();
-    expect(journalUtilisateurs()[0]?.quoi).toBe(
-      'Création du groupe Livreurs (Gérant de la semaine)',
-    );
+    expect(groupes.at(-1)).toMatchObject({ nom: 'Livreurs', profil: 'gerant' });
   });
 
   it('dit le refus du serveur pour un nom en double', async () => {
-    await ouvrir('admin', 'fr', '?onglet=groupes');
+    await ouvrir('fr', '?onglet=groupes');
     await screen.findByRole('heading', { name: 'Nouveau groupe' });
-    repondreAuxEcritures(refus(409, 'groupe_existant'));
+    serveur.use(http.post('*/api/v1/groupes/', () => refus(409, 'groupe_existant')));
     fireEvent.change(screen.getByLabelText('Nom du groupe'), { target: { value: 'Autre' } });
     fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
     const alerte = await screen.findByRole('alert');
@@ -317,7 +524,7 @@ describe('Gestion › Utilisateurs : groupes', () => {
   });
 
   it('rogne le nom, borne les longueurs et met le focus sur le nom après une erreur', async () => {
-    await ouvrir('admin', 'fr', '?onglet=groupes');
+    await ouvrir('fr', '?onglet=groupes');
     const champ = (await screen.findByLabelText('Nom du groupe')) as HTMLInputElement;
     expect(champ.maxLength).toBe(60);
     expect((screen.getByLabelText('Description') as HTMLInputElement).maxLength).toBe(200);
@@ -326,13 +533,20 @@ describe('Gestion › Utilisateurs : groupes', () => {
     fireEvent.change(champ, { target: { value: '  Livreurs  ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
     expect(await screen.findByRole('heading', { name: 'Livreurs' })).toBeTruthy();
-    expect(journalUtilisateurs()[0]?.quoi).toBe('Création du groupe Livreurs (Caissier)');
+    expect(groupes.at(-1)).toMatchObject({ nom: 'Livreurs', profil: 'caissier' });
   });
 
   it('lit sous le champ le refus 400 d’un nom trop long', async () => {
-    await ouvrir('admin', 'fr', '?onglet=groupes');
+    await ouvrir('fr', '?onglet=groupes');
     await screen.findByRole('heading', { name: 'Nouveau groupe' });
-    repondreAuxEcritures(refus(400, 'nom_trop_long'));
+    serveur.use(
+      http.post('*/api/v1/groupes/', () =>
+        HttpResponse.json(
+          { nom: ['Assurez-vous que ce champ ne contient pas plus de 60 caractères.'] },
+          { status: 400 },
+        ),
+      ),
+    );
     fireEvent.change(screen.getByLabelText('Nom du groupe'), { target: { value: 'Autre' } });
     fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
     expect((await screen.findByRole('alert')).textContent).toBe(
@@ -341,22 +555,19 @@ describe('Gestion › Utilisateurs : groupes', () => {
   });
 
   it('ne crée qu’un groupe pour deux clics rapprochés', async () => {
-    await ouvrir('admin', 'fr', '?onglet=groupes');
+    await ouvrir('fr', '?onglet=groupes');
     await screen.findByRole('heading', { name: 'Nouveau groupe' });
     fireEvent.change(screen.getByLabelText('Nom du groupe'), { target: { value: 'Livreurs' } });
     const bouton = screen.getByRole('button', { name: 'Créer le groupe' });
     fireEvent.click(bouton);
     fireEvent.click(bouton);
     await screen.findByText('Groupe créé');
-    expect(
-      journalUtilisateurs().filter((j) => j.quoi.startsWith('Création du groupe')),
-    ).toHaveLength(1);
+    expect(ecritures).toEqual(['POST']);
   });
 
   it('s’affiche en anglais', async () => {
-    await ouvrir('admin', 'en', '?onglet=groupes');
-    expect(await screen.findByRole('heading', { name: 'Managers of the week' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'New group' })).toBeTruthy();
+    await ouvrir('en', '?onglet=groupes');
+    expect(await screen.findByRole('heading', { name: 'New group' })).toBeTruthy();
     expect(screen.getAllByText('3 members').length).toBeGreaterThan(0);
   });
 });
@@ -365,7 +576,7 @@ const saisir = (nom: RegExp | string, valeur: string) =>
   fireEvent.change(screen.getByLabelText(nom), { target: { value: valeur } });
 
 async function remplir() {
-  await ouvrir('admin', 'fr', '?onglet=nouveau');
+  await ouvrir('fr', '?onglet=nouveau');
   await screen.findByText('1. Identité');
   saisir('Nom complet', 'Ada Lovelace');
   saisir('Adresse Gmail', 'ada@gmail.com');
@@ -375,7 +586,7 @@ async function remplir() {
 
 describe('Gestion › Utilisateurs : nouvel utilisateur', () => {
   it('montre l’aperçu qui suit la saisie et les accès du groupe', async () => {
-    await ouvrir('admin', 'fr', '?onglet=nouveau');
+    await ouvrir('fr', '?onglet=nouveau');
     expect(await screen.findByText('Choisissez un groupe pour voir les accès.')).toBeTruthy();
     saisir('Nom complet', 'Ada Lovelace');
     saisir(/Téléphone/, '677412018');
@@ -389,16 +600,16 @@ describe('Gestion › Utilisateurs : nouvel utilisateur', () => {
   });
 
   it('montre l’aperçu en anglais', async () => {
-    await ouvrir('admin', 'en', '?onglet=nouveau');
+    await ouvrir('en', '?onglet=nouveau');
     expect(await screen.findByText('Choose a group to see the access.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /Cash desk – day team/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Caisse – équipe de jour/ }));
     const apercu = screen.getByRole('complementary', { name: 'Account preview' });
     expect(within(apercu).getByText('Current session')).toBeTruthy();
     expect(within(apercu).getByText('Cashier')).toBeTruthy();
   });
 
   it('affiche les erreurs, les rattache aux champs et les efface à la saisie', async () => {
-    await ouvrir('admin', 'fr', '?onglet=nouveau');
+    await ouvrir('fr', '?onglet=nouveau');
     await screen.findByText('1. Identité');
     fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
     const nom = screen.getByLabelText('Nom complet');
@@ -426,9 +637,9 @@ describe('Gestion › Utilisateurs : nouvel utilisateur', () => {
   it('crée le compte, confirme, puis revient à la liste filtrée sur son groupe', async () => {
     await remplir();
     fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
-    expect(await screen.findByText('Ada Lovelace peut maintenant se connecter')).toBeTruthy();
     expect(await screen.findByText('Compte créé')).toBeTruthy();
-    expect(screen.getByText(/Mot de passe provisoire : optiboul/)).toBeTruthy();
+    expect(screen.getByText('Ada Lovelace peut maintenant se connecter')).toBeTruthy();
+    expect(screen.getByText('AAAA-1111 · BBBB-2222')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Voir dans la liste' }));
     expect(await screen.findByRole('tab', { name: 'Utilisateurs · 10' })).toBeTruthy();
     expect(
@@ -444,6 +655,7 @@ describe('Gestion › Utilisateurs : nouvel utilisateur', () => {
     saisir('Nom complet', '   Ada Lovelace  ');
     fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
     expect(await screen.findByRole('heading', { name: 'Ada Lovelace' })).toBeTruthy();
+    expect(comptes.at(-1)).toMatchObject({ name: 'Ada Lovelace', telephone: '+237677412018' });
   });
 
   it('propose d’en créer un autre en gardant le groupe', async () => {
@@ -462,38 +674,32 @@ describe('Gestion › Utilisateurs : nouvel utilisateur', () => {
     fireEvent.click(bouton);
     fireEvent.click(bouton);
     await screen.findByText('Compte créé');
-    expect(
-      journalUtilisateurs().filter((j) => j.quoi.startsWith('Création de l’utilisateur')),
-    ).toHaveLength(1);
+    expect(ecritures).toEqual(['POST']);
+    expect(comptes).toHaveLength(10);
   });
 
   it('dit le refus du serveur sur un champ, sinon par un message', async () => {
     await remplir();
-    repondreAuxEcritures(() =>
-      Response.json(
-        {
-          detail: 'Champs invalides.',
-          code: 'champs_invalides',
-          erreurs: { email: 'email_deja_utilise' },
-        },
-        { status: 400 },
+    serveur.use(
+      http.post('*/api/v1/utilisateurs/', () =>
+        HttpResponse.json({ email: ['Cette adresse Gmail a déjà un compte.'] }, { status: 400 }),
       ),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
     expect(await screen.findByText('Cette adresse est déjà utilisée.')).toBeTruthy();
-    repondreAuxEcritures(refus(403, 'droit_insuffisant'));
+    serveur.use(http.post('*/api/v1/utilisateurs/', () => droitInsuffisant()));
     fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
     expect(await screen.findByText('Votre profil ne permet pas cette action.')).toBeTruthy();
   });
 
   it('borne le nom (60) et l’adresse (120) dans les champs', async () => {
-    await ouvrir('admin', 'fr', '?onglet=nouveau');
+    await ouvrir('fr', '?onglet=nouveau');
     expect(((await screen.findByLabelText('Nom complet')) as HTMLInputElement).maxLength).toBe(60);
     expect((screen.getByLabelText('Adresse Gmail') as HTMLInputElement).maxLength).toBe(120);
   });
 
   it('met le focus sur le premier champ en erreur, sans le déplacer à la saisie', async () => {
-    await ouvrir('admin', 'fr', '?onglet=nouveau');
+    await ouvrir('fr', '?onglet=nouveau');
     await screen.findByText('1. Identité');
     fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
     expect(document.activeElement).toBe(screen.getByLabelText('Nom complet'));
@@ -531,17 +737,14 @@ describe('Gestion › Utilisateurs : nouvel utilisateur', () => {
 
   it('un non-administrateur reçoit 403 à la création et aucun compte n’est créé', async () => {
     await remplir();
-    memoriserUtilisateurConnecte('willy');
+    moi = 3;
     fireEvent.click(screen.getByRole('button', { name: 'Créer l’utilisateur' }));
     expect(await screen.findByText('Votre profil ne permet pas cette action.')).toBeTruthy();
-    memoriserUtilisateurConnecte('admin');
-    expect(
-      (await (await fetch('/api/v1/simulation/gestion/utilisateurs/')).json()).utilisateurs,
-    ).toHaveLength(9);
+    expect(comptes).toHaveLength(9);
   });
 
   it('annule et décoche l’invitation', async () => {
-    await ouvrir('admin', 'fr', '?onglet=nouveau');
+    await ouvrir('fr', '?onglet=nouveau');
     const invitation = await screen.findByRole('checkbox', {
       name: /Envoyer l’invitation par WhatsApp/,
     });
@@ -582,7 +785,7 @@ describe('Gestion › Utilisateurs : accès', () => {
   });
 
   it('un profil sans le droit voit une erreur, pas la liste', async () => {
-    await ouvrir('willy');
+    await ouvrir('fr', '', [], 3);
     expect(await screen.findByText('Impossible de lire les utilisateurs. Réessayez.')).toBeTruthy();
   });
 });

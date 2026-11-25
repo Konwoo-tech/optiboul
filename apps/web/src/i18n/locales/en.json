@@ -1727,7 +1727,6 @@
         "choisirGroupe": "Choose a group to see the access.",
         "connexion": "Sign-in",
         "google": "Continue with Google: {{email}}",
-        "emailMotDePasse": "Email and temporary password \"{{motDePasse}}\"",
         "doubleAuthentification": "Two-step verification via {{canal}} to {{telephone}}"
       },
       "code": {
@@ -1742,7 +1741,6 @@
         "titre": "Account created",
         "texteReel": "{{nom}} can now sign in. Set their 4-digit code from the list (“Reset code”). Keep the backup codes below: they will not be shown again.",
         "codesSecours": "Backup codes",
-        "texte": "{{nom}} now appears on the sign-in screen. Temporary password: {{motDePasse}}, to be changed at first sign-in. The verification code will arrive via {{canal}} at +237 {{telephone}}.",
         "voirListe": "See in the list",
         "autre": "Create another user"
       }

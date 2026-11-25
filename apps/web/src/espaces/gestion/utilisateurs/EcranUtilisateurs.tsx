@@ -1,5 +1,4 @@
 import { useUtilisateurCourant } from '@/auth';
-import { SIMULATION } from '@/simulation';
 import { useTranslation } from '@/i18n';
 import { EcranChargement, EcranErreur, useToast, afficherRefus } from '@/ui';
 import { useRef, useState, type KeyboardEvent } from 'react';
@@ -405,7 +404,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
               onReinitialiser={(u) => surReinitialiser(u)}
               onActiver={surActiver}
               peutActiver
-              {...(SIMULATION ? {} : { onDebloquer: surDebloquer })}
+              onDebloquer={surDebloquer}
             />
           )}
         </div>
