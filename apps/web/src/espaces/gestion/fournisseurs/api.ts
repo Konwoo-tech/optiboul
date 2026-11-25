@@ -1,6 +1,8 @@
 import {
   ErreurApi,
   facturesPayerCreate,
+  fournisseursCreate,
+  fournisseursPartialUpdate,
   getPaiementsFournisseursRecuRetrieveUrl,
   manquantsRelancerCreate,
   manquantsReplanifierCreate,
@@ -9,14 +11,16 @@ import {
 } from '@/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type { SaisieFournisseur } from './ModaleFournisseur.tsx';
 import { lireFournisseursReels, numeroDeCommande } from './reel.ts';
-import type {
-  Commande,
-  Facture,
-  InstantaneFournisseurs,
-  NouveauPaiement,
-  NouvelleCommande,
-  NouvelleReception,
+import {
+  CODE_DES_CONDITIONS,
+  type Commande,
+  type Facture,
+  type InstantaneFournisseurs,
+  type NouveauPaiement,
+  type NouvelleCommande,
+  type NouvelleReception,
 } from './types.ts';
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
@@ -148,4 +152,24 @@ export function ouvrirLeRecu(paiement: number) {
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
 export function codeErreur(erreur: unknown): string | undefined {
   return erreur instanceof ErreurApi ? erreur.code : undefined;
+}
+
+/** Crée un fournisseur, ou modifie celui dont l'identifiant est donné (gérant) : `POST` / `PATCH /fournisseurs/`. */
+export function useEnregistrerFournisseur(utilisateur: string | undefined) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, saisie }: { id?: string; saisie: SaisieFournisseur }) => {
+      const corps = {
+        nom: saisie.nom,
+        telephone: saisie.telephone,
+        conditions: CODE_DES_CONDITIONS[saisie.conditions] as 'sept_jours',
+        conditions_note: saisie.conditionsNote,
+        matieres: saisie.matieres,
+        actif: saisie.actif,
+      };
+      if (id) await fournisseursPartialUpdate(Number(id), corps);
+      else await fournisseursCreate(corps);
+    },
+    onSuccess: () => client.invalidateQueries({ queryKey: cleFournisseurs(utilisateur) }),
+  });
 }

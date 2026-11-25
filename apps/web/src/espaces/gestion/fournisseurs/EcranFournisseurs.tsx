@@ -12,6 +12,7 @@ import { jourCourt } from './affichage.ts';
 import {
   codeErreur,
   ouvrirLeRecu,
+  useEnregistrerFournisseur,
   useFournisseurs,
   usePayer,
   usePlanifier,
@@ -23,6 +24,7 @@ import { Factures } from './Factures.tsx';
 import { Fiches } from './Fiches.tsx';
 import styles from './Fournisseurs.module.css';
 import { ModalePaiement } from './ModalePaiement.tsx';
+import { ModaleFournisseur, type SaisieFournisseur } from './ModaleFournisseur.tsx';
 import { ModaleReception } from './ModaleReception.tsx';
 import { Receptions } from './Receptions.tsx';
 import {
@@ -49,7 +51,10 @@ const ERREURS_DE_SAISIE = [
 ];
 
 /** Fenêtre ouverte : la réception d'un bon ou le paiement d'une facture (une seule à la fois). */
-type Fenetre = { genre: 'reception'; numero: string } | { genre: 'paiement'; numero: string };
+type Fenetre =
+  | { genre: 'reception'; numero: string }
+  | { genre: 'paiement'; numero: string }
+  | { genre: 'fiche'; id?: string };
 
 /**
  * Gestion › Fournisseurs (US-100 à US-103) : réceptions et bons de commande, fiches fournisseurs,
@@ -69,6 +74,7 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
   const relancer = useRelancer(nom);
   const replanifier = useReplanifier(nom);
   const payer = usePayer(nom);
+  const enregistrer = useEnregistrerFournisseur(nom);
   // La fenêtre appartient à la personne qui l'a ouverte : changer d'utilisateur la ferme.
   const [ouverte, setOuverte] = useState<{ nom?: string; fenetre: Fenetre | null }>({
     fenetre: null,
@@ -256,6 +262,34 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
     }
   };
 
+  const ficheOuverte =
+    fenetre?.genre === 'fiche'
+      ? instantane.fournisseurs.find((f) => f.id === fenetre.id)
+      : undefined;
+
+  const enregistrerFiche = async (saisie: SaisieFournisseur): Promise<string | null> => {
+    try {
+      await enregistrer.mutateAsync({ id: ficheOuverte?.id, saisie });
+      ouvrir(null);
+      afficher(
+        t(
+          ficheOuverte
+            ? 'gestion.fournisseurs.fiche.toastModifie'
+            : 'gestion.fournisseurs.fiche.toastCree',
+          { nom: saisie.nom },
+        ),
+      );
+      return null;
+    } catch (erreur) {
+      if (erreur instanceof ErreurApi && erreur.status === 400) {
+        const champs = Object.keys((erreur.details ?? {}) as object);
+        if (champs.includes('nom')) return 'nom';
+        if (champs.includes('matieres')) return 'matieres';
+      }
+      return 'defaut';
+    }
+  };
+
   const commandeOuverte =
     fenetre?.genre === 'reception'
       ? instantane.commandes.find((c) => c.numero === fenetre.numero && c.statut === 'planifiee')
@@ -346,7 +380,14 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
               onPlanifier={planifierReception}
             />
           )}
-          {onglet === 'fournisseurs' && <Fiches instantane={instantane} />}
+          {onglet === 'fournisseurs' && (
+            <Fiches
+              instantane={instantane}
+              peutModifier={droits.modifier}
+              onNouveau={() => ouvrir({ genre: 'fiche' })}
+              onModifier={(f) => ouvrir({ genre: 'fiche', id: f.id })}
+            />
+          )}
           {onglet === 'dettes' && (
             <Factures
               instantane={instantane}
@@ -375,6 +416,16 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
           }
         />
       )}
+      {droits.modifier &&
+        fenetre?.genre === 'fiche' &&
+        (fenetre.id === undefined || ficheOuverte) && (
+          <ModaleFournisseur
+            fournisseur={ficheOuverte}
+            envoiEnCours={enregistrer.isPending}
+            onFermer={() => ouvrir(null)}
+            onConfirmer={enregistrerFiche}
+          />
+        )}
       {droits.modifier && factureOuverte && (
         <ModalePaiement
           facture={factureOuverte}
