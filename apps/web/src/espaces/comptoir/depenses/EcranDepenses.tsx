@@ -6,7 +6,6 @@ import { useSearchParams } from 'react-router';
 
 import type { Ecran } from '../../../navigation.ts';
 import { EnTeteEcran } from '../../EnTeteEcran.tsx';
-import { SIMULATION } from '@/simulation';
 import {
   codeErreur,
   useDepenses,
@@ -102,7 +101,7 @@ export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
             lignes={instantane.budget}
             mois={instantane.mois}
             onFixer={
-              !SIMULATION && profil === 'proprietaire'
+              profil === 'proprietaire'
                 ? () => {
                     fixerBudget.reset();
                     setReglage('budget');

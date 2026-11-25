@@ -1,22 +1,9 @@
-import {
-  budgetsFixerUpdate,
-  depensesCreate,
-  ErreurApi,
-  optiboulFetch,
-  preAutorisationsFixerUpdate,
-} from '@/api';
-import { SIMULATION } from '@/simulation';
+import { budgetsFixerUpdate, depensesCreate, ErreurApi, preAutorisationsFixerUpdate } from '@/api';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 
 import { lireDepensesReelles, versCodeCategorie } from './reel.ts';
 import { ACHATS_COURANTS, type AchatCourant, type Categorie } from './types.ts';
 import type { DemandeDepense, Depense, InstantaneDepenses, NouvelleDepense } from './types.ts';
-
-// En simulation, l'écran lit le faux serveur (`simulation/depenses.ts`) ; sur le vrai serveur,
-// `reel.ts` compose l'instantané à partir des routes.
-const RACINE = '/api/v1/simulation/comptoir/depenses/';
-
-type Reponse<T> = { data: T };
 
 /** La clé contient la personne connectée : après un changement d'utilisateur, rien ne fuit. */
 export const cleDepenses = (utilisateur: string | undefined) =>
@@ -25,10 +12,7 @@ export const cleDepenses = (utilisateur: string | undefined) =>
 export function useDepenses(utilisateur: string | undefined) {
   return useQuery({
     queryKey: cleDepenses(utilisateur),
-    queryFn: async () =>
-      SIMULATION
-        ? (await optiboulFetch<Reponse<InstantaneDepenses>>(RACINE)).data
-        : lireDepensesReelles(),
+    queryFn: lireDepensesReelles,
     enabled: Boolean(utilisateur),
     // Les dépenses bougent depuis d'autres écrans (demandes) : on relit à chaque ouverture.
     staleTime: 0,
@@ -118,16 +102,8 @@ export function useFixerPreAutorisations(utilisateur: string | undefined) {
 export function useEnregistrerDepense(utilisateur: string | undefined) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: async (depense: NouvelleDepense): Promise<DepenseEnregistree> => {
-      if (!SIMULATION) return enregistrerSurLeServeur(client, utilisateur, depense);
-      return (
-        await optiboulFetch<Reponse<DepenseEnregistree>>(RACINE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(depense),
-        })
-      ).data;
-    },
+    mutationFn: (depense: NouvelleDepense): Promise<DepenseEnregistree> =>
+      enregistrerSurLeServeur(client, utilisateur, depense),
     onSuccess: (reponse) => {
       client.setQueryData(cleDepenses(utilisateur), reponse.instantane);
       // Une dépense payée en caisse change les espèces attendues de la caisse et de la clôture.

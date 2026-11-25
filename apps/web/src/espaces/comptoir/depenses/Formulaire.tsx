@@ -1,4 +1,3 @@
-import { SIMULATION } from '@/simulation';
 import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
 import { useId, useRef, useState } from 'react';
@@ -302,8 +301,8 @@ export function Formulaire({
         aria-pressed={photo}
         onClick={() => {
           effacer();
-          // Sur le vrai serveur, la photo est un fichier : on ouvre l'appareil ou la galerie.
-          if (SIMULATION || photo) {
+          // La photo est un fichier : on ouvre l'appareil ou la galerie.
+          if (photo) {
             setPhoto(!photo);
             setJustificatif(undefined);
           } else {
