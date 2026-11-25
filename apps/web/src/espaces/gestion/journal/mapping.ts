@@ -1,4 +1,4 @@
-import type { JournalListParams, LigneJournal } from '@/api';
+import type { JournalListFamille, JournalListParams, LigneJournal } from '@/api';
 
 import { PROFILS } from '../../../profils.ts';
 import type { Profil } from '../../../profils.ts';
@@ -10,15 +10,12 @@ import { TYPES_ACTION, type EntreeJournal, type FiltresJournal, type TypeAction 
  * modèle de l'écran (`EntreeJournal`, `FiltresJournal`) ; quand le backend sera branché, seul ce
  * fichier et `api.ts` changent, pas l'écran.
  *
- * ÉCARTS DE CONTRAT à lever au raccordement (le backend est gelé, rien n'est modifié côté API) :
- * - auteur : l'API filtre par identifiant numérique d'acteur (`auteur?: number`) et renvoie
- *   `acteur` (id) + `acteur_nom` ; le faux serveur filtre par nom. Il faudra une liste d'acteurs
- *   (id, nom) pour alimenter le filtre : `versParametresApi` reçoit la correspondance nom → id ;
- * - type : l'API filtre par « type d'objet (caisse…) ou préfixe d'action (connexion…) » et ne
- *   connaît pas les familles de l'écran (`TypeAction`) ; `typeDeLaLigne` les déduit du type
- *   d'objet et de l'action, au mieux (repli : `autre`) ;
- * - pagination : l'API pagine par curseur (`cursor`, `next`, `previous`), l'écran montre les 40
- *   dernières actions et le total ; le total n'existe pas côté API ;
+ * Vague P7 (#361) : le serveur donne le `total` des lignes filtrées, filtre par `famille`, liste les
+ * acteurs (`journal/acteurs/`) et rend chaque ligne avec son libellé lisible (français et anglais),
+ * sa famille et son objet (« Caisse de jour du 19/11 »). Écarts restants :
+ * - auteur : l'API filtre par identifiant d'acteur ; `versParametresApi` reçoit la correspondance
+ *   nom → id tirée de `journal/acteurs/` ;
+ * - famille : le serveur n'a pas de famille « session » (ses livraisons sont dans `caisse`) ;
  * - horodatage : l'API donne un instant (`horodatage`), l'écran affiche jour et heure à l'heure
  *   de la boulangerie (Africa/Douala) ;
  * - avant / après : `unknown` côté API (objets JSON), des textes courts côté écran ;
@@ -73,6 +70,12 @@ export function typeDeLaLigne(ligne: Pick<LigneJournal, 'objet_type' | 'action'>
 }
 
 /** Une ligne de l'API en entrée de l'écran. */
+/** La famille de la ligne : celle du serveur si l'écran la connaît, sinon déduite (anciennes lignes). */
+const familleDe = (ligne: LigneJournal): TypeAction =>
+  (TYPES_ACTION as readonly string[]).includes(ligne.famille)
+    ? (ligne.famille as TypeAction)
+    : typeDeLaLigne(ligne);
+
 export function depuisLigneApi(ligne: LigneJournal): EntreeJournal {
   const quand = new Date(ligne.horodatage);
   const profil = estProfil(ligne.profil) ? ligne.profil : null;
@@ -83,9 +86,10 @@ export function depuisLigneApi(ligne: LigneJournal): EntreeJournal {
     heure: heureDe(quand),
     auteur: ligne.acteur_nom,
     profil,
-    type: typeDeLaLigne(ligne),
+    type: familleDe(ligne),
     texte: texteDeLaLigne(ligne),
-    codeAction: ligne.action,
+    ...(ligne.libelle_en ? { texteEn: ligne.libelle_en } : {}),
+    ...(ligne.objet_libelle ? { objet: ligne.objet_libelle } : {}),
     // Dès qu'une des deux valeurs existe (création : pas d'avant ; suppression : pas d'après),
     // l'autre s'affiche « — » ; `null` et `undefined` comptent comme absents.
     ...(estPresent(ligne.avant) || estPresent(ligne.apres)
@@ -94,9 +98,10 @@ export function depuisLigneApi(ligne: LigneJournal): EntreeJournal {
   };
 }
 
-/** Provisoire : le code de l'action, tant que les libellés traduits n'existent pas. */
-export const texteDeLaLigne = (ligne: Pick<LigneJournal, 'entree' | 'action'>): string =>
-  ligne.action || ligne.entree;
+/** Le libellé lisible du serveur ; à défaut (ligne ancienne), le code de l'action. */
+export const texteDeLaLigne = (
+  ligne: Pick<LigneJournal, 'entree' | 'action'> & { libelle?: string },
+): string => ligne.libelle || ligne.action || ligne.entree;
 
 /**
  * Filtres de l'écran en paramètres de l'API. `idsActeurs` donne l'identifiant de l'acteur d'un
@@ -109,7 +114,9 @@ export function versParametresApi(
   const auteur = filtres.auteur ? idsActeurs.get(filtres.auteur) : undefined;
   return {
     ...(auteur !== undefined ? { auteur } : {}),
-    ...(filtres.type ? { type: filtres.type } : {}),
+    ...(filtres.type
+      ? { famille: (filtres.type === 'session' ? 'caisse' : filtres.type) as JournalListFamille }
+      : {}),
     ...(filtres.du ? { du: filtres.du } : {}),
     ...(filtres.au ? { au: filtres.au } : {}),
   };

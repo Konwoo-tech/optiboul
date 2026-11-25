@@ -194,7 +194,10 @@ export default function EcranJournal({ ecran }: { ecran: Ecran }) {
                     ? t(`gestion.journal.actions.${entree.codeAction}`, {
                         defaultValue: entree.codeAction,
                       })
-                    : entree.texte}
+                    : i18n.language === 'en' && entree.texteEn
+                      ? entree.texteEn
+                      : entree.texte}
+                  {entree.objet ? ` · ${entree.objet}` : ''}
                   {entree.avant !== undefined && entree.apres !== undefined ? (
                     <span className={styles.changement}>
                       {t('gestion.journal.changement', {

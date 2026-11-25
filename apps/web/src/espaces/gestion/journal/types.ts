@@ -37,6 +37,9 @@ export type EntreeJournal = {
   profil: Profil | null;
   type: TypeAction;
   texte: string;
+  /** Vrai serveur : le texte en anglais et l'objet concerné (« Caisse de jour du 19/11 »). */
+  texteEn?: string;
+  objet?: string;
   /** Vrai serveur : code de l'action (« caisse.ouverte »), traduit à l'affichage. */
   codeAction?: string;
   avant?: string;
