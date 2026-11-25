@@ -14,8 +14,6 @@ type Props = {
   envoyerCode: (canal: Canal) => Promise<string>;
   /** Vérifie le code ; une erreur `code_incorrect` porte `essaisRestants` dans `details`. */
   verifierCode: (code: string) => Promise<void>;
-  /** Texte d'aide sous le champ (code de démonstration) : seulement en simulation. */
-  aide?: string;
   onRetour: () => void;
   /** Le code est bon : la session est ouverte. */
   onTermine: () => void;
@@ -33,7 +31,6 @@ export function VerificationDeuxEtapes({
   attente,
   envoyerCode,
   verifierCode,
-  aide,
   onRetour,
   onTermine,
 }: Props) {
@@ -247,7 +244,6 @@ export function VerificationDeuxEtapes({
           </div>
         </>
       )}
-      {aide && <div className={styles.otpDemo}>{aide}</div>}
     </div>
   );
 }

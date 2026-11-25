@@ -1,7 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { useContexte } from '@/coque/contexte.ts';
-import { SIMULATION } from '@/simulation';
 import { AvatarUtilisateur, BoutonDeconnexion } from '@/ui';
 import { formaterDateCourte } from '@/utils';
 import { useState } from 'react';
@@ -107,7 +106,7 @@ export function BarreLaterale() {
               <span className={styles.identiteRole}>{t(`profils.${profil}`)}</span>
             </span>
           </div>
-          {!SIMULATION && <SecuriteCompte libelle={t('securite.bouton')} />}
+          <SecuriteCompte libelle={t('securite.bouton')} />
           <BoutonDeconnexion
             action="changer"
             libelle={t('commun.changerUtilisateur')}
@@ -154,7 +153,7 @@ export function BarreTelephone() {
               <span className={styles.piedTelephoneNom}>
                 {utilisateur.name} · {t(`profils.${profil}`)}
               </span>
-              {!SIMULATION && <SecuriteCompte libelle={t('securite.bouton')} />}
+              <SecuriteCompte libelle={t('securite.bouton')} />
               <BoutonDeconnexion
                 action="changer"
                 libelle={t('coque.changer')}

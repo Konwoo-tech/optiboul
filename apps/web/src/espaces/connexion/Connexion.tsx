@@ -1,7 +1,7 @@
 import { effacerMessageConnexion, lireMessageConnexion, useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { cheminSuivant } from '@/utils';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router';
 
 import { cheminAccueil } from '../../navigation.ts';
@@ -9,17 +9,9 @@ import { ColonneSession } from './ColonneSession.tsx';
 import styles from './Connexion.module.css';
 import EcransReels from './EcransReels.tsx';
 
-// Chargé seulement en mode simulation. La condition lit `import.meta.env.MODE` ici même : le
-// compilateur la remplace par `false` en production et retire alors l'import et tout ce qu'il
-// cite (codes et mots de passe de démonstration compris). Via une constante importée, il ne
-// le ferait pas à coup sûr.
-const EcransSimules =
-  import.meta.env.MODE === 'simulation' ? lazy(() => import('./EcransSimules.tsx')) : null;
-
 /**
  * Connexion : identification (nom + code sur un poste de confiance, ou adresse e-mail), puis
- * vérification en deux étapes, sur le vrai serveur. En simulation, le parcours de la maquette est
- * joué sur de fausses données.
+ * vérification en deux étapes, sur le vrai serveur.
  */
 export default function Connexion() {
   const { t } = useTranslation();
@@ -56,10 +48,6 @@ export default function Connexion() {
           <div className={styles.alerte} role="alert">
             {t('connexion.aucunProfil')}
           </div>
-        ) : EcransSimules ? (
-          <Suspense fallback={null}>
-            <EcransSimules onMessage={setMessage} />
-          </Suspense>
         ) : (
           <EcransReels onMessage={setMessage} />
         )}

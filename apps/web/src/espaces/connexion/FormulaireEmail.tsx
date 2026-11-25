@@ -1,30 +1,20 @@
-import type { Identification, PersonneConnexion } from '@/auth/connexion.ts';
+import type { Identification } from '@/auth/connexion.ts';
 import { useTranslation } from '@/i18n';
-import { AvatarUtilisateur, LogoGoogle, useToast } from '@/ui';
+import { useToast } from '@/ui';
 import { useState, type FormEvent, type ReactNode } from 'react';
 
 import styles from './Etapes.module.css';
 
-/** Comptes de démonstration à toucher pour remplir le formulaire : seulement en simulation. */
-export type DemoIdentifiants = {
-  comptes: PersonneConnexion[];
-  motDePasse: string;
-  texte: string;
-};
-
 type Props = {
-  /** Absent : pas de bouton Google (le vrai serveur demande un jeton Google Identity Services). */
-  onGoogle?: () => void;
-  /** Vrai serveur : le bouton Google Identity Services, à la place du bouton simulé. */
+  /** Le bouton Google Identity Services ; absent : pas de connexion par Google. */
   boutonGoogle?: ReactNode;
   identifier: (identification: Identification) => Promise<void>;
   /** Demande le lien de réinitialisation (vrai serveur). Absent : l'envoi est simplement annoncé. */
   onOublie?: (email: string) => Promise<void>;
-  demo?: DemoIdentifiants;
 };
 
 /** Connexion par Google, ou par e-mail et mot de passe (maquette, lignes 64-86). */
-export function FormulaireEmail({ onGoogle, boutonGoogle, identifier, onOublie, demo }: Props) {
+export function FormulaireEmail({ boutonGoogle, identifier, onOublie }: Props) {
   const { t } = useTranslation();
   const afficherToast = useToast();
   const [email, setEmail] = useState('');
@@ -45,8 +35,6 @@ export function FormulaireEmail({ onGoogle, boutonGoogle, identifier, onOublie, 
       setMotDePasse('');
     }
   };
-
-  const adresseSaisie = email.trim().toLowerCase();
 
   const oublie = async () => {
     if (onOublie) {
@@ -72,14 +60,9 @@ export function FormulaireEmail({ onGoogle, boutonGoogle, identifier, onOublie, 
         <h1 className={styles.titre}>{t('connexion.titre')}</h1>
         <p className={styles.sousTitre}>{t('connexion.sousTitreEmail')}</p>
       </div>
-      {(onGoogle || boutonGoogle) && (
+      {boutonGoogle && (
         <>
-          {boutonGoogle ?? (
-            <button type="button" className={styles.boutonGoogle} onClick={onGoogle}>
-              <LogoGoogle />
-              <span>{t('connexion.google')}</span>
-            </button>
-          )}
+          {boutonGoogle}
           <div className={styles.separateur}>{t('connexion.ou')}</div>
         </>
       )}
@@ -134,40 +117,6 @@ export function FormulaireEmail({ onGoogle, boutonGoogle, identifier, onOublie, 
           {t('connexion.seConnecter')}
         </button>
       </form>
-      {demo && (
-        <div className={styles.demoProfils}>
-          <div className={styles.demoEntete}>
-            <span className={styles.demoTitre}>{t('connexion.demoTitre')}</span>
-            <span className={styles.demoAstuce}>{t('connexion.demoAstuce')}</span>
-          </div>
-          <div className={styles.demoGrille}>
-            {demo.comptes.map((compte) => (
-              <button
-                key={compte.id}
-                type="button"
-                className={styles.demoCarte}
-                aria-pressed={adresseSaisie === compte.email}
-                onClick={() => {
-                  setEmail(compte.email);
-                  setMotDePasse(demo.motDePasse);
-                  setErreur('');
-                }}
-              >
-                <AvatarUtilisateur nom={compte.nom} profil={compte.profil} taille={34} />
-                <span className={styles.demoTextes}>
-                  <span className={styles.demoNom}>
-                    {compte.nom}
-                    {' · '}
-                    <span className={styles.demoRole}>{t(`profils.${compte.profil}`)}</span>
-                  </span>
-                  <span className={styles.demoEmail}>{compte.email}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-          <div className={styles.demoIdentifiants}>{demo.texte}</div>
-        </div>
-      )}
     </div>
   );
 }

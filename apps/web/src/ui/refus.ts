@@ -1,13 +1,12 @@
 import { ErreurApi } from '@/api';
-import { SIMULATION } from '@/simulation';
 import type { TFunction } from 'i18next';
 
 /**
  * Le message d'un refus du serveur (champ `detail`, en français) : seulement pour un refus métier
- * (code connu du serveur, erreur 4xx), jamais en simulation.
+ * (code connu du serveur, erreur 4xx).
  */
 export function detailDuServeur(erreur: unknown): string | undefined {
-  if (SIMULATION || !(erreur instanceof ErreurApi)) return undefined;
+  if (!(erreur instanceof ErreurApi)) return undefined;
   const refusMetier = Boolean(erreur.code) && erreur.status >= 400 && erreur.status < 500;
   return refusMetier && erreur.message ? erreur.message : undefined;
 }

@@ -1,5 +1,4 @@
 import { useUtilisateurCourant } from '@/auth';
-import { SIMULATION } from '@/simulation';
 import { useTranslation } from '@/i18n';
 import { Text } from '@mantine/core';
 import { Carte, EcranChargement, EcranErreur, useToast } from '@/ui';
@@ -124,7 +123,7 @@ export default function EcranParametres({ ecran }: { ecran: Ecran }) {
           {lecture ? <p className={styles.note}>{t('gestion.parametres.lectureSeule')}</p> : null}
           <AutresParametres groupes={groupes} lecture={lecture} enregistrer={enregistrer} />
           <HistoriqueDesValeurs parametres={liste} utilisateur={nom} />
-          {!SIMULATION && <ReglesNotification lecture={lecture} />}
+          <ReglesNotification lecture={lecture} />
         </div>
       </div>
     </>

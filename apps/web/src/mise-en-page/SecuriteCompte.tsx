@@ -10,7 +10,6 @@ import {
 } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { SIMULATION } from '@/simulation';
 import { FenetreModale, useToast } from '@/ui';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type SubmitEvent } from 'react';
@@ -57,7 +56,8 @@ function FenetreSecurite({ onFermer }: { onFermer: () => void }) {
     onError: () => afficher(t('securite.erreur')),
   });
   const activer = useMutation({
-    mutationFn: async (valeur: string) => (await mfaTotpActiverCreate({ code: valeur })).data as CodesSecours,
+    mutationFn: async (valeur: string) =>
+      (await mfaTotpActiverCreate({ code: valeur })).data as CodesSecours,
     onSuccess: (donnees) => {
       setSecret(null);
       setCodes(donnees.codesSecours);
@@ -191,7 +191,7 @@ function FenetreSecurite({ onFermer }: { onFermer: () => void }) {
             </button>
           </div>
         )}
-        {!SIMULATION && utilisateur?.profil === 'administrateur' && <PostesDeConfiance />}
+        {utilisateur?.profil === 'administrateur' && <PostesDeConfiance />}
         <div className={styles.actions}>
           <button type="button" className={styles.confirmer} onClick={onFermer}>
             {t('securite.fermer')}

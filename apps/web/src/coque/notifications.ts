@@ -7,7 +7,6 @@ import {
 } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { SIMULATION, marquerNotificationsLues, useNotificationsSimulees } from '@/simulation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { cheminEcran, ecransDe } from '../navigation.ts';
@@ -81,9 +80,8 @@ export function typeDuGenre(genre: string, libelle?: string): string {
 type PageDeNotifications = { data: { results?: Notification[] } };
 
 /**
- * Notifications de la personne connectée, pour le tiroir. Sur le vrai serveur : `GET
- * /notifications/` ; en simulation : le faux serveur. Lire ou marquer comme lue renvoie le
- * compteur de l'en-tête à jour.
+ * Notifications de la personne connectée, pour le tiroir : `GET /notifications/`. Lire ou marquer
+ * comme lue renvoie le compteur de l'en-tête à jour.
  */
 export function useNotifications(actif: boolean) {
   const client = useQueryClient();
@@ -92,48 +90,35 @@ export function useNotifications(actif: boolean) {
   const langue = i18n.language === 'en' ? 'en' : 'fr';
   const profil = utilisateur?.profil as Profil | undefined;
 
-  const simulees = useNotificationsSimulees(utilisateur?.name);
   const reelles = useQuery({
     queryKey: ['coque', 'notifications', utilisateur?.url],
     queryFn: () => notificationsList() as Promise<PageDeNotifications>,
-    enabled: !SIMULATION && actif && Boolean(utilisateur),
+    enabled: actif && Boolean(utilisateur),
     refetchInterval: ACTUALISATION_MS,
   });
 
-  const notifications: NotificationAffichee[] = SIMULATION
-    ? (simulees.data ?? []).map((notification) => ({
-        id: notification.id,
-        lue: notification.lue,
-        enDirect: notification.enDirect,
-        type: notification[langue].type,
-        heure: notification[langue].heure,
-        titre: notification[langue].titre,
-        detail: notification[langue].detail,
-        chemin: notification.destination ? cheminEcran(notification.destination) : null,
-      }))
-    : (reelles.data?.data.results ?? []).map((notification) => ({
-        id: String(notification.id),
-        lue: notification.lue,
-        enDirect: false,
-        type: typeDuGenre(notification.genre, notification.genre_libelle),
-        heure: heureDeNotification(notification.cree_le, langue),
-        titre: notification.titre,
-        detail: notification.message,
-        chemin: notification.lien ? cheminDuLien(notification.lien, profil) : null,
-      }));
+  const notifications: NotificationAffichee[] = (reelles.data?.data.results ?? []).map(
+    (notification) => ({
+      id: String(notification.id),
+      lue: notification.lue,
+      enDirect: false,
+      type: typeDuGenre(notification.genre, notification.genre_libelle),
+      heure: heureDeNotification(notification.cree_le, langue),
+      titre: notification.titre,
+      detail: notification.message,
+      chemin: notification.lien ? cheminDuLien(notification.lien, profil) : null,
+    }),
+  );
 
   const actualiser = async () => {
-    await client.invalidateQueries({ queryKey: ['simulation', 'notifications'] });
     await client.invalidateQueries({ queryKey: ['coque', 'notifications'] });
   };
   const marquerLues = async (ids: string[]) => {
-    if (SIMULATION) await marquerNotificationsLues(ids);
-    else await Promise.all(ids.map((id) => notificationsMarquerLueCreate(Number(id))));
+    await Promise.all(ids.map((id) => notificationsMarquerLueCreate(Number(id))));
     await actualiser();
   };
   const toutMarquerLu = async () => {
-    if (SIMULATION) await marquerNotificationsLues(notifications.map((n) => n.id));
-    else await notificationsToutMarquerLuCreate();
+    await notificationsToutMarquerLuCreate();
     await actualiser();
   };
   return { notifications, marquerLues, toutMarquerLu };
@@ -142,16 +127,14 @@ export function useNotifications(actif: boolean) {
 /** Nombre de notifications non lues, pour la pastille de l'en-tête. */
 export function useNombreNonLues(): number {
   const { utilisateur } = useUtilisateurCourant();
-  const simulees = useNotificationsSimulees(utilisateur?.name);
   const reel = useQuery({
     queryKey: ['coque', 'notifications', 'non-lues', utilisateur?.url],
     queryFn: async () => {
       const reponse = await notificationsNonLuesRetrieve();
       return (reponse.data as { non_lues?: number }).non_lues ?? 0;
     },
-    enabled: !SIMULATION && Boolean(utilisateur),
+    enabled: Boolean(utilisateur),
     refetchInterval: ACTUALISATION_MS,
   });
-  if (SIMULATION) return (simulees.data ?? []).filter((notification) => !notification.lue).length;
   return reel.data ?? 0;
 }
