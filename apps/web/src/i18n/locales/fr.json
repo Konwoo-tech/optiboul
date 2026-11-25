@@ -1374,6 +1374,28 @@
         "erreur": "L’action n’a pas pu être enregistrée. Réessayez.",
         "dejaFait": "Cette ligne a déjà été traitée. La liste est à jour.",
         "semaineFermee": "Aucune semaine n’est ouverte : ouvrez-en une dans Gestion › Semaines."
+      },
+      "fiche": {
+        "ajouter": "Nouveau fournisseur",
+        "modifier": "Modifier {{nom}}",
+        "titreNouveau": "Nouveau fournisseur",
+        "titreModifier": "Modifier le fournisseur",
+        "nom": "Nom du fournisseur",
+        "telephone": "Téléphone",
+        "conditions": "Conditions de paiement",
+        "note": "Précision sur les conditions (facultatif)",
+        "matieres": "Matières livrées",
+        "actif": "Fournisseur actif (décocher pour le retirer des listes)",
+        "creer": "Créer le fournisseur",
+        "enregistrer": "Enregistrer",
+        "annuler": "Annuler",
+        "toastCree": "Fournisseur {{nom}} créé",
+        "toastModifie": "Fournisseur {{nom}} modifié",
+        "erreurs": {
+          "nom": "Le nom du fournisseur est obligatoire.",
+          "matieres": "Choisissez au moins une matière livrée.",
+          "defaut": "Le fournisseur n’a pas pu être enregistré. Réessayez."
+        }
       }
     },
     "semaines": {

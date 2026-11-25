@@ -477,6 +477,59 @@ describe('Gestion › Fournisseurs : fiches', () => {
   });
 });
 
+describe('Gestion › Fournisseurs : créer et modifier une fiche', () => {
+  it('le propriétaire et la caissière n’ont pas les boutons', async () => {
+    await ouvrir('fotso', 'fr', '?onglet=fournisseurs');
+    expect(screen.queryByRole('button', { name: 'Nouveau fournisseur' })).toBeNull();
+  });
+
+  it('le gérant crée un fournisseur : nom, matières et conditions sont envoyés', async () => {
+    let corps: Record<string, unknown> | undefined;
+    serveur.use(
+      http.post('*/api/v1/fournisseurs/', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ id: 9 }, { status: 201 });
+      }),
+    );
+    await ouvrir('willy', 'fr', '?onglet=fournisseurs');
+    fireEvent.click(bouton('Nouveau fournisseur'));
+    fireEvent.click(bouton('Créer le fournisseur'));
+    expect((await screen.findByRole('alert')).textContent).toMatch(/nom du fournisseur/);
+    saisir(screen.getByLabelText('Nom du fournisseur'), ' Huilerie Test ');
+    fireEvent.click(bouton('Créer le fournisseur'));
+    expect((await screen.findByRole('alert')).textContent).toMatch(/au moins une matière/);
+    fireEvent.click(screen.getByLabelText('Huile'));
+    saisir(screen.getByLabelText('Conditions de paiement'), 'sept-jours');
+    fireEvent.click(bouton('Créer le fournisseur'));
+    expect(await screen.findByText('Fournisseur Huilerie Test créé')).toBeTruthy();
+    expect(corps).toMatchObject({
+      nom: 'Huilerie Test',
+      conditions: 'sept_jours',
+      matieres: ['huile'],
+      actif: true,
+    });
+  });
+
+  it('le gérant modifie une fiche : la fenêtre reprend les valeurs et envoie un PATCH', async () => {
+    let corps: Record<string, unknown> | undefined;
+    serveur.use(
+      http.patch('*/api/v1/fournisseurs/:id/', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ id: 1 });
+      }),
+    );
+    await ouvrir('willy', 'fr', '?onglet=fournisseurs');
+    fireEvent.click(bouton('Modifier Grands Moulins du Centre'));
+    expect((screen.getByLabelText('Nom du fournisseur') as HTMLInputElement).value).toBe(
+      'Grands Moulins du Centre',
+    );
+    saisir(screen.getByLabelText('Téléphone'), '677001201');
+    fireEvent.click(bouton('Enregistrer'));
+    expect(await screen.findByText('Fournisseur Grands Moulins du Centre modifié')).toBeTruthy();
+    expect(corps).toMatchObject({ telephone: '677001201', conditions: 'credit_lundi_mardi' });
+  });
+});
+
 describe('Gestion › Fournisseurs : factures et dettes', () => {
   it('liste les factures avec leur statut et leur échéance', async () => {
     const ouvert = vi.spyOn(window, 'open').mockReturnValue(null);

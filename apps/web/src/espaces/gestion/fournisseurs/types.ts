@@ -6,6 +6,13 @@ export { MATIERES, type Matiere } from '../../comptoir/depenses/types.ts';
 export const CONDITIONS = ['credit-lundi-mardi', 'sept-jours', 'a-la-livraison'] as const;
 export type Conditions = (typeof CONDITIONS)[number];
 
+/** Le code des conditions de paiement dans l'API. */
+export const CODE_DES_CONDITIONS: Record<Conditions, string> = {
+  'credit-lundi-mardi': 'credit_lundi_mardi',
+  'sept-jours': 'sept_jours',
+  'a-la-livraison': 'a_la_livraison',
+};
+
 export type Fournisseur = {
   id: string;
   nom: string;
@@ -13,6 +20,8 @@ export type Fournisseur = {
   /** Sans l'indicatif : « 6 99 10 20 30 ». */
   telephone: string;
   conditions: Conditions;
+  /** Précision libre sur les conditions (facultative). */
+  conditionsNote?: string;
   /** Livre à crédit : la facture a une échéance après la livraison. */
   credit: boolean;
 };

@@ -1374,6 +1374,28 @@
         "erreur": "The action could not be saved. Please try again.",
         "dejaFait": "This line has already been handled. The list is up to date.",
         "semaineFermee": "No week is open: open one in Management › Weeks."
+      },
+      "fiche": {
+        "ajouter": "New supplier",
+        "modifier": "Edit {{nom}}",
+        "titreNouveau": "New supplier",
+        "titreModifier": "Edit the supplier",
+        "nom": "Supplier name",
+        "telephone": "Phone",
+        "conditions": "Payment terms",
+        "note": "Note on the terms (optional)",
+        "matieres": "Materials supplied",
+        "actif": "Active supplier (untick to remove it from the lists)",
+        "creer": "Create the supplier",
+        "enregistrer": "Save",
+        "annuler": "Cancel",
+        "toastCree": "Supplier {{nom}} created",
+        "toastModifie": "Supplier {{nom}} updated",
+        "erreurs": {
+          "nom": "The supplier name is required.",
+          "matieres": "Choose at least one material.",
+          "defaut": "The supplier could not be saved. Try again."
+        }
       }
     },
     "semaines": {

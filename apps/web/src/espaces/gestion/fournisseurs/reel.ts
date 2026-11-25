@@ -75,6 +75,7 @@ export function versFournisseur(f: FournisseurServeur): Fournisseur {
     matieres: f.matieres.filter(matiereConnue),
     telephone: sansIndicatif(f.telephone),
     conditions,
+    conditionsNote: f.conditions_note ?? '',
     credit: conditions !== 'a-la-livraison',
   };
 }

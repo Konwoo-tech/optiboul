@@ -156,6 +156,7 @@ describe('lecture des fournisseurs sur le vrai serveur', () => {
         matieres: ['farine', 'levure'],
         telephone: '699 10 20 30',
         conditions: 'credit-lundi-mardi',
+        conditionsNote: '',
         credit: true,
       },
     ]);
