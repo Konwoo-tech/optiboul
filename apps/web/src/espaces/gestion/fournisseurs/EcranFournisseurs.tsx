@@ -1,7 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { ErreurApi } from '@/api';
 import { useTranslation } from '@/i18n';
-import { SIMULATION } from '@/simulation';
 import { EcranChargement, EcranErreur, useToast, afficherRefus } from '@/ui';
 import { formaterNombre } from '@/utils';
 import { useCallback, useState, type KeyboardEvent } from 'react';
@@ -368,7 +367,7 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
           commande={commandeOuverte}
           fournisseur={instantane.fournisseurs.find((f) => f.id === commandeOuverte.fournisseur)}
           enCours={enCours}
-          avecPrix={!SIMULATION && commandeOuverte.matiere !== 'farine'}
+          avecPrix={commandeOuverte.matiere !== 'farine'}
           onFermer={() => ouvrir(null)}
           onIncomplet={() => afficher(t('gestion.fournisseurs.toasts.quantiteRecue'))}
           onConfirmer={(quantite, observation, prix) =>
