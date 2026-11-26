@@ -1262,6 +1262,7 @@
         "modifier": "Modifier",
         "modifierLigne": "Modifier la ligne « {{libelle}} »",
         "supprimer": "Supprimer la ligne « {{libelle}} »",
+        "avantPreparation": "Préparez d’abord l’état de paie du mois pour saisir des lignes, des absences ou des avances.",
         "verrou": "Les lignes sont verrouillées une fois l’état de paie soumis.",
         "bulletin": "Bulletin de paie (PDF)",
         "net": "Net à payer",
