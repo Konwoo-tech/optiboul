@@ -1,8 +1,7 @@
 import type { Creneau } from '@/utils';
 
-/** Produits saisis au comptoir (maquette : BAG, KO, GC 135). */
-export const CLES_PRODUIT = ['BAG', 'KO', 'GC'] as const;
-export type CleProduit = (typeof CLES_PRODUIT)[number];
+export { CLES_PRODUIT, type CleProduit } from './catalogue.ts';
+import type { CleProduit } from './catalogue.ts';
 
 export const MODES_PAIEMENT = ['especes', 'mtn', 'orange'] as const;
 export type ModePaiement = (typeof MODES_PAIEMENT)[number];

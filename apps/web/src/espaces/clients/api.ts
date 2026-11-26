@@ -4,6 +4,7 @@ import {
   clientsDettesRetrieve,
   clientsEnvoyerReleveCreate,
   clientsList,
+  produitsList,
   clientsRelancerCreate,
   clientsRelancerGroupeCreate,
   clientsRelancesList,
@@ -44,6 +45,40 @@ export function dimancheDeLaSemaine(maintenant = new Date()): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** Un produit vendu : son code serveur, son nom et son écriture courte (« GC 135 »). */
+export type ProduitVendu = { code: string; nom: string; libelle: string };
+
+const PRODUITS_DE_DEPART: ProduitVendu[] = [
+  { code: 'BAG', nom: 'Baguette', libelle: 'BAG' },
+  { code: 'KO', nom: 'Kirikou', libelle: 'KO' },
+  { code: 'GC135', nom: 'Gros court 135', libelle: 'GC 135' },
+];
+
+/** Les produits actifs du catalogue, dans leur ordre ; les trois d'origine tant que le serveur n'a pas répondu. */
+export function useProduitsVendus(): ProduitVendu[] {
+  const { data } = useQuery({
+    queryKey: ['clients', 'produits'],
+    queryFn: async () => {
+      const lus = await toutesLesPages<{
+        code: string;
+        nom: string;
+        actif?: boolean;
+        ordre?: number;
+      }>((page) => produitsList({ page }) as unknown as Promise<Page<never>>);
+      return lus
+        .filter((p) => p.actif !== false)
+        .sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0) || a.code.localeCompare(b.code))
+        .map((p) => ({
+          code: p.code,
+          nom: p.nom,
+          libelle: p.code.replace(/^([A-Za-z]+)(d+)$/, '$1 $2'),
+        }));
+    },
+    staleTime: 60_000,
+  });
+  return data && data.length > 0 ? data : PRODUITS_DE_DEPART;
+}
+
 /** Un client du vrai serveur, tel que l'écran le lit. */
 export function versClientDeLecran(client: Client, relances: ReadonlySet<number>): ClientDeLecran {
   const prix = (client.prix ?? {}) as Record<string, number | null>;
@@ -54,7 +89,10 @@ export function versClientDeLecran(client: Client, relances: ReadonlySet<number>
     lieu: client.lieu ?? '',
     // Le serveur masque le téléphone pour la caissière : on l'affiche tel quel.
     telephone: client.telephone ?? '',
-    tarifs: { BAG: prix.BAG ?? 0, KO: prix.KO ?? 0, GC: prix.GC135 ?? 0 },
+    // Tous les prix appliqués, par code du serveur : le catalogue peut compter plus de trois produits.
+    tarifs: Object.fromEntries(
+      Object.entries(prix).filter((ligne): ligne is [string, number] => ligne[1] != null),
+    ),
     solde: client.solde,
     relance: relances.has(client.id),
     plafond: client.plafond_effectif,

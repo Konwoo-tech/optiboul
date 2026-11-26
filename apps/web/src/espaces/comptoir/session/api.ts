@@ -22,6 +22,7 @@ import { useUtilisateurCourant } from '@/auth';
 import { useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
+import { CLES_PRODUIT, codeServeur } from './catalogue.ts';
 import { lireSessionReelle, versLivraison } from './reel.ts';
 import type {
   CleProduit,
@@ -85,12 +86,9 @@ const GENRE_DU_TYPE: Record<TypeMouvement, string> = {
 /** Un champ de commande : la quantité saisie, ou rien. */
 const entier = (valeur: string | undefined) => Number.parseInt(valeur ?? '', 10) || 0;
 
-/** Les trois produits de l'écran, avec les codes du serveur (`GC` est `GC135`, voir E17). */
-const lignesDeSaisie = (saisies: Record<CleProduit, string>) => ({
-  BAG: entier(saisies.BAG),
-  KO: entier(saisies.KO),
-  GC135: entier(saisies.GC),
-});
+/** Les produits du catalogue, avec les codes du serveur (`GC` est `GC135`, voir E17). */
+const lignesDeSaisie = (saisies: Record<CleProduit, string>) =>
+  Object.fromEntries(CLES_PRODUIT.map((cle) => [codeServeur(cle), entier(saisies[cle])]));
 
 /** Envoi différé de la saisie d'une commande : un envoi par client, quand la frappe s'arrête. */
 const DELAI_SAISIE_MS = 600;
@@ -111,11 +109,9 @@ const MOTIF_DEPASSEMENT = 'Dépassement du plafond de dette du client';
 function corpsDeLivraison(livraison: NouvelleLivraison) {
   return {
     client: Number(livraison.clientId),
-    lignes: lignesDeSaisie({
-      BAG: String(livraison.quantites.BAG),
-      KO: String(livraison.quantites.KO),
-      GC: String(livraison.quantites.GC),
-    }),
+    lignes: lignesDeSaisie(
+      Object.fromEntries(CLES_PRODUIT.map((cle) => [cle, String(livraison.quantites[cle] ?? 0)])),
+    ),
     paiement:
       livraison.recu > 0
         ? { mode: livraison.mode, montant: livraison.recu, reference: livraison.reference }

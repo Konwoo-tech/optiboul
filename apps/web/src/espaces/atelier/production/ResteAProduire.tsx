@@ -4,8 +4,7 @@ import { formaterNombre } from '@/utils';
 import { libelleProduit } from './affichage.ts';
 import styles from './Production.module.css';
 import { resteAProduire } from './regles.ts';
-import { CLES_PRODUIT } from '../../comptoir/session/types.ts';
-import type { Plan, Realise } from './types.ts';
+import { CLES_PRODUIT, type Plan, type Realise } from './types.ts';
 
 type Props = {
   plan: Plan;

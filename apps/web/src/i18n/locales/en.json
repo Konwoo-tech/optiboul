@@ -270,7 +270,7 @@
     "detail": "Customer details",
     "echeance": "Due before {{date}}",
     "rienARegler": "Nothing to settle",
-    "tarifs": "Prices: BAG {{BAG}} · KO {{KO}} · GC 135 {{GC}} FCFA",
+    "tarifs": "Prices: {{prix}} FCFA",
     "historique": "History",
     "livraison": "Delivery slip #{{bon}}",
     "nuit": "night",
@@ -311,7 +311,8 @@
       "titreModifier": "Edit the customer",
       "enregistrer": "Save",
       "actif": "Active customer (untick to remove from the list)",
-      "toastModifie": "Customer {{nom}} updated"
+      "toastModifie": "Customer {{nom}} updated",
+      "prixDe": "Price · {{produit}}"
     },
     "paiementsTitre": "Debt payments",
     "relancesTitre": "Reminders sent",

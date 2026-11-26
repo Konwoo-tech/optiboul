@@ -1,7 +1,8 @@
 /** Catégorie d'un client ; l'interface la traduit. */
 export type TypeClient = 'livreur' | 'restaurant' | 'hotel' | 'particulier';
 
-export type TarifsClient = { BAG: number; KO: number; GC: number };
+/** Prix appliqués au client, par code de produit du serveur (BAG, KO, GC135…). */
+export type TarifsClient = Record<string, number>;
 
 /** Un client tel que l'écran « Clients et dettes » l'affiche. */
 export type ClientDeLecran = {

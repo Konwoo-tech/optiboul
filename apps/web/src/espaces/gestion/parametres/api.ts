@@ -1,4 +1,11 @@
-import { ErreurApi, parametresUpdate, produitsCreate, produitsPartialUpdate } from '@/api';
+import {
+  ErreurApi,
+  parametresUpdate,
+  produitsCreate,
+  produitsList,
+  produitsPartialUpdate,
+  toutesLesPages,
+} from '@/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { lireHistoriqueReel, lireParametresReels, lireProduitsReels } from './reel.ts';
@@ -106,6 +113,14 @@ export function useCreerProduit(utilisateur: string | undefined) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async (produit: NouveauProduit): Promise<number> => {
+      // Le nouveau produit passe après les autres dans les colonnes du comptoir.
+      const existants = await toutesLesPages<{ ordre?: number }>(
+        (page) =>
+          produitsList({ page }) as unknown as Promise<{
+            data: { results?: { ordre?: number }[]; next?: string | null };
+          }>,
+      ).catch(() => []);
+      const ordre = existants.reduce((max, p) => Math.max(max, p.ordre ?? 0), 0) + 1;
       const reponse = await produitsCreate({
         code: produit.code,
         nom: produit.nom,
@@ -113,7 +128,7 @@ export function useCreerProduit(utilisateur: string | undefined) {
         prix: produit.prix,
         cuisson_minutes: produit.cuisson,
         actif: true,
-        ordre: 0,
+        ordre,
       } as Parameters<typeof produitsCreate>[0]);
       return (reponse.data as { id: number }).id;
     },

@@ -152,7 +152,7 @@ describe('lecture des clients sur le vrai serveur', () => {
         type: 'livreur',
         lieu: 'Marché Etoudi',
         telephone: '+237 6 •• •• 10 45',
-        tarifs: { BAG: 110, KO: 75, GC: 165 },
+        tarifs: { BAG: 110, KO: 75, GC135: 165, C2: 165 },
         solde: -1140,
         relance: true,
         plafond: 2000,
@@ -166,7 +166,7 @@ describe('lecture des clients sur le vrai serveur', () => {
         type: 'particulier',
         solde: 0,
         relance: false,
-        tarifs: { BAG: 100, KO: 70, GC: 160 },
+        tarifs: { BAG: 100, KO: 70, GC135: 160, C2: 165 },
       }),
     ]);
   });
@@ -280,16 +280,16 @@ describe('fonctions de lecture', () => {
       id: '1',
       plafond: 5000,
       relance: true,
-      tarifs: { BAG: 110, KO: 75, GC: 165 },
+      tarifs: { BAG: 110, KO: 75, GC135: 165 },
     });
   });
 
-  it('garde « 0 » quand un prix manque, et le type livreur par défaut', () => {
+  it('ne retient que les produits qui ont un prix, et le type livreur par défaut', () => {
     const client = versClientDeLecran(
       { ...ALAIN, type: undefined, prix: { BAG: 100 } } as never,
       new Set(),
     );
-    expect(client).toMatchObject({ type: 'livreur', tarifs: { BAG: 100, KO: 0, GC: 0 } });
+    expect(client).toMatchObject({ type: 'livreur', tarifs: { BAG: 100 } });
   });
 
   it('le plafond courant est le plus fréquent, 2 000 à défaut', () => {

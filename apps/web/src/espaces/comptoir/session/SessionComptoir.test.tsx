@@ -49,7 +49,8 @@ let appels: string[];
 let enAttente: { demande: DemandePlafond; livraison: Livraison } | null;
 
 const heure = '18:02';
-const fcfa = (q: Quantites, p: Quantites) => q.BAG * p.BAG + q.KO * p.KO + q.GC * p.GC;
+const fcfa = (q: Quantites, p: Quantites) =>
+  (q.BAG ?? 0) * (p.BAG ?? 0) + (q.KO ?? 0) * (p.KO ?? 0) + (q.GC ?? 0) * (p.GC ?? 0);
 
 beforeEach(() => {
   etat = structuredClone(DEPART);

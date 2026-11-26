@@ -6,6 +6,7 @@ import {
   livraisonsList,
   mouvementsInternesList,
   optiboulFetch,
+  produitsList,
   toutesLesPages,
   type Client as ClientServeur,
   type Commande,
@@ -17,6 +18,7 @@ import {
 } from '@/api';
 
 import { heureDeYaounde, lireCaisses } from '../caisses/api.ts';
+import { cleDeCode, CLES_PRODUIT, definirCatalogue, parProduit } from './catalogue.ts';
 import type {
   Client,
   CleProduit,
@@ -40,17 +42,20 @@ import type {
 
 type Page<T> = { data: { results?: T[]; next?: string | null } };
 
-/** Les produits de l'écran : les codes du serveur, `GC135` devenant « GC » (voir E17). */
-const CODE_DU_PRODUIT: Record<string, CleProduit> = { BAG: 'BAG', KO: 'KO', GC135: 'GC' };
+/** Le produit de l'écran d'un code du serveur (`GC135` devient « GC », voir E17) ; absent du catalogue : rien. */
+const produitDeCode = (code: string): CleProduit | undefined => {
+  const cle = cleDeCode(code);
+  return CLES_PRODUIT.includes(cle) ? cle : undefined;
+};
 
-const quantitesVides = (): Quantites => ({ BAG: 0, KO: 0, GC: 0 });
-const saisiesVides = (): Saisies => ({ BAG: '', KO: '', GC: '' });
+const quantitesVides = (): Quantites => parProduit(0);
+const saisiesVides = (): Saisies => parProduit('');
 
 /** Pains par produit de l'écran, depuis « code serveur → quantité ». */
 export function versQuantites(lignes: Readonly<Record<string, number>> | undefined): Quantites {
   const quantites = quantitesVides();
   for (const [code, quantite] of Object.entries(lignes ?? {})) {
-    const cle = CODE_DU_PRODUIT[code];
+    const cle = produitDeCode(code);
     if (cle) quantites[cle] = quantite;
   }
   return quantites;
@@ -59,11 +64,9 @@ export function versQuantites(lignes: Readonly<Record<string, number>> | undefin
 /** Champs de saisie : les chiffres de la commande, vide quand le client n'a rien commandé. */
 export function versSaisies(lignes: Readonly<Record<string, number>> | undefined): Saisies {
   const quantites = versQuantites(lignes);
-  return {
-    BAG: quantites.BAG ? String(quantites.BAG) : '',
-    KO: quantites.KO ? String(quantites.KO) : '',
-    GC: quantites.GC ? String(quantites.GC) : '',
-  };
+  return Object.fromEntries(
+    CLES_PRODUIT.map((cle) => [cle, quantites[cle] ? String(quantites[cle]) : '']),
+  );
 }
 
 export function versClient(client: ClientServeur): Client {
@@ -132,9 +135,9 @@ const TYPE_DE_MOUVEMENT: Record<string, TypeMouvement> = {
   ration: 'ration',
 };
 
-/** Un mouvement du serveur ; `undefined` pour un produit que l'écran ne saisit pas (hors BAG, KO, GC). */
+/** Un mouvement du serveur ; `undefined` pour un produit que l'écran ne saisit pas (absent du catalogue). */
 export function versMouvement(mouvement: MouvementInterne): Mouvement | undefined {
-  const produit = CODE_DU_PRODUIT[mouvement.produit];
+  const produit = produitDeCode(mouvement.produit);
   const type = TYPE_DE_MOUVEMENT[mouvement.genre];
   if (!produit || !type) return undefined;
   return {
@@ -207,6 +210,11 @@ export async function lireSessionReelle(): Promise<InstantaneSession> {
   const derniere = caisses.sessions.at(-1);
   if (!derniere) throw new Error('Aucune caisse enregistrée');
   const idCaisse = Number(derniere.id);
+  // Le catalogue d'abord : les clients, les commandes et les mouvements s'écrivent à ses produits.
+  const produits = await toutesLesPages<{ code: string }>(
+    (page) => produitsList({ page }) as Promise<Page<{ code: string }>>,
+  ).catch(() => null);
+  if (produits) definirCatalogue(produits);
   const [clients, commandes, habituels, livraisons, mouvements, semaines, enAttente] =
     await Promise.all([
       toutesLesPages<ClientServeur>(

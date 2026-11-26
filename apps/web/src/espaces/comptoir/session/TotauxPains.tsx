@@ -2,13 +2,11 @@ import { mouvementsInternesTotauxRetrieve } from '@/api';
 import { useTranslation } from '@/i18n';
 import { useQuery } from '@tanstack/react-query';
 
+import { codeServeur } from './catalogue.ts';
 import { formaterNombre, PRODUITS } from './calculs.ts';
 import styles from './Mouvements.module.css';
 
 type Totaux = Record<string, Record<string, number>>;
-
-/** Code du produit sur le serveur : le « GC » de l'écran est le GC135. */
-const CODE_SERVEUR = { BAG: 'BAG', KO: 'KO', GC: 'GC135' } as const;
 
 const LIGNES = [
   ['livres', 'comptoir.session.mouvements.totaux.livres'],
@@ -57,9 +55,7 @@ export function TotauxPains({ caisse, signature }: { caisse: string; signature: 
             <tr key={cle}>
               <th scope="row">{t(libelle)}</th>
               {PRODUITS.map((p) => (
-                <td key={p.cle}>
-                  {formaterNombre(totaux.data?.[cle]?.[CODE_SERVEUR[p.cle]] ?? 0)}
-                </td>
+                <td key={p.cle}>{formaterNombre(totaux.data?.[cle]?.[codeServeur(p.cle)] ?? 0)}</td>
               ))}
             </tr>
           ))}

@@ -4,6 +4,7 @@ import { FenetreModale, useToast } from '@/ui';
 import { envoyerBonParWhatsapp, ouvrirBonPdf } from './api.ts';
 
 import { dateCourte, dateSansAnnee, libelleDuMode, nomDeSession } from './affichage.ts';
+import { de } from './catalogue.ts';
 import { formaterNombre, formaterSigne, PRODUITS } from './calculs.ts';
 import styles from './Fenetres.module.css';
 import type { Livraison, SessionCaisse } from './types.ts';
@@ -24,12 +25,12 @@ export function ModaleBon({ livraison, session, echeanceDettes, onFermer }: Prop
       ? t('comptoir.session.modales.bon.especes')
       : libelleDuMode(t, livraison.mode);
 
-  const lignes = PRODUITS.filter((p) => livraison.quantites[p.cle] > 0).map((p) => ({
+  const lignes = PRODUITS.filter((p) => de(livraison.quantites, p.cle) > 0).map((p) => ({
     cle: p.cle,
     produit: p.libelle,
-    quantite: livraison.quantites[p.cle],
-    prix: formaterNombre(livraison.prix[p.cle]),
-    total: formaterNombre(livraison.quantites[p.cle] * livraison.prix[p.cle]),
+    quantite: de(livraison.quantites, p.cle),
+    prix: formaterNombre(de(livraison.prix, p.cle)),
+    total: formaterNombre(de(livraison.quantites, p.cle) * de(livraison.prix, p.cle)),
   }));
   const totaux = [
     [t('comptoir.session.modales.bon.du'), formaterNombre(livraison.du)],

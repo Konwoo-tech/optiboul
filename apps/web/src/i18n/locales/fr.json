@@ -270,7 +270,7 @@
     "detail": "Détail du client",
     "echeance": "À régler avant {{date}}",
     "rienARegler": "Aucune dette à régler",
-    "tarifs": "Tarifs : BAG {{BAG}} · KO {{KO}} · GC 135 {{GC}} FCFA",
+    "tarifs": "Tarifs : {{prix}} FCFA",
     "historique": "Historique",
     "livraison": "Livraison bon n° {{bon}}",
     "nuit": "nuit",
@@ -311,7 +311,8 @@
       "titreModifier": "Modifier le client",
       "enregistrer": "Enregistrer",
       "actif": "Client actif (décocher pour le retirer de la liste)",
-      "toastModifie": "Client {{nom}} modifié"
+      "toastModifie": "Client {{nom}} modifié",
+      "prixDe": "Prix · {{produit}}"
     },
     "paiementsTitre": "Paiements de dette",
     "relancesTitre": "Relances envoyées",

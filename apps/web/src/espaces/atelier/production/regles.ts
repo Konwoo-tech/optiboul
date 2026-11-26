@@ -1,8 +1,6 @@
 import { formaterNombre } from '@/utils';
 
 import type { Profil } from '../../../profils.ts';
-import { PRODUITS } from '../../comptoir/session/calculs.ts';
-import { CLES_PRODUIT } from '../../comptoir/session/types.ts';
 import type {
   Brouillon,
   CleProduit,
@@ -18,7 +16,14 @@ import type {
   Recette,
   SortieDeStock,
 } from './types.ts';
-import { INGREDIENTS } from './types.ts';
+import { CLES_PRODUIT, INGREDIENTS } from './types.ts';
+
+/** Pains tirés d'un sac de farine, par produit du plan de production. */
+const PRODUITS: readonly { cle: CleProduit; painsParSac: number }[] = [
+  { cle: 'BAG', painsParSac: 315 },
+  { cle: 'KO', painsParSac: 426 },
+  { cle: 'GC', painsParSac: 216 },
+];
 
 /** Poids de pâte d'un sac de farine de 50 kg (50 + 27,4 + 0,6 + 0,45 + 0,3 kg), en grammes. */
 export const PATE_PAR_SAC_G = 78_750;
