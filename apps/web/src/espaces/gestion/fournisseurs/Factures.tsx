@@ -15,10 +15,18 @@ type Props = {
   enCours: boolean;
   onPayer: (facture: Facture) => void;
   onRecu: (facture: Facture) => void;
+  onHistorique: (facture: Facture) => void;
 };
 
 /** Factures et dettes fournisseurs : à payer, en cours, en retard, payées (US-103). */
-export function Factures({ instantane, peutModifier, enCours, onPayer, onRecu }: Props) {
+export function Factures({
+  instantane,
+  peutModifier,
+  enCours,
+  onPayer,
+  onRecu,
+  onHistorique,
+}: Props) {
   const { t, i18n } = useTranslation();
   const langue = i18n.language;
   const nomFournisseur = (id: string) =>
@@ -72,6 +80,16 @@ export function Factures({ instantane, peutModifier, enCours, onPayer, onRecu }:
                       onClick={() => !enCours && onPayer(f)}
                     >
                       {t('gestion.fournisseurs.factures.payer')}
+                    </button>
+                  )}
+                  {f.statut === 'payee' && f.idServeur !== undefined && (
+                    <button
+                      type="button"
+                      className={styles.secondaire}
+                      aria-label={`${t('gestion.fournisseurs.factures.historique')} ${f.numero}`}
+                      onClick={() => onHistorique(f)}
+                    >
+                      {t('gestion.fournisseurs.factures.historique')}
                     </button>
                   )}
                   {f.statut === 'payee' && (

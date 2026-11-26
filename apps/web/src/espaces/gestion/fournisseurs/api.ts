@@ -1,5 +1,6 @@
 import {
   ErreurApi,
+  facturesPaiementsList,
   facturesPayerCreate,
   fournisseursCreate,
   fournisseursPartialUpdate,
@@ -19,6 +20,7 @@ import {
   type Commande,
   type Facture,
   type InstantaneFournisseurs,
+  type ModePaiement,
   type NouveauPaiement,
   type NouvelleCommande,
   type NouvelleReception,
@@ -150,6 +152,41 @@ export const usePayer = (u: string | undefined) =>
     );
     return { depense: String((reponse.data as { depense: number }).depense) };
   });
+
+export type PaiementDeFacture = {
+  id: number;
+  jour: string;
+  mode: ModePaiement;
+  montant: number;
+  reference: string;
+  payePar: string;
+};
+
+/** Paiements d'une facture, du plus récent au plus ancien (lus sur le serveur à l'ouverture). */
+export function usePaiementsFacture(idServeur: number | undefined) {
+  return useQuery({
+    queryKey: ['gestion', 'fournisseurs', 'paiements-facture', idServeur],
+    enabled: idServeur !== undefined,
+    staleTime: 0,
+    queryFn: async (): Promise<PaiementDeFacture[]> => {
+      const reponse = await facturesPaiementsList(idServeur as number);
+      return (reponse.data.results ?? [])
+        .map((p) => ({
+          id: p.id,
+          jour: new Intl.DateTimeFormat('fr-CA', { timeZone: 'Africa/Douala' }).format(
+            new Date(p.paye_le),
+          ),
+          mode: p.mode as ModePaiement,
+          montant: p.montant,
+          reference: p.reference,
+          payePar: p.paye_par,
+          instant: p.paye_le,
+        }))
+        .sort((a, b) => b.instant.localeCompare(a.instant))
+        .map(({ instant: _instant, ...reste }) => reste);
+    },
+  });
+}
 
 /** Ouvre le reçu PDF d'un paiement dans un nouvel onglet. */
 export function ouvrirLeRecu(paiement: number) {
