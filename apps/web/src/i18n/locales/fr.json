@@ -628,6 +628,10 @@
           "serveur": "La dépense n’a pas pu être corrigée. Réessayez."
         }
       },
+      "justificatif": {
+        "voir": "Justificatif",
+        "voirNom": "Voir le justificatif de la dépense {{numero}}"
+      },
       "annulation": {
         "titre": "Annuler la dépense",
         "motif": "Motif de l’annulation",

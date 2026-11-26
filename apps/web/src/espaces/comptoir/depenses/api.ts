@@ -4,6 +4,7 @@ import {
   depensesCreate,
   depensesPartialUpdate,
   ErreurApi,
+  getDepensesJustificatifRetrieveUrl,
   preAutorisationsFixerUpdate,
 } from '@/api';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
@@ -118,6 +119,11 @@ export function useEnregistrerDepense(utilisateur: string | undefined) {
       void client.invalidateQueries({ queryKey: ['ecran', 'comptoir', 'session'] });
     },
   });
+}
+
+/** Ouvre la photo ou le PDF du justificatif dans un nouvel onglet : le navigateur porte la session. */
+export function ouvrirLeJustificatif(id: string) {
+  window.open(getDepensesJustificatifRetrieveUrl(Number(id)), '_blank', 'noopener');
 }
 
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
