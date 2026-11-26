@@ -14,6 +14,7 @@ import {
   useSauvegarderLocale,
   useSauvegardes,
 } from './api.ts';
+import { ImportClasseur } from './ImportClasseur.tsx';
 import { ModaleRestauration } from './ModaleRestauration.tsx';
 import { libelleDeCopie } from './regles.ts';
 import styles from './Sauvegardes.module.css';
@@ -277,6 +278,7 @@ export default function EcranSauvegardes({ ecran }: { ecran: Ecran }) {
             ))}
           </ul>
         </section>
+        <ImportClasseur />
       </div>
       {aRestaurer && (
         <ModaleRestauration

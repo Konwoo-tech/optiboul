@@ -1716,6 +1716,19 @@
         "droit": "Your profile does not allow this action.",
         "inconnue": "This copy no longer exists: the list has just been refreshed.",
         "erreur": "The action could not be saved. Try again."
+      },
+      "import": {
+        "titre": "Customer workbook import",
+        "aide": "Import the Excel workbook (\"Clients\" and \"Tarifs\" sheets). A dry run shows what would be imported first; nothing is kept until you confirm.",
+        "fichier": "Excel workbook (.xlsx)",
+        "simuler": "Run a dry run",
+        "confirmer": "Confirm the import",
+        "erreur": "The workbook could not be read. Check its sheets.",
+        "resumeSimulation": "Dry run: {{clients}} customers, {{tarifs}} prices and {{soldes}} balances would be imported.",
+        "resumeFait": "Import done: {{clients}} customers, {{tarifs}} prices and {{soldes}} balances imported.",
+        "rejet": "{{feuille}}, row {{ligne}}: {{raison}}",
+        "auDela_one": "{{count}} debt exceeds the ceiling.",
+        "auDela_other": "{{count}} debts exceed the ceiling."
       }
     },
     "utilisateurs": {
