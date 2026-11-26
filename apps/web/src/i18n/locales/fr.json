@@ -1174,7 +1174,8 @@
         "titreModifier": "Modifier l’employé",
         "enregistrer": "Enregistrer",
         "actif": "Employé en poste (décocher pour le retirer du personnel)",
-        "toastModifie": "Fiche de {{nom}} modifiée"
+        "toastModifie": "Fiche de {{nom}} modifiée",
+        "modifier": "Modifier"
       },
       "retenues": {
         "absences": "Jours d’absence (0,5 possible)",
@@ -1278,7 +1279,9 @@
         "reference": "Indiquez la référence de la transaction mobile money dans la fiche.",
         "impossible": "Action impossible dans l’état actuel de la paie.",
         "erreur": "L’action n’a pas pu être enregistrée : réessayez."
-      }
+      },
+      "equipe_one": "Équipe · {{count}} employé",
+      "equipe_other": "Équipe · {{count}} employés"
     },
     "fournisseurs": {
       "sections": "Fournisseurs",
