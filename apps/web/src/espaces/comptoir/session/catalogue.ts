@@ -13,15 +13,19 @@ export type Produit = {
   cle: CleProduit;
   /** Libellé affiché dans les en-têtes et les champs. */
   libelle: string;
+  /** Nom complet du produit (« Pain long ») ; vide pour les trois produits d'origine hors ligne. */
+  nom: string;
   /** Pains tirés d'un sac de farine : sert au plan de pétrissage. */
   painsParSac: number;
+  /** Poids d'une boule de pâte, en grammes (fiche technique) ; sert au plan de production. */
+  boule: number;
 };
 
 /** Produits d'origine : repris tant que le serveur n'a pas répondu (et dans les essais). */
 const PAR_DEFAUT: readonly Produit[] = [
-  { cle: 'BAG', libelle: 'BAG', painsParSac: 315 },
-  { cle: 'KO', libelle: 'KO', painsParSac: 426 },
-  { cle: 'GC', libelle: 'GC 135', painsParSac: 216 },
+  { cle: 'BAG', libelle: 'BAG', nom: 'Baguette', painsParSac: 315, boule: 5000 },
+  { cle: 'KO', libelle: 'KO', nom: 'Kirikou', painsParSac: 426, boule: 3700 },
+  { cle: 'GC', libelle: 'GC 135', nom: 'Gros court 135', painsParSac: 216, boule: 7300 },
 ];
 
 export const PRODUITS: Produit[] = [...PAR_DEFAUT];
@@ -38,9 +42,10 @@ const libelleDeCode = (code: string) => code.replace(/^([A-Za-z]+)(\d+)$/, '$1 $
 
 type ProduitServeur = {
   code: string;
+  nom?: string;
   actif?: boolean;
   ordre?: number;
-  fiche?: { pains_par_sac?: number } | null;
+  fiche?: { pains_par_sac?: number; poids_boule?: number } | null;
 };
 
 /** Remplace le catalogue par les produits actifs du serveur ; sans produit, on garde celui d'avant. */
@@ -56,10 +61,13 @@ export function definirCatalogue(produits: readonly ProduitServeur[]) {
       cle: cleDeCode(p.code),
       // Les trois produits d'origine gardent leur écriture historique.
       libelle: p.code === 'GC135' ? 'GC 135' : libelleDeCode(p.code),
+      nom: p.nom ?? PAR_DEFAUT.find((d) => d.cle === cleDeCode(p.code))?.nom ?? p.code,
       painsParSac:
         p.fiche?.pains_par_sac ??
         PAR_DEFAUT.find((d) => d.cle === cleDeCode(p.code))?.painsParSac ??
         0,
+      boule:
+        p.fiche?.poids_boule ?? PAR_DEFAUT.find((d) => d.cle === cleDeCode(p.code))?.boule ?? 5000,
     })),
   );
   CLES_PRODUIT.splice(0, CLES_PRODUIT.length, ...PRODUITS.map((p) => p.cle));

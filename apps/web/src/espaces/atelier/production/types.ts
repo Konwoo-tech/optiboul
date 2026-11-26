@@ -2,13 +2,10 @@ import type { Creneau } from '@/utils';
 
 import type { Matiere } from '../../comptoir/depenses/types.ts';
 
-/**
- * Produits du plan de production : BAG, KO et GC 135. Le comptoir vend tout le catalogue, mais le plan
- * et la fiche de pétrissage restent sur ces trois produits (leurs boules et leur guichet moyen sont
- * des réglages de la boulangerie).
- */
-export const CLES_PRODUIT = ['BAG', 'KO', 'GC'] as const;
-export type CleProduit = (typeof CLES_PRODUIT)[number];
+import { CLES_PRODUIT, type CleProduit } from '../../comptoir/session/catalogue.ts';
+
+/** Le plan de production suit le catalogue du comptoir : un produit créé y entre avec sa fiche. */
+export { CLES_PRODUIT, type CleProduit };
 export type Quantites = Record<CleProduit, number>;
 export type { Matiere };
 

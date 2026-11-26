@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n';
+import { CLES_PRODUIT } from './types.ts';
 import { FenetreModale } from '@/ui';
 import { formaterNombre } from '@/utils';
 
@@ -28,7 +29,7 @@ export function ModaleCloture({
 }: Props) {
   const { t, i18n } = useTranslation();
   const langue = i18n.language;
-  const total = (realise.BAG ?? 0) + (realise.KO ?? 0) + (realise.GC ?? 0);
+  const total = CLES_PRODUIT.reduce((somme, cle) => somme + (realise[cle] ?? 0), 0);
   const virgule = (valeur: number) => String(valeur).replace('.', langue === 'en' ? '.' : ',');
 
   return (

@@ -297,14 +297,17 @@ function Contenu({ ecran, instantane, nom, profil, actions }: ContenuProps) {
   };
 
   const ajusterLeSupplement = (produit: CleProduit, pas: number) =>
-    setSupplement((avant) => ({ ...avant, [produit]: bornerSupplement(avant[produit] + pas) }));
+    setSupplement((avant) => ({
+      ...avant,
+      [produit]: bornerSupplement((avant[produit] ?? 0) + pas),
+    }));
 
   const reprendreLaSuggestion = () => {
-    setSupplement({
-      BAG: bornerSupplement(instantane.demande.BAG.besoin),
-      KO: bornerSupplement(instantane.demande.KO.besoin),
-      GC: bornerSupplement(instantane.demande.GC.besoin),
-    });
+    setSupplement(
+      Object.fromEntries(
+        CLES_PRODUIT.map((cle) => [cle, bornerSupplement(instantane.demande[cle]?.besoin ?? 0)]),
+      ),
+    );
     setMotifSupplement((avant) => avant || 'habituels');
   };
 

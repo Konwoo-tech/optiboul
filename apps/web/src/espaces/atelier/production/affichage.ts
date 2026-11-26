@@ -2,6 +2,7 @@ import { formaterDateCourte, formaterNombre, type Creneau } from '@/utils';
 import type { TFunction } from 'i18next';
 
 import { unChiffre } from './regles.ts';
+import { PRODUITS } from '../../comptoir/session/catalogue.ts';
 import type { CleProduit, Matiere } from './types.ts';
 
 /** « 14 oct. » pour un jour ISO (« 2026-10-14 »). */
@@ -14,7 +15,8 @@ export const nomDeSessionCourt = (t: TFunction, type: Creneau): string =>
   t(`creneau.${type}`).toLocaleLowerCase();
 
 /** Libellé d'un produit : « GC 135 » pour la ligne GC, comme la maquette. */
-export const libelleProduit = (cle: CleProduit): string => (cle === 'GC' ? 'GC 135' : cle);
+export const libelleProduit = (cle: CleProduit): string =>
+  PRODUITS.find((p) => p.cle === cle)?.libelle ?? (cle === 'GC' ? 'GC 135' : cle);
 
 /** « +3 pains · +1,2 % » : un écart signé en nombre (moins typographique) puis en pourcentage. */
 export function ecartEnPains(ecart: number, pourcent: number, langue: string): string {

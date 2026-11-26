@@ -1,5 +1,6 @@
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- Tableaux en grille CSS (colonnes de la maquette, valeur par valeur) : passer à <table> changerait la mise en page au pixel près ; les rôles ARIA table, row et cell portent la sémantique. */
 import { useTranslation } from '@/i18n';
+import { CLES_PRODUIT } from './types.ts';
 import { formaterNombre } from '@/utils';
 
 import { dateCourte, nomDeSessionCourt } from './affichage.ts';
@@ -35,9 +36,7 @@ export function Cycle({ instantane, action, occupe, onAction }: Props) {
       detail: tRoute('detailCommandes', {
         clients: instantane.clientsCommandes,
         pains: formaterNombre(
-          instantane.plan.lignes.BAG.pains +
-            instantane.plan.lignes.KO.pains +
-            instantane.plan.lignes.GC.pains,
+          CLES_PRODUIT.reduce((somme, cle) => somme + (instantane.plan.lignes[cle]?.pains ?? 0), 0),
         ),
       }),
     },

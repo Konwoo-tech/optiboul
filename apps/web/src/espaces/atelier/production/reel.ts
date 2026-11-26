@@ -8,6 +8,7 @@ import {
   productionsPlanRetrieve,
   productionsResteAProduireRetrieve,
   semainesList,
+  produitsList,
   toutesLesPages,
   type Demande,
   type ResumeProduction,
@@ -15,6 +16,7 @@ import {
 } from '@/api';
 import type { Creneau } from '@/utils';
 
+import { cleDeCode, definirCatalogue, parProduit } from '../../comptoir/session/catalogue.ts';
 import { justificationEnvoyee } from './justifications.ts';
 import {
   CLES_PRODUIT,
@@ -46,8 +48,11 @@ import {
 type Page<T> = { data: { results?: T[]; next?: string | null } };
 
 /** Les produits de l'écran : les codes du serveur, `GC135` devenant « GC » (voir E17). */
-const CODE_DU_PRODUIT: Record<string, CleProduit> = { BAG: 'BAG', KO: 'KO', GC135: 'GC' };
-export const CODE_SERVEUR: Record<CleProduit, string> = { BAG: 'BAG', KO: 'KO', GC: 'GC135' };
+/** Le produit de l'écran d'un code du serveur ; absent du catalogue : rien. */
+const produitDeCode = (code: string): CleProduit | undefined => {
+  const cle = cleDeCode(code);
+  return CLES_PRODUIT.includes(cle) ? cle : undefined;
+};
 
 const MATIERES_SUIVIES: readonly Matiere[] = [
   'farine',
@@ -126,7 +131,7 @@ export function versPlan(lignes: readonly LignePlanServeur[]): {
   const plan = {} as Record<CleProduit, LignePlan>;
   const demande = {} as Record<CleProduit, LigneDemande>;
   for (const cle of CLES_PRODUIT) {
-    const l = lignes.find((x) => CODE_DU_PRODUIT[x.code] === cle);
+    const l = lignes.find((x) => produitDeCode(x.code) === cle);
     plan[cle] = {
       pains: l?.commandes ?? 0,
       base: l?.base ?? 0,
@@ -146,7 +151,8 @@ export function versPlan(lignes: readonly LignePlanServeur[]): {
       besoin: l?.besoin ?? 0,
     };
   }
-  const somme = (champ: keyof LignePlan) => CLES_PRODUIT.reduce((s, c) => s + plan[c][champ], 0);
+  const somme = (champ: keyof LignePlan) =>
+    CLES_PRODUIT.reduce((s, c) => s + (plan[c]?.[champ] ?? 0), 0);
   return {
     plan: {
       lignes: plan,
@@ -208,7 +214,7 @@ export function derniereFourneeDe(
     (a, f) => (!a || f.numero > a.numero ? f : a),
     null,
   );
-  const cle = derniere ? CODE_DU_PRODUIT[derniere.produit] : undefined;
+  const cle = derniere ? produitDeCode(derniere.produit) : undefined;
   return derniere && cle
     ? {
         numero: derniere.numero,
@@ -229,9 +235,9 @@ export function etapeDe(plan: string | null, production: string | undefined): Et
 }
 
 export function versRealise(produits: readonly ProduitServeur[]): Realise {
-  const realise = { BAG: null, KO: null, GC: null } as Realise;
+  const realise = parProduit<number | null>(null) as Realise;
   for (const p of produits) {
-    const cle = CODE_DU_PRODUIT[p.code];
+    const cle = produitDeCode(p.code);
     // Un produit que le plan ne prévoit pas n'a rien à saisir : son réalisé est 0, pas « à saisir ».
     if (cle) realise[cle] = p.realise > 0 ? p.realise : p.prevus === 0 ? 0 : null;
   }
@@ -250,9 +256,9 @@ export function versConsommation(lignes: EnCoursServeur['consommation']): Consom
 export function versDemandeProduction(demande: Demande): DemandeProduction | undefined {
   if (demande.type !== 'supplement' || demande.statut !== 'en_attente') return undefined;
   const sacs = ((demande.details ?? {}) as { sacs?: Record<string, number> }).sacs ?? {};
-  const supplement = { BAG: 0, KO: 0, GC: 0 } as Quantites;
+  const supplement = parProduit(0) as Quantites;
   for (const [code, n] of Object.entries(sacs)) {
-    const cle = CODE_DU_PRODUIT[code];
+    const cle = produitDeCode(code);
     if (cle) supplement[cle] = n;
   }
   const motif = ((demande.details ?? {}) as { motif?: string }).motif;
@@ -269,6 +275,11 @@ export function versDemandeProduction(demande: Demande): DemandeProduction | und
 
 /** Compose l'instantané de l'écran de production à partir des routes du serveur. */
 export async function lireProductionReelle(): Promise<InstantaneProduction> {
+  // Le catalogue d'abord : le plan, le réalisé et le supplément s'écrivent à ses produits.
+  const catalogue = await toutesLesPages<{ code: string }>(
+    (page) => produitsList({ page }) as unknown as Promise<Page<{ code: string }>>,
+  ).catch(() => null);
+  if (catalogue) definirCatalogue(catalogue);
   const plan = (await productionsPlanRetrieve()).data as unknown as PlanServeur;
   const session = { jour: plan.jour, creneau: plan.creneau as never };
   const [enCours, reste, semaines, commandes, stock, demandes, prochaine] = await Promise.all([
