@@ -2,6 +2,7 @@ import {
   depensesAnnulerCreate,
   budgetsFixerUpdate,
   depensesCreate,
+  depensesPartialUpdate,
   ErreurApi,
   preAutorisationsFixerUpdate,
 } from '@/api';
@@ -122,6 +123,33 @@ export function useEnregistrerDepense(utilisateur: string | undefined) {
 /** Code d'une erreur de l'API, pour choisir le message affiché. */
 export function codeErreur(erreur: unknown): string | undefined {
   return erreur instanceof ErreurApi ? erreur.code : undefined;
+}
+
+/** Corrige une dépense encore en attente : `PATCH /depenses/{id}/` (le serveur garde l'historique). */
+export function useCorrigerDepense(utilisateur: string | undefined) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      categorie,
+      libelle,
+      montant,
+    }: {
+      id: string;
+      categorie: Categorie;
+      libelle: string;
+      montant: number;
+    }) =>
+      depensesPartialUpdate(Number(id), {
+        categorie: versCodeCategorie(categorie) as never,
+        libelle,
+        montant,
+      }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: cleDepenses(utilisateur) });
+      void client.invalidateQueries({ queryKey: ['ecran', 'gestion', 'demandes'] });
+    },
+  });
 }
 
 /** Annule une dépense encore en attente, avec son motif : `POST /depenses/{id}/annuler/`. */

@@ -38,6 +38,8 @@ type Props = {
   /** Qui peut annuler cette dépense en attente ; absent : personne. */
   peutAnnuler?: (depense: Depense) => boolean;
   onAnnuler?: (depense: Depense) => void;
+  /** Corrige une dépense en attente (même droit que l'annulation). */
+  onCorriger?: (depense: Depense) => void;
 };
 
 /** Liste filtrable des dépenses, avec la demande de validation liée à chacune. */
@@ -50,6 +52,7 @@ export function Liste({
   cheminDemandes,
   peutAnnuler,
   onAnnuler,
+  onCorriger,
 }: Props) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -144,6 +147,18 @@ export function Liste({
                         onClick={() => void navigate(cheminDemandes)}
                       >
                         {libelleDemande(t, demande, instantane.gerantDeLaSemaine, langue)}
+                      </button>
+                    )}
+                    {onCorriger && peutAnnuler?.(depense) && (
+                      <button
+                        type="button"
+                        className={styles.demande}
+                        aria-label={t('comptoir.depenses.correction.corrigerNom', {
+                          numero: numeroDepense(depense.numero),
+                        })}
+                        onClick={() => onCorriger(depense)}
+                      >
+                        {t('comptoir.depenses.correction.corriger')}
                       </button>
                     )}
                     {onAnnuler && peutAnnuler?.(depense) && (

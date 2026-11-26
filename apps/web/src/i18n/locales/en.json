@@ -612,6 +612,22 @@
         "acceptee": "{{numero}} · approved by {{nom}} · {{date}} {{heure}}",
         "refusee": "{{numero}} · refused by {{nom}} · {{date}} {{heure}}"
       },
+      "correction": {
+        "titre": "Edit the expense",
+        "categorie": "Category",
+        "libelle": "Label",
+        "montant": "Amount (FCFA)",
+        "note": "While the expense is pending. If the amount exceeds the threshold, the approval request is updated.",
+        "retour": "Back",
+        "enregistrer": "Save",
+        "corriger": "Edit",
+        "corrigerNom": "Edit expense {{numero}}",
+        "toast": "Expense updated",
+        "erreurs": {
+          "invalide": "Enter a label and a whole amount above 0.",
+          "serveur": "The expense could not be updated. Please try again."
+        }
+      },
       "annulation": {
         "titre": "Cancel the expense",
         "motif": "Reason for cancelling",
