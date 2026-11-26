@@ -96,7 +96,9 @@ export function FicheEmploye({
 
   const { statut } = instantane;
   const c = calculerPaie(employe);
-  const modifiable = estModifiable(statut) && droits.preparer;
+  // Sans état préparé pour le mois, la ligne de l'employé n'existe pas encore sur le serveur.
+  const nonPrepare = Boolean(instantane.aPreparer);
+  const modifiable = estModifiable(statut) && droits.preparer && !nonPrepare;
   const peutPayer = paiementOuvert(statut) && droits.payer && c.reste > 0;
   const paiementPossible = paiementOuvert(statut) && droits.payer;
   // La maquette ne montre cette phrase qu'à qui ne peut pas payer ; le propriétaire, qui ne paie
@@ -336,7 +338,15 @@ export function FicheEmploye({
           </button>
         </form>
       )}
-      <div className={styles.verrou}>{modifiable ? '' : t('gestion.personnel.fiche.verrou')}</div>
+      <div className={styles.verrou}>
+        {modifiable
+          ? ''
+          : t(
+              nonPrepare
+                ? 'gestion.personnel.fiche.avantPreparation'
+                : 'gestion.personnel.fiche.verrou',
+            )}
+      </div>
       <div className={styles.net}>
         <span>{t('gestion.personnel.fiche.net')}</span>
         <span className={styles.netValeur}>{`${fmt(c.net)} FCFA`}</span>

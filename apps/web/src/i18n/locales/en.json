@@ -1262,6 +1262,7 @@
         "modifier": "Edit",
         "modifierLigne": "Edit line “{{libelle}}”",
         "supprimer": "Delete line “{{libelle}}”",
+        "avantPreparation": "Prepare the month’s payroll first to enter lines, absences or advances.",
         "verrou": "Lines are locked once the payroll is submitted.",
         "bulletin": "Payslip (PDF)",
         "net": "Net pay",
