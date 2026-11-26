@@ -9,6 +9,7 @@ import { EnTeteEcran } from '../../EnTeteEcran.tsx';
 import {
   useDepenses,
   useAnnulerDepense,
+  useCorrigerDepense,
   useEnregistrerDepense,
   useFixerBudget,
   useFixerPreAutorisations,
@@ -19,6 +20,7 @@ import { Formulaire } from './Formulaire.tsx';
 import { FenetreReglages } from './FenetreReglages.tsx';
 import { PreAutorisations } from './PreAutorisations.tsx';
 import { FenetreAnnulation } from './FenetreAnnulation.tsx';
+import { FenetreCorrection } from './FenetreCorrection.tsx';
 import { Liste } from './Liste.tsx';
 import {
   droitsDepenses,
@@ -37,12 +39,14 @@ export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
   const { t, i18n } = useTranslation();
   const afficher = useToast();
   const [aAnnuler, setAAnnuler] = useState<Depense | null>(null);
+  const [aCorriger, setACorriger] = useState<Depense | null>(null);
   const { utilisateur } = useUtilisateurCourant();
   const nom = utilisateur?.name;
   const profil = utilisateur?.profil;
   const requete = useDepenses(nom);
   const enregistrer = useEnregistrerDepense(nom);
   const annulerDepense = useAnnulerDepense(nom);
+  const corrigerDepense = useCorrigerDepense(nom);
   const fixerBudget = useFixerBudget(nom);
   const fixerPlafonds = useFixerPreAutorisations(nom);
   const [reglage, setReglage] = useState<'budget' | 'plafonds' | null>(null);
@@ -152,9 +156,27 @@ export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
               (d.par === nom || profil === 'gerant' || profil === 'proprietaire')
             }
             onAnnuler={setAAnnuler}
+            onCorriger={setACorriger}
           />
         </div>
       </div>
+      {aCorriger && (
+        <FenetreCorrection
+          depense={aCorriger}
+          envoiEnCours={corrigerDepense.isPending}
+          onFermer={() => setACorriger(null)}
+          onConfirmer={async (correction) => {
+            try {
+              await corrigerDepense.mutateAsync({ id: aCorriger.id, ...correction });
+              setACorriger(null);
+              afficher(t('comptoir.depenses.correction.toast'));
+              return null;
+            } catch (erreur) {
+              return messageOuDefaut(erreur, t('comptoir.depenses.correction.erreurs.serveur'));
+            }
+          }}
+        />
+      )}
       {aAnnuler && (
         <FenetreAnnulation
           depense={`DEP-${String(aAnnuler.numero).padStart(4, '0')} · ${aAnnuler.libelle}`}

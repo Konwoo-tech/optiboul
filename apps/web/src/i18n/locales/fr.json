@@ -612,6 +612,22 @@
         "acceptee": "{{numero}} · validée par {{nom}} · {{date}} {{heure}}",
         "refusee": "{{numero}} · refusée par {{nom}} · {{date}} {{heure}}"
       },
+      "correction": {
+        "titre": "Corriger la dépense",
+        "categorie": "Catégorie",
+        "libelle": "Libellé",
+        "montant": "Montant (FCFA)",
+        "note": "Tant que la dépense est en attente. Si le montant dépasse le seuil, la demande de validation est mise à jour.",
+        "retour": "Retour",
+        "enregistrer": "Enregistrer",
+        "corriger": "Corriger",
+        "corrigerNom": "Corriger la dépense {{numero}}",
+        "toast": "Dépense corrigée",
+        "erreurs": {
+          "invalide": "Indiquez un libellé et un montant entier supérieur à 0.",
+          "serveur": "La dépense n’a pas pu être corrigée. Réessayez."
+        }
+      },
       "annulation": {
         "titre": "Annuler la dépense",
         "motif": "Motif de l’annulation",

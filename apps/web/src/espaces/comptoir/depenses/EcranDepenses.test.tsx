@@ -302,6 +302,52 @@ describe('Comptoir › Dépenses : annuler une dépense en attente', () => {
   });
 });
 
+describe('Comptoir › Dépenses : corriger une dépense en attente', () => {
+  it('le gérant corrige le montant et le libellé ; un montant nul est refusé avant l’envoi', async () => {
+    let corps: Record<string, unknown> | undefined;
+    serveur.use(
+      http.patch('*/api/v1/depenses/:id/', async ({ request }) => {
+        // multipart : on relit les champs envoyés
+        const donnees = await request.formData();
+        corps = Object.fromEntries(donnees.entries());
+        return HttpResponse.json({ id: 14 });
+      }),
+    );
+    await ouvrir('willy');
+    fireEvent.click(screen.getByRole('button', { name: 'Corriger la dépense DEP-0014' }));
+    const fenetre = within(await screen.findByRole('dialog'));
+    saisir(fenetre.getByLabelText('Montant (FCFA)'), '0');
+    fireEvent.click(fenetre.getByRole('button', { name: 'Enregistrer' }));
+    expect((await fenetre.findByRole('alert')).textContent).toMatch(/montant entier supérieur à 0/);
+    saisir(fenetre.getByLabelText('Libellé'), 'Réparation du pétrin (pièce)');
+    saisir(fenetre.getByLabelText('Montant (FCFA)'), '42000');
+    fireEvent.click(fenetre.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByText('Dépense corrigée')).toBeTruthy();
+    expect(corps).toMatchObject({ libelle: 'Réparation du pétrin (pièce)', montant: '42000' });
+  });
+
+  it('dit le refus du serveur quand la dépense n’est plus en attente', async () => {
+    serveur.use(
+      http.patch('*/api/v1/depenses/:id/', () =>
+        HttpResponse.json(
+          {
+            detail: 'Seule une dépense en attente peut être corrigée.',
+            code: 'depense_non_modifiable',
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    await ouvrir('willy');
+    fireEvent.click(screen.getByRole('button', { name: 'Corriger la dépense DEP-0014' }));
+    const fenetre = within(await screen.findByRole('dialog'));
+    fireEvent.click(fenetre.getByRole('button', { name: 'Enregistrer' }));
+    expect(
+      await fenetre.findByText('Seule une dépense en attente peut être corrigée.'),
+    ).toBeTruthy();
+  });
+});
+
 describe('Comptoir › Dépenses (propriétaire)', () => {
   beforeEach(() => ouvrir('fotso'));
 
