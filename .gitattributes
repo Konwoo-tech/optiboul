@@ -1,0 +1,19 @@
+# Fins de ligne : LF dans le dépôt et dans les fichiers de travail, quel que soit le poste.
+* text=auto eol=lf
+
+# Fichiers binaires : jamais convertis.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.xlsx binary
+*.dump binary
+
+# Scripts Windows : CRLF.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
