@@ -238,7 +238,10 @@
       "titre": "Affichage des notifications",
       "detail": "Détail",
       "regroupees": "Par heure",
-      "compte": "{{nombre}} notifications · {{nonLues}} non lues",
+      "nombre_one": "{{count}} notification",
+    "nombre_other": "{{count}} notifications",
+    "nonLues_one": "{{count}} non lue",
+    "nonLues_other": "{{count}} non lues",
       "marquerGroupe": "Marquer le groupe lu"
     },
     "toutMarquerLu": "Tout marquer lu",

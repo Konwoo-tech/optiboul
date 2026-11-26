@@ -146,7 +146,7 @@ export function PanneauNotifications({ ouvert, onFermer }: Props) {
                   </div>
                   <div className={styles.titreCarte}>{groupe.titre}</div>
                   <div className={styles.detail}>
-                    {t('coque.vue.compte', { nombre: groupe.nombre, nonLues: groupe.nonLues })}
+                    {`${t('coque.vue.nombre', { count: groupe.nombre })} · ${t('coque.vue.nonLues', { count: groupe.nonLues })}`}
                   </div>
                   <div className={styles.actionsCarte}>
                     {groupe.chemin && (
