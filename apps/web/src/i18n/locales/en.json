@@ -1434,7 +1434,8 @@
           "nom": "The supplier name is required.",
           "matieres": "Choose at least one material.",
           "defaut": "The supplier could not be saved. Try again."
-        }
+        },
+        "modifierCourt": "Edit"
       }
     },
     "semaines": {

@@ -492,3 +492,29 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+.ficheEntete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.modifierFiche {
+  flex: none;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 999px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modifierFiche:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
