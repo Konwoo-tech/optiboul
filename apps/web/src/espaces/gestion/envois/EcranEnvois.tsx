@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { EcranChargement, EcranErreur, afficherRefus, useToast } from '@/ui';
+import { EcranChargement, EcranErreur, afficherRefus, useToast, Paginee } from '@/ui';
 import { formaterNombre } from '@/utils';
 import { useState } from 'react';
 
@@ -94,57 +94,65 @@ export default function EcranEnvois({ ecran }: { ecran: Ecran }) {
           ))}
         </fieldset>
 
-        <ul className={styles.liste} aria-label={t('gestion.envois.liste', { count: total })}>
-          {messages.map((m) => {
-            const niveau = NIVEAU[m.statut];
-            return (
-              <li className={styles.ligne} key={m.id}>
-                <div className={styles.texte}>
-                  <span className={styles.titre}>
-                    {t(`gestion.envois.canaux.${m.canal}`)} · {m.destinataire}
-                  </span>
-                  {m.sujet && <span className={styles.sous}>{m.sujet}</span>}
-                  <span className={styles.sous}>
-                    {t('gestion.envois.creeLe', { date: quand(m.cree_le) })}
-                    {m.tentatives
-                      ? ` · ${t('gestion.envois.tentatives', { count: m.tentatives })}`
-                      : ''}
-                  </span>
-                  {m.derniere_erreur && <span className={styles.erreur}>{m.derniere_erreur}</span>}
-                </div>
-                <div className={styles.droite}>
-                  <span
-                    className={styles.statut}
-                    style={{
-                      background: `var(--ob-${niveau}-fond)`,
-                      color: `var(--ob-${niveau}-texte)`,
-                    }}
-                  >
-                    {t(`gestion.envois.statuts.${m.statut}`)}
-                  </span>
-                  {m.statut === 'echec' && (
-                    <button
-                      type="button"
-                      className={styles.relancer}
-                      disabled={relancer.isPending}
-                      aria-label={t('gestion.envois.relancerNom', { destinataire: m.destinataire })}
-                      onClick={() =>
-                        relancer.mutate(m.id, {
-                          onSuccess: () => afficher(t('gestion.envois.toastRelance')),
-                          onError: (erreur) =>
-                            afficherRefus(afficher, t, erreur, 'gestion.envois.toastErreur'),
-                        })
-                      }
-                    >
-                      {t('gestion.envois.relancer')}
-                    </button>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-          {messages.length === 0 && <li className={styles.vide}>{t('gestion.envois.vide')}</li>}
-        </ul>
+        <Paginee elements={messages} cle={filtre}>
+          {(page) => (
+            <ul className={styles.liste} aria-label={t('gestion.envois.liste', { count: total })}>
+              {page.map((m) => {
+                const niveau = NIVEAU[m.statut];
+                return (
+                  <li className={styles.ligne} key={m.id}>
+                    <div className={styles.texte}>
+                      <span className={styles.titre}>
+                        {t(`gestion.envois.canaux.${m.canal}`)} · {m.destinataire}
+                      </span>
+                      {m.sujet && <span className={styles.sous}>{m.sujet}</span>}
+                      <span className={styles.sous}>
+                        {t('gestion.envois.creeLe', { date: quand(m.cree_le) })}
+                        {m.tentatives
+                          ? ` · ${t('gestion.envois.tentatives', { count: m.tentatives })}`
+                          : ''}
+                      </span>
+                      {m.derniere_erreur && (
+                        <span className={styles.erreur}>{m.derniere_erreur}</span>
+                      )}
+                    </div>
+                    <div className={styles.droite}>
+                      <span
+                        className={styles.statut}
+                        style={{
+                          background: `var(--ob-${niveau}-fond)`,
+                          color: `var(--ob-${niveau}-texte)`,
+                        }}
+                      >
+                        {t(`gestion.envois.statuts.${m.statut}`)}
+                      </span>
+                      {m.statut === 'echec' && (
+                        <button
+                          type="button"
+                          className={styles.relancer}
+                          disabled={relancer.isPending}
+                          aria-label={t('gestion.envois.relancerNom', {
+                            destinataire: m.destinataire,
+                          })}
+                          onClick={() =>
+                            relancer.mutate(m.id, {
+                              onSuccess: () => afficher(t('gestion.envois.toastRelance')),
+                              onError: (erreur) =>
+                                afficherRefus(afficher, t, erreur, 'gestion.envois.toastErreur'),
+                            })
+                          }
+                        >
+                          {t('gestion.envois.relancer')}
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+              {messages.length === 0 && <li className={styles.vide}>{t('gestion.envois.vide')}</li>}
+            </ul>
+          )}
+        </Paginee>
       </div>
     </>
   );

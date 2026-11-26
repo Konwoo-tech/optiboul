@@ -1,3 +1,4 @@
+import { Paginee } from '@/ui';
 import { useTranslation } from '@/i18n';
 import { useId, useRef, useState } from 'react';
 
@@ -117,35 +118,41 @@ export function Mouvements({ instantane, peutSaisir, onEnregistrer }: Props) {
           </fieldset>
           <div className={styles.regleMouvements}>{t('atelier.stocks.mouvements.regle')}</div>
         </div>
-        <ul className={styles.lignes}>
-          {mouvements.map((m) => (
-            <li className={styles.mouvement} key={m.id}>
-              <Mot niveau={NIVEAU_MOUVEMENT[m.type]}>
-                {t(`atelier.stocks.mouvements.types.${m.type}`)}
-              </Mot>
-              <div className={styles.mouvementTexte}>
-                <div className={styles.mouvementTitre}>
-                  {nomMatiere(t, m.matiere)}
-                  {' · '}
-                  <span
-                    className={styles.quantite}
-                    style={{ color: COULEUR_QUANTITE[m.type] ?? 'var(--ob-encre)' }}
-                  >
-                    {`${signeDuMouvement(m.type, m.quantite)}${quantite(
-                      Math.abs(m.quantite),
-                      langue,
-                    )} ${uniteMatiere(t, m.matiere)}`}
-                  </span>
-                </div>
-                <div className={styles.mouvementRef}>{libelleOrigine(t, m.origine, langue)}</div>
-              </div>
-              <div className={styles.mouvementQuand}>
-                <div>{jourEtHeure(m.jour, m.heure, langue)}</div>
-                <div>{m.par}</div>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <Paginee elements={mouvements}>
+          {(page) => (
+            <ul className={styles.lignes}>
+              {page.map((m) => (
+                <li className={styles.mouvement} key={m.id}>
+                  <Mot niveau={NIVEAU_MOUVEMENT[m.type]}>
+                    {t(`atelier.stocks.mouvements.types.${m.type}`)}
+                  </Mot>
+                  <div className={styles.mouvementTexte}>
+                    <div className={styles.mouvementTitre}>
+                      {nomMatiere(t, m.matiere)}
+                      {' · '}
+                      <span
+                        className={styles.quantite}
+                        style={{ color: COULEUR_QUANTITE[m.type] ?? 'var(--ob-encre)' }}
+                      >
+                        {`${signeDuMouvement(m.type, m.quantite)}${quantite(
+                          Math.abs(m.quantite),
+                          langue,
+                        )} ${uniteMatiere(t, m.matiere)}`}
+                      </span>
+                    </div>
+                    <div className={styles.mouvementRef}>
+                      {libelleOrigine(t, m.origine, langue)}
+                    </div>
+                  </div>
+                  <div className={styles.mouvementQuand}>
+                    <div>{jourEtHeure(m.jour, m.heure, langue)}</div>
+                    <div>{m.par}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Paginee>
         {mouvements.length === 0 && (
           <div className={styles.vide}>{t('atelier.stocks.mouvements.vide')}</div>
         )}

@@ -1,3 +1,4 @@
+import { Paginee } from '@/ui';
 import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
 
@@ -26,65 +27,69 @@ export function Factures({ instantane, peutModifier, enCours, onPayer, onRecu }:
   return (
     <section className={styles.carte} aria-label={t('gestion.fournisseurs.factures.liste')}>
       <div className={styles.regle}>{t('gestion.fournisseurs.factures.regle')}</div>
-      <ul className={styles.lignes}>
-        {instantane.factures.map((f) => {
-          const etat = etatDeFacture(f);
-          return (
-            <li className={styles.ligne} key={f.numero}>
-              <Mot niveau={NIVEAU_FACTURE[etat]}>
-                {t(`gestion.fournisseurs.factures.statuts.${etat}`)}
-              </Mot>
-              <div className={styles.texteFacture}>
-                <div className={styles.titre}>
-                  {f.numero}
-                  {' · '}
-                  {libelleFacture(t, f, langue)}
-                </div>
-                <div className={styles.sous}>
-                  {nomFournisseur(f.fournisseur)}
-                  {' · '}
-                  {f.statut === 'payee' && f.payeeLe && f.mode
-                    ? t('gestion.fournisseurs.factures.payeeLe', {
-                        date: jourCourt(f.payeeLe, langue),
-                        mode: t(`gestion.fournisseurs.modes.${f.mode}`),
-                      })
-                    : t('gestion.fournisseurs.factures.echeance', {
-                        date: jourCourt(f.echeance, langue),
-                      })}
-                  {f.statut === 'payee' && f.reference
-                    ? t('gestion.fournisseurs.factures.reference', { reference: f.reference })
-                    : null}
-                </div>
-              </div>
-              <span className={styles.montant}>
-                {formaterNombre(f.montant)}
-                {' FCFA'}
-              </span>
-              {peutModifier && sePaie(f) && (
-                <button
-                  type="button"
-                  className={styles.principal}
-                  aria-disabled={enCours}
-                  aria-label={`${t('gestion.fournisseurs.factures.payer')} ${f.numero}`}
-                  onClick={() => !enCours && onPayer(f)}
-                >
-                  {t('gestion.fournisseurs.factures.payer')}
-                </button>
-              )}
-              {f.statut === 'payee' && (
-                <button
-                  type="button"
-                  className={styles.secondaire}
-                  aria-label={`${t('gestion.fournisseurs.factures.recu')} ${f.numero}`}
-                  onClick={() => onRecu(f)}
-                >
-                  {t('gestion.fournisseurs.factures.recu')}
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      <Paginee elements={instantane.factures}>
+        {(page) => (
+          <ul className={styles.lignes}>
+            {page.map((f) => {
+              const etat = etatDeFacture(f);
+              return (
+                <li className={styles.ligne} key={f.numero}>
+                  <Mot niveau={NIVEAU_FACTURE[etat]}>
+                    {t(`gestion.fournisseurs.factures.statuts.${etat}`)}
+                  </Mot>
+                  <div className={styles.texteFacture}>
+                    <div className={styles.titre}>
+                      {f.numero}
+                      {' · '}
+                      {libelleFacture(t, f, langue)}
+                    </div>
+                    <div className={styles.sous}>
+                      {nomFournisseur(f.fournisseur)}
+                      {' · '}
+                      {f.statut === 'payee' && f.payeeLe && f.mode
+                        ? t('gestion.fournisseurs.factures.payeeLe', {
+                            date: jourCourt(f.payeeLe, langue),
+                            mode: t(`gestion.fournisseurs.modes.${f.mode}`),
+                          })
+                        : t('gestion.fournisseurs.factures.echeance', {
+                            date: jourCourt(f.echeance, langue),
+                          })}
+                      {f.statut === 'payee' && f.reference
+                        ? t('gestion.fournisseurs.factures.reference', { reference: f.reference })
+                        : null}
+                    </div>
+                  </div>
+                  <span className={styles.montant}>
+                    {formaterNombre(f.montant)}
+                    {' FCFA'}
+                  </span>
+                  {peutModifier && sePaie(f) && (
+                    <button
+                      type="button"
+                      className={styles.principal}
+                      aria-disabled={enCours}
+                      aria-label={`${t('gestion.fournisseurs.factures.payer')} ${f.numero}`}
+                      onClick={() => !enCours && onPayer(f)}
+                    >
+                      {t('gestion.fournisseurs.factures.payer')}
+                    </button>
+                  )}
+                  {f.statut === 'payee' && (
+                    <button
+                      type="button"
+                      className={styles.secondaire}
+                      aria-label={`${t('gestion.fournisseurs.factures.recu')} ${f.numero}`}
+                      onClick={() => onRecu(f)}
+                    >
+                      {t('gestion.fournisseurs.factures.recu')}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Paginee>
     </section>
   );
 }

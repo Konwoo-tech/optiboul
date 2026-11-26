@@ -1,3 +1,4 @@
+import { Paginee } from '@/ui';
 import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
 import { useNavigate } from 'react-router';
@@ -113,65 +114,71 @@ export function Liste({
           )}
         </span>
       </div>
-      <ul className={styles.lignes}>
-        {liste.map((depense) => {
-          const demande = demandeDe(depense, instantane.demandes);
-          const niveau = NIVEAU_STATUT[depense.statut];
-          return (
-            <li className={styles.ligne} key={depense.id}>
-              <div className={styles.ligneTexte}>
-                <span className={styles.ligneTitre}>
-                  {numeroDepense(depense.numero)} · {depense.libelle}
-                </span>
-                <span className={styles.ligneRattache}>
-                  {t(`comptoir.depenses.categories.${depense.categorie}`)}
-                  {' · '}
-                  {libelleRattachement(
-                    t,
-                    depense.rattachement,
-                    numeroDeSemaine(depense.semaine),
-                    langue,
-                  )}
-                </span>
-                <span className={styles.ligneQui}>{libelleAuteur(t, depense, langue)}</span>
-                {demande && (
-                  <button
-                    type="button"
-                    className={styles.demande}
-                    onClick={() => void navigate(cheminDemandes)}
-                  >
-                    {libelleDemande(t, demande, instantane.gerantDeLaSemaine, langue)}
-                  </button>
-                )}
-                {onAnnuler && peutAnnuler?.(depense) && (
-                  <button
-                    type="button"
-                    className={styles.demande}
-                    aria-label={t('comptoir.depenses.annulation.annulerNom', {
-                      numero: numeroDepense(depense.numero),
-                    })}
-                    onClick={() => onAnnuler(depense)}
-                  >
-                    {t('comptoir.depenses.annulation.annuler')}
-                  </button>
-                )}
-              </div>
-              <div className={styles.ligneDroite}>
-                <span className={styles.ligneMontant}>{formaterNombre(depense.montant)} FCFA</span>
-                <span
-                  className={styles.statut}
-                  style={{
-                    background: `var(--ob-${niveau}-fond)`,
-                    color: `var(--ob-${niveau}-texte)`,
-                  }}
-                >
-                  {t(`comptoir.depenses.statuts.${depense.statut}`)}
-                </span>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      <Paginee elements={liste} cle={`${semaine}|${rattachement}`}>
+        {(page) => (
+          <ul className={styles.lignes}>
+            {page.map((depense) => {
+              const demande = demandeDe(depense, instantane.demandes);
+              const niveau = NIVEAU_STATUT[depense.statut];
+              return (
+                <li className={styles.ligne} key={depense.id}>
+                  <div className={styles.ligneTexte}>
+                    <span className={styles.ligneTitre}>
+                      {numeroDepense(depense.numero)} · {depense.libelle}
+                    </span>
+                    <span className={styles.ligneRattache}>
+                      {t(`comptoir.depenses.categories.${depense.categorie}`)}
+                      {' · '}
+                      {libelleRattachement(
+                        t,
+                        depense.rattachement,
+                        numeroDeSemaine(depense.semaine),
+                        langue,
+                      )}
+                    </span>
+                    <span className={styles.ligneQui}>{libelleAuteur(t, depense, langue)}</span>
+                    {demande && (
+                      <button
+                        type="button"
+                        className={styles.demande}
+                        onClick={() => void navigate(cheminDemandes)}
+                      >
+                        {libelleDemande(t, demande, instantane.gerantDeLaSemaine, langue)}
+                      </button>
+                    )}
+                    {onAnnuler && peutAnnuler?.(depense) && (
+                      <button
+                        type="button"
+                        className={styles.demande}
+                        aria-label={t('comptoir.depenses.annulation.annulerNom', {
+                          numero: numeroDepense(depense.numero),
+                        })}
+                        onClick={() => onAnnuler(depense)}
+                      >
+                        {t('comptoir.depenses.annulation.annuler')}
+                      </button>
+                    )}
+                  </div>
+                  <div className={styles.ligneDroite}>
+                    <span className={styles.ligneMontant}>
+                      {formaterNombre(depense.montant)} FCFA
+                    </span>
+                    <span
+                      className={styles.statut}
+                      style={{
+                        background: `var(--ob-${niveau}-fond)`,
+                        color: `var(--ob-${niveau}-texte)`,
+                      }}
+                    >
+                      {t(`comptoir.depenses.statuts.${depense.statut}`)}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Paginee>
       {liste.length === 0 && <div className={styles.vide}>{t('comptoir.depenses.liste.vide')}</div>}
     </section>
   );

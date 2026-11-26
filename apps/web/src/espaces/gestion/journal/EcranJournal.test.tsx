@@ -218,7 +218,8 @@ describe('Gestion › Journal : liste', () => {
     );
     await ouvrir();
     const l = await lignes();
-    expect(l).toHaveLength(11);
+    // Dix actions par page.
+    expect(l).toHaveLength(10);
     expect(visible(l[0]!)).toBe(
       '18:02|Willy · Gérant de la semaine|Jour de paie d’octobre fixé au 2026-10-30',
     );
@@ -247,7 +248,8 @@ describe('Gestion › Journal : liste', () => {
       registre.unshift(entree(100 + i, AUJOURDHUI, '19:00', 'Willy', 'caisse', `A${i}`));
     }
     await ouvrir();
-    expect(await lignes()).toHaveLength(40);
+    expect(await lignes()).toHaveLength(10);
+    expect(screen.getByText('Page 1 sur 4')).toBeTruthy();
     expect(await screen.findByText(/40 dernières actions affichées sur 55/)).toBeTruthy();
   });
 

@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { Carte, EcranChargement, EcranErreur } from '@/ui';
+import { Carte, EcranChargement, EcranErreur, Paginee } from '@/ui';
 import { formaterDateCourte } from '@/utils';
 import { Text, VisuallyHidden } from '@mantine/core';
 import { useState } from 'react';
@@ -167,48 +167,52 @@ export default function EcranJournal({ ecran }: { ecran: Ecran }) {
             {t(filtreActif(filtres) ? 'gestion.journal.videFiltre' : 'gestion.journal.vide')}
           </p>
         ) : (
-          <ol className={styles.liste}>
-            {instantane.entrees.map((entree) => (
-              <li key={entree.id} className={styles.ligne}>
-                <span className={styles.heure}>
-                  <VisuallyHidden component="span">
-                    {t('gestion.journal.colonnes.heure')}
-                  </VisuallyHidden>
-                  {horodatage(entree, instantane.aujourdhui, jourCourt)}
-                </span>
-                {/* Un seul nœud de texte, comme la maquette : le crénage change à la jonction. */}
-                <span className={styles.auteur}>
-                  <VisuallyHidden component="span">
-                    {t('gestion.journal.colonnes.auteur')}
-                  </VisuallyHidden>
-                  {entree.profil
-                    ? `${entree.auteur} · ${t(`profils.${entree.profil}`)}`
-                    : entree.auteur}
-                </span>
-                <span className={styles.quoi}>
-                  <VisuallyHidden component="span">
-                    {t('gestion.journal.colonnes.action')}
-                  </VisuallyHidden>
-                  {entree.codeAction
-                    ? t(`gestion.journal.actions.${entree.codeAction}`, {
-                        defaultValue: entree.codeAction,
-                      })
-                    : i18n.language === 'en' && entree.texteEn
-                      ? entree.texteEn
-                      : entree.texte}
-                  {entree.objet ? ` · ${entree.objet}` : ''}
-                  {entree.avant !== undefined && entree.apres !== undefined ? (
-                    <span className={styles.changement}>
-                      {t('gestion.journal.changement', {
-                        avant: texteDeValeur(entree.avant),
-                        apres: texteDeValeur(entree.apres),
-                      })}
+          <Paginee elements={instantane.entrees} cle={JSON.stringify(filtres)}>
+            {(page) => (
+              <ol className={styles.liste}>
+                {page.map((entree) => (
+                  <li key={entree.id} className={styles.ligne}>
+                    <span className={styles.heure}>
+                      <VisuallyHidden component="span">
+                        {t('gestion.journal.colonnes.heure')}
+                      </VisuallyHidden>
+                      {horodatage(entree, instantane.aujourdhui, jourCourt)}
                     </span>
-                  ) : null}
-                </span>
-              </li>
-            ))}
-          </ol>
+                    {/* Un seul nœud de texte, comme la maquette : le crénage change à la jonction. */}
+                    <span className={styles.auteur}>
+                      <VisuallyHidden component="span">
+                        {t('gestion.journal.colonnes.auteur')}
+                      </VisuallyHidden>
+                      {entree.profil
+                        ? `${entree.auteur} · ${t(`profils.${entree.profil}`)}`
+                        : entree.auteur}
+                    </span>
+                    <span className={styles.quoi}>
+                      <VisuallyHidden component="span">
+                        {t('gestion.journal.colonnes.action')}
+                      </VisuallyHidden>
+                      {entree.codeAction
+                        ? t(`gestion.journal.actions.${entree.codeAction}`, {
+                            defaultValue: entree.codeAction,
+                          })
+                        : i18n.language === 'en' && entree.texteEn
+                          ? entree.texteEn
+                          : entree.texte}
+                      {entree.objet ? ` · ${entree.objet}` : ''}
+                      {entree.avant !== undefined && entree.apres !== undefined ? (
+                        <span className={styles.changement}>
+                          {t('gestion.journal.changement', {
+                            avant: texteDeValeur(entree.avant),
+                            apres: texteDeValeur(entree.apres),
+                          })}
+                        </span>
+                      ) : null}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Paginee>
         )}
         {instantane.total > LIMITE_AFFICHEE ? (
           <p className={styles.limite}>

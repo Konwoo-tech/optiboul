@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { useToast } from '@/ui';
+import { useToast, Paginee } from '@/ui';
 import { formaterDateCourte, formaterNombre } from '@/utils';
 import { useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Link } from 'react-router';
@@ -196,7 +196,9 @@ function Bloc({ idTitre, titre, vide, demandes, titreRef, ligne }: BlocProps) {
         {titre}
       </h2>
       {demandes.length > 0 ? (
-        <ul className={styles.liste}>{demandes.map(ligne)}</ul>
+        <Paginee elements={demandes}>
+          {(page) => <ul className={styles.liste}>{page.map(ligne)}</ul>}
+        </Paginee>
       ) : (
         <p className={styles.vide}>{vide}</p>
       )}

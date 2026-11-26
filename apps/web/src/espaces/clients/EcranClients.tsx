@@ -1,7 +1,7 @@
 import { useUtilisateurCourant } from '@/auth';
 import { ErreurApi } from '@/api';
 import { useTranslation } from '@/i18n';
-import { useToast } from '@/ui';
+import { useToast, Paginee } from '@/ui';
 import { formaterNombre } from '@/utils';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -286,20 +286,24 @@ export default function EcranClients({ ecran }: { ecran: Ecran }) {
           )}
         </div>
         <div className={styles.corps}>
-          <ul className={styles.liste} aria-label={t('clients.liste')}>
-            {liste.map((client) => (
-              <LigneClient
-                key={client.id}
-                client={client}
-                plafond={plafond}
-                choisi={choisi?.id === client.id}
-                relancable={relancable}
-                onChoisir={() => choisir(client)}
-                onRelancer={() => relancerUn(client)}
-              />
-            ))}
-            {liste.length === 0 && <li className={styles.vide}>{t('clients.vide')}</li>}
-          </ul>
+          <Paginee elements={liste} cle={filtre}>
+            {(visibles) => (
+              <ul className={styles.liste} aria-label={t('clients.liste')}>
+                {visibles.map((client) => (
+                  <LigneClient
+                    key={client.id}
+                    client={client}
+                    plafond={plafond}
+                    choisi={choisi?.id === client.id}
+                    relancable={relancable}
+                    onChoisir={() => choisir(client)}
+                    onRelancer={() => relancerUn(client)}
+                  />
+                ))}
+                {liste.length === 0 && <li className={styles.vide}>{t('clients.vide')}</li>}
+              </ul>
+            )}
+          </Paginee>
           {choisi ? (
             <DetailClient
               client={choisi}

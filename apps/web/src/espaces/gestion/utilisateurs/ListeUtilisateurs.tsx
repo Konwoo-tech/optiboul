@@ -1,3 +1,4 @@
+import { Paginee } from '@/ui';
 import { useTranslation } from '@/i18n';
 import { useId } from 'react';
 
@@ -72,96 +73,100 @@ export function ListeUtilisateurs({
       </fieldset>
 
       <div className={styles.carte}>
-        <ul className={styles.liste} aria-label={t('gestion.utilisateurs.liste.etiquette')}>
-          {visibles.map((u) => {
-            const lui = u.id === moi;
-            return (
-              <li key={u.id} className={styles.ligne}>
-                <Pastille nom={u.nom} profil={u.profil} />
-                <div className={styles.identite}>
-                  <div className={styles.nom}>
-                    {u.nom} · <span className={styles.profil}>{t(`profils.${u.profil}`)}</span>
-                  </div>
-                  <div className={styles.sous}>
-                    {t(
-                      u.telephone
-                        ? 'gestion.utilisateurs.liste.sousLigne'
-                        : 'gestion.utilisateurs.liste.sousLigneSansTelephone',
-                      {
-                        email: u.email,
-                        telephone: u.telephone,
-                        acces: formaterAcces(u.dernierAcces, i18n.language),
-                      },
+        <Paginee elements={visibles} cle={String(filtre)}>
+          {(page) => (
+            <ul className={styles.liste} aria-label={t('gestion.utilisateurs.liste.etiquette')}>
+              {page.map((u) => {
+                const lui = u.id === moi;
+                return (
+                  <li key={u.id} className={styles.ligne}>
+                    <Pastille nom={u.nom} profil={u.profil} />
+                    <div className={styles.identite}>
+                      <div className={styles.nom}>
+                        {u.nom} · <span className={styles.profil}>{t(`profils.${u.profil}`)}</span>
+                      </div>
+                      <div className={styles.sous}>
+                        {t(
+                          u.telephone
+                            ? 'gestion.utilisateurs.liste.sousLigne'
+                            : 'gestion.utilisateurs.liste.sousLigneSansTelephone',
+                          {
+                            email: u.email,
+                            telephone: u.telephone,
+                            acces: formaterAcces(u.dernierAcces, i18n.language),
+                          },
+                        )}
+                      </div>
+                    </div>
+                    <select
+                      className={styles.choix}
+                      value={u.groupe}
+                      disabled={lui}
+                      aria-disabled={occupe || undefined}
+                      aria-label={t('gestion.utilisateurs.liste.groupeDe', { nom: u.nom })}
+                      onChange={(e) => onGroupe(u, e.target.value)}
+                    >
+                      {groupes.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {nomDuGroupe(g, i18n.language)}
+                        </option>
+                      ))}
+                    </select>
+                    <Mot niveau={u.bloque ? 'surveiller' : u.actif ? 'ok' : 'neutre'}>
+                      {t(
+                        u.bloque
+                          ? 'gestion.utilisateurs.liste.bloque'
+                          : u.actif
+                            ? 'gestion.utilisateurs.liste.actif'
+                            : 'gestion.utilisateurs.liste.desactive',
+                      )}
+                    </Mot>
+                    <button
+                      type="button"
+                      className={styles.petit}
+                      aria-disabled={occupe || undefined}
+                      aria-label={t('gestion.utilisateurs.liste.reinitialiserDe', { nom: u.nom })}
+                      onClick={() => onReinitialiser(u)}
+                    >
+                      {t('gestion.utilisateurs.liste.reinitialiser')}
+                    </button>
+                    {u.bloque && onDebloquer && (
+                      <button
+                        type="button"
+                        className={styles.petit}
+                        aria-disabled={occupe || undefined}
+                        aria-label={t('gestion.utilisateurs.liste.debloquerDe', { nom: u.nom })}
+                        onClick={() => onDebloquer(u)}
+                      >
+                        {t('gestion.utilisateurs.liste.debloquer')}
+                      </button>
                     )}
-                  </div>
-                </div>
-                <select
-                  className={styles.choix}
-                  value={u.groupe}
-                  disabled={lui}
-                  aria-disabled={occupe || undefined}
-                  aria-label={t('gestion.utilisateurs.liste.groupeDe', { nom: u.nom })}
-                  onChange={(e) => onGroupe(u, e.target.value)}
-                >
-                  {groupes.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {nomDuGroupe(g, i18n.language)}
-                    </option>
-                  ))}
-                </select>
-                <Mot niveau={u.bloque ? 'surveiller' : u.actif ? 'ok' : 'neutre'}>
-                  {t(
-                    u.bloque
-                      ? 'gestion.utilisateurs.liste.bloque'
-                      : u.actif
-                        ? 'gestion.utilisateurs.liste.actif'
-                        : 'gestion.utilisateurs.liste.desactive',
-                  )}
-                </Mot>
-                <button
-                  type="button"
-                  className={styles.petit}
-                  aria-disabled={occupe || undefined}
-                  aria-label={t('gestion.utilisateurs.liste.reinitialiserDe', { nom: u.nom })}
-                  onClick={() => onReinitialiser(u)}
-                >
-                  {t('gestion.utilisateurs.liste.reinitialiser')}
-                </button>
-                {u.bloque && onDebloquer && (
-                  <button
-                    type="button"
-                    className={styles.petit}
-                    aria-disabled={occupe || undefined}
-                    aria-label={t('gestion.utilisateurs.liste.debloquerDe', { nom: u.nom })}
-                    onClick={() => onDebloquer(u)}
-                  >
-                    {t('gestion.utilisateurs.liste.debloquer')}
-                  </button>
-                )}
-                {!lui && peutActiver && (
-                  <button
-                    type="button"
-                    className={styles.petitDiscret}
-                    aria-disabled={occupe || undefined}
-                    aria-label={t(
-                      u.actif
-                        ? 'gestion.utilisateurs.liste.desactiverDe'
-                        : 'gestion.utilisateurs.liste.reactiverDe',
-                      { nom: u.nom },
+                    {!lui && peutActiver && (
+                      <button
+                        type="button"
+                        className={styles.petitDiscret}
+                        aria-disabled={occupe || undefined}
+                        aria-label={t(
+                          u.actif
+                            ? 'gestion.utilisateurs.liste.desactiverDe'
+                            : 'gestion.utilisateurs.liste.reactiverDe',
+                          { nom: u.nom },
+                        )}
+                        onClick={() => onActiver(u)}
+                      >
+                        {t(
+                          u.actif
+                            ? 'gestion.utilisateurs.liste.desactiver'
+                            : 'gestion.utilisateurs.liste.reactiver',
+                        )}
+                      </button>
                     )}
-                    onClick={() => onActiver(u)}
-                  >
-                    {t(
-                      u.actif
-                        ? 'gestion.utilisateurs.liste.desactiver'
-                        : 'gestion.utilisateurs.liste.reactiver',
-                    )}
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </Paginee>
         {visibles.length === 0 && (
           <div className={styles.vide}>{t('gestion.utilisateurs.liste.aucunMembre')}</div>
         )}

@@ -1,3 +1,4 @@
+import { Paginee } from '@/ui';
 import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
 import { useId, useRef, useState } from 'react';
@@ -198,7 +199,9 @@ export function Receptions({
         aria-label={t('gestion.fournisseurs.receptions.liste')}
       >
         <div className={styles.regle}>{t('gestion.fournisseurs.receptions.regle')}</div>
-        <ul className={styles.lignes}>{trierCommandes(instantane.commandes).map(ligne)}</ul>
+        <Paginee elements={trierCommandes(instantane.commandes)}>
+          {(page) => <ul className={styles.lignes}>{page.map(ligne)}</ul>}
+        </Paginee>
         {instantane.commandes.length === 0 && (
           <div className={styles.vide}>{t('gestion.fournisseurs.receptions.vide')}</div>
         )}
