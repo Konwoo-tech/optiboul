@@ -753,7 +753,12 @@
         "ligne": "{{type}} · {{quantite}} {{produit}}",
         "erreurQuantite": "Indiquez une quantité.",
         "erreurMotif": "Motif obligatoire : précisez la raison du mouvement.",
-        "toastAjoute": "Mouvement ajouté aux totaux de la session"
+        "toastAjoute": "Mouvement ajouté aux totaux de la session",
+        "totaux": {
+          "titre": "Pains de la session",
+          "livres": "Livrés",
+          "mouvement": "Mouvement"
+        }
       },
       "cloture": {
         "recap": "Récapitulatif de la session",

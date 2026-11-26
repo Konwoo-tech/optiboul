@@ -129,8 +129,15 @@
   cursor: pointer;
 }
 
-.liste {
+.colonneListe {
   flex: 1.4 1 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.liste {
   background: var(--ob-surface);
   border: 1px solid var(--ob-ligne);
   border-radius: 16px;
@@ -164,4 +171,44 @@
   padding: 12px 20px;
   font-size: 14px;
   color: var(--ob-discret);
+}
+
+.totaux {
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 8px 0 12px;
+}
+
+.tableTotaux {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tableTotaux th,
+.tableTotaux td {
+  padding: 8px 20px;
+  text-align: right;
+  border-top: 1px solid var(--ob-ligne);
+}
+
+.tableTotaux thead th {
+  border-top: none;
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.tableTotaux tbody th {
+  text-align: left;
+  font-weight: 700;
+  color: var(--ob-encre);
+}
+
+.invisible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
 }
