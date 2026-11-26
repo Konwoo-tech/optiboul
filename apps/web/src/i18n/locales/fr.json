@@ -743,6 +743,7 @@
           "demandeEnvoyee": "Demande envoyée : la livraison partira dès l’accord d’un valideur."
         },
         "commande": "Commandé : {{commande}}",
+        "prixManquant": "Pas de prix pour {{produits}} : fixez-le dans la fiche du client pour livrer comme commandé.",
         "commandePropose": "{{montant}} FCFA à payer · solde après livraison {{solde}} FCFA",
         "commeCommande": "Livrer comme commandé"
       },
