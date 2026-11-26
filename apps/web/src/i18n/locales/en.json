@@ -1379,6 +1379,7 @@
         "payeeLe": "Paid on {{date}} · {{mode}}",
         "payer": "Pay",
         "recu": "PDF receipt",
+        "historique": "Payments",
         "objets": {
           "farine": "Flour · week {{semaine}} ({{sacs}} sacks)",
           "farineEnCours": "Flour · week {{semaine}} ({{sacs}} sacks so far)",
@@ -1411,6 +1412,14 @@
           "prix_decimal": "The server does not accept a decimal price yet (e.g. 2.5 FCFA per gram): enter a whole price.",
           "defaut": "The delivery could not be recorded. Please try again."
         }
+      },
+      "historique": {
+        "titre": "Payments for {{numero}}",
+        "chargement": "Loading…",
+        "erreur": "The payments could not be read.",
+        "vide": "No payment recorded.",
+        "liste": "Invoice payments",
+        "fermer": "Close"
       },
       "paiement": {
         "titre": "Supplier payment",

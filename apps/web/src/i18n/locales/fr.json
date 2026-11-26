@@ -1379,6 +1379,7 @@
         "payeeLe": "Payée le {{date}} · {{mode}}",
         "payer": "Payer",
         "recu": "Reçu PDF",
+        "historique": "Paiements",
         "objets": {
           "farine": "Farine · semaine {{semaine}} ({{sacs}} sacs)",
           "farineEnCours": "Farine · semaine {{semaine}} ({{sacs}} sacs à ce jour)",
@@ -1411,6 +1412,14 @@
           "prix_decimal": "Le serveur n’accepte pas encore un prix à la décimale (ex. 2,5 FCFA le gramme) : indiquez un prix entier.",
           "defaut": "La réception n’a pas pu être enregistrée. Réessayez."
         }
+      },
+      "historique": {
+        "titre": "Paiements de {{numero}}",
+        "chargement": "Chargement…",
+        "erreur": "Les paiements n’ont pas pu être lus.",
+        "vide": "Aucun paiement enregistré.",
+        "liste": "Paiements de la facture",
+        "fermer": "Fermer"
       },
       "paiement": {
         "titre": "Paiement fournisseur",

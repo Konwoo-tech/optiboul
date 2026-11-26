@@ -24,6 +24,7 @@ import {
 import { Factures } from './Factures.tsx';
 import { Fiches } from './Fiches.tsx';
 import styles from './Fournisseurs.module.css';
+import { ModaleHistorique } from './ModaleHistorique.tsx';
 import { ModalePaiement } from './ModalePaiement.tsx';
 import { ModaleFournisseur, type SaisieFournisseur } from './ModaleFournisseur.tsx';
 import { ModaleReception } from './ModaleReception.tsx';
@@ -55,6 +56,7 @@ const ERREURS_DE_SAISIE = [
 type Fenetre =
   | { genre: 'reception'; numero: string }
   | { genre: 'paiement'; numero: string }
+  | { genre: 'historique'; numero: string }
   | { genre: 'fiche'; id?: string };
 
 /**
@@ -422,6 +424,7 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
               peutModifier={droits.modifier}
               enCours={enCours}
               onPayer={(f: Facture) => ouvrir({ genre: 'paiement', numero: f.numero })}
+              onHistorique={(f: Facture) => ouvrir({ genre: 'historique', numero: f.numero })}
               onRecu={(f) => {
                 if (f.paiement !== undefined) ouvrirLeRecu(f.paiement);
                 afficher(t('gestion.fournisseurs.toasts.recuPret'));
@@ -452,6 +455,13 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
             envoiEnCours={enregistrer.isPending}
             onFermer={() => ouvrir(null)}
             onConfirmer={enregistrerFiche}
+          />
+        )}
+      {fenetre?.genre === 'historique' &&
+        instantane.factures.find((f) => f.numero === fenetre.numero) && (
+          <ModaleHistorique
+            facture={instantane.factures.find((f) => f.numero === fenetre.numero) as Facture}
+            onFermer={() => ouvrir(null)}
           />
         )}
       {droits.modifier && factureOuverte && (
