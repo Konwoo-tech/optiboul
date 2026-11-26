@@ -8,11 +8,13 @@ type Props = {
   employe: Employe;
   occupe: boolean;
   onEnregistrer: (absences: number, avances: number) => void;
+  /** Jours de caisse prévus et non ouverts : proposés comme absences, à confirmer. */
+  joursProposes?: readonly string[];
 };
 
 /** Absences (jours, au demi-jour) et avances à retenir : saisies tant que l'état est en brouillon. */
-export function AbsencesAvances({ employe, occupe, onEnregistrer }: Props) {
-  const { t } = useTranslation();
+export function AbsencesAvances({ employe, occupe, onEnregistrer, joursProposes = [] }: Props) {
+  const { t, i18n } = useTranslation();
   const [absences, setAbsences] = useState(String(employe.absences));
   const [avances, setAvances] = useState(String(employe.avances));
   const valide = /^\d{1,2}([.,]5|[.,]0)?$/.test(absences) && /^\d+$/.test(avances);
@@ -45,6 +47,31 @@ export function AbsencesAvances({ employe, occupe, onEnregistrer }: Props) {
           onChange={(e) => setAvances(e.target.value.replace(/\D/g, ''))}
         />
       </label>
+      {joursProposes.length > 0 && Number(absences.replace(',', '.')) !== joursProposes.length && (
+        <div className={styles.proposition}>
+          <span>
+            {t('gestion.personnel.retenues.proposees', {
+              count: joursProposes.length,
+              jours: joursProposes
+                .map((j) =>
+                  new Intl.DateTimeFormat(i18n.language, {
+                    day: 'numeric',
+                    month: 'short',
+                    timeZone: 'UTC',
+                  }).format(new Date(`${j}T00:00:00Z`)),
+                )
+                .join(', '),
+            })}
+          </span>
+          <button
+            type="button"
+            className={styles.modifierFiche}
+            onClick={() => setAbsences(String(joursProposes.length))}
+          >
+            {t('gestion.personnel.retenues.reprendre')}
+          </button>
+        </div>
+      )}
       <button type="submit" className={styles.principal} aria-disabled={occupe || !valide}>
         {t('gestion.personnel.retenues.enregistrer')}
       </button>

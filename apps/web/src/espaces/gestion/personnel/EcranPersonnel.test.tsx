@@ -345,6 +345,30 @@ describe('Gestion › Personnel : modifier la fiche d’un employé', () => {
   });
 });
 
+describe('Gestion › Personnel : absences proposées', () => {
+  it('propose les jours de caisse non ouverts et les reprend comme absences', async () => {
+    serveur.use(
+      http.get('*/api/v1/paies/:id/absences-proposees/', () =>
+        HttpResponse.json([
+          { ligne: 11, employe: 'Davy', jours: ['2026-10-05', '2026-10-07'], saisies: '0.0' },
+        ]),
+      ),
+    );
+    await ouvrir('willy', 'fr', {
+      ...DEPART,
+      etat: 7,
+      employes: DEPART.employes.map((e) =>
+        e.nom === 'Davy' ? { ...e, id: '11', absences: 0 } : e,
+      ),
+    });
+    fireEvent.click(ligne('Davy'));
+    expect(await screen.findByText(/2 jours de caisse prévus et non ouverts/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Reprendre' }));
+    expect((screen.getByLabelText(/^Jours d’absence/) as HTMLInputElement).value).toBe('2');
+    expect(screen.queryByText(/jours de caisse prévus/)).toBeNull();
+  });
+});
+
 describe('Gestion › Personnel : validation par le propriétaire', () => {
   it('le propriétaire voit Valider et Refuser, pas Soumettre', async () => {
     await ouvrir('fotso', 'fr', SOUMIS);

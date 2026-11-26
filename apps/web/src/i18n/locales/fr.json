@@ -1195,7 +1195,10 @@
       "retenues": {
         "absences": "Jours d’absence (0,5 possible)",
         "avances": "Avances à retenir (FCFA)",
-        "enregistrer": "Enregistrer les retenues"
+        "enregistrer": "Enregistrer les retenues",
+        "proposees_one": "{{count}} jour de caisse prévu et non ouvert ({{jours}}).",
+        "proposees_other": "{{count}} jours de caisse prévus et non ouverts ({{jours}}).",
+        "reprendre": "Reprendre"
       },
       "valider": "Valider l’état de paie",
       "refuser": "Refuser",

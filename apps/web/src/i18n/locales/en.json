@@ -1195,7 +1195,10 @@
       "retenues": {
         "absences": "Days of absence (0.5 allowed)",
         "avances": "Advances to deduct (FCFA)",
-        "enregistrer": "Save deductions"
+        "enregistrer": "Save deductions",
+        "proposees_one": "{{count}} planned cash day not opened ({{jours}}).",
+        "proposees_other": "{{count}} planned cash days not opened ({{jours}}).",
+        "reprendre": "Use"
       },
       "valider": "Approve payroll",
       "refuser": "Refuse",
