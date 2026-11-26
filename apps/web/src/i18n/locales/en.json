@@ -238,7 +238,10 @@
       "titre": "Notification view",
       "detail": "Detail",
       "regroupees": "By hour",
-      "compte": "{{nombre}} notifications · {{nonLues}} unread",
+      "nombre_one": "{{count}} notification",
+    "nombre_other": "{{count}} notifications",
+    "nonLues_one": "{{count}} unread",
+    "nonLues_other": "{{count}} unread",
       "marquerGroupe": "Mark group as read"
     },
     "toutMarquerLu": "Mark all read",

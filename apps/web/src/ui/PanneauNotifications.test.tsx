@@ -71,4 +71,14 @@ describe('tiroir de notifications', () => {
     fireEvent.keyDown(window, { key: 'Tab' });
     expect(document.activeElement).toBe(fermer);
   });
+
+  it('accorde « notification » et « non lue » au singulier et au pluriel', () => {
+    const t = initI18n('fr').t.bind(initI18n('fr'));
+    expect(`${t('coque.vue.nombre', { count: 1 })} · ${t('coque.vue.nonLues', { count: 1 })}`).toBe(
+      '1 notification · 1 non lue',
+    );
+    expect(`${t('coque.vue.nombre', { count: 4 })} · ${t('coque.vue.nonLues', { count: 3 })}`).toBe(
+      '4 notifications · 3 non lues',
+    );
+  });
 });
