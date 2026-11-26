@@ -367,6 +367,25 @@ describe('Atelier › Stocks : entrées et sorties', () => {
     );
   });
 
+  it('un refus du serveur sans texte prévu à l’écran affiche le message du serveur', async () => {
+    await ouvrir();
+    serveur.use(
+      http.post('*/api/v1/mouvements-stock/saisir/', () =>
+        HttpResponse.json(
+          { detail: 'Aucune semaine n’est ouverte (R1).', code: 'semaine_non_ouverte' },
+          { status: 409 },
+        ),
+      ),
+    );
+    onglet('Entrées et sorties');
+    saisir(screen.getByLabelText('Quantité'), '200');
+    saisir(screen.getByLabelText('Motif (obligatoire)'), 'achat de matière');
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'Aucune semaine n’est ouverte (R1).',
+    );
+  });
+
   it('exige la quantité puis le motif, avec le focus sur le champ fautif', async () => {
     await ouvrir();
     onglet('Entrées et sorties');

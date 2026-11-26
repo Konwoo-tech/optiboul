@@ -1,7 +1,7 @@
 import { useUtilisateurCourant } from '@/auth';
 import { ErreurApi } from '@/api';
 import { useTranslation } from '@/i18n';
-import { EcranChargement, EcranErreur, useToast, afficherRefus } from '@/ui';
+import { EcranChargement, EcranErreur, useToast, afficherRefus, codeOuTexte } from '@/ui';
 import { formaterNombre } from '@/utils';
 import { useCallback, useState, type KeyboardEvent } from 'react';
 import { useSearchParams } from 'react-router';
@@ -173,7 +173,10 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
       );
       return null;
     } catch (erreur) {
-      return codeErreur(erreur) ?? 'defaut';
+      return (
+        codeOuTexte(erreur, (c) => i18n.exists(`gestion.fournisseurs.planifier.erreurs.${c}`)) ??
+        'defaut'
+      );
     }
   };
 
@@ -299,7 +302,7 @@ export default function EcranFournisseurs({ ecran }: { ecran: Ecran }) {
         if (champs.includes('nom')) return 'nom';
         if (champs.includes('matieres')) return 'matieres';
       }
-      return 'defaut';
+      return codeOuTexte(erreur, () => false) ?? 'defaut';
     }
   };
 

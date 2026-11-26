@@ -1,3 +1,4 @@
+import { estTexteDuServeur, texteDuServeur } from '@/ui';
 import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
 import { useId, useRef, useState } from 'react';
@@ -77,11 +78,13 @@ export function Formulaire({
   const message = erreur
     ? t(`comptoir.depenses.erreurs.${erreur}`)
     : erreurServeur
-      ? t(
-          i18n.exists(`comptoir.depenses.erreurs.${erreurServeur}`)
-            ? `comptoir.depenses.erreurs.${erreurServeur}`
-            : 'comptoir.depenses.erreurs.defaut',
-        )
+      ? estTexteDuServeur(erreurServeur)
+        ? texteDuServeur(erreurServeur)
+        : t(
+            i18n.exists(`comptoir.depenses.erreurs.${erreurServeur}`)
+              ? `comptoir.depenses.erreurs.${erreurServeur}`
+              : 'comptoir.depenses.erreurs.defaut',
+          )
       : '';
 
   const valider = async () => {

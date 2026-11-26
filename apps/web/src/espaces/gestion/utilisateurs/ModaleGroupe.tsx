@@ -1,5 +1,5 @@
 import { useTranslation } from '@/i18n';
-import { FenetreModale } from '@/ui';
+import { FenetreModale, estTexteDuServeur, texteDuServeur } from '@/ui';
 import { useState, type SubmitEvent } from 'react';
 
 import type { Profil } from '../../../profils.ts';
@@ -86,7 +86,9 @@ export function ModaleGroupe({ groupe, groupes, envoiEnCours, onConfirmer, onFer
         </label>
         {erreur && (
           <div className={styles.erreur} role="alert">
-            {t(`gestion.utilisateurs.groupes.modifier.erreurs.${erreur}`)}
+            {estTexteDuServeur(erreur)
+              ? texteDuServeur(erreur)
+              : t(`gestion.utilisateurs.groupes.modifier.erreurs.${erreur}`)}
           </div>
         )}
         <div className={styles.actions}>

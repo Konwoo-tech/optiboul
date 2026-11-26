@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { EcranChargement, EcranErreur, EnTetePage, useToast } from '@/ui';
+import { EcranChargement, EcranErreur, EnTetePage, useToast, messageOuDefaut } from '@/ui';
 import { useCallback, useState, type KeyboardEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
@@ -71,7 +71,11 @@ export default function SessionComptoir() {
     (erreur: unknown) => {
       const code = codeErreur(erreur);
       const connu = code && i18n.exists(`comptoir.session.erreurs.${code}`);
-      afficher(t(connu ? `comptoir.session.erreurs.${code}` : 'comptoir.session.erreurs.defaut'));
+      afficher(
+        connu
+          ? t(`comptoir.session.erreurs.${code}`)
+          : messageOuDefaut(erreur, t('comptoir.session.erreurs.defaut')),
+      );
     },
     [afficher, i18n, t],
   );

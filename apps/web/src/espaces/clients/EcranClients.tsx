@@ -1,7 +1,7 @@
 import { useUtilisateurCourant } from '@/auth';
 import { ErreurApi } from '@/api';
 import { useTranslation } from '@/i18n';
-import { useToast, Paginee } from '@/ui';
+import { useToast, Paginee, codeOuTexte } from '@/ui';
 import { formaterNombre } from '@/utils';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -157,7 +157,7 @@ function refusDeSaisie(erreur: unknown): string {
     if (champs.includes('telephone')) return 'telephone';
     if (champs.includes('nom')) return 'nom';
   }
-  return 'defaut';
+  return codeOuTexte(erreur, () => false) ?? 'defaut';
 }
 
 /**

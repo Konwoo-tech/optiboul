@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { EcranChargement, EcranErreur, useToast, afficherRefus } from '@/ui';
+import { EcranChargement, EcranErreur, useToast, afficherRefus, codeOuTexte } from '@/ui';
 import { formaterHeure } from '@/utils';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -308,7 +308,9 @@ export default function EcranSemaines({ ecran }: { ecran: Ecran }) {
               afficher(t('gestion.semaines.planification.toast', { numero: saisie.numero }));
               return null;
             } catch (erreur) {
-              return codeErreur(erreur) === 'semaine_existante' ? 'existe' : 'defaut';
+              return codeErreur(erreur) === 'semaine_existante'
+                ? 'existe'
+                : (codeOuTexte(erreur, () => false) ?? 'defaut');
             }
           }}
         />

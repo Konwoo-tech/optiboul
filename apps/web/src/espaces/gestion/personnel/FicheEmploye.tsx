@@ -1,3 +1,4 @@
+import { estTexteDuServeur, texteDuServeur } from '@/ui';
 import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
 import { useId, useRef, useState } from 'react';
@@ -114,7 +115,9 @@ export function FicheEmploye({
   const message = erreur
     ? t(`gestion.personnel.saisie.erreurs.${erreur}`)
     : erreurServeur
-      ? t('gestion.personnel.saisie.erreurs.defaut')
+      ? estTexteDuServeur(erreurServeur)
+        ? texteDuServeur(erreurServeur)
+        : t('gestion.personnel.saisie.erreurs.defaut')
       : '';
 
   const ajouter = async () => {

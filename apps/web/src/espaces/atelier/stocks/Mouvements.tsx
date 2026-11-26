@@ -1,4 +1,4 @@
-import { Paginee } from '@/ui';
+import { Paginee, estTexteDuServeur, texteDuServeur } from '@/ui';
 import { useTranslation } from '@/i18n';
 import { useId, useRef, useState } from 'react';
 
@@ -58,21 +58,23 @@ export function Mouvements({ instantane, peutSaisir, onEnregistrer }: Props) {
 
   const mouvements = filtrerMouvements(instantane.mouvements, filtre);
   const puce = (actif: boolean) => `${styles.puce} ${actif ? styles.actif : ''}`;
-  const message = erreur
-    ? t(
-        `atelier.stocks.mouvements.erreurs.${
-          [
-            'quantite',
-            'motif',
-            'quantite_obligatoire',
-            'motif_obligatoire',
-            'stock_insuffisant',
-          ].includes(erreur)
-            ? erreur
-            : 'defaut'
-        }`,
-      )
-    : '';
+  const message = !erreur
+    ? ''
+    : estTexteDuServeur(erreur)
+      ? texteDuServeur(erreur)
+      : t(
+          `atelier.stocks.mouvements.erreurs.${
+            [
+              'quantite',
+              'motif',
+              'quantite_obligatoire',
+              'motif_obligatoire',
+              'stock_insuffisant',
+            ].includes(erreur)
+              ? erreur
+              : 'defaut'
+          }`,
+        );
 
   const valider = async () => {
     const trouvee = erreurDeMouvement(quantiteTexte, motif);

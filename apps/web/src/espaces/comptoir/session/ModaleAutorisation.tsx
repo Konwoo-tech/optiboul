@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { FenetreModale } from '@/ui';
+import { FenetreModale, messageOuDefaut } from '@/ui';
 import { useEffect, useRef, useState } from 'react';
 
 import { codeErreur, type ActionsSession } from './api.ts';
@@ -42,7 +42,7 @@ export function ModaleAutorisation({ demande, actions, onFermer, onDecision }: P
       setErreur(
         codeErreur(e) === 'code_incorrect'
           ? t('comptoir.session.modales.autorisation.codeIncorrect')
-          : t('comptoir.session.erreurs.defaut'),
+          : messageOuDefaut(e, t('comptoir.session.erreurs.defaut')),
       );
     }
   };

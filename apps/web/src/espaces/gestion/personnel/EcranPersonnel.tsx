@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { EcranChargement, EcranErreur, useToast, afficherRefus } from '@/ui';
+import { EcranChargement, EcranErreur, useToast, afficherRefus, codeOuTexte } from '@/ui';
 import { useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -164,7 +164,7 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
         {
           onSuccess: () => resoudre(true),
           onError: (erreur) => {
-            setErreurServeur(codeErreur(erreur) ?? 'erreur');
+            setErreurServeur(codeOuTexte(erreur, (c) => c === 'montant_invalide') ?? 'erreur');
             if (codeErreur(erreur) !== 'montant_invalide') signaler(erreur);
             resoudre(false);
           },
@@ -351,7 +351,10 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
               afficher(t('gestion.personnel.employe.toastModifie', { nom: employe.nom }));
               return null;
             } catch (erreur) {
-              return codeErreur(erreur) ?? 'defaut';
+              return (
+                codeOuTexte(erreur, (c) => i18n.exists(`gestion.personnel.employe.erreurs.${c}`)) ??
+                'defaut'
+              );
             }
           }}
         />
@@ -367,7 +370,10 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
               afficher(t('gestion.personnel.employe.toast', { nom: employe.nom }));
               return null;
             } catch (erreur) {
-              return codeErreur(erreur) ?? 'defaut';
+              return (
+                codeOuTexte(erreur, (c) => i18n.exists(`gestion.personnel.employe.erreurs.${c}`)) ??
+                'defaut'
+              );
             }
           }}
         />

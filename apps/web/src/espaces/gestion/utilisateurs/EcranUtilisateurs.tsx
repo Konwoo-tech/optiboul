@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { EcranChargement, EcranErreur, useToast, afficherRefus } from '@/ui';
+import { EcranChargement, EcranErreur, useToast, afficherRefus, codeOuTexte } from '@/ui';
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -272,7 +272,11 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
       return null;
     } catch (erreur) {
       const code = codeErreur(erreur);
-      return code === 'groupe_existant' ? 'existe' : code === 'nom_obligatoire' ? 'nom' : 'defaut';
+      return code === 'groupe_existant'
+        ? 'existe'
+        : code === 'nom_obligatoire'
+          ? 'nom'
+          : (codeOuTexte(erreur, () => false) ?? 'defaut');
     }
   };
 

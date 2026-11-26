@@ -1,13 +1,12 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { EcranChargement, EcranErreur, useToast } from '@/ui';
+import { EcranChargement, EcranErreur, useToast, codeOuTexte, messageOuDefaut } from '@/ui';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import type { Ecran } from '../../../navigation.ts';
 import { EnTeteEcran } from '../../EnTeteEcran.tsx';
 import {
-  codeErreur,
   useDepenses,
   useAnnulerDepense,
   useEnregistrerDepense,
@@ -35,7 +34,7 @@ import { ACHATS_COURANTS, CATEGORIES, type Depense, type NouvelleDepense } from 
  * propriétaire consulte (il valide les dépenses du gérant depuis l'écran des demandes).
  */
 export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const afficher = useToast();
   const [aAnnuler, setAAnnuler] = useState<Depense | null>(null);
   const { utilisateur } = useUtilisateurCourant();
@@ -91,7 +90,9 @@ export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
       );
       return true;
     } catch (erreur) {
-      setErreurServeur(codeErreur(erreur) ?? 'defaut');
+      setErreurServeur(
+        codeOuTexte(erreur, (c) => i18n.exists(`comptoir.depenses.erreurs.${c}`)) ?? 'defaut',
+      );
       return false;
     }
   };
@@ -164,9 +165,9 @@ export default function EcranDepenses({ ecran }: { ecran: Ecran }) {
               await annulerDepense.mutateAsync({ id: aAnnuler.id, motif });
               setAAnnuler(null);
               afficher(t('comptoir.depenses.annulation.toast'));
-              return false;
-            } catch {
-              return true;
+              return null;
+            } catch (erreur) {
+              return messageOuDefaut(erreur, t('comptoir.depenses.annulation.erreurs.serveur'));
             }
           }}
         />
