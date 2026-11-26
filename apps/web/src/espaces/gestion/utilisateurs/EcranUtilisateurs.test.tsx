@@ -527,6 +527,43 @@ describe('Gestion › Utilisateurs : groupes', () => {
     expect(corps).toMatchObject({ nom: 'Équipe du matin' });
   });
 
+  it('supprime un groupe vide après confirmation, et dit le refus du serveur sinon', async () => {
+    const supprimes: string[] = [];
+    await ouvrir('fr', '?onglet=groupes');
+    await screen.findByRole('heading', { name: 'Nouveau groupe' });
+    fireEvent.change(screen.getByLabelText('Nom du groupe'), { target: { value: 'Livreurs' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
+    await screen.findByRole('heading', { name: 'Livreurs' });
+    serveur.use(
+      http.delete('*/api/v1/groupes/:id/', ({ params }) => {
+        supprimes.push(String(params.id));
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    // Un groupe qui a des membres ne propose pas la suppression.
+    expect(screen.getAllByRole('button', { name: /^Supprimer le groupe/ })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer le groupe Livreurs' }));
+    const fenetre = within(await screen.findByRole('dialog'));
+    expect(fenetre.getByText('Supprimer le groupe « Livreurs » ?')).toBeTruthy();
+    fireEvent.click(fenetre.getByRole('button', { name: 'Supprimer' }));
+    expect(await screen.findByText('Groupe Livreurs supprimé')).toBeTruthy();
+    expect(supprimes).toHaveLength(1);
+  });
+
+  it('explique le refus d’une suppression : le groupe a encore des membres', async () => {
+    await ouvrir('fr', '?onglet=groupes');
+    await screen.findByRole('heading', { name: 'Nouveau groupe' });
+    fireEvent.change(screen.getByLabelText('Nom du groupe'), { target: { value: 'Livreurs' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Créer le groupe' }));
+    await screen.findByRole('heading', { name: 'Livreurs' });
+    serveur.use(http.delete('*/api/v1/groupes/:id/', () => refus(409, 'groupe_non_vide')));
+    fireEvent.click(screen.getByRole('button', { name: 'Supprimer le groupe Livreurs' }));
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Supprimer' }),
+    );
+    expect(await screen.findByText(/Ce groupe a encore des membres/)).toBeTruthy();
+  });
+
   it('dit le refus du serveur pour un nom en double', async () => {
     await ouvrir('fr', '?onglet=groupes');
     await screen.findByRole('heading', { name: 'Nouveau groupe' });

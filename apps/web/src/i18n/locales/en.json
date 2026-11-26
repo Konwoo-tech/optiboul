@@ -1854,6 +1854,18 @@
         "erreurExiste": "A group already has this name.",
         "erreurNomLong": "The group name is at most {{max}} characters long.",
         "erreurDescriptionLongue": "The description is at most {{max}} characters long.",
+        "supprimerNom": "Delete the group {{nom}}",
+        "supprimer": {
+          "bouton": "Delete",
+          "titre": "Delete group",
+          "question": "Delete the group “{{nom}}”?",
+          "note": "The group is empty. Deletion cannot be undone; it stays in the activity log.",
+          "annuler": "Cancel",
+          "confirmer": "Delete",
+          "toast": "Group {{nom}} deleted",
+          "nonVide": "This group still has members: move them first. The list was reloaded.",
+          "protege": "This built-in group cannot be deleted."
+        },
         "modifierNom": "Edit group {{nom}}",
         "modifierTitre": "Edit the group",
         "modifier": {

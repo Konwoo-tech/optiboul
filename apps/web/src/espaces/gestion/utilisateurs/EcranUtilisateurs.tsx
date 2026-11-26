@@ -13,6 +13,7 @@ import {
   useChangerDeGroupe,
   useCreerUnGroupe,
   useModifierUnGroupe,
+  useSupprimerUnGroupe,
   useCreerUtilisateur,
   erreursDeChamps,
   useReinitialiserLeCode,
@@ -20,6 +21,7 @@ import {
 } from './api.ts';
 import { ListeUtilisateurs } from './ListeUtilisateurs.tsx';
 import { ModaleGroupe } from './ModaleGroupe.tsx';
+import { ModaleSuppressionGroupe } from './ModaleSuppressionGroupe.tsx';
 import { NouvelUtilisateur } from './NouvelUtilisateur.tsx';
 import {
   aDesErreurs,
@@ -72,6 +74,8 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
   const activer = useActiver(nom);
   const creerGroupe = useCreerUnGroupe(nom);
   const modifierGroupe = useModifierUnGroupe(nom);
+  const supprimerGroupe = useSupprimerUnGroupe(nom);
+  const [groupeASupprimer, setGroupeASupprimer] = useState<Groupe | null>(null);
   const [groupeEdite, setGroupeEdite] = useState<Groupe | null>(null);
   const creer = useCreerUtilisateur(nom);
   const debloquer = useDebloquer(nom);
@@ -163,17 +167,21 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
       erreur,
       code === 'droit_insuffisant'
         ? 'gestion.utilisateurs.toasts.droit'
-        : code === 'compte_propre'
-          ? 'gestion.utilisateurs.toasts.comptePropre'
-          : code === 'groupe_existant'
-            ? 'gestion.utilisateurs.groupes.erreurExiste'
-            : code === 'dernier_administrateur'
-              ? 'gestion.utilisateurs.toasts.dernierAdministrateur'
-              : code === 'utilisateur_inconnu' || code === 'groupe_inconnu'
-                ? 'gestion.utilisateurs.toasts.inconnu'
-                : code
-                  ? 'gestion.utilisateurs.toasts.impossible'
-                  : 'gestion.utilisateurs.toasts.erreur',
+        : code === 'groupe_non_vide'
+          ? 'gestion.utilisateurs.groupes.supprimer.nonVide'
+          : code === 'groupe_protege'
+            ? 'gestion.utilisateurs.groupes.supprimer.protege'
+            : code === 'compte_propre'
+              ? 'gestion.utilisateurs.toasts.comptePropre'
+              : code === 'groupe_existant'
+                ? 'gestion.utilisateurs.groupes.erreurExiste'
+                : code === 'dernier_administrateur'
+                  ? 'gestion.utilisateurs.toasts.dernierAdministrateur'
+                  : code === 'utilisateur_inconnu' || code === 'groupe_inconnu'
+                    ? 'gestion.utilisateurs.toasts.inconnu'
+                    : code
+                      ? 'gestion.utilisateurs.toasts.impossible'
+                      : 'gestion.utilisateurs.toasts.erreur',
     );
     void requete.refetch();
   };
@@ -377,6 +385,7 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
               onAjouterMembre={(g) => nouveau(g)}
               onCreer={surCreerGroupe}
               onModifier={(g) => setGroupeEdite(g)}
+              onSupprimer={setGroupeASupprimer}
             />
           )}
           {onglet === 'nouveau' && (
@@ -432,6 +441,27 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
           )}
         </div>
       </div>
+      {groupeASupprimer && (
+        <ModaleSuppressionGroupe
+          groupe={groupeASupprimer}
+          envoiEnCours={supprimerGroupe.isPending}
+          onFermer={() => setGroupeASupprimer(null)}
+          onConfirmer={() =>
+            supprimerGroupe.mutate(groupeASupprimer.id, {
+              onSuccess: () => {
+                setGroupeASupprimer(null);
+                afficher(
+                  t('gestion.utilisateurs.groupes.supprimer.toast', { nom: groupeASupprimer.nom }),
+                );
+              },
+              onError: (erreur) => {
+                setGroupeASupprimer(null);
+                signaler(erreur);
+              },
+            })
+          }
+        />
+      )}
       {groupeEdite && (
         <ModaleGroupe
           groupe={groupeEdite}

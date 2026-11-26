@@ -29,6 +29,8 @@ type Props = {
   onCreer: (groupe: NouveauGroupe) => Promise<string | null>;
   /** Ouvre la fenêtre de modification du groupe. */
   onModifier?: (groupe: Groupe) => void;
+  /** Demande la suppression d'un groupe vide et non protégé. */
+  onSupprimer?: (groupe: Groupe) => void;
 };
 
 /** Onglet « Groupes » : une carte par groupe et le formulaire d'un nouveau groupe (US-021). */
@@ -39,6 +41,7 @@ export function VueGroupes({
   onAjouterMembre,
   onCreer,
   onModifier,
+  onSupprimer,
 }: Props) {
   const { t, i18n } = useTranslation();
   const idErreur = useId();
@@ -123,6 +126,16 @@ export function VueGroupes({
                 onClick={() => onModifier(g)}
               >
                 {t('gestion.utilisateurs.groupes.modifier.bouton')}
+              </button>
+            )}
+            {onSupprimer && !g.protege && membres.length === 0 && (
+              <button
+                type="button"
+                className={`${styles.petit} ${styles.ajouterMembre}`}
+                aria-label={t('gestion.utilisateurs.groupes.supprimerNom', { nom: nomLocalise })}
+                onClick={() => onSupprimer(g)}
+              >
+                {t('gestion.utilisateurs.groupes.supprimer.bouton')}
               </button>
             )}
           </section>

@@ -1,6 +1,7 @@
 import {
   ErreurApi,
   groupesCreate,
+  groupesDestroy,
   groupesPartialUpdate,
   utilisateursActivationCreate,
   utilisateursCreate,
@@ -141,6 +142,13 @@ export const useModifierUnGroupe = (utilisateur: string | undefined) =>
     } catch (erreur) {
       throw enErreurDeGroupe(erreur);
     }
+    return {};
+  });
+
+/** Supprime un groupe vide ; le serveur refuse un groupe protégé ou qui a encore des membres. */
+export const useSupprimerUnGroupe = (utilisateur: string | undefined) =>
+  useAction<string>(utilisateur, async (id) => {
+    await groupesDestroy(Number(id));
     return {};
   });
 
