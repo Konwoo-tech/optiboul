@@ -7,12 +7,14 @@ import {
   utilisateursCreate,
   utilisateursDebloquerCreate,
   utilisateursGroupeCreate,
+  utilisateursPartialUpdate,
   utilisateursReinitialiserCodeCreate,
 } from '@/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { enErreurDeChamps, lireUtilisateursReels, telephoneDuServeur } from './reel.ts';
 import type {
+  Canal,
   ErreursUtilisateur,
   InstantaneUtilisateurs,
   NouveauGroupe,
@@ -114,6 +116,23 @@ export const useActiver = (utilisateur: string | undefined) =>
     await utilisateursActivationCreate(Number(id), { actif });
     return {};
   });
+/** Corrige le nom, le téléphone et le canal d'un compte (`PATCH /utilisateurs/{id}/`). */
+export const useModifierUnUtilisateur = (utilisateur: string | undefined) =>
+  useAction<{ id: string; nom: string; telephone: string; canal: Canal }>(
+    utilisateur,
+    async ({ id, nom, telephone, canal }) => {
+      try {
+        await utilisateursPartialUpdate(Number(id), {
+          nom,
+          telephone: telephoneDuServeur(telephone),
+          canal,
+        });
+      } catch (erreur) {
+        throw enErreurDeChamps(erreur);
+      }
+      return {};
+    },
+  );
 /** Lève le blocage d'un compte après trop de codes faux. */
 export const useDebloquer = (utilisateur: string | undefined) =>
   useAction<string>(utilisateur, async (id) => {

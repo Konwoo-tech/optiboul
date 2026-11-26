@@ -1789,6 +1789,8 @@
         "debloquerDe": "Débloquer {{nom}}",
         "sousLigneSansTelephone": "{{email}} · dernier accès {{acces}}",
         "desactive": "Désactivé",
+        "modifierDe": "Modifier le compte de {{nom}}",
+        "modifier": "Modifier",
         "reinitialiser": "Réinitialiser le code",
         "reinitialiserDe": "Réinitialiser le code de {{nom}}",
         "desactiver": "Désactiver",
@@ -1884,6 +1886,20 @@
             "defaut": "Le groupe n’a pas pu être modifié. Réessayez."
           }
         }
+      },
+      "modifier": {
+        "titre": "Modifier le compte",
+        "nom": "Nom complet",
+        "telephone": "Téléphone (+237)",
+        "canal": "Canal de vérification",
+        "canaux": {
+          "whatsapp": "WhatsApp",
+          "sms": "SMS"
+        },
+        "annuler": "Annuler",
+        "enregistrer": "Enregistrer",
+        "toast": "Compte de {{nom}} modifié",
+        "erreurDefaut": "Le compte n’a pas pu être modifié. Réessayez."
       },
       "formulaire": {
         "etape1": "1. Identité",

@@ -23,6 +23,8 @@ type Props = {
   peutActiver?: boolean;
   /** Vrai serveur : lève le blocage d'un compte. */
   onDebloquer?: (utilisateur: Utilisateur) => void;
+  /** Ouvre la fenêtre de modification du compte (nom, téléphone, canal). */
+  onModifier?: (utilisateur: Utilisateur) => void;
 };
 
 /** Onglet « Utilisateurs » : filtres par groupe, une ligne par compte, puis les droits par profil. */
@@ -38,6 +40,7 @@ export function ListeUtilisateurs({
   onActiver,
   peutActiver = true,
   onDebloquer,
+  onModifier,
 }: Props) {
   const { t, i18n } = useTranslation();
   const idFiltres = useId();
@@ -121,6 +124,17 @@ export function ListeUtilisateurs({
                             : 'gestion.utilisateurs.liste.desactive',
                       )}
                     </Mot>
+                    {onModifier && (
+                      <button
+                        type="button"
+                        className={styles.petit}
+                        aria-disabled={occupe || undefined}
+                        aria-label={t('gestion.utilisateurs.liste.modifierDe', { nom: u.nom })}
+                        onClick={() => onModifier(u)}
+                      >
+                        {t('gestion.utilisateurs.liste.modifier')}
+                      </button>
+                    )}
                     <button
                       type="button"
                       className={styles.petit}

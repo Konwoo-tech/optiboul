@@ -358,6 +358,50 @@ describe('Gestion › Utilisateurs : liste', () => {
     await waitFor(() => expect(screen.getAllByText('Actif')).toHaveLength(9));
   });
 
+  it('modifie le nom, le téléphone et le canal d’un compte', async () => {
+    let corps: Record<string, unknown> | undefined;
+    serveur.use(
+      http.patch('*/api/v1/utilisateurs/:id/', async ({ request }) => {
+        corps = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({});
+      }),
+    );
+    await ouvrir();
+    fireEvent.click(await screen.findByRole('button', { name: 'Modifier le compte de Rachel' }));
+    const fenetre = within(await screen.findByRole('dialog'));
+    expect((fenetre.getByLabelText('Nom complet') as HTMLInputElement).value).toBe('Rachel');
+    fireEvent.change(fenetre.getByLabelText('Nom complet'), { target: { value: 'Rachel Tchoua' } });
+    fireEvent.change(fenetre.getByLabelText('Téléphone (+237)'), {
+      target: { value: '6 55 44 33 22' },
+    });
+    fireEvent.change(fenetre.getByLabelText('Canal de vérification'), { target: { value: 'sms' } });
+    fireEvent.click(fenetre.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByText('Compte de Rachel Tchoua modifié')).toBeTruthy();
+    expect(corps).toEqual({ nom: 'Rachel Tchoua', telephone: '+237655443322', canal: 'sms' });
+  });
+
+  it('refuse un téléphone invalide sans appeler le serveur, puis dit le refus du serveur', async () => {
+    await ouvrir();
+    fireEvent.click(await screen.findByRole('button', { name: 'Modifier le compte de Rachel' }));
+    const fenetre = within(await screen.findByRole('dialog'));
+    fireEvent.change(fenetre.getByLabelText('Téléphone (+237)'), { target: { value: '12 34' } });
+    fireEvent.click(fenetre.getByRole('button', { name: 'Enregistrer' }));
+    expect((await fenetre.findByRole('alert')).textContent).toBe('9 chiffres commençant par 6.');
+    serveur.use(
+      http.patch('*/api/v1/utilisateurs/:id/', () =>
+        HttpResponse.json(
+          { detail: 'Compte du propriétaire protégé.', code: 'compte_protege' },
+          { status: 409 },
+        ),
+      ),
+    );
+    fireEvent.change(fenetre.getByLabelText('Téléphone (+237)'), {
+      target: { value: '655443322' },
+    });
+    fireEvent.click(fenetre.getByRole('button', { name: 'Enregistrer' }));
+    expect((await fenetre.findByRole('alert')).textContent).toBe('Compte du propriétaire protégé.');
+  });
+
   it('dit le refus du serveur quand le profil ne permet pas l’action', async () => {
     await ouvrir();
     await screen.findByLabelText('Groupe de Davy');
