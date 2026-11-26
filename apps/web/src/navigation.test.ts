@@ -34,7 +34,7 @@ describe('navigation', () => {
 
   it('l’administrateur ne voit que l’administration, le journal et les paramètres', () => {
     const cles = ecransDe('administrateur', 'gestion').map((ecran) => ecran.cle);
-    expect(cles).toEqual(['utilisateurs', 'sauvegardes', 'journal', 'parametres']);
+    expect(cles).toEqual(['utilisateurs', 'sauvegardes', 'envois', 'journal', 'parametres']);
   });
 
   it('le gérant n’a pas « Paramètres » (cahier des charges §3.3), le propriétaire l’a', () => {
@@ -49,6 +49,7 @@ describe('navigation', () => {
       'personnel',
       'demandes',
       'rapports',
+      'envois',
       'journal',
     ]);
     expect(proprietaire).toEqual([...gerant, 'parametres']);

@@ -196,6 +196,7 @@
     "personnel": "Staff & payroll",
     "utilisateurs": "Users & roles",
     "rapports": "Reports",
+    "envois": "Messages",
     "sauvegardes": "Backups",
     "journal": "Activity log",
     "parametres": "Settings"
@@ -214,6 +215,7 @@
     "personnel": "Staff & payroll",
     "utilisateurs": "Users & roles",
     "rapports": "Reports",
+    "envois": "Messages",
     "sauvegardes": "Backups",
     "journal": "Activity log",
     "parametres": "Settings"
@@ -2020,6 +2022,38 @@
         "ligne": "{{jour}} · {{creneau}} — app: {{application}} · Excel: {{excel}}",
         "erreur": "The file could not be compared. Check its columns."
       }
+    },
+    "envois": {
+      "erreurChargement": "Could not read the send queue. Try again.",
+      "internet": "Internet",
+      "internetValeurs": {
+        "en_ligne": "Online",
+        "hors_ligne": "Offline",
+        "inconnu": "Unknown"
+      },
+      "enAttente": "Pending",
+      "enEchec": "Failed",
+      "filtres": "Filter by status",
+      "liste": "Send queue ({{count}})",
+      "statuts": {
+        "tous": "All",
+        "en_attente": "Pending",
+        "envoye": "Sent",
+        "echec": "Failed"
+      },
+      "canaux": {
+        "sms": "SMS",
+        "whatsapp": "WhatsApp",
+        "email": "E-mail"
+      },
+      "creeLe": "Created {{date}}",
+      "tentatives_one": "{{count}} attempt",
+      "tentatives_other": "{{count}} attempts",
+      "relancer": "Retry",
+      "relancerNom": "Retry the message to {{destinataire}}",
+      "toastRelance": "Message put back in the queue",
+      "toastErreur": "Only a failed message can be retried.",
+      "vide": "No message in this list."
     }
   },
   "atelier": {
