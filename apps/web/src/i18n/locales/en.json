@@ -1789,6 +1789,8 @@
         "debloquerDe": "Unlock {{nom}}",
         "sousLigneSansTelephone": "{{email}} · last access {{acces}}",
         "desactive": "Disabled",
+        "modifierDe": "Edit {{nom}}’s account",
+        "modifier": "Edit",
         "reinitialiser": "Reset code",
         "reinitialiserDe": "Reset the code of {{nom}}",
         "desactiver": "Disable",
@@ -1884,6 +1886,20 @@
             "defaut": "The group could not be updated. Try again."
           }
         }
+      },
+      "modifier": {
+        "titre": "Edit account",
+        "nom": "Full name",
+        "telephone": "Phone (+237)",
+        "canal": "Verification channel",
+        "canaux": {
+          "whatsapp": "WhatsApp",
+          "sms": "SMS"
+        },
+        "annuler": "Cancel",
+        "enregistrer": "Save",
+        "toast": "{{nom}}’s account updated",
+        "erreurDefaut": "The account could not be updated. Please try again."
       },
       "formulaire": {
         "etape1": "1. Identity",

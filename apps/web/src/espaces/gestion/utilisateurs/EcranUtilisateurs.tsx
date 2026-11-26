@@ -13,6 +13,7 @@ import {
   useChangerDeGroupe,
   useCreerUnGroupe,
   useModifierUnGroupe,
+  useModifierUnUtilisateur,
   useSupprimerUnGroupe,
   useCreerUtilisateur,
   erreursDeChamps,
@@ -21,6 +22,7 @@ import {
 } from './api.ts';
 import { ListeUtilisateurs } from './ListeUtilisateurs.tsx';
 import { ModaleGroupe } from './ModaleGroupe.tsx';
+import { ModaleUtilisateur, type ModificationUtilisateur } from './ModaleUtilisateur.tsx';
 import { ModaleSuppressionGroupe } from './ModaleSuppressionGroupe.tsx';
 import { NouvelUtilisateur } from './NouvelUtilisateur.tsx';
 import {
@@ -77,6 +79,8 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
   const supprimerGroupe = useSupprimerUnGroupe(nom);
   const [groupeASupprimer, setGroupeASupprimer] = useState<Groupe | null>(null);
   const [groupeEdite, setGroupeEdite] = useState<Groupe | null>(null);
+  const modifierCompte = useModifierUnUtilisateur(nom);
+  const [compteEdite, setCompteEdite] = useState<Utilisateur | null>(null);
   const creer = useCreerUtilisateur(nom);
   const debloquer = useDebloquer(nom);
   const [codesSecours, setCodesSecours] = useState<string[]>([]);
@@ -220,6 +224,23 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
         },
       ),
     );
+  };
+
+  const surModifierCompte = async (
+    modification: ModificationUtilisateur,
+  ): Promise<string | null> => {
+    if (!compteEdite) return 'defaut';
+    try {
+      await modifierCompte.mutateAsync({ id: compteEdite.id, ...modification });
+      afficher(t('gestion.utilisateurs.modifier.toast', { nom: modification.nom }));
+      setCompteEdite(null);
+      return null;
+    } catch (erreur) {
+      const champs = erreursDeChamps(erreur);
+      const premier = Object.values(champs)[0];
+      if (premier) return premier;
+      return codeOuTexte(erreur, () => false) ?? 'defaut';
+    }
   };
 
   const surDebloquer = (u: Utilisateur) =>
@@ -437,10 +458,20 @@ export default function EcranUtilisateurs({ ecran }: { ecran: Ecran }) {
               onActiver={surActiver}
               peutActiver
               onDebloquer={surDebloquer}
+              onModifier={setCompteEdite}
             />
           )}
         </div>
       </div>
+      {compteEdite && (
+        <ModaleUtilisateur
+          key={compteEdite.id}
+          utilisateur={compteEdite}
+          envoiEnCours={modifierCompte.isPending}
+          onFermer={() => setCompteEdite(null)}
+          onConfirmer={surModifierCompte}
+        />
+      )}
       {groupeASupprimer && (
         <ModaleSuppressionGroupe
           groupe={groupeASupprimer}
