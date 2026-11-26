@@ -139,6 +139,8 @@ async function ouvrir(
     depart?: InstantaneProduction;
     langue?: 'fr' | 'en';
     chemin?: string;
+    /** Faux : l'écran n'est pas censé s'afficher (refus), inutile d'attendre ses onglets. */
+    attendre?: boolean;
   } = {},
 ) {
   connecte = utilisateur;
@@ -157,6 +159,7 @@ async function ouvrir(
       </QueryClientProvider>
     </OptiboulProvider>,
   );
+  if (options.attendre === false) return;
   if (options.chemin?.includes('fiche='))
     await screen.findByText('Procédé de fabrication').catch(() => undefined);
   else await screen.findAllByRole('tab');
@@ -434,7 +437,7 @@ describe('Atelier › Production : refus du serveur', () => {
     lecture.lireProductionReelle.mockRejectedValue(
       new ErreurApi(403, { detail: 'Refusé.', code: 'droit_insuffisant' }),
     );
-    await ouvrir('willy').catch(() => undefined);
+    await ouvrir('willy', { attendre: false });
     expect(await screen.findByRole('alert')).toBeTruthy();
   });
 });
