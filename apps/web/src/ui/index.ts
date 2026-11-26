@@ -18,6 +18,7 @@ export { COULEURS, themeOptiboul } from './theme.ts';
 export { useToast } from './toast.ts';
 export { Toasts } from './Toasts.tsx';
 export { TuileKpi } from './TuileKpi.tsx';
+export { useBrouillon } from './useBrouillon.ts';
 export { useCreneau } from './useCreneau.ts';
 export { useHorloge } from './useHorloge.ts';
 export { afficherRefus, detailDuServeur } from './refus.ts';

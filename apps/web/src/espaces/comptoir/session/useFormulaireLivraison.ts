@@ -1,3 +1,4 @@
+import { useBrouillon } from '@/ui';
 import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
 
 import type { ActionsSession } from './api.ts';
@@ -109,6 +110,19 @@ export function useFormulaireLivraison({
         peutSaisir,
       }),
     [client, formulaire, instantane?.plafond, autorisation, peutSaisir],
+  );
+
+  // La saisie en cours suit la personne : elle la retrouve après « Changer d'utilisateur ».
+  useBrouillon<Formulaire>(
+    'livraison',
+    formulaire,
+    formulaire.clientId === null,
+    (contenu) => {
+      if (contenu?.clientId && clients?.some((c) => c.id === contenu.clientId)) {
+        setFormulaire({ ...VIDE, ...contenu });
+      }
+    },
+    peutSaisir && Boolean(instantane),
   );
 
   const clientsFiltres = useMemo(
