@@ -2617,6 +2617,12 @@
             "detail": "{{minutes}} min in the wood oven, about 230 °C."
           }
         },
+        "versions": {
+          "titre": "Recipe versions",
+          "sous": "Each save creates a version; earlier ones stay available.",
+          "numero": "v{{version}}",
+          "rendement": "{{pains}} loaves per bag · {{boule}} g dough ball"
+        },
         "regleModifiable": "Each edit creates a new version, recorded in the activity log. Unit prices follow stock purchases.",
         "regleLecture": "Read-only. Only the owner and the administrator edit technical sheets.",
         "regleChef": "Quantities and baking times are the kneading reference.",

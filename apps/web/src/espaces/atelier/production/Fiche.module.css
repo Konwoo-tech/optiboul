@@ -461,3 +461,26 @@
   font-size: 14px;
   color: var(--ob-discret);
 }
+
+.listeVersions {
+  list-style: none;
+  margin: 0;
+  padding: 0 20px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ligneVersion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  padding: 10px 0;
+  border-top: 1px solid var(--ob-ligne);
+}
+
+.numeroVersion {
+  min-width: 36px;
+  font-weight: 800;
+  color: var(--ob-marque);
+}
