@@ -468,6 +468,27 @@ describe('Comptoir › Session en cours', () => {
     });
   });
 
+  it('« Livrer comme commandé » refusé au-delà du plafond : le message du serveur dit combien encaisser', async () => {
+    serveur.use(
+      http.post('*/api/v1/livraisons/livrer-comme-commande/', () =>
+        HttpResponse.json(
+          {
+            detail:
+              'Plafond de dette dépassé : encaissez 18750 FCFA ou demandez l’accord du gérant.',
+            code: 'plafond_depasse',
+            manque: 18750,
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    await choisir(/^Alain/);
+    fireEvent.click(await screen.findByRole('button', { name: 'Livrer comme commandé' }));
+    expect(
+      await screen.findByText(/encaissez 18750 FCFA ou demandez l’accord du gérant/),
+    ).toBeTruthy();
+  });
+
   describe('plafond de 2 000 FCFA', () => {
     async function depasserLePlafond() {
       await choisir(/^Brice/);
