@@ -312,7 +312,19 @@
       "enregistrer": "Save",
       "actif": "Active customer (untick to remove from the list)",
       "toastModifie": "Customer {{nom}} updated"
-    }
+    },
+    "paiementsTitre": "Debt payments",
+    "relancesTitre": "Reminders sent",
+    "modes": {
+      "especes": "Cash",
+      "mtn": "MTN Mobile Money",
+      "orange": "Orange Money"
+    },
+    "relanceMotifs": {
+      "dette": "Debt reminder",
+      "commande": "Order reminder"
+    },
+    "relanceAuto": "automatic"
   },
   "comptoir": {
     "caisses": {

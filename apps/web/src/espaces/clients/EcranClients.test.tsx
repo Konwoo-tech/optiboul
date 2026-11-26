@@ -329,6 +329,61 @@ describe('Clients et dettes', () => {
     expect(screen.queryByRole('button', { name: 'Modifier la fiche' })).toBeNull();
   });
 
+  it('le détail liste les paiements de dette et les relances du client', async () => {
+    ouvrir('willy', '/?client=1', [
+      http.get('*/api/v1/encaissements/', () =>
+        HttpResponse.json({
+          count: 2,
+          next: null,
+          previous: null,
+          results: [
+            {
+              id: 4,
+              livraison: null,
+              mode: 'mtn',
+              montant: 1500,
+              reference: 'MP771',
+              cree_le: '2026-10-13T10:00:00+01:00',
+            },
+            {
+              id: 3,
+              livraison: 9,
+              mode: 'especes',
+              montant: 900,
+              reference: '',
+              cree_le: '2026-10-12T10:00:00+01:00',
+            },
+          ],
+        }),
+      ),
+      http.get('*/api/v1/clients/:id/relances/', () =>
+        HttpResponse.json({
+          count: 1,
+          next: null,
+          previous: null,
+          results: [
+            {
+              id: 2,
+              motif: 'dette',
+              montant: 1250,
+              automatique: true,
+              auteur: '',
+              cree_le: '2026-10-12T09:00:00+01:00',
+            },
+          ],
+        }),
+      ),
+    ]);
+    await lignes();
+    expect(await screen.findByText('Paiements de dette')).toBeTruthy();
+    expect(screen.getByText(/MTN Mobile Money · MP771/)).toBeTruthy();
+    // Un paiement lié à une livraison n’est pas un paiement de dette.
+    expect(screen.queryByText('Espèces')).toBeNull();
+    expect(await screen.findByText('Relances envoyées')).toBeTruthy();
+    expect(screen.getByText(/Relance de dette/)).toBeTruthy();
+    expect(screen.getByText(/automatique/)).toBeTruthy();
+  });
+
   it('ouvre le détail d’un client au clic et y place le focus', async () => {
     ouvrir('davy');
     const [brice] = await lignes();
