@@ -38,33 +38,28 @@ describe('Historique des paiements d’une facture', () => {
   it('liste les paiements du plus récent au plus ancien et ouvre le reçu choisi', async () => {
     serveur.use(
       http.get('*/api/v1/factures/41/paiements/', () =>
-        HttpResponse.json({
-          count: 2,
-          next: null,
-          previous: null,
-          results: [
-            {
-              id: 7,
-              facture: 41,
-              montant: 40000,
-              mode: 'especes',
-              reference: '',
-              depense: 3,
-              paye_par: 'Gérant',
-              paye_le: '2026-11-20T09:00:00Z',
-            },
-            {
-              id: 9,
-              facture: 41,
-              montant: 50000,
-              mode: 'mobile',
-              reference: 'MP-123',
-              depense: 4,
-              paye_par: 'Gérant',
-              paye_le: '2026-11-25T09:00:00Z',
-            },
-          ],
-        }),
+        HttpResponse.json([
+          {
+            id: 7,
+            facture: 41,
+            montant: 40000,
+            mode: 'especes',
+            reference: '',
+            depense: 3,
+            paye_par: 'Gérant',
+            paye_le: '2026-11-20T09:00:00Z',
+          },
+          {
+            id: 9,
+            facture: 41,
+            montant: 50000,
+            mode: 'mobile',
+            reference: 'MP-123',
+            depense: 4,
+            paye_par: 'Gérant',
+            paye_le: '2026-11-25T09:00:00Z',
+          },
+        ]),
       ),
     );
     const ouvrir = vi.spyOn(window, 'open').mockReturnValue(null);

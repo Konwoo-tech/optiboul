@@ -153,6 +153,11 @@ export const usePayer = (u: string | undefined) =>
     return { depense: String((reponse.data as { depense: number }).depense) };
   });
 
+type PaiementServeur = Awaited<ReturnType<typeof facturesPaiementsList>>['data']['results'] extends
+  (infer P)[] | undefined
+  ? P
+  : never;
+
 export type PaiementDeFacture = {
   id: number;
   jour: string;
@@ -170,7 +175,9 @@ export function usePaiementsFacture(idServeur: number | undefined) {
     staleTime: 0,
     queryFn: async (): Promise<PaiementDeFacture[]> => {
       const reponse = await facturesPaiementsList(idServeur as number);
-      return (reponse.data.results ?? [])
+      // Le serveur renvoie un tableau simple (le schéma annonce à tort une page).
+      const lignes = reponse.data as unknown as PaiementServeur[] | { results?: PaiementServeur[] };
+      return (Array.isArray(lignes) ? lignes : (lignes.results ?? []))
         .map((p) => ({
           id: p.id,
           jour: new Intl.DateTimeFormat('fr-CA', { timeZone: 'Africa/Douala' }).format(
