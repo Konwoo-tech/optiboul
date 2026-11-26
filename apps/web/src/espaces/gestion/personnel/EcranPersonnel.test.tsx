@@ -3,7 +3,7 @@ import { initI18n } from '@/i18n';
 import { creerServeurApi } from '@/test';
 import { OptiboulProvider } from '@/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -114,6 +114,18 @@ function installerServeur() {
         e.ajustements = e.ajustements.filter((a) => a.id !== String(params.id));
       }
       return new HttpResponse(null, { status: 204 });
+    }),
+    http.put('*/api/v1/paies/elements/:id/', async ({ params, request }) => {
+      const corps = (await request.json()) as { description: string; montant: number };
+      for (const e of etat.employes) {
+        for (const a of e.ajustements) {
+          if (a.id === String(params.id)) {
+            a.libelle = corps.description;
+            a.montant = corps.montant;
+          }
+        }
+      }
+      return HttpResponse.json({});
     }),
     http.put('*/api/v1/paies/:id/jour/', async ({ request }) => {
       etat.jourDePaie = ((await request.json()) as { jour: string }).jour;
@@ -265,6 +277,30 @@ describe('Gestion › Personnel : brouillon', () => {
     await waitFor(() => expect(screen.queryByText('Retard')).toBeNull());
     expect(document.activeElement?.textContent).toBe('Gains et pénalités');
     expect(screen.getByText('Aucun gain ni pénalité ce mois-ci.')).toBeTruthy();
+  });
+
+  it('corrige le libellé et le montant d’une ligne', async () => {
+    await ouvrir();
+    fireEvent.click(ligne('Rachel'));
+    await screen.findByRole('heading', { name: 'Rachel', level: 2 });
+    fireEvent.click(screen.getByRole('button', { name: 'Pénalité' }));
+    fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Retard' } });
+    fireEvent.change(screen.getByLabelText('Montant (FCFA)'), { target: { value: '1500' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter la ligne' }));
+    await screen.findByText('Retard');
+    fireEvent.click(screen.getByRole('button', { name: 'Modifier la ligne « Retard »' }));
+    const fenetre = within(screen.getByRole('dialog'));
+    fireEvent.change(fenetre.getByLabelText('Montant (FCFA)'), { target: { value: '0' } });
+    fireEvent.click(fenetre.getByRole('button', { name: 'Enregistrer' }));
+    expect(
+      await fenetre.findByText('Indiquez un libellé et un montant entier supérieur à 0.'),
+    ).toBeTruthy();
+    fireEvent.change(fenetre.getByLabelText('Libellé'), { target: { value: 'Grand retard' } });
+    fireEvent.change(fenetre.getByLabelText('Montant (FCFA)'), { target: { value: '2000' } });
+    fireEvent.click(fenetre.getByRole('button', { name: 'Enregistrer' }));
+    expect(await screen.findByText('Grand retard')).toBeTruthy();
+    expect(screen.getAllByText('−2 000').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('le gérant soumet : l’état est verrouillé et la saisie disparaît', async () => {

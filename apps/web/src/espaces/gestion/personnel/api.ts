@@ -8,6 +8,7 @@ import {
   ErreurApi,
   getPaiesLignesBulletinRetrieveUrl,
   paiesElementsDestroy,
+  paiesElementsUpdate,
   paiesLignesElementsCreate,
   paiesLignesPayerCreate,
   paiesLignesUpdate,
@@ -99,6 +100,14 @@ export const useRetirerLigne = (utilisateur: string | undefined) =>
     await paiesElementsDestroy(id);
     return {};
   });
+export const useModifierAjustement = (utilisateur: string | undefined) =>
+  useActionPaie<{ id: string; libelle: string; montant: number }>(
+    utilisateur,
+    async ({ id, libelle, montant }) => {
+      await paiesElementsUpdate(id, { description: libelle, montant });
+      return {};
+    },
+  );
 /** Le jour de paie du mois affiché (`PUT /paies/{id}/jour/`), tant que l'état n'est pas soumis. */
 export const useChoisirLeJour = (utilisateur: string | undefined) =>
   useActionPaie<string>(utilisateur, async (jour, avant) => {

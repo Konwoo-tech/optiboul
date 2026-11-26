@@ -670,3 +670,16 @@
   font-size: 13px;
   font-weight: 700;
 }
+
+.modifierLigne {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 10px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
