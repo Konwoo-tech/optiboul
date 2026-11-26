@@ -1434,7 +1434,8 @@
           "nom": "Le nom du fournisseur est obligatoire.",
           "matieres": "Choisissez au moins une matière livrée.",
           "defaut": "Le fournisseur n’a pas pu être enregistré. Réessayez."
-        }
+        },
+        "modifierCourt": "Modifier"
       }
     },
     "semaines": {

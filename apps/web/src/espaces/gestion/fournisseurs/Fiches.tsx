@@ -32,7 +32,19 @@ export function Fiches({ instantane, peutModifier, onModifier }: Props) {
           );
           return (
             <li className={styles.fiche} key={f.id}>
-              <h2 className={styles.ficheNom}>{f.nom}</h2>
+              <div className={styles.ficheEntete}>
+                <h2 className={styles.ficheNom}>{f.nom}</h2>
+                {peutModifier && (
+                  <button
+                    type="button"
+                    className={styles.modifierFiche}
+                    aria-label={t('gestion.fournisseurs.fiche.modifier', { nom: f.nom })}
+                    onClick={() => onModifier(f)}
+                  >
+                    {t('gestion.fournisseurs.fiche.modifierCourt')}
+                  </button>
+                )}
+              </div>
               <div className={styles.ficheSous}>
                 {f.matieres.map((m) => nomMatiere(t, m)).join(', ')}
                 {' · '}
@@ -95,11 +107,6 @@ export function Fiches({ instantane, peutModifier, onModifier }: Props) {
                   </dd>
                 </div>
               </dl>
-              {peutModifier && (
-                <button type="button" className={styles.secondaire} onClick={() => onModifier(f)}>
-                  {t('gestion.fournisseurs.fiche.modifier', { nom: f.nom })}
-                </button>
-              )}
             </li>
           );
         })}
