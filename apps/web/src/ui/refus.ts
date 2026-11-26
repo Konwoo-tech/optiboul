@@ -25,3 +25,28 @@ export function afficherRefus(
   const generique = /\.(erreur|impossible|defaut)$/.test(cle);
   afficher((generique ? detailDuServeur(erreur) : undefined) ?? t(cle));
 }
+
+const PREFIXE_TEXTE = 'texte:';
+
+/**
+ * Ce qu'un écran garde d'un refus pour l'afficher plus tard : le code quand l'écran sait le dire,
+ * sinon le message du serveur (précédé de `texte:`), sinon le code seul. Évite le « Réessayez » qui
+ * cache pourquoi le serveur a refusé.
+ */
+export function codeOuTexte(erreur: unknown, connu: (code: string) => boolean): string | undefined {
+  const code = erreur instanceof ErreurApi ? erreur.code : undefined;
+  if (code && connu(code)) return code;
+  const detail = detailDuServeur(erreur);
+  return detail ? `${PREFIXE_TEXTE}${detail}` : code;
+}
+
+/** Vrai quand le refus gardé est le message du serveur (voir `codeOuTexte`). */
+export const estTexteDuServeur = (code: string): boolean => code.startsWith(PREFIXE_TEXTE);
+
+/** Le message du serveur gardé par `codeOuTexte`. */
+export const texteDuServeur = (code: string): string => code.slice(PREFIXE_TEXTE.length);
+
+/** Le message d'une erreur de fenêtre : le serveur d'abord, sinon le texte par défaut de l'écran. */
+export function messageOuDefaut(erreur: unknown, defaut: string): string {
+  return detailDuServeur(erreur) ?? defaut;
+}

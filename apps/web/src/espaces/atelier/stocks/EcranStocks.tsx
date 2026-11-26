@@ -1,6 +1,6 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
-import { afficherRefus, EcranChargement, EcranErreur, useToast } from '@/ui';
+import { afficherRefus, EcranChargement, EcranErreur, useToast, codeOuTexte } from '@/ui';
 import { useCallback, useState, type KeyboardEvent } from 'react';
 import { useSearchParams } from 'react-router';
 
@@ -25,7 +25,7 @@ const ONGLET_PAR_DEFAUT: Onglet = 'etat';
  * les inventaires avec écart depuis l'écran des demandes).
  */
 export default function EcranStocks({ ecran }: { ecran: Ecran }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const afficher = useToast();
   const { utilisateur } = useUtilisateurCourant();
   const nom = utilisateur?.name;
@@ -94,7 +94,10 @@ export default function EcranStocks({ ecran }: { ecran: Ecran }) {
       afficher(t('atelier.stocks.mouvements.manuel.toast'));
       return null;
     } catch (erreur) {
-      return codeErreur(erreur) ?? 'defaut';
+      return (
+        codeOuTexte(erreur, (c) => i18n.exists(`atelier.stocks.mouvements.erreurs.${c}`)) ??
+        'defaut'
+      );
     }
   };
 

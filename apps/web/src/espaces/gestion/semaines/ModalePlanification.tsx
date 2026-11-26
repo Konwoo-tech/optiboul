@@ -1,5 +1,5 @@
 import { useTranslation } from '@/i18n';
-import { FenetreModale } from '@/ui';
+import { FenetreModale, estTexteDuServeur, texteDuServeur } from '@/ui';
 import { useEffect, useState, type SubmitEvent } from 'react';
 
 import styles from '../../comptoir/caisses/Fenetres.module.css';
@@ -131,7 +131,9 @@ export function ModalePlanification({
         <div className={styles.discret}>{t('gestion.semaines.planification.note')}</div>
         {erreur && (
           <div className={styles.erreur} role="alert">
-            {t(`gestion.semaines.planification.erreurs.${erreur}`)}
+            {estTexteDuServeur(erreur)
+              ? texteDuServeur(erreur)
+              : t(`gestion.semaines.planification.erreurs.${erreur}`)}
           </div>
         )}
         <div className={styles.actions}>

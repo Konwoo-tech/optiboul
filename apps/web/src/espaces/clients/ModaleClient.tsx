@@ -1,5 +1,5 @@
 import { useTranslation } from '@/i18n';
-import { FenetreModale } from '@/ui';
+import { FenetreModale, estTexteDuServeur, texteDuServeur } from '@/ui';
 import { useState, type SubmitEvent } from 'react';
 
 import styles from '../comptoir/caisses/Fenetres.module.css';
@@ -163,7 +163,9 @@ export function ModaleClient({ client, envoiEnCours, onConfirmer, onFermer }: Pr
         )}
         {erreur && (
           <div className={styles.erreur} role="alert">
-            {t(`clients.nouveau.erreurs.${erreur}`)}
+            {estTexteDuServeur(erreur)
+              ? texteDuServeur(erreur)
+              : t(`clients.nouveau.erreurs.${erreur}`)}
           </div>
         )}
         <div className={styles.actions}>

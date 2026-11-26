@@ -1,7 +1,7 @@
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { Text } from '@mantine/core';
-import { Carte, EcranChargement, EcranErreur, useToast } from '@/ui';
+import { Carte, EcranChargement, EcranErreur, useToast, codeOuTexte } from '@/ui';
 import { useRef, useState } from 'react';
 
 import { cheminEcran, ecransDe, type Ecran } from '../../../navigation.ts';
@@ -100,7 +100,9 @@ export default function EcranParametres({ ecran }: { ecran: Ecran }) {
       afficher(t('gestion.parametres.produits.toast', { nom: saisie.nom }));
       return null;
     } catch (erreur) {
-      return codeErreur(erreur) === 'droit_insuffisant' ? 'droit' : 'defaut';
+      return codeErreur(erreur) === 'droit_insuffisant'
+        ? 'droit'
+        : (codeOuTexte(erreur, () => false) ?? 'defaut');
     }
   };
 

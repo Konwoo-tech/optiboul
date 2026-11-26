@@ -21,4 +21,11 @@ export { TuileKpi } from './TuileKpi.tsx';
 export { useBrouillon } from './useBrouillon.ts';
 export { useCreneau } from './useCreneau.ts';
 export { useHorloge } from './useHorloge.ts';
-export { afficherRefus, detailDuServeur } from './refus.ts';
+export {
+  afficherRefus,
+  codeOuTexte,
+  detailDuServeur,
+  estTexteDuServeur,
+  messageOuDefaut,
+  texteDuServeur,
+} from './refus.ts';

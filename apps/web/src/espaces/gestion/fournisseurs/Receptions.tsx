@@ -1,4 +1,4 @@
-import { Paginee } from '@/ui';
+import { Paginee, estTexteDuServeur, texteDuServeur } from '@/ui';
 import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
 import { useId, useRef, useState } from 'react';
@@ -65,14 +65,16 @@ export function Receptions({
   const nomFournisseur = (id: string) =>
     instantane.fournisseurs.find((f) => f.id === id)?.nom ?? '';
   const message = erreur
-    ? t(
-        `gestion.fournisseurs.planifier.erreurs.${
-          ['quantite', 'quantite_obligatoire', 'quantite_trop_grande'].includes(erreur)
-            ? erreur
-            : 'defaut'
-        }`,
-        { max: formaterNombre(quantiteMax()) },
-      )
+    ? estTexteDuServeur(erreur)
+      ? texteDuServeur(erreur)
+      : t(
+          `gestion.fournisseurs.planifier.erreurs.${
+            ['quantite', 'quantite_obligatoire', 'quantite_trop_grande'].includes(erreur)
+              ? erreur
+              : 'defaut'
+          }`,
+          { max: formaterNombre(quantiteMax()) },
+        )
     : '';
 
   const valider = async () => {
