@@ -9,6 +9,7 @@ import { EnTeteEcran } from '../../EnTeteEcran.tsx';
 import type { Ecran } from '../../../navigation.ts';
 import { codeErreur, useFiches, useModifierFiche } from './api.ts';
 import { dateCourte } from './affichage.ts';
+import { VersionsFiche } from './VersionsFiche.tsx';
 import styles from './Fiche.module.css';
 import { calculerFiche, champInvalide, decimal, nombreSaisi } from './regles.ts';
 import { INGREDIENTS, type FicheProduit, type Ingredient, type Recette } from './types.ts';
@@ -515,6 +516,7 @@ export function FicheTechnique({
             </section>
           </div>
         </div>
+        <VersionsFiche idServeur={fiche.idServeur} version={fiche.version} />
         <p className={styles.regle}>
           {peutModifier
             ? tf('regleModifiable')

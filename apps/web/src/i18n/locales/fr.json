@@ -2617,6 +2617,12 @@
             "detail": "{{minutes}} min au four à bois, environ 230 °C."
           }
         },
+        "versions": {
+          "titre": "Versions de la fiche",
+          "sous": "Chaque enregistrement crée une version ; les précédentes restent consultables.",
+          "numero": "v{{version}}",
+          "rendement": "{{pains}} pains par sac · boule de {{boule}} g"
+        },
         "regleModifiable": "Chaque modification crée une nouvelle version, enregistrée dans le journal des actions. Les prix unitaires suivent les achats en stock.",
         "regleLecture": "Lecture seule. Seuls le propriétaire et l’administrateur modifient les fiches techniques.",
         "regleChef": "Les quantités et les temps de cuisson servent de référence au pétrissage.",
