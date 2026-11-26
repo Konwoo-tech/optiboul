@@ -1,4 +1,4 @@
-import { produitsFichesList } from '@/api';
+import { produitsFichesList, type Fiche } from '@/api';
 import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
 import { useQuery } from '@tanstack/react-query';
@@ -23,7 +23,12 @@ export function VersionsFiche({ idServeur, version }: Props) {
   const requete = useQuery({
     queryKey: ['atelier', 'production', 'versions-fiche', idServeur, version],
     enabled: idServeur !== undefined,
-    queryFn: async () => (await produitsFichesList(idServeur as number)).data.results ?? [],
+    queryFn: async () => {
+      // Le serveur renvoie un tableau simple (le schéma annonce à tort une page).
+      const donnees = (await produitsFichesList(idServeur as number)).data as unknown as
+        Fiche[] | { results?: Fiche[] };
+      return Array.isArray(donnees) ? donnees : (donnees.results ?? []);
+    },
   });
   const versions = [...(requete.data ?? [])].sort((a, b) => b.version - a.version);
   if (idServeur === undefined || versions.length === 0) return null;

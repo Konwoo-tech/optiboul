@@ -38,12 +38,8 @@ describe('Versions de la fiche technique', () => {
   it('liste les versions de la plus récente à la plus ancienne', async () => {
     serveur.use(
       http.get('*/api/v1/produits/3/fiches/', () =>
-        HttpResponse.json({
-          count: 2,
-          next: null,
-          previous: null,
-          results: [version(1, 300, '2026-10-01'), version(2, 315, '2026-11-12')],
-        }),
+        // Le serveur renvoie un tableau simple, pas une page.
+        HttpResponse.json([version(1, 300, '2026-10-01'), version(2, 315, '2026-11-12')]),
       ),
     );
     render(
