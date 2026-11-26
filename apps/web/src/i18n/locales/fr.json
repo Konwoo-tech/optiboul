@@ -1230,6 +1230,14 @@
       },
       "absencesCellule": "{{jours}} j · −{{montant}}",
       "formule": "Net = base − absences − avances − pénalités + gains + impayé antérieur.",
+      "ligne": {
+        "titre": "Modifier la ligne",
+        "libelle": "Libellé",
+        "montant": "Montant (FCFA)",
+        "invalide": "Indiquez un libellé et un montant entier supérieur à 0.",
+        "annuler": "Annuler",
+        "enregistrer": "Enregistrer"
+      },
       "fiche": {
         "base": "Salaire de base",
         "absences": "Absences",
@@ -1241,6 +1249,8 @@
         "gain": "Gain",
         "penalite": "Pénalité",
         "meta": "{{type}} · {{date}} · par {{nom}}",
+        "modifier": "Modifier",
+        "modifierLigne": "Modifier la ligne « {{libelle}} »",
         "supprimer": "Supprimer la ligne « {{libelle}} »",
         "verrou": "Les lignes sont verrouillées une fois l’état de paie soumis.",
         "bulletin": "Bulletin de paie (PDF)",
@@ -1293,6 +1303,7 @@
       "toasts": {
         "soumis": "État de paie soumis au propriétaire",
         "prepare": "État de paie préparé",
+        "ligne": "Ligne modifiée",
         "retenues": "Absences et avances enregistrées",
         "paiement": "Paiement enregistré · {{code}}",
         "payes_one": "{{count}} salaire payé",

@@ -1230,6 +1230,14 @@
       },
       "absencesCellule": "{{jours}} d · −{{montant}}",
       "formule": "Net = base − absences − advances − penalties + gains + arrears.",
+      "ligne": {
+        "titre": "Edit line",
+        "libelle": "Label",
+        "montant": "Amount (FCFA)",
+        "invalide": "Enter a label and a whole amount above 0.",
+        "annuler": "Cancel",
+        "enregistrer": "Save"
+      },
       "fiche": {
         "base": "Base salary",
         "absences": "Absences",
@@ -1241,6 +1249,8 @@
         "gain": "Gain",
         "penalite": "Penalty",
         "meta": "{{type}} · {{date}} · by {{nom}}",
+        "modifier": "Edit",
+        "modifierLigne": "Edit line “{{libelle}}”",
         "supprimer": "Delete line “{{libelle}}”",
         "verrou": "Lines are locked once the payroll is submitted.",
         "bulletin": "Payslip (PDF)",
@@ -1293,6 +1303,7 @@
       "toasts": {
         "soumis": "Payroll submitted to the owner",
         "prepare": "Payroll prepared",
+        "ligne": "Line updated",
         "retenues": "Absences and advances saved",
         "paiement": "Payment recorded · {{code}}",
         "payes_one": "{{count}} salary paid",

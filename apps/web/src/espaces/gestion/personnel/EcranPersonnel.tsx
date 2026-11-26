@@ -22,6 +22,7 @@ import {
   usePersonnel,
   usePreparer,
   usePlanifierLeMois,
+  useModifierAjustement,
   useRetirerLigne,
   useSoumettre,
 } from './api.ts';
@@ -29,10 +30,11 @@ import { CalendrierPaies } from './CalendrierPaies.tsx';
 import { EtatDePaie } from './EtatDePaie.tsx';
 import { FicheEmploye } from './FicheEmploye.tsx';
 import { ModaleEmploye, type NouvelEmploye } from './ModaleEmploye.tsx';
+import { ModaleLigne } from './ModaleLigne.tsx';
 import styles from './Personnel.module.css';
 import { droitsPaie, montantAPayer, calculerPaie, totaux } from './regles.ts';
 import { TableauPaie } from './TableauPaie.tsx';
-import type { ModePaiement, NouvelAjustement } from './types.ts';
+import type { Ajustement, ModePaiement, NouvelAjustement } from './types.ts';
 
 const PARAMETRE = 'employe';
 
@@ -51,6 +53,8 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
   const requete = usePersonnel(nom);
   const ajouter = useAjouterLigne(nom);
   const retirer = useRetirerLigne(nom);
+  const modifierAjustement = useModifierAjustement(nom);
+  const [ligneEnEdition, setLigneEnEdition] = useState<Ajustement | null>(null);
   const modifierLigne = useModifierLigne(nom);
   const choisirLeJour = useChoisirLeJour(nom);
   const planifier = usePlanifierLeMois(nom);
@@ -310,6 +314,7 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
             onMontantPaye={setMontantPaye}
             onAjouter={surAjouter}
             onRetirer={(id) => retirer.mutate(id, { onError: signaler })}
+            onModifierLigne={setLigneEnEdition}
             onRetenues={(absences, avances) =>
               modifierLigne.mutate(
                 { employe: choisi.id, absences, avances },
@@ -336,6 +341,28 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
           onPlanifier={(mois, jour) => planifier.mutate({ mois, jour }, { onError: signaler })}
         />
       </div>
+      {ligneEnEdition && (
+        <ModaleLigne
+          ligne={ligneEnEdition}
+          envoiEnCours={modifierAjustement.isPending}
+          onFermer={() => setLigneEnEdition(null)}
+          onConfirmer={(libelle, montant) =>
+            modifierAjustement.mutate(
+              { id: ligneEnEdition.id, libelle, montant },
+              {
+                onSuccess: () => {
+                  setLigneEnEdition(null);
+                  afficher(t('gestion.personnel.toasts.ligne'));
+                },
+                onError: (erreur) => {
+                  setLigneEnEdition(null);
+                  signaler(erreur);
+                },
+              },
+            )
+          }
+        />
+      )}
       {edition && (
         <ModaleEmploye
           initial={edition.fiche}

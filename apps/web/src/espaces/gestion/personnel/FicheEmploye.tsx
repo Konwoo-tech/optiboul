@@ -19,6 +19,7 @@ import {
 } from './regles.ts';
 import {
   MODES_PAIEMENT,
+  type Ajustement,
   type Employe,
   type InstantanePaie,
   type ModePaiement,
@@ -45,6 +46,8 @@ type Props = {
   onMontantPaye: (montant: string) => void;
   onAjouter: (ligne: Omit<NouvelAjustement, 'employe'>) => Promise<boolean>;
   onRetirer: (id: string) => void;
+  /** Corrige le libellé et le montant d'une ligne (vrai serveur) ; absent : pas de bouton. */
+  onModifierLigne?: (ligne: Ajustement) => void;
   /** Vrai serveur : enregistre les absences et les avances de la ligne. */
   onRetenues: (absences: number, avances: number) => void;
   onPayer: () => void;
@@ -71,6 +74,7 @@ export function FicheEmploye({
   onMontantPaye,
   onAjouter,
   onRetirer,
+  onModifierLigne,
   onRetenues,
   onPayer,
   onModifier,
@@ -222,6 +226,17 @@ export function FicheEmploye({
                 className={styles.ajustementMontant}
                 style={{ color: `var(--ob-${niveau}-texte)` }}
               >{`${gain ? '+' : '−'}${fmt(a.montant)}`}</span>
+              {modifiable && onModifierLigne && (
+                <button
+                  type="button"
+                  className={styles.modifierLigne}
+                  aria-disabled={occupe}
+                  aria-label={t('gestion.personnel.fiche.modifierLigne', { libelle: a.libelle })}
+                  onClick={() => !occupe && onModifierLigne(a)}
+                >
+                  {t('gestion.personnel.fiche.modifier')}
+                </button>
+              )}
               {modifiable && (
                 <button
                   type="button"
