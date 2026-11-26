@@ -267,24 +267,21 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
           onValider={surValider}
           onPayerLesRestes={surPayerLesRestes}
         />
-        {profil === 'gerant' && (
-          <button
-            type="button"
-            className={styles.secondaire}
-            onClick={() => setNouvelEmploye(true)}
-          >
-            {t('gestion.personnel.employe.ajouter')}
-          </button>
-        )}
-        {profil === 'gerant' && choisi.employeId !== undefined && (
-          <button
-            type="button"
-            className={styles.secondaire}
-            onClick={() => void ouvrirLaFiche(choisi.employeId as number)}
-          >
-            {t('gestion.personnel.employe.modifierNom', { nom: choisi.nom })}
-          </button>
-        )}
+        <div className={styles.barreEquipe}>
+          <h2 className={styles.titreEquipe}>
+            {t('gestion.personnel.equipe', { count: employes.length })}
+          </h2>
+          {profil === 'gerant' && (
+            <button
+              type="button"
+              className={styles.principal}
+              onClick={() => setNouvelEmploye(true)}
+            >
+              <span aria-hidden>+ </span>
+              {t('gestion.personnel.employe.ajouter')}
+            </button>
+          )}
+        </div>
         <div className={styles.rangee}>
           <TableauPaie employes={employes} choisi={choisi.id} onChoisir={choisir} />
           <FicheEmploye
@@ -319,6 +316,11 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
             }
             onPayer={surPayer}
             onModifier={() => setErreurServeur(null)}
+            onModifierFiche={
+              profil === 'gerant' && choisi.employeId !== undefined
+                ? () => void ouvrirLaFiche(choisi.employeId as number)
+                : undefined
+            }
           />
         </div>
         <CalendrierPaies

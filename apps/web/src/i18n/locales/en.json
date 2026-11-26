@@ -1174,7 +1174,8 @@
         "titreModifier": "Edit the employee",
         "enregistrer": "Save",
         "actif": "Employed (untick to remove from staff)",
-        "toastModifie": "{{nom}}'s record updated"
+        "toastModifie": "{{nom}}'s record updated",
+        "modifier": "Edit"
       },
       "retenues": {
         "absences": "Days of absence (0.5 allowed)",
@@ -1278,7 +1279,9 @@
         "reference": "Enter the mobile money transaction reference in the sheet.",
         "impossible": "Not possible in the current state of the payroll.",
         "erreur": "The action could not be saved: try again."
-      }
+      },
+      "equipe_one": "Team · {{count}} employee",
+      "equipe_other": "Team · {{count}} employees"
     },
     "fournisseurs": {
       "sections": "Suppliers",

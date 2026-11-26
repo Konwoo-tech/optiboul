@@ -48,6 +48,8 @@ type Props = {
   onRetenues: (absences: number, avances: number) => void;
   onPayer: () => void;
   onModifier: () => void;
+  /** Le gérant modifie la fiche (nom, poste, salaire) ; absent : pas de bouton. */
+  onModifierFiche?: () => void;
 };
 
 /** Fiche de l'employé : décomposition du net, gains et pénalités, paiements. */
@@ -69,6 +71,7 @@ export function FicheEmploye({
   onRetenues,
   onPayer,
   onModifier,
+  onModifierFiche,
 }: Props) {
   const { t, i18n } = useTranslation();
   const langue = i18n.language;
@@ -158,11 +161,23 @@ export function FicheEmploye({
 
   return (
     <section className={styles.fiche} aria-labelledby="fiche-employe">
-      <div>
-        <h2 id="fiche-employe" className={styles.ficheNom}>
-          {employe.nom}
-        </h2>
-        <div className={styles.fichePoste}>{employe.poste}</div>
+      <div className={styles.ficheEntete}>
+        <div>
+          <h2 id="fiche-employe" className={styles.ficheNom}>
+            {employe.nom}
+          </h2>
+          <div className={styles.fichePoste}>{employe.poste}</div>
+        </div>
+        {onModifierFiche && (
+          <button
+            type="button"
+            className={styles.modifierFiche}
+            aria-label={t('gestion.personnel.employe.modifierNom', { nom: employe.nom })}
+            onClick={onModifierFiche}
+          >
+            {t('gestion.personnel.employe.modifier')}
+          </button>
+        )}
       </div>
       <ul className={styles.decomposition}>
         {lignes.map(([libelleLigne, valeur, sens]) => (
