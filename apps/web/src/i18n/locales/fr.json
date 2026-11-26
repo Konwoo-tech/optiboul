@@ -195,6 +195,7 @@
     "fournisseurs": "Fournisseurs",
     "personnel": "Personnel et paie",
     "utilisateurs": "Utilisateurs et rôles",
+    "rapports": "Rapports",
     "sauvegardes": "Sauvegardes",
     "journal": "Journal des actions",
     "parametres": "Paramètres"
@@ -212,6 +213,7 @@
     "fournisseurs": "Fournisseurs et réceptions",
     "personnel": "Personnel et paie",
     "utilisateurs": "Utilisateurs et rôles",
+    "rapports": "Rapports",
     "sauvegardes": "Sauvegardes",
     "journal": "Journal des actions",
     "parametres": "Paramètres"
@@ -1983,6 +1985,40 @@
           "valeur": "Valeur",
           "auteur": "Auteur"
         }
+      }
+    },
+    "rapports": {
+      "format": "Format",
+      "pdf": "PDF",
+      "excel": "Excel",
+      "telecharger": "Télécharger le rapport",
+      "semaineNumero": "Semaine {{numero}}",
+      "session": {
+        "titre": "Rapport de session",
+        "aide": "Ventes, caisse et dépenses d’une session.",
+        "jour": "Jour",
+        "creneau": "Session"
+      },
+      "semaine": {
+        "titre": "Rapport de semaine",
+        "aide": "Le bilan complet d’une semaine de travail.",
+        "choix": "Semaine"
+      },
+      "mois": {
+        "titre": "Rapport du mois",
+        "aide": "Les totaux d’un mois civil.",
+        "choix": "Mois"
+      },
+      "rapprochement": {
+        "titre": "Rapprochement avec l’Excel",
+        "aide": "Comparez une semaine, session par session, aux totaux de votre fichier (colonnes : jour, creneau, ventes, recette).",
+        "fichier": "Fichier Excel ou CSV",
+        "comparer": "Comparer",
+        "identique": "Les totaux sont identiques, session par session.",
+        "ecarts_one": "{{count}} écart relevé",
+        "ecarts_other": "{{count}} écarts relevés",
+        "ligne": "{{jour}} · {{creneau}} — application : {{application}} · Excel : {{excel}}",
+        "erreur": "Le fichier n’a pas pu être comparé. Vérifiez ses colonnes."
       }
     }
   },

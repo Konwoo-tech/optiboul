@@ -195,6 +195,7 @@
     "fournisseurs": "Suppliers",
     "personnel": "Staff & payroll",
     "utilisateurs": "Users & roles",
+    "rapports": "Reports",
     "sauvegardes": "Backups",
     "journal": "Activity log",
     "parametres": "Settings"
@@ -212,6 +213,7 @@
     "fournisseurs": "Suppliers & deliveries",
     "personnel": "Staff & payroll",
     "utilisateurs": "Users & roles",
+    "rapports": "Reports",
     "sauvegardes": "Backups",
     "journal": "Activity log",
     "parametres": "Settings"
@@ -1983,6 +1985,40 @@
           "valeur": "Value",
           "auteur": "Author"
         }
+      }
+    },
+    "rapports": {
+      "format": "Format",
+      "pdf": "PDF",
+      "excel": "Excel",
+      "telecharger": "Download the report",
+      "semaineNumero": "Week {{numero}}",
+      "session": {
+        "titre": "Session report",
+        "aide": "Sales, cash and expenses of a session.",
+        "jour": "Day",
+        "creneau": "Session"
+      },
+      "semaine": {
+        "titre": "Week report",
+        "aide": "The full summary of a work week.",
+        "choix": "Week"
+      },
+      "mois": {
+        "titre": "Month report",
+        "aide": "The totals of a calendar month.",
+        "choix": "Month"
+      },
+      "rapprochement": {
+        "titre": "Reconciliation with the Excel sheet",
+        "aide": "Compare a week, session by session, with your file's totals (columns: jour, creneau, ventes, recette).",
+        "fichier": "Excel or CSV file",
+        "comparer": "Compare",
+        "identique": "Totals are identical, session by session.",
+        "ecarts_one": "{{count}} difference found",
+        "ecarts_other": "{{count}} differences found",
+        "ligne": "{{jour}} · {{creneau}} — app: {{application}} · Excel: {{excel}}",
+        "erreur": "The file could not be compared. Check its columns."
       }
     }
   },
