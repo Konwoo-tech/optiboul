@@ -196,6 +196,7 @@
     "personnel": "Personnel et paie",
     "utilisateurs": "Utilisateurs et rôles",
     "rapports": "Rapports",
+    "envois": "Envois",
     "sauvegardes": "Sauvegardes",
     "journal": "Journal des actions",
     "parametres": "Paramètres"
@@ -214,6 +215,7 @@
     "personnel": "Personnel et paie",
     "utilisateurs": "Utilisateurs et rôles",
     "rapports": "Rapports",
+    "envois": "Envois",
     "sauvegardes": "Sauvegardes",
     "journal": "Journal des actions",
     "parametres": "Paramètres"
@@ -2020,6 +2022,38 @@
         "ligne": "{{jour}} · {{creneau}} — application : {{application}} · Excel : {{excel}}",
         "erreur": "Le fichier n’a pas pu être comparé. Vérifiez ses colonnes."
       }
+    },
+    "envois": {
+      "erreurChargement": "Impossible de lire la file d’envoi. Réessayez.",
+      "internet": "Internet",
+      "internetValeurs": {
+        "en_ligne": "En ligne",
+        "hors_ligne": "Hors ligne",
+        "inconnu": "Inconnu"
+      },
+      "enAttente": "En attente",
+      "enEchec": "En échec",
+      "filtres": "Filtrer par état",
+      "liste": "File d’envoi ({{count}})",
+      "statuts": {
+        "tous": "Tous",
+        "en_attente": "En attente",
+        "envoye": "Envoyés",
+        "echec": "En échec"
+      },
+      "canaux": {
+        "sms": "SMS",
+        "whatsapp": "WhatsApp",
+        "email": "E-mail"
+      },
+      "creeLe": "Créé le {{date}}",
+      "tentatives_one": "{{count}} tentative",
+      "tentatives_other": "{{count}} tentatives",
+      "relancer": "Relancer",
+      "relancerNom": "Relancer l’envoi à {{destinataire}}",
+      "toastRelance": "Envoi remis dans la file",
+      "toastErreur": "Seul un envoi en échec peut être relancé.",
+      "vide": "Aucun message dans cette liste."
     }
   },
   "atelier": {

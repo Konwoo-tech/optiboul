@@ -1,0 +1,138 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.etat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chiffre {
+  flex: 1 1 160px;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  padding: 14px 18px;
+}
+
+.chiffreLibelle {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.chiffreValeur {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.filtres {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.puce {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 999px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.puce[aria-pressed='true'] {
+  background: var(--ob-marque);
+  border-color: var(--ob-marque);
+  color: #fff8ea;
+}
+
+.liste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--ob-surface);
+  border: 1px solid var(--ob-ligne);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.ligne {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--ob-ligne);
+}
+
+.ligne:last-child {
+  border-bottom: none;
+}
+
+.texte {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.titre {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.sous {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.erreur {
+  font-size: 12px;
+  color: #c2453a;
+}
+
+.droite {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statut {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.relancer {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.vide {
+  padding: 24px;
+  text-align: center;
+  color: var(--ob-discret);
+}
