@@ -70,7 +70,9 @@ export default function SessionComptoir() {
   const surErreur = useCallback(
     (erreur: unknown) => {
       const code = codeErreur(erreur);
-      const connu = code && i18n.exists(`comptoir.session.erreurs.${code}`);
+      // Un dépassement de plafond : le message du serveur dit combien encaisser, celui de l'écran non.
+      const connu =
+        code && code !== 'plafond_depasse' && i18n.exists(`comptoir.session.erreurs.${code}`);
       afficher(
         connu
           ? t(`comptoir.session.erreurs.${code}`)
