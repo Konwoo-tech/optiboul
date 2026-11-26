@@ -4,7 +4,13 @@ import { formaterNombre } from '@/utils';
 import { useEffect, useRef } from 'react';
 
 import styles from './EcranClients.module.css';
-import { ouvrirRelevePdf, useEnvoyerReleve, useHistoriqueClient } from './api.ts';
+import {
+  ouvrirRelevePdf,
+  useEncaissementsClient,
+  useEnvoyerReleve,
+  useHistoriqueClient,
+  useRelancesClient,
+} from './api.ts';
 import { formaterJourCourt, formaterJourLong } from './formats.ts';
 import { LIBELLE_DU_STATUT, NIVEAU_DU_STATUT, plafondDe, statutDeSolde } from './logique.ts';
 import type { ClientDeLecran, LigneHistoriqueClient } from './types.ts';
@@ -54,6 +60,14 @@ export function DetailClient({
   const afficherToast = useToast();
   const envoyerReleve = useEnvoyerReleve();
   const { data: historique = [] } = useHistoriqueClient(client.id);
+  const { data: paiements = [] } = useEncaissementsClient(client.id);
+  const { data: relances = [] } = useRelancesClient(client.id);
+  const jourDe = (iso: string) =>
+    new Intl.DateTimeFormat(i18n.language, {
+      day: 'numeric',
+      month: 'short',
+      timeZone: 'Africa/Douala',
+    }).format(new Date(iso));
   const titre = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -123,6 +137,46 @@ export function DetailClient({
           </li>
         ))}
       </ul>
+      {paiements.length > 0 && (
+        <>
+          <h3 className={styles.historiqueTitre}>{t('clients.paiementsTitre')}</h3>
+          <ul className={styles.historique}>
+            {paiements.slice(0, 5).map((p) => (
+              <li key={p.id} className={styles.historiqueLigne}>
+                <div className={styles.historiqueTexte}>
+                  <div className={styles.historiqueLibelle}>
+                    {t(`clients.modes.${p.mode}`)}
+                    {p.reference ? ` · ${p.reference}` : ''}
+                  </div>
+                  <div className={styles.historiqueDate}>{jourDe(p.cree_le)}</div>
+                </div>
+                <div className={styles.historiqueRecu}>{`+${formaterNombre(p.montant)}`}</div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {relances.length > 0 && (
+        <>
+          <h3 className={styles.historiqueTitre}>{t('clients.relancesTitre')}</h3>
+          <ul className={styles.historique}>
+            {relances.slice(0, 5).map((r) => (
+              <li key={r.id} className={styles.historiqueLigne}>
+                <div className={styles.historiqueTexte}>
+                  <div className={styles.historiqueLibelle}>
+                    {t(`clients.relanceMotifs.${r.motif}`)}
+                  </div>
+                  <div className={styles.historiqueDate}>
+                    {jourDe(r.cree_le)}
+                    {` · ${r.automatique ? t('clients.relanceAuto') : r.auteur}`}
+                  </div>
+                </div>
+                <div className={styles.historiqueDu}>{formaterNombre(r.montant)}</div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       <div className={styles.actions}>
         {onModifier && (
           <button type="button" className={styles.pdf} onClick={onModifier}>

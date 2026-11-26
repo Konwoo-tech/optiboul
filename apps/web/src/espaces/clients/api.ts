@@ -6,10 +6,14 @@ import {
   clientsList,
   clientsRelancerCreate,
   clientsRelancerGroupeCreate,
+  clientsRelancesList,
+  encaissementsList,
   getClientsRelevePdfRetrieveUrl,
   toutesLesPages,
   livraisonsList,
   type Client,
+  type Encaissement,
+  type Relance,
   type Livraison,
 } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
@@ -148,6 +152,34 @@ export function useHistoriqueClient(id: string | null) {
   return useQuery({
     queryKey: ['clients', 'historique', id],
     queryFn: () => lireHistorique(id as string),
+    enabled: id !== null,
+  });
+}
+
+/** Paiements de dette du client (sans pain livré), du plus récent au plus ancien. */
+export function useEncaissementsClient(id: string | null) {
+  return useQuery({
+    queryKey: ['clients', 'encaissements', id],
+    queryFn: async () => {
+      const lus = await toutesLesPages<Encaissement>(
+        (page) => encaissementsList({ client: Number(id), page }) as Promise<Page<Encaissement>>,
+      );
+      return lus.filter((e) => e.livraison === null).sort((a, b) => b.id - a.id);
+    },
+    enabled: id !== null,
+  });
+}
+
+/** Relances envoyées au client, la plus récente d'abord. */
+export function useRelancesClient(id: string | null) {
+  return useQuery({
+    queryKey: ['clients', 'relances', id],
+    queryFn: async () => {
+      const lues = await toutesLesPages<Relance>(
+        (page) => clientsRelancesList(Number(id), { page }) as Promise<Page<Relance>>,
+      );
+      return lues;
+    },
     enabled: id !== null,
   });
 }

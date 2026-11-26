@@ -312,7 +312,19 @@
       "enregistrer": "Enregistrer",
       "actif": "Client actif (décocher pour le retirer de la liste)",
       "toastModifie": "Client {{nom}} modifié"
-    }
+    },
+    "paiementsTitre": "Paiements de dette",
+    "relancesTitre": "Relances envoyées",
+    "modes": {
+      "especes": "Espèces",
+      "mtn": "MTN Mobile Money",
+      "orange": "Orange Money"
+    },
+    "relanceMotifs": {
+      "dette": "Relance de dette",
+      "commande": "Rappel de commande"
+    },
+    "relanceAuto": "automatique"
   },
   "comptoir": {
     "caisses": {
