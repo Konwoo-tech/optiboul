@@ -1,7 +1,12 @@
 import { useUtilisateurCourant } from '@/auth';
-import { useNotifications, type NotificationAffichee } from '@/coque/notifications.ts';
+import {
+  useNotifications,
+  useNotificationsRegroupees,
+  type GroupeAffiche,
+  type NotificationAffichee,
+} from '@/coque/notifications.ts';
 import { useTranslation } from '@/i18n';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import styles from './PanneauNotifications.module.css';
@@ -17,6 +22,8 @@ export function PanneauNotifications({ ouvert, onFermer }: Props) {
   const naviguer = useNavigate();
   const { utilisateur } = useUtilisateurCourant();
   const { notifications, marquerLues, toutMarquerLu } = useNotifications(ouvert);
+  const { groupes, marquerGroupeLu } = useNotificationsRegroupees(ouvert);
+  const [regroupe, setRegroupe] = useState(false);
   const boutonFermer = useRef<HTMLButtonElement>(null);
   const panneau = useRef<HTMLDialogElement>(null);
   // Le parent recrée `onFermer` à chaque rendu : on le lit par une référence pour que l'effet
@@ -67,6 +74,12 @@ export function PanneauNotifications({ ouvert, onFermer }: Props) {
     onFermer();
     void naviguer(notification.chemin);
   };
+  const ouvrirGroupe = async (groupe: GroupeAffiche) => {
+    if (!groupe.chemin) return;
+    await marquerGroupeLu(groupe);
+    onFermer();
+    void naviguer(groupe.chemin);
+  };
 
   return (
     <>
@@ -101,43 +114,103 @@ export function PanneauNotifications({ ouvert, onFermer }: Props) {
             </button>
           </div>
         </div>
+        <fieldset className={styles.vues} aria-label={t('coque.vue.titre')}>
+          {([false, true] as const).map((parHeure) => (
+            <button
+              type="button"
+              key={String(parHeure)}
+              className={`${styles.vue} ${regroupe === parHeure ? styles.vueActive : ''}`}
+              aria-pressed={regroupe === parHeure}
+              onClick={() => setRegroupe(parHeure)}
+            >
+              {t(parHeure ? 'coque.vue.regroupees' : 'coque.vue.detail')}
+            </button>
+          ))}
+        </fieldset>
         <div className={styles.liste}>
-          {notifications.map((notification) => {
-            return (
+          {regroupe &&
+            groupes.map((groupe) => (
               <div
-                key={notification.id}
+                key={groupe.cle}
                 className={styles.carte}
-                style={{ borderColor: notification.lue ? 'var(--ob-ligne)' : '#F2B705' }}
+                style={{ borderColor: groupe.nonLues > 0 ? '#F2B705' : 'var(--ob-ligne)' }}
               >
                 <span
                   className={styles.pastille}
-                  style={{ background: notification.lue ? 'transparent' : '#C2453A' }}
+                  style={{ background: groupe.nonLues > 0 ? '#C2453A' : 'transparent' }}
                 />
                 <div className={styles.corps}>
                   <div className={styles.ligneType}>
-                    <span
-                      className={`${styles.type} ${notification.enDirect ? styles.typeEnDirect : ''}`}
-                    >
-                      {notification.type}
-                    </span>
-                    <span className={styles.heure}>{notification.heure}</span>
+                    <span className={styles.type}>{groupe.type}</span>
+                    <span className={styles.heure}>{groupe.heure}</span>
                   </div>
-                  <div className={styles.titreCarte}>{notification.titre}</div>
-                  <div className={styles.detail}>{notification.detail}</div>
-                  {notification.chemin && (
-                    <button
-                      type="button"
-                      className={styles.ouvrir}
-                      onClick={() => void ouvrirEcran(notification)}
-                    >
-                      {t('coque.ouvrir')}
-                    </button>
-                  )}
+                  <div className={styles.titreCarte}>{groupe.titre}</div>
+                  <div className={styles.detail}>
+                    {t('coque.vue.compte', { nombre: groupe.nombre, nonLues: groupe.nonLues })}
+                  </div>
+                  <div className={styles.actionsCarte}>
+                    {groupe.chemin && (
+                      <button
+                        type="button"
+                        className={styles.ouvrir}
+                        onClick={() => void ouvrirGroupe(groupe)}
+                      >
+                        {t('coque.ouvrir')}
+                      </button>
+                    )}
+                    {groupe.nonLues > 0 && (
+                      <button
+                        type="button"
+                        className={styles.ouvrir}
+                        onClick={() => void marquerGroupeLu(groupe)}
+                      >
+                        {t('coque.vue.marquerGroupe')}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            );
-          })}
-          {notifications.length === 0 && (
+            ))}
+          {regroupe && groupes.length === 0 && (
+            <div className={styles.vide}>{t('coque.aucuneNotification')}</div>
+          )}
+          {!regroupe &&
+            notifications.map((notification) => {
+              return (
+                <div
+                  key={notification.id}
+                  className={styles.carte}
+                  style={{ borderColor: notification.lue ? 'var(--ob-ligne)' : '#F2B705' }}
+                >
+                  <span
+                    className={styles.pastille}
+                    style={{ background: notification.lue ? 'transparent' : '#C2453A' }}
+                  />
+                  <div className={styles.corps}>
+                    <div className={styles.ligneType}>
+                      <span
+                        className={`${styles.type} ${notification.enDirect ? styles.typeEnDirect : ''}`}
+                      >
+                        {notification.type}
+                      </span>
+                      <span className={styles.heure}>{notification.heure}</span>
+                    </div>
+                    <div className={styles.titreCarte}>{notification.titre}</div>
+                    <div className={styles.detail}>{notification.detail}</div>
+                    {notification.chemin && (
+                      <button
+                        type="button"
+                        className={styles.ouvrir}
+                        onClick={() => void ouvrirEcran(notification)}
+                      >
+                        {t('coque.ouvrir')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          {!regroupe && notifications.length === 0 && (
             <div className={styles.vide}>{t('coque.aucuneNotification')}</div>
           )}
         </div>

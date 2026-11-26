@@ -234,6 +234,13 @@
     "changer": "Changer",
     "notificationsPour": "Pour {{nom}} · {{role}}",
     "notificationsRegle": "Chaque notification va aux rôles concernés : la programmation et le plan de production à toute l’équipe, les relances de commande à la caisse, le reste à produire au chef, au gérant et à la caisse, les contrôles de stock au gérant et au chef. Envoi WhatsApp ou SMS en complément (fournisseur à choisir).",
+    "vue": {
+      "titre": "Affichage des notifications",
+      "detail": "Détail",
+      "regroupees": "Par heure",
+      "compte": "{{nombre}} notifications · {{nonLues}} non lues",
+      "marquerGroupe": "Marquer le groupe lu"
+    },
     "toutMarquerLu": "Tout marquer lu",
     "ouvrir": "Ouvrir ›"
   },
