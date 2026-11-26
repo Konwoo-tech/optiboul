@@ -1,7 +1,10 @@
-import { ErreurApi, parametresUpdate, produitsPartialUpdate } from '@/api';
+import { ErreurApi, parametresUpdate, produitsCreate, produitsPartialUpdate } from '@/api';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { lireHistoriqueReel, lireParametresReels, lireProduitsReels } from './reel.ts';
+import { poserLaFiche } from '../../atelier/production/fiches.ts';
+import type { Recette } from '../../atelier/production/types.ts';
+import type { NouveauProduit } from './ModaleNouveauProduit.tsx';
 import type { SaisieProduit } from './ModaleProduit.tsx';
 import type { Parametre, ValeurParametre } from './types.ts';
 
@@ -95,5 +98,37 @@ export function useModifierProduit(utilisateur: string | undefined) {
         actif: saisie.actif,
       }),
     onSuccess: () => client.invalidateQueries({ queryKey: cleProduits(utilisateur) }),
+  });
+}
+
+/** Crée le produit (`POST /produits/`) : sans recette, il reste invisible du plan et des fiches. */
+export function useCreerProduit(utilisateur: string | undefined) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (produit: NouveauProduit): Promise<number> => {
+      const reponse = await produitsCreate({
+        code: produit.code,
+        nom: produit.nom,
+        nom_en: produit.nomEn,
+        prix: produit.prix,
+        cuisson_minutes: produit.cuisson,
+        actif: true,
+        ordre: 0,
+      } as Parameters<typeof produitsCreate>[0]);
+      return (reponse.data as { id: number }).id;
+    },
+    onSuccess: () => client.invalidateQueries({ queryKey: cleProduits(utilisateur) }),
+  });
+}
+
+/** Pose la première version de la fiche du produit : rendement et recette d'un sac. */
+export function useAjouterLaRecette(utilisateur: string | undefined) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, recette }: { id: number; recette: Recette }) => poserLaFiche(id, recette),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: cleProduits(utilisateur) });
+      void client.invalidateQueries({ queryKey: ['ecran', 'atelier'] });
+    },
   });
 }

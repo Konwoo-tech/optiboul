@@ -1926,6 +1926,42 @@
           "nom": "Le nom du produit est obligatoire.",
           "droit": "Seul le propriétaire modifie les produits.",
           "defaut": "Le produit n’a pas pu être enregistré. Réessayez."
+        },
+        "nouveau": {
+          "ajouter": "Nouveau produit",
+          "titre": "Nouveau produit",
+          "etapes": "Étapes",
+          "etapeProduit": "Le produit",
+          "etapeRecette": "La recette",
+          "code": "Code du produit",
+          "noteCode": "Lettres et chiffres, sans espace : BAG, KO, PL, C2… Il ne se change plus ensuite.",
+          "nom": "Nom du produit",
+          "nomEn": "Nom en anglais (facultatif)",
+          "prix": "Prix de vente de base (FCFA, facultatif)",
+          "cuisson": "Cuisson au four (minutes, facultatif)",
+          "noteRecette": "Recette pour un sac de 50 kg de farine : {{code}} · {{nom}}. Elle donne le rendement et le coût de revient ; le boulanger l’ajuste à la fiche technique.",
+          "produitCree": "Le produit est créé ; il manque sa recette. Complétez-la puis réessayez.",
+          "boule": "Poids d’une boule de pâte",
+          "painsParBoule": "Pains par boule",
+          "pains": "pains",
+          "recapPains": "pains par sac",
+          "recapPate": "Pâte du sac : {{kg}} kg",
+          "recapCout": "Coût de revient : {{cout}} FCFA par pain",
+          "recapMarge": "Marge : {{marge}} FCFA par pain",
+          "suivant": "Suivant : la recette",
+          "creer": "Créer le produit",
+          "reessayer": "Réessayer la recette",
+          "retour": "Retour",
+          "annuler": "Annuler",
+          "toast": "Produit {{nom}} créé avec sa fiche technique",
+          "erreurs": {
+            "code": "Code invalide : 1 à 10 lettres ou chiffres.",
+            "nom": "Le nom du produit est obligatoire.",
+            "recette": "Boule, pains par boule, farine, sel, levure et améliorant doivent être supérieurs à zéro.",
+            "codeExiste": "Ce code est déjà pris par un autre produit.",
+            "recetteEchec": "La recette n’a pas pu être enregistrée. Réessayez.",
+            "defaut": "Le produit n’a pas pu être créé. Réessayez."
+          }
         }
       },
       "notifications": {

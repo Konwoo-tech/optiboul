@@ -18,12 +18,15 @@ export function Produits({
   produits,
   cheminFiche,
   onModifier,
+  onNouveau,
 }: {
   produits: ProduitParametre[];
   /** Adresse de la fiche d'un produit ; absent : la ligne n'ouvre rien. */
   cheminFiche?: (id: string) => string;
   /** Le propriétaire modifie un produit ; absent : lecture seule. */
   onModifier?: (produit: ProduitParametre) => void;
+  /** Le propriétaire crée un produit ; absent : lecture seule. */
+  onNouveau?: () => void;
 }) {
   const { t, i18n } = useTranslation();
   const titre = useId();
@@ -31,9 +34,17 @@ export function Produits({
   return (
     <section className={styles.tableau} aria-labelledby={titre}>
       <div className={styles.tableauInterne}>
-        <h2 id={titre} className={`${styles.titre} ${styles.tableauTitre}`}>
-          {tp('titre')}
-        </h2>
+        <div className={styles.tableauEntete}>
+          <h2 id={titre} className={`${styles.titre} ${styles.tableauTitre}`}>
+            {tp('titre')}
+          </h2>
+          {onNouveau && (
+            <button type="button" className={styles.nouveauProduit} onClick={onNouveau}>
+              <span aria-hidden>+ </span>
+              {tp('nouveau.ajouter')}
+            </button>
+          )}
+        </div>
         <div role="table" aria-labelledby={titre}>
           <div role="row" className={`${styles.rangeeProduits} ${styles.enteteProduits}`}>
             <span role="columnheader">{tp('produit')}</span>

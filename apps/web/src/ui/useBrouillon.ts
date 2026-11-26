@@ -22,7 +22,9 @@ export function useBrouillon<T>(
   const [pret, setPret] = useState(false);
   const existe = useRef(false);
   const restaurerRef = useRef(restaurer);
-  restaurerRef.current = restaurer;
+  useEffect(() => {
+    restaurerRef.current = restaurer;
+  });
 
   useEffect(() => {
     if (!actif) return;
