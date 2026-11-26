@@ -48,6 +48,7 @@ describe('navigation', () => {
       'depenses',
       'personnel',
       'demandes',
+      'rapports',
       'journal',
     ]);
     expect(proprietaire).toEqual([...gerant, 'parametres']);

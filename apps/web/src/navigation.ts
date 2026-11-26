@@ -14,6 +14,7 @@ export type CleEcran =
   | 'personnel'
   | 'utilisateurs'
   | 'sauvegardes'
+  | 'rapports'
   | 'journal'
   | 'parametres';
 
@@ -51,6 +52,7 @@ export const ECRANS: readonly Ecran[] = [
   { cle: 'depenses', espace: 'gestion', profils: DIRECTION, recit: 'US-110' },
   { cle: 'personnel', espace: 'gestion', profils: DIRECTION, recit: 'US-120' },
   { cle: 'demandes', espace: 'gestion', profils: DIRECTION, recit: 'US-071' },
+  { cle: 'rapports', espace: 'gestion', profils: DIRECTION, recit: 'US-150' },
   { cle: 'utilisateurs', espace: 'gestion', profils: ['administrateur'], recit: 'US-020' },
   { cle: 'sauvegardes', espace: 'gestion', profils: ['administrateur'], recit: 'US-143' },
   {
