@@ -153,18 +153,25 @@ export async function lireFichesReelles(): Promise<InstantaneFiches> {
   };
 }
 
-/** Enregistre la recette modifiée : le serveur crée une nouvelle version de la fiche. */
-export async function modifierFicheSurLeServeur(
-  idServeur: number,
-  recette: ModificationFiche,
-  prix: Record<Matiere, number>,
-): Promise<InstantaneFiches> {
+/** Pose une version de la fiche (rendement et recette d'un sac) : le serveur garde les précédentes. */
+export async function poserLaFiche(idServeur: number, recette: ModificationFiche) {
   await produitsNouvelleVersionCreate(idServeur, {
     poids_boule: Math.round(recette.boule),
     pains_par_boule: Math.round(recette.pb),
     // Le rendement d'un sac se déduit de la recette (pâte du sac ÷ poids d'un pain).
-    pains_par_sac: Math.max(1, calculerFiche(recette, prix, null).painsParSac),
+    pains_par_sac: Math.max(1, calculerFiche(recette, PRIX_NULS, null).painsParSac),
     recette: versRecetteServeur(recette),
   });
+}
+
+const PRIX_NULS = { farine: 0, sel: 0, levure: 0, ameliorant: 0, glace: 0, bois: 0, huile: 0 };
+
+/** Enregistre la recette modifiée : le serveur crée une nouvelle version de la fiche. */
+export async function modifierFicheSurLeServeur(
+  idServeur: number,
+  recette: ModificationFiche,
+  _prix: Record<Matiere, number>,
+): Promise<InstantaneFiches> {
+  await poserLaFiche(idServeur, recette);
   return lireFichesReelles();
 }

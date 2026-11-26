@@ -352,6 +352,74 @@ describe('Gestion › Paramètres : modifier un produit', () => {
   });
 });
 
+describe('Gestion › Paramètres : créer un produit', () => {
+  it('crée le produit puis sa recette d’un sac, et annonce le rendement avant d’envoyer', async () => {
+    const appels: { url: string; corps: Record<string, unknown> }[] = [];
+    await ouvrir('fotso', 'fr', [
+      http.post('*/api/v1/produits/', async ({ request }) => {
+        appels.push({ url: 'produit', corps: (await request.json()) as Record<string, unknown> });
+        return HttpResponse.json({ id: 42 }, { status: 201 });
+      }),
+      http.post('*/api/v1/produits/:id/nouvelle-version/', async ({ params, request }) => {
+        appels.push({
+          url: `fiche ${params.id}`,
+          corps: (await request.json()) as Record<string, unknown>,
+        });
+        return HttpResponse.json({ version: 1 }, { status: 201 });
+      }),
+    ]);
+    await attendreTableau();
+    fireEvent.click(screen.getByRole('button', { name: 'Nouveau produit' }));
+    const fenetre = within(await screen.findByRole('dialog'));
+    // Un code invalide est refusé avant tout envoi.
+    fireEvent.click(fenetre.getByRole('button', { name: 'Suivant : la recette' }));
+    expect((await fenetre.findByRole('alert')).textContent).toMatch(/Code invalide/);
+    fireEvent.change(fenetre.getByLabelText('Code du produit'), { target: { value: 'pl' } });
+    fireEvent.change(fenetre.getByLabelText('Nom du produit'), { target: { value: 'Pain long' } });
+    fireEvent.change(fenetre.getByLabelText(/^Prix de vente de base/), {
+      target: { value: '150' },
+    });
+    fireEvent.click(fenetre.getByRole('button', { name: 'Suivant : la recette' }));
+    // La recette de départ : 50 kg de farine, pâte de 82 kg, boule de 5 kg coupée en 20 pains de 250 g.
+    expect(await fenetre.findByText(/Pâte du sac : 82 kg/)).toBeTruthy();
+    expect(fenetre.getByText(/pains par sac/)).toBeTruthy();
+    fireEvent.click(fenetre.getByRole('button', { name: 'Créer le produit' }));
+    expect(await screen.findByText('Produit Pain long créé avec sa fiche technique')).toBeTruthy();
+    expect(appels[0]).toMatchObject({
+      url: 'produit',
+      corps: { code: 'PL', nom: 'Pain long', prix: 150, actif: true },
+    });
+    expect(appels[1]).toMatchObject({
+      url: 'fiche 42',
+      corps: { poids_boule: 5000, pains_par_boule: 20 },
+    });
+    expect((appels[1]!.corps.recette as Record<string, string>).sel).toBe('1000');
+  });
+
+  it('un code déjà pris ramène à la première étape ; la caissière et l’administrateur n’ont pas le bouton', async () => {
+    await ouvrir('fotso', 'fr', [
+      http.post('*/api/v1/produits/', () =>
+        HttpResponse.json({ code: ['produit with this code already exists.'] }, { status: 400 }),
+      ),
+    ]);
+    await attendreTableau();
+    fireEvent.click(screen.getByRole('button', { name: 'Nouveau produit' }));
+    const fenetre = within(await screen.findByRole('dialog'));
+    fireEvent.change(fenetre.getByLabelText('Code du produit'), { target: { value: 'BAG' } });
+    fireEvent.change(fenetre.getByLabelText('Nom du produit'), { target: { value: 'Autre' } });
+    fireEvent.click(fenetre.getByRole('button', { name: 'Suivant : la recette' }));
+    fireEvent.click(await fenetre.findByRole('button', { name: 'Créer le produit' }));
+    expect((await fenetre.findByRole('alert')).textContent).toMatch(/déjà pris/);
+    expect(fenetre.getByLabelText('Code du produit')).toBeTruthy();
+  });
+
+  it('l’administrateur consulte : pas de bouton « Nouveau produit »', async () => {
+    await ouvrir('admin');
+    await attendreTableau();
+    expect(screen.queryByRole('button', { name: 'Nouveau produit' })).toBeNull();
+  });
+});
+
 describe('Gestion › Paramètres : autres paramètres et historique', () => {
   it('range les autres paramètres par famille avec leur valeur par défaut', async () => {
     await ouvrir();

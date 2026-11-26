@@ -1,3 +1,4 @@
+import { ErreurApi } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { Text } from '@mantine/core';
@@ -12,13 +13,18 @@ import {
   phraseDuServeur,
   useModifierParametre,
   useParametres,
+  useAjouterLaRecette,
+  useCreerProduit,
   useModifierProduit,
   useProduits,
 } from './api.ts';
 import type { Enregistrer } from './Champs.tsx';
 import { AutresParametres, HistoriqueDesValeurs } from './Complements.tsx';
 import styles from './Parametres.module.css';
+import { ModaleNouveauProduit, type NouveauProduit } from './ModaleNouveauProduit.tsx';
 import { ModaleProduit, type SaisieProduit } from './ModaleProduit.tsx';
+import { useFiches } from '../../atelier/production/api.ts';
+import type { Recette } from '../../atelier/production/types.ts';
 import { Produits } from './Produits.tsx';
 import { ReglesNotification } from './ReglesNotification.tsx';
 import {
@@ -46,6 +52,12 @@ export default function EcranParametres({ ecran }: { ecran: Ecran }) {
   const produits = useProduits(nom);
   const modifier = useModifierParametre(nom);
   const modifierProduit = useModifierProduit(nom);
+  const creerProduit = useCreerProduit(nom);
+  const ajouterRecette = useAjouterLaRecette(nom);
+  const fiches = useFiches(nom);
+  const [nouveauProduit, setNouveauProduit] = useState(false);
+  // Le produit créé dont la recette a échoué : on ne le recrée pas en réessayant.
+  const [produitSansRecette, setProduitSansRecette] = useState<number | null>(null);
   const [produitOuvert, setProduitOuvert] = useState<string | null>(null);
   // Garde synchrone : deux enregistrements du même paramètre ne partent pas ensemble.
   const enCours = useRef(new Set<string>());
@@ -106,6 +118,35 @@ export default function EcranParametres({ ecran }: { ecran: Ecran }) {
     }
   };
 
+  const creerLeProduit = async (
+    produit: NouveauProduit,
+    recette: Recette,
+  ): Promise<string | null> => {
+    let id = produitSansRecette;
+    if (id === null) {
+      try {
+        id = await creerProduit.mutateAsync(produit);
+        setProduitSansRecette(id);
+      } catch (erreur) {
+        const champs =
+          erreur instanceof ErreurApi && erreur.status === 400
+            ? Object.keys((erreur.details ?? {}) as object)
+            : [];
+        if (champs.includes('code')) return 'codeExiste';
+        return codeOuTexte(erreur, () => false) ?? 'defaut';
+      }
+    }
+    try {
+      await ajouterRecette.mutateAsync({ id, recette });
+    } catch (erreur) {
+      return codeOuTexte(erreur, () => false) ?? 'recetteEchec';
+    }
+    setProduitSansRecette(null);
+    setNouveauProduit(false);
+    afficher(t('gestion.parametres.produits.nouveau.toast', { nom: produit.nom }));
+    return null;
+  };
+
   const enregistrer: Enregistrer = async (parametre, valeur) => {
     if (lecture) return 'droit';
     const verdict = validerValeur(parametre, valeur);
@@ -136,6 +177,7 @@ export default function EcranParametres({ ecran }: { ecran: Ecran }) {
             produits={produits.data}
             cheminFiche={cheminFiche}
             onModifier={lecture ? undefined : (p) => setProduitOuvert(p.id)}
+            onNouveau={lecture ? undefined : () => setNouveauProduit(true)}
           />
         ) : produits.isError ? (
           <Carte role="alert">
@@ -149,6 +191,25 @@ export default function EcranParametres({ ecran }: { ecran: Ecran }) {
           <ReglesNotification lecture={lecture} />
         </div>
       </div>
+      {nouveauProduit && (
+        <ModaleNouveauProduit
+          prix={
+            fiches.data?.prix ?? {
+              farine: 0,
+              sel: 0,
+              levure: 0,
+              ameliorant: 0,
+              glace: 0,
+              bois: 0,
+              huile: 0,
+            }
+          }
+          envoiEnCours={creerProduit.isPending || ajouterRecette.isPending}
+          produitCree={produitSansRecette !== null}
+          onFermer={() => setNouveauProduit(false)}
+          onConfirmer={creerLeProduit}
+        />
+      )}
       {produitAModifier && (
         <ModaleProduit
           produit={produitAModifier}

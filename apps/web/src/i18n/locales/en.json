@@ -1926,6 +1926,42 @@
           "nom": "The product name is required.",
           "droit": "Only the owner edits products.",
           "defaut": "The product could not be saved. Try again."
+        },
+        "nouveau": {
+          "ajouter": "New product",
+          "titre": "New product",
+          "etapes": "Steps",
+          "etapeProduit": "The product",
+          "etapeRecette": "The recipe",
+          "code": "Product code",
+          "noteCode": "Letters and digits, no spaces: BAG, KO, PL, C2… It cannot be changed afterwards.",
+          "nom": "Product name",
+          "nomEn": "English name (optional)",
+          "prix": "Base selling price (FCFA, optional)",
+          "cuisson": "Oven baking (minutes, optional)",
+          "noteRecette": "Recipe for one 50 kg bag of flour: {{code}} · {{nom}}. It gives the yield and the cost price; the baker adjusts it on the technical sheet.",
+          "produitCree": "The product is created; its recipe is missing. Complete it and try again.",
+          "boule": "Dough ball weight",
+          "painsParBoule": "Loaves per ball",
+          "pains": "loaves",
+          "recapPains": "loaves per bag",
+          "recapPate": "Dough per bag: {{kg}} kg",
+          "recapCout": "Cost price: {{cout}} FCFA per loaf",
+          "recapMarge": "Margin: {{marge}} FCFA per loaf",
+          "suivant": "Next: the recipe",
+          "creer": "Create the product",
+          "reessayer": "Retry the recipe",
+          "retour": "Back",
+          "annuler": "Cancel",
+          "toast": "Product {{nom}} created with its technical sheet",
+          "erreurs": {
+            "code": "Invalid code: 1 to 10 letters or digits.",
+            "nom": "The product name is required.",
+            "recette": "Ball, loaves per ball, flour, salt, yeast and improver must be above zero.",
+            "codeExiste": "This code is already used by another product.",
+            "recetteEchec": "The recipe could not be saved. Try again.",
+            "defaut": "The product could not be created. Try again."
+          }
         }
       },
       "notifications": {

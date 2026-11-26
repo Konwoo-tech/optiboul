@@ -311,3 +311,24 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+.tableauEntete {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-right: 20px;
+}
+
+.nouveauProduit {
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: #f2b705;
+  color: #2e1a10;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
