@@ -172,7 +172,7 @@
 }
 
 .identite {
-  flex: 1 1 220px;
+  flex: 1 1 160px;
   min-width: 0;
 }
 
@@ -195,7 +195,7 @@
 
 .choix {
   height: 44px;
-  min-width: 200px;
+  min-width: 180px;
   border: 1.5px solid var(--ob-ligne-champ);
   border-radius: 10px;
   padding: 0 10px;
