@@ -1,10 +1,10 @@
 import { useBrouillon } from '@/ui';
-import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
+import { createRef, useCallback, useMemo, useRef, useState, type RefObject } from 'react';
 
 import type { ActionsSession } from './api.ts';
 import { calculerLivraison, chiffres, filtrerClients, lireEntier } from './calculs.ts';
+import { CLES_PRODUIT, parProduit } from './catalogue.ts';
 import {
-  CLES_PRODUIT,
   type CleProduit,
   type DemandePlafond,
   type InstantaneSession,
@@ -21,13 +21,13 @@ type Formulaire = {
   reference: string;
 };
 
-const VIDE: Formulaire = {
+const videFormulaire = (): Formulaire => ({
   clientId: null,
-  saisies: { BAG: '', KO: '', GC: '' },
+  saisies: parProduit(''),
   mode: 'especes',
   recu: '',
   reference: '',
-};
+});
 
 /** Le champ prend le focus une fois affiché (le prototype attend 60 ms). */
 function focaliser(champ: RefObject<HTMLInputElement | null>) {
@@ -37,19 +37,22 @@ function focaliser(champ: RefObject<HTMLInputElement | null>) {
 /** Champs du formulaire qui prennent le focus : créés par l'écran, qui les passe au hook et à l'onglet. */
 export type ChampsLivraison = {
   recherche: RefObject<HTMLInputElement | null>;
-  quantites: Record<CleProduit, RefObject<HTMLInputElement | null>>;
+  /** Le champ de quantité d'un produit : créé à la demande, le catalogue peut grandir. */
+  quantite: (cle: CleProduit) => RefObject<HTMLInputElement | null>;
   recu: RefObject<HTMLInputElement | null>;
 };
 
 export function useChampsLivraison(): ChampsLivraison {
   const recherche = useRef<HTMLInputElement>(null);
-  const BAG = useRef<HTMLInputElement>(null);
-  const KO = useRef<HTMLInputElement>(null);
-  const GC = useRef<HTMLInputElement>(null);
+  const quantites = useRef<Record<CleProduit, RefObject<HTMLInputElement | null>>>({});
   const recu = useRef<HTMLInputElement>(null);
   return useMemo(
-    () => ({ recherche, quantites: { BAG, KO, GC }, recu }),
-    [recherche, BAG, KO, GC, recu],
+    () => ({
+      recherche,
+      quantite: (cle: CleProduit) => (quantites.current[cle] ??= createRef<HTMLInputElement>()),
+      recu,
+    }),
+    [recherche, recu],
   );
 }
 
@@ -83,7 +86,7 @@ export function useFormulaireLivraison({
   surAutorisation,
 }: Parametres) {
   const [recherche, setRecherche] = useState('');
-  const [formulaire, setFormulaire] = useState<Formulaire>(VIDE);
+  const [formulaire, setFormulaire] = useState<Formulaire>(videFormulaire);
   const enCours = useRef(false);
   // Une clé par envoi : la même si l'on renvoie la même saisie (réseau coupé), nouvelle dès qu'elle change.
   const cle = useRef<string | null>(null);
@@ -119,7 +122,7 @@ export function useFormulaireLivraison({
     formulaire.clientId === null,
     (contenu) => {
       if (contenu?.clientId && clients?.some((c) => c.id === contenu.clientId)) {
-        setFormulaire({ ...VIDE, ...contenu });
+        setFormulaire({ ...videFormulaire(), ...contenu });
       }
     },
     peutSaisir && Boolean(instantane),
@@ -133,8 +136,8 @@ export function useFormulaireLivraison({
   const selectionner = useCallback(
     (clientId: string) => {
       cle.current = null;
-      setFormulaire({ ...VIDE, clientId });
-      focaliser(champs.quantites.BAG);
+      setFormulaire({ ...videFormulaire(), clientId });
+      focaliser(champs.quantite(CLES_PRODUIT[0] ?? 'BAG'));
     },
     [champs],
   );
@@ -146,7 +149,7 @@ export function useFormulaireLivraison({
   const reinitialiser = useCallback(
     (avecFocus = true) => {
       cle.current = null;
-      setFormulaire(VIDE);
+      setFormulaire(videFormulaire());
       setRecherche('');
       if (avecFocus === true) focaliser(champs.recherche);
     },
@@ -169,7 +172,7 @@ export function useFormulaireLivraison({
   const passerAuSuivant = (cle: CleProduit) => {
     const rang = CLES_PRODUIT.indexOf(cle);
     const suivante = CLES_PRODUIT[rang + 1];
-    (suivante ? champs.quantites[suivante] : champs.recu).current?.focus();
+    (suivante ? champs.quantite(suivante) : champs.recu).current?.focus();
   };
 
   const valider = useCallback(async () => {
@@ -185,7 +188,7 @@ export function useFormulaireLivraison({
           cle: cleDeLEnvoi(),
         });
         cle.current = null;
-        setFormulaire(VIDE);
+        setFormulaire(videFormulaire());
         setRecherche('');
         focaliser(champs.recherche);
         surEncaissee({ nom: client.nom, montant: calcul.recu });
@@ -193,18 +196,16 @@ export function useFormulaireLivraison({
       }
       const reponse = await actions.livrer({
         clientId: client.id,
-        quantites: {
-          BAG: lireEntier(formulaire.saisies.BAG),
-          KO: lireEntier(formulaire.saisies.KO),
-          GC: lireEntier(formulaire.saisies.GC),
-        },
+        quantites: Object.fromEntries(
+          CLES_PRODUIT.map((cle) => [cle, lireEntier(formulaire.saisies[cle])]),
+        ),
         mode: formulaire.mode,
         recu: calcul.recu,
         reference: formulaire.reference.trim(),
         cle: cleDeLEnvoi(),
       });
       cle.current = null;
-      setFormulaire(VIDE);
+      setFormulaire(videFormulaire());
       setRecherche('');
       focaliser(champs.recherche);
       surEnregistree(reponse.livraison);
@@ -239,7 +240,7 @@ export function useFormulaireLivraison({
         cle: cleDeLEnvoi(),
       });
       cle.current = null;
-      setFormulaire(VIDE);
+      setFormulaire(videFormulaire());
       setRecherche('');
       focaliser(champs.recherche);
       surEnregistree(reponse.livraison);
@@ -255,11 +256,9 @@ export function useFormulaireLivraison({
     try {
       const reponse = await actions.demanderAutorisation(client.id, {
         clientId: client.id,
-        quantites: {
-          BAG: lireEntier(formulaire.saisies.BAG),
-          KO: lireEntier(formulaire.saisies.KO),
-          GC: lireEntier(formulaire.saisies.GC),
-        },
+        quantites: Object.fromEntries(
+          CLES_PRODUIT.map((cle) => [cle, lireEntier(formulaire.saisies[cle])]),
+        ),
         mode: formulaire.mode,
         recu: calcul.recu,
         reference: formulaire.reference.trim(),

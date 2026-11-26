@@ -1,7 +1,6 @@
 import { formaterNombre, type NiveauStatut } from '@/utils';
 
 import {
-  CLES_PRODUIT,
   type CleProduit,
   type Client,
   type Livraison,
@@ -20,19 +19,9 @@ export const PLAFOND_PAR_DEFAUT = 2000;
 /** Fonds de caisse à l'ouverture d'une session. */
 export const FONDS_DE_CAISSE = 20000;
 
-export type Produit = {
-  cle: CleProduit;
-  /** Libellé affiché dans les en-têtes et les champs. */
-  libelle: string;
-  /** Pains tirés d'un sac de farine : sert au plan de pétrissage. */
-  painsParSac: number;
-};
+import { CLES_PRODUIT, de, PRODUITS, sommeDesPains, type Produit } from './catalogue.ts';
 
-export const PRODUITS: readonly Produit[] = [
-  { cle: 'BAG', libelle: 'BAG', painsParSac: 315 },
-  { cle: 'KO', libelle: 'KO', painsParSac: 426 },
-  { cle: 'GC', libelle: 'GC 135', painsParSac: 216 },
-];
+export { PRODUITS, type Produit };
 
 /** Ne garde que les chiffres : un champ de quantité ou de montant n'en accepte pas d'autres. */
 export function chiffres(texte: string): string {
@@ -100,7 +89,7 @@ export function calculerLivraison(entree: EntreeLivraison): CalculLivraison {
   const { client, saisies, plafond } = entree;
   const lignes: LigneLivraison[] = PRODUITS.map(({ cle, libelle }) => {
     const quantite = lireEntier(saisies[cle]);
-    const prix = client ? client.prix[cle] : 0;
+    const prix = client ? de(client.prix, cle) : 0;
     return { cle, libelle, quantite, prix, total: quantite * prix };
   });
   const du = lignes.reduce((somme, ligne) => somme + ligne.total, 0);
@@ -171,8 +160,7 @@ export function totauxDesLivraisons(livraisons: readonly Livraison[]): TotauxSes
       recu: total.recu + livraison.recu,
       dette: total.dette + Math.min(livraison.reste, 0),
       remboursements: total.remboursements + Math.max(livraison.reste, 0),
-      pains:
-        total.pains + livraison.quantites.BAG + livraison.quantites.KO + livraison.quantites.GC,
+      pains: total.pains + sommeDesPains(livraison.quantites),
       especes: total.especes + (livraison.mode === 'especes' ? livraison.recu : 0),
       mtn: total.mtn + (livraison.mode === 'mtn' ? livraison.recu : 0),
       orange: total.orange + (livraison.mode === 'orange' ? livraison.recu : 0),
@@ -225,7 +213,7 @@ export function planDeSacs(clients: readonly Client[], commandes: Record<string,
 /** Montant estimé de la commande d'un client, à son tarif. */
 export function montantEstime(client: Client, commande: Saisies | undefined): number {
   return CLES_PRODUIT.reduce(
-    (somme, cle) => somme + lireEntier(commande?.[cle]) * client.prix[cle],
+    (somme, cle) => somme + lireEntier(commande?.[cle]) * de(client.prix, cle),
     0,
   );
 }
@@ -241,7 +229,7 @@ export function clientsSansCommande(
     const commande = commandes[client.id];
     return (
       habituelle !== undefined &&
-      CLES_PRODUIT.some((cle) => habituelle[cle] > 0) &&
+      CLES_PRODUIT.some((cle) => de(habituelle, cle) > 0) &&
       CLES_PRODUIT.every((cle) => lireEntier(commande?.[cle]) === 0)
     );
   });
@@ -250,8 +238,8 @@ export function clientsSansCommande(
 /** « 12 BAG · 3 KO » : la commande habituelle d'un client. */
 export function texteHabituel(habituelle: Quantites | undefined): string {
   if (!habituelle) return '';
-  return PRODUITS.filter(({ cle }) => habituelle[cle] > 0)
-    .map(({ cle, libelle }) => `${formaterNombre(habituelle[cle])} ${libelle}`)
+  return PRODUITS.filter(({ cle }) => de(habituelle, cle) > 0)
+    .map(({ cle, libelle }) => `${formaterNombre(de(habituelle, cle))} ${libelle}`)
     .join(' · ');
 }
 

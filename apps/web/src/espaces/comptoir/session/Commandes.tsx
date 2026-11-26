@@ -1,5 +1,5 @@
 import { useTranslation } from '@/i18n';
-import { useRef, type KeyboardEvent } from 'react';
+import { useRef, type CSSProperties, type KeyboardEvent } from 'react';
 
 import type { ActionsSession } from './api.ts';
 import {
@@ -190,6 +190,7 @@ export function Commandes({
         <div className={styles.defilement}>
           <div
             className={styles.tableau}
+            style={{ '--produits': PRODUITS.length } as CSSProperties}
             ref={tableau}
 
             aria-labelledby="titre-commandes"
@@ -247,7 +248,7 @@ export function Commandes({
               <span>{t('comptoir.session.commandes.totalPains')}</span>
               {PRODUITS.map((produit) => (
                 <span className={styles.droite} key={produit.cle}>
-                  {formaterNombre(plan[produit.cle].pains)}
+                  {formaterNombre(plan[produit.cle]?.pains ?? 0)}
                 </span>
               ))}
               <span className={styles.droite}>{formaterNombre(total)}</span>
@@ -256,7 +257,7 @@ export function Commandes({
               <span>{t('comptoir.session.commandes.sacsAPetrir')}</span>
               {PRODUITS.map((produit) => (
                 <span className={styles.sacsNombre} key={produit.cle}>
-                  {String(plan[produit.cle].sacs)}
+                  {String(plan[produit.cle]?.sacs ?? 0)}
                 </span>
               ))}
               <span></span>

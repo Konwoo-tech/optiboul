@@ -45,7 +45,11 @@ const entree = (champs: Partial<EntreeLivraison> = {}): EntreeLivraison => ({
 });
 
 const livraison = (
-  champs: { id: string; du: number; recu: number; mode: ModePaiement } & Partial<Quantites>,
+  champs: { id: string; du: number; recu: number; mode: ModePaiement } & {
+    BAG?: number;
+    KO?: number;
+    GC?: number;
+  },
 ): Livraison => ({
   id: champs.id,
   numero: 1,
@@ -305,8 +309,8 @@ describe('commandes et plan de sacs', () => {
 
   it('pile un sac : pas de sac en plus', () => {
     const plan = planDeSacs([client({ id: 'a' })], { a: { BAG: '315', KO: '', GC: '' } });
-    expect(plan.BAG.sacs).toBe(1);
-    expect(plan.KO.sacs).toBe(0);
+    expect(plan.BAG?.sacs).toBe(1);
+    expect(plan.KO?.sacs).toBe(0);
   });
 
   it('estime le montant d’un client à son tarif', () => {

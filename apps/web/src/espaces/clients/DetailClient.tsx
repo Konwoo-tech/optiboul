@@ -9,6 +9,7 @@ import {
   useEncaissementsClient,
   useEnvoyerReleve,
   useHistoriqueClient,
+  useProduitsVendus,
   useRelancesClient,
 } from './api.ts';
 import { formaterJourCourt, formaterJourLong } from './formats.ts';
@@ -59,6 +60,7 @@ export function DetailClient({
   const { t, i18n } = useTranslation();
   const afficherToast = useToast();
   const envoyerReleve = useEnvoyerReleve();
+  const produits = useProduitsVendus();
   const { data: historique = [] } = useHistoriqueClient(client.id);
   const { data: paiements = [] } = useEncaissementsClient(client.id);
   const { data: relances = [] } = useRelancesClient(client.id);
@@ -111,7 +113,14 @@ export function DetailClient({
           ? t('clients.echeance', { date: formaterJourLong(echeance, i18n.language) })
           : t('clients.rienARegler')}
       </div>
-      <div className={styles.tarifs}>{t('clients.tarifs', client.tarifs)}</div>
+      <div className={styles.tarifs}>
+        {t('clients.tarifs', {
+          prix: produits
+            .filter((p) => (client.tarifs[p.code] ?? 0) > 0)
+            .map((p) => `${p.libelle} ${client.tarifs[p.code]}`)
+            .join(' · '),
+        })}
+      </div>
       <h3 className={styles.historiqueTitre}>{t('clients.historique')}</h3>
       <ul className={styles.historique}>
         {historique.map((ligne) => (

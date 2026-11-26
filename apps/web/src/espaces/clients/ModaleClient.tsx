@@ -3,16 +3,10 @@ import { FenetreModale, estTexteDuServeur, texteDuServeur } from '@/ui';
 import { useState, type SubmitEvent } from 'react';
 
 import styles from '../comptoir/caisses/Fenetres.module.css';
+import { useProduitsVendus } from './api.ts';
 import type { ClientDeLecran, TypeClient } from './types.ts';
 
 const TYPES_DE_CLIENT: readonly TypeClient[] = ['livreur', 'restaurant', 'hotel', 'particulier'];
-
-/** Produits dont le client peut avoir un prix propre : code de l'API → libellé de l'interface. */
-const PRODUITS_TARIFES = [
-  { code: 'BAG', cle: 'clients.nouveau.prixBag' },
-  { code: 'KO', cle: 'clients.nouveau.prixKo' },
-  { code: 'GC135', cle: 'clients.nouveau.prixGc' },
-] as const;
 
 export type NouveauClient = {
   nom: string;
@@ -42,6 +36,15 @@ const telephoneValide = (valeur: string) => valeur === '' || /^6\d{8}$/.test(val
 /** Fiche d'un nouveau client : identité, plafond de dette et prix propres (gérant, propriétaire). */
 export function ModaleClient({ client, envoiEnCours, onConfirmer, onFermer }: Props) {
   const { t } = useTranslation();
+  // Un prix propre est possible pour chaque produit du catalogue, y compris ceux créés depuis.
+  const produits = useProduitsVendus();
+  const CLES_CONNUES: Record<string, string> = {
+    BAG: 'clients.nouveau.prixBag',
+    KO: 'clients.nouveau.prixKo',
+    GC135: 'clients.nouveau.prixGc',
+  };
+  const libellePrix = (code: string, nom: string) =>
+    CLES_CONNUES[code] ? t(CLES_CONNUES[code]) : t('clients.nouveau.prixDe', { produit: nom });
   const [nom, setNom] = useState(client?.nom ?? '');
   const [type, setType] = useState<TypeClient>(client?.type ?? 'livreur');
   const [lieu, setLieu] = useState(client?.lieu ?? '');
@@ -60,7 +63,7 @@ export function ModaleClient({ client, envoiEnCours, onConfirmer, onFermer }: Pr
     if (!nom.trim()) return setErreur('nom');
     if (!telephoneValide(telephone)) return setErreur('telephone');
     const tarifs: Record<string, number | null> = {};
-    for (const { code } of PRODUITS_TARIFES) {
+    for (const { code } of produits) {
       if (prix[code]) tarifs[code] = Number(prix[code]);
       else if (client) tarifs[code] = null;
     }
@@ -142,9 +145,9 @@ export function ModaleClient({ client, envoiEnCours, onConfirmer, onFermer }: Pr
           />
         </label>
         <div className={styles.discret}>{t('clients.nouveau.noteTarifs')}</div>
-        {PRODUITS_TARIFES.map(({ code, cle }) => (
+        {produits.map(({ code, nom }) => (
           <label key={code} className={styles.champ}>
-            {t(cle)}
+            {libellePrix(code, nom)}
             <input
               className={styles.texte}
               value={prix[code] ?? ''}

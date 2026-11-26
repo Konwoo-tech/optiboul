@@ -11,6 +11,7 @@ import {
   texteHabituel,
   totauxDesLivraisons,
 } from './calculs.ts';
+import { CLES_PRODUIT } from './catalogue.ts';
 import { CommeCommande } from './CommeCommande.tsx';
 import styles from './Livraisons.module.css';
 import type { ChampsLivraison, FormulaireLivraison } from './useFormulaireLivraison.ts';
@@ -46,16 +47,14 @@ export function Livraisons({
   const { t } = useTranslation();
   const { plafond, livraisons, session, dernierBon } = instantane;
   const { client, calcul, formulaire } = lv;
-  const { recherche: refRecherche, quantites: refsQuantites, recu: refRecu } = champs;
+  const { recherche: refRecherche, quantite: refQuantite, recu: refRecu } = champs;
   const totaux = totauxDesLivraisons(livraisons);
   const dejaLivres = new Set(livraisons.map((l) => l.clientId));
   const commande = client ? instantane.commandes[client.id] : undefined;
   const commandeDuClient =
     client && commande && !dejaLivres.has(client.id)
       ? texteHabituel({
-          BAG: lireEntier(commande.BAG),
-          KO: lireEntier(commande.KO),
-          GC: lireEntier(commande.GC),
+          ...Object.fromEntries(CLES_PRODUIT.map((cle) => [cle, lireEntier(commande[cle])])),
         })
       : '';
 
@@ -225,7 +224,7 @@ export function Livraisons({
                     <span className={styles.prix}>{formaterNombre(ligne.prix)} F</span>
                   </span>
                   <input
-                    ref={refsQuantites[ligne.cle]}
+                    ref={refQuantite(ligne.cle)}
                     className={styles.quantite}
                     value={formulaire.saisies[ligne.cle]}
                     onChange={(e) => lv.saisirQuantite(ligne.cle, e.target.value)}
