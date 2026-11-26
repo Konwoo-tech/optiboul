@@ -619,3 +619,43 @@
   font-size: 14px;
   color: var(--ob-discret);
 }
+
+.commeCommande {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--ob-doux);
+}
+
+.commeCommandeTitre {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ob-encre);
+}
+
+.commeCommandeSous {
+  font-size: 13px;
+  color: var(--ob-discret);
+}
+
+.commeCommandeBouton {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ob-marque);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.commeCommandeBouton:disabled {
+  cursor: default;
+  opacity: 0.6;
+}

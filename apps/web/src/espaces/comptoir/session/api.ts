@@ -12,6 +12,7 @@ import {
   caissesRouvrirCreate,
   mouvementsInternesCreate,
   commandesAnnulerCreate,
+  livraisonsLivrerCommeCommandeCreate,
   commandesRelancerHabituelsCreate,
   commandesReprendreVeilleCreate,
   commandesReprendreHabituelleCreate,
@@ -234,6 +235,23 @@ export function actionsSession(
         livraisonsCreate(corpsDeLivraison(livraison), {
           headers: { 'Idempotency-Key': livraison.cle ?? crypto.randomUUID() },
         }).then(async (reponse) => ({
+          ...(await relire()),
+          livraison: versLivraison(reponse.data as never),
+        })),
+      ),
+    /** « Livrer comme commandé » : le serveur compose la livraison depuis la commande du client. */
+    livrerCommeCommande: (livraison: NouvelEncaissement) =>
+      ranger(
+        livraisonsLivrerCommeCommandeCreate(
+          {
+            client: Number(livraison.clientId),
+            paiement:
+              livraison.recu > 0
+                ? { mode: livraison.mode, montant: livraison.recu, reference: livraison.reference }
+                : null,
+          },
+          { headers: { 'Idempotency-Key': livraison.cle ?? crypto.randomUUID() } },
+        ).then(async (reponse) => ({
           ...(await relire()),
           livraison: versLivraison(reponse.data as never),
         })),

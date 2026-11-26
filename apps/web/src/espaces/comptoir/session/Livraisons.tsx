@@ -3,7 +3,15 @@ import type { NiveauStatut } from '@/utils';
 import type { CSSProperties } from 'react';
 
 import { dateCourte, libelleDuMode, nomDeSession } from './affichage.ts';
-import { formaterNombre, formaterSigne, niveauDuSolde, totauxDesLivraisons } from './calculs.ts';
+import {
+  formaterNombre,
+  formaterSigne,
+  lireEntier,
+  niveauDuSolde,
+  texteHabituel,
+  totauxDesLivraisons,
+} from './calculs.ts';
+import { CommeCommande } from './CommeCommande.tsx';
 import styles from './Livraisons.module.css';
 import type { ChampsLivraison, FormulaireLivraison } from './useFormulaireLivraison.ts';
 import { MODES_PAIEMENT, type InstantaneSession } from './types.ts';
@@ -41,6 +49,15 @@ export function Livraisons({
   const { recherche: refRecherche, quantites: refsQuantites, recu: refRecu } = champs;
   const totaux = totauxDesLivraisons(livraisons);
   const dejaLivres = new Set(livraisons.map((l) => l.clientId));
+  const commande = client ? instantane.commandes[client.id] : undefined;
+  const commandeDuClient =
+    client && commande && !dejaLivres.has(client.id)
+      ? texteHabituel({
+          BAG: lireEntier(commande.BAG),
+          KO: lireEntier(commande.KO),
+          GC: lireEntier(commande.GC),
+        })
+      : '';
 
   const niveauApres = niveauDuSolde(calcul.soldeApres, plafond);
   const motSolde =
@@ -190,6 +207,15 @@ export function Livraisons({
                 </div>
               </div>
             </div>
+
+            {commandeDuClient && peutSaisir && (
+              <CommeCommande
+                clientId={client.id}
+                commande={commandeDuClient}
+                occupe={false}
+                onLivrer={() => void lv.livrerCommeCommande()}
+              />
+            )}
 
             <div className={styles.quantites}>
               {calcul.lignes.map((ligne) => (

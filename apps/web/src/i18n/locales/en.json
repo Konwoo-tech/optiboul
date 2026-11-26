@@ -730,7 +730,10 @@
           "depassementAutorise": "Over-limit authorised and logged",
           "encaissee": "Payment recorded · {{nom}} · {{montant}} FCFA",
           "demandeEnvoyee": "Request sent: the delivery will go out once an approver agrees."
-        }
+        },
+        "commande": "Ordered: {{commande}}",
+        "commandePropose": "{{montant}} FCFA due · balance after delivery {{solde}} FCFA",
+        "commeCommande": "Deliver as ordered"
       },
       "mouvements": {
         "nouveau": "New internal movement",
