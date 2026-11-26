@@ -11,6 +11,8 @@ export type Groupe = {
   profil: Profil;
   description: string;
   descriptionEn?: string;
+  /** Groupe de départ : le serveur refuse de le supprimer. */
+  protege?: boolean;
 };
 
 export type Utilisateur = {

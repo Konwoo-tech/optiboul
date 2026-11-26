@@ -1854,6 +1854,18 @@
         "erreurExiste": "Un groupe porte déjà ce nom.",
         "erreurNomLong": "Le nom du groupe ne dépasse pas {{max}} caractères.",
         "erreurDescriptionLongue": "La description ne dépasse pas {{max}} caractères.",
+        "supprimerNom": "Supprimer le groupe {{nom}}",
+        "supprimer": {
+          "bouton": "Supprimer",
+          "titre": "Supprimer le groupe",
+          "question": "Supprimer le groupe « {{nom}} » ?",
+          "note": "Le groupe est vide. La suppression ne se défait pas ; elle reste inscrite au journal.",
+          "annuler": "Annuler",
+          "confirmer": "Supprimer",
+          "toast": "Groupe {{nom}} supprimé",
+          "nonVide": "Ce groupe a encore des membres : déplacez-les d’abord. La liste a été relue.",
+          "protege": "Ce groupe de départ ne peut pas être supprimé."
+        },
         "modifierNom": "Modifier le groupe {{nom}}",
         "modifierTitre": "Modifier le groupe",
         "modifier": {

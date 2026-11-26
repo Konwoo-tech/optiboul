@@ -33,6 +33,7 @@ export function versGroupe(g: GroupeServeur): Groupe {
     nom: g.nom,
     profil: g.profil as Profil,
     description: g.description ?? '',
+    protege: g.protege,
   };
 }
 
