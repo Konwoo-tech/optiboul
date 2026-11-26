@@ -2,7 +2,7 @@ import { ErreurApi } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
 import { useTranslation } from '@/i18n';
 import { useContexte } from '@/coque/contexte.ts';
-import { EcranErreur, EnTetePage, useToast } from '@/ui';
+import { EcranErreur, EnTetePage, useToast, Paginee } from '@/ui';
 import { formaterDateCourte, formaterNombre, formaterNombreSigne, initiales } from '@/utils';
 import { useState } from 'react';
 
@@ -314,51 +314,57 @@ export default function EcranCaisses({ ecran }: { ecran: Ecran }) {
 
         <section className={styles.cadre} aria-label={t('comptoir.caisses.tableau')}>
           <div className={styles.large}>
-            <table className={styles.table}>
-              <thead>
-                <tr className={styles.entete}>
-                  {COLONNES.map((colonne) => (
-                    <th key={colonne} scope="col">
-                      {t(`comptoir.caisses.colonnes.${colonne}`)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {lignes.map((s) => {
-                  const { niveau } = statutDeSession(s);
-                  const ecart = ecartDeCaisse(s.attendu, s.compte ?? s.attendu);
-                  return (
-                    <tr key={s.id} className={styles.ligne}>
-                      <th scope="row" className={styles.jour}>
-                        {jourAvecSemaine(s.jour, langue)}
-                      </th>
-                      <td>
-                        {t(s.type === 'nuit' ? 'comptoir.caisses.nuit' : 'comptoir.caisses.jour')}
-                      </td>
-                      <td className={styles.caissiere}>{s.caissiere.nom}</td>
-                      <td>{`${s.ouverture.heure} · ${s.ouverture.par}`}</td>
-                      <td>
-                        {s.fermeture
-                          ? `${s.fermeture.heure} · ${s.fermeture.par}`
-                          : t('comptoir.caisses.enCours')}
-                      </td>
-                      <td>{formaterNombre(s.fonds)}</td>
-                      <td>{formaterNombre(s.attendu)}</td>
-                      <td>{s.enCours ? '—' : formaterNombre(s.compte ?? 0)}</td>
-                      <td
-                        className={`${styles.ecart} ${s.enCours ? styles.ecartNeutre : CLASSE_ECART[niveau]}`}
-                      >
-                        {s.enCours ? '—' : formaterNombreSigne(ecart)}
-                      </td>
-                      <td className={`${styles.statut} ${CLASSE_STATUT[niveau]}`}>
-                        {libelleStatut(s)}
-                      </td>
+            <Paginee elements={lignes} cle={String(filtreActif)}>
+              {(page) => (
+                <table className={styles.table}>
+                  <thead>
+                    <tr className={styles.entete}>
+                      {COLONNES.map((colonne) => (
+                        <th key={colonne} scope="col">
+                          {t(`comptoir.caisses.colonnes.${colonne}`)}
+                        </th>
+                      ))}
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {page.map((s) => {
+                      const { niveau } = statutDeSession(s);
+                      const ecart = ecartDeCaisse(s.attendu, s.compte ?? s.attendu);
+                      return (
+                        <tr key={s.id} className={styles.ligne}>
+                          <th scope="row" className={styles.jour}>
+                            {jourAvecSemaine(s.jour, langue)}
+                          </th>
+                          <td>
+                            {t(
+                              s.type === 'nuit' ? 'comptoir.caisses.nuit' : 'comptoir.caisses.jour',
+                            )}
+                          </td>
+                          <td className={styles.caissiere}>{s.caissiere.nom}</td>
+                          <td>{`${s.ouverture.heure} · ${s.ouverture.par}`}</td>
+                          <td>
+                            {s.fermeture
+                              ? `${s.fermeture.heure} · ${s.fermeture.par}`
+                              : t('comptoir.caisses.enCours')}
+                          </td>
+                          <td>{formaterNombre(s.fonds)}</td>
+                          <td>{formaterNombre(s.attendu)}</td>
+                          <td>{s.enCours ? '—' : formaterNombre(s.compte ?? 0)}</td>
+                          <td
+                            className={`${styles.ecart} ${s.enCours ? styles.ecartNeutre : CLASSE_ECART[niveau]}`}
+                          >
+                            {s.enCours ? '—' : formaterNombreSigne(ecart)}
+                          </td>
+                          <td className={`${styles.statut} ${CLASSE_STATUT[niveau]}`}>
+                            {libelleStatut(s)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </Paginee>
             {lignes.length === 0 && (
               <div className={styles.vide}>{t('comptoir.caisses.aucune')}</div>
             )}

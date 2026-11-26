@@ -1,0 +1,37 @@
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 0 4px;
+}
+
+.bouton {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ob-ligne-champ);
+  border-radius: 12px;
+  background: var(--ob-surface);
+  color: var(--ob-marque);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bouton:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.bouton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 183, 5, 0.45);
+}
+
+.etat {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ob-discret);
+}

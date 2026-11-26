@@ -12,6 +12,7 @@ export { Jauge } from './Jauge.tsx';
 export { LimiteErreur } from './LimiteErreur.tsx';
 export { LogoGoogle } from './LogoGoogle.tsx';
 export { MontantFCFA } from './MontantFCFA.tsx';
+export { Pagination, Paginee, TAILLE_DE_PAGE, usePagination } from './Pagination.tsx';
 export { OptiboulProvider } from './OptiboulProvider.tsx';
 export { COULEURS, themeOptiboul } from './theme.ts';
 export { useToast } from './toast.ts';

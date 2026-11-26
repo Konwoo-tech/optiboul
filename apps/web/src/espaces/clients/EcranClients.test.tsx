@@ -195,15 +195,17 @@ describe('Clients et dettes', () => {
   it('classe du plus endetté au moins endetté, avec le statut de chacun', async () => {
     ouvrir('davy');
     const toutes = await lignes();
-    expect(toutes).toHaveLength(12);
+    // Dix clients par page ; les deux derniers sont sur la page suivante.
+    expect(toutes).toHaveLength(10);
+    expect(screen.getByText('Page 1 sur 2')).toBeTruthy();
     expect(within(toutes[0]!).getByText('Brice')).toBeTruthy();
     expect(within(toutes[0]!).getByText('Plafond dépassé')).toBeTruthy();
     expect(espace(within(toutes[0]!).getByText(/^4.200 \/ 2.000 FCFA$/).textContent ?? '')).toBe(
       '4 200 / 2 000 FCFA',
     );
     expect(within(toutes[3]!).getByText('Dette')).toBeTruthy();
-    expect(within(toutes[11]!).getByText('À jour')).toBeTruthy();
-    expect(within(toutes[11]!).getByText('Aucune dette')).toBeTruthy();
+    expect(within(toutes[9]!).getByText('À jour')).toBeTruthy();
+    expect(within(toutes[9]!).getByText('Aucune dette')).toBeTruthy();
   });
 
   it('filtre la liste et marque le filtre actif', async () => {
@@ -380,7 +382,9 @@ describe('Clients et dettes', () => {
 
   it('ignore un filtre inconnu dans l’adresse', async () => {
     ouvrir('davy', '/?filtre=nimporte');
-    expect(await lignes()).toHaveLength(12);
+    expect(await lignes()).toHaveLength(10);
+    fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
+    expect(await lignes()).toHaveLength(2);
     expect(screen.getByRole('button', { name: 'Tous · 12' }).getAttribute('aria-pressed')).toBe(
       'true',
     );

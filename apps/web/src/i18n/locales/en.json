@@ -2537,5 +2537,11 @@
         "retourProduits": "‹ All products"
       }
     }
+  },
+  "pagination": {
+    "titre": "Pagination",
+    "precedent": "Previous",
+    "suivant": "Next",
+    "page": "Page {{page}} of {{pages}}"
   }
 }
