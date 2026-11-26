@@ -2,6 +2,7 @@ import {
   demandesAccorderCreate,
   demandesRefuserCreate,
   employesCreate,
+  paiesAbsencesProposeesList,
   employesPartialUpdate,
   employesRetrieve,
   ErreurApi,
@@ -240,4 +241,17 @@ export async function lireFicheEmploye(id: number) {
     base: data.salaire_base,
     actif: data.actif ?? true,
   };
+}
+
+/** Jours de caisse planifiés et non ouverts, par ligne de paie : à confirmer comme absences (O14). */
+export function useAbsencesProposees(etat: number | undefined, actif: boolean) {
+  return useQuery({
+    queryKey: ['ecran', 'gestion', 'personnel', 'absences-proposees', etat],
+    queryFn: async () => {
+      const { data } = await paiesAbsencesProposeesList(etat as number);
+      const lignes = data as unknown as { ligne: number; jours: string[] }[];
+      return Object.fromEntries(lignes.map((l) => [String(l.ligne), l.jours]));
+    },
+    enabled: actif && etat !== undefined,
+  });
 }

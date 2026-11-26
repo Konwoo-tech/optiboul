@@ -13,6 +13,7 @@ import {
   useModifierLigne,
   useChoisirLeJour,
   lireFicheEmploye,
+  useAbsencesProposees,
   useCreerEmploye,
   useModifierEmploye,
   useDeciderLaPaie,
@@ -56,6 +57,10 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
   const soumettre = useSoumettre(nom);
   const preparer = usePreparer(nom);
   const creerEmploye = useCreerEmploye(nom);
+  const absencesProposees = useAbsencesProposees(
+    requete.data?.etat,
+    profil === 'gerant' && requete.data?.statut === 'brouillon',
+  );
   const [nouvelEmploye, setNouvelEmploye] = useState(false);
   const modifierEmploye = useModifierEmploye(nom);
   const [edition, setEdition] = useState<{ id: number; fiche: NouvelEmploye } | null>(null);
@@ -316,6 +321,7 @@ export default function EcranPersonnel({ ecran }: { ecran: Ecran }) {
             }
             onPayer={surPayer}
             onModifier={() => setErreurServeur(null)}
+            joursProposes={absencesProposees.data?.[choisi.id]}
             onModifierFiche={
               profil === 'gerant' && choisi.employeId !== undefined
                 ? () => void ouvrirLaFiche(choisi.employeId as number)

@@ -50,6 +50,8 @@ type Props = {
   onModifier: () => void;
   /** Le gérant modifie la fiche (nom, poste, salaire) ; absent : pas de bouton. */
   onModifierFiche?: () => void;
+  /** Jours de caisse prévus et non ouverts de cet employé, proposés comme absences. */
+  joursProposes?: readonly string[];
 };
 
 /** Fiche de l'employé : décomposition du net, gains et pénalités, paiements. */
@@ -72,6 +74,7 @@ export function FicheEmploye({
   onPayer,
   onModifier,
   onModifierFiche,
+  joursProposes,
 }: Props) {
   const { t, i18n } = useTranslation();
   const langue = i18n.language;
@@ -244,6 +247,7 @@ export function FicheEmploye({
           employe={employe}
           occupe={occupe}
           onEnregistrer={onRetenues}
+          joursProposes={joursProposes}
         />
       )}
       {modifiable && (
