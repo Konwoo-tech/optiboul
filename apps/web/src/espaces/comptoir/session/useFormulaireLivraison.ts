@@ -212,6 +212,30 @@ export function useFormulaireLivraison({
     surErreur,
   ]);
 
+  /** « Livrer comme commandé » : une livraison depuis la commande, avec le paiement saisi s'il y en a un. */
+  const livrerCommeCommande = useCallback(async () => {
+    if (!client || enCours.current) return;
+    enCours.current = true;
+    try {
+      const reponse = await actions.livrerCommeCommande({
+        clientId: client.id,
+        mode: formulaire.mode,
+        recu: calcul.recu,
+        reference: formulaire.reference.trim(),
+        cle: cleDeLEnvoi(),
+      });
+      cle.current = null;
+      setFormulaire(VIDE);
+      setRecherche('');
+      focaliser(champs.recherche);
+      surEnregistree(reponse.livraison);
+    } catch (erreur) {
+      surErreur(erreur);
+    } finally {
+      enCours.current = false;
+    }
+  }, [actions, calcul.recu, champs, client, formulaire, surEnregistree, surErreur]);
+
   const demanderAutorisation = useCallback(async () => {
     if (!client) return;
     try {
@@ -259,6 +283,7 @@ export function useFormulaireLivraison({
     recuComplement: () =>
       modifier((avant) => ({ ...avant, recu: String(calcul.recu + calcul.manque) })),
     valider,
+    livrerCommeCommande,
     demanderAutorisation,
   };
 }

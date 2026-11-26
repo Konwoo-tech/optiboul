@@ -730,7 +730,10 @@
           "depassementAutorise": "Dépassement autorisé et tracé",
           "encaissee": "Paiement enregistré · {{nom}} · {{montant}} FCFA",
           "demandeEnvoyee": "Demande envoyée : la livraison partira dès l’accord d’un valideur."
-        }
+        },
+        "commande": "Commandé : {{commande}}",
+        "commandePropose": "{{montant}} FCFA à payer · solde après livraison {{solde}} FCFA",
+        "commeCommande": "Livrer comme commandé"
       },
       "mouvements": {
         "nouveau": "Nouveau mouvement interne",
