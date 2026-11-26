@@ -178,3 +178,35 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+.vues {
+  display: flex;
+  margin: 0;
+  border: none;
+  min-width: 0;
+  gap: 6px;
+  padding: 10px 12px 0;
+}
+
+.vue {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ob-ligne);
+  border-radius: 999px;
+  background: var(--ob-surface);
+  color: var(--ob-discret);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.vueActive {
+  border-color: var(--ob-marque);
+  color: var(--ob-marque);
+}
+
+.actionsCarte {
+  display: flex;
+  gap: 16px;
+}

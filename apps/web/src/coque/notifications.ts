@@ -1,8 +1,11 @@
 import {
   notificationsList,
+  notificationsMarquerGroupeLuCreate,
   notificationsMarquerLueCreate,
+  notificationsRegroupeesList,
   notificationsNonLuesRetrieve,
   notificationsToutMarquerLuCreate,
+  type GroupeNotifications,
   type Notification,
 } from '@/api';
 import { useUtilisateurCourant } from '@/auth';
@@ -137,4 +140,56 @@ export function useNombreNonLues(): number {
     refetchInterval: ACTUALISATION_MS,
   });
   return reel.data ?? 0;
+}
+
+/** Un groupe du tiroir : les notifications d'un même type reçues pendant la même heure (US-073). */
+export type GroupeAffiche = {
+  /** Clé stable : le type et l'heure. */
+  cle: string;
+  genre: string;
+  heure: string;
+  /** Début de l'heure, tel que le serveur le rend : sert à marquer le groupe lu. */
+  instant: string;
+  type: string;
+  titre: string;
+  nombre: number;
+  nonLues: number;
+  chemin: string | null;
+};
+
+/**
+ * Notifications regroupées par type et par heure : `GET /notifications/regroupees/`. Marquer un
+ * groupe lu ne touche que ses notifications.
+ */
+export function useNotificationsRegroupees(actif: boolean) {
+  const client = useQueryClient();
+  const { utilisateur } = useUtilisateurCourant();
+  const { i18n } = useTranslation();
+  const langue = i18n.language === 'en' ? 'en' : 'fr';
+  const profil = utilisateur?.profil as Profil | undefined;
+
+  const requete = useQuery({
+    queryKey: ['coque', 'notifications', 'regroupees', utilisateur?.url],
+    queryFn: async () => (await notificationsRegroupeesList()).data as GroupeNotifications[],
+    enabled: actif && Boolean(utilisateur),
+    refetchInterval: ACTUALISATION_MS,
+  });
+
+  const groupes: GroupeAffiche[] = (requete.data ?? []).map((g) => ({
+    cle: `${g.genre}|${g.heure}`,
+    genre: g.genre,
+    heure: heureDeNotification(g.heure, langue),
+    instant: g.heure,
+    type: typeDuGenre(g.genre, g.genre_libelle),
+    titre: g.titre,
+    nombre: g.nombre,
+    nonLues: g.non_lues,
+    chemin: g.lien ? cheminDuLien(g.lien, profil) : null,
+  }));
+
+  const marquerGroupeLu = async (groupe: GroupeAffiche) => {
+    await notificationsMarquerGroupeLuCreate({ genre: groupe.genre, heure: groupe.instant });
+    await client.invalidateQueries({ queryKey: ['coque', 'notifications'] });
+  };
+  return { groupes, marquerGroupeLu };
 }

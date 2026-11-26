@@ -12,6 +12,7 @@ import {
   typeDuGenre,
   useNombreNonLues,
   useNotifications,
+  useNotificationsRegroupees,
 } from './notifications.ts';
 
 const serveur = creerServeurApi();
@@ -164,6 +165,57 @@ describe('tiroir des notifications sur le vrai serveur', () => {
     await waitFor(() => expect(liste()).toHaveLength(1));
     screen.getByRole('button', { name: 'tout' }).click();
     await waitFor(() => expect(appels).toBe(1));
+  });
+});
+
+describe('notifications regroupées par type et par heure', () => {
+  function Groupes() {
+    const { groupes, marquerGroupeLu } = useNotificationsRegroupees(true);
+    return (
+      <div>
+        <pre data-testid="liste">{JSON.stringify(groupes)}</pre>
+        <button type="button" onClick={() => void marquerGroupeLu(groupes[0]!)}>
+          groupe
+        </button>
+      </div>
+    );
+  }
+
+  it('lit les groupes puis marque un groupe lu avec son type et son heure', async () => {
+    connecte('gerant');
+    let corps: unknown;
+    serveur.use(
+      http.get('*/api/v1/notifications/regroupees/', () =>
+        HttpResponse.json([
+          {
+            genre: 'stock.bas',
+            genre_libelle: 'Stock bas',
+            heure: '2026-11-25T18:00:00Z',
+            titre: 'Levure sous le seuil',
+            lien: '/atelier/stocks',
+            nombre: 4,
+            non_lues: 3,
+          },
+        ]),
+      ),
+      http.post('*/api/v1/notifications/marquer-groupe-lu/', async ({ request }) => {
+        corps = await request.json();
+        return HttpResponse.json({ marquees: 3 });
+      }),
+    );
+    ouvrir(<Groupes />);
+    await waitFor(() => expect(liste()).toHaveLength(1));
+    expect(liste()[0]).toMatchObject({
+      type: 'Stock bas',
+      titre: 'Levure sous le seuil',
+      nombre: 4,
+      nonLues: 3,
+      chemin: '/atelier/stocks',
+    });
+    screen.getByRole('button', { name: 'groupe' }).click();
+    await waitFor(() =>
+      expect(corps).toEqual({ genre: 'stock.bas', heure: '2026-11-25T18:00:00Z' }),
+    );
   });
 });
 
