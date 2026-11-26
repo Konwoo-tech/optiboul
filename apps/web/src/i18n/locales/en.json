@@ -753,7 +753,12 @@
         "ligne": "{{type}} · {{quantite}} {{produit}}",
         "erreurQuantite": "Enter a quantity.",
         "erreurMotif": "Reason required: explain the movement.",
-        "toastAjoute": "Movement added to session totals"
+        "toastAjoute": "Movement added to session totals",
+        "totaux": {
+          "titre": "Session bread",
+          "livres": "Delivered",
+          "mouvement": "Movement"
+        }
       },
       "cloture": {
         "recap": "Session summary",

@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n';
 import type { BrouillonMouvement } from './brouillonMouvement.ts';
 import { PRODUITS } from './calculs.ts';
 import styles from './Mouvements.module.css';
+import { TotauxPains } from './TotauxPains.tsx';
 import { TYPES_MOUVEMENT, type InstantaneSession } from './types.ts';
 
 type Props = {
@@ -92,28 +93,36 @@ export function Mouvements({ instantane, brouillon, onChange, onAjouter, peutSai
           </button>
         </form>
       )}
-      <section className={styles.liste} aria-labelledby="titre-mouvements">
-        <div className={styles.listeTitre} id="titre-mouvements">
-          {t('comptoir.session.mouvements.titre')}
-        </div>
-        {mouvements.map((mouvement) => (
-          <div className={styles.mouvement} key={mouvement.id}>
-            <div className={styles.mouvementTitre}>
-              {t('comptoir.session.mouvements.ligne', {
-                type: t(`comptoir.session.mouvements.types.${mouvement.type}`),
-                quantite: mouvement.quantite,
-                produit: PRODUITS.find((p) => p.cle === mouvement.produit)?.libelle,
-              })}
-            </div>
-            <div className={styles.mouvementMeta}>
-              {`${mouvement.motif} · ${mouvement.par} · ${mouvement.heure}`}
-            </div>
-          </div>
-        ))}
-        {mouvements.length === 0 && (
-          <div className={styles.vide}>{t('comptoir.session.mouvements.vide')}</div>
+      <div className={styles.colonneListe}>
+        {instantane.session.caisseId && (
+          <TotauxPains
+            caisse={instantane.session.caisseId}
+            signature={`${mouvements.length}-${instantane.livraisons.length}`}
+          />
         )}
-      </section>
+        <section className={styles.liste} aria-labelledby="titre-mouvements">
+          <div className={styles.listeTitre} id="titre-mouvements">
+            {t('comptoir.session.mouvements.titre')}
+          </div>
+          {mouvements.map((mouvement) => (
+            <div className={styles.mouvement} key={mouvement.id}>
+              <div className={styles.mouvementTitre}>
+                {t('comptoir.session.mouvements.ligne', {
+                  type: t(`comptoir.session.mouvements.types.${mouvement.type}`),
+                  quantite: mouvement.quantite,
+                  produit: PRODUITS.find((p) => p.cle === mouvement.produit)?.libelle,
+                })}
+              </div>
+              <div className={styles.mouvementMeta}>
+                {`${mouvement.motif} · ${mouvement.par} · ${mouvement.heure}`}
+              </div>
+            </div>
+          ))}
+          {mouvements.length === 0 && (
+            <div className={styles.vide}>{t('comptoir.session.mouvements.vide')}</div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
