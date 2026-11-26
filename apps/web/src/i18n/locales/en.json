@@ -628,6 +628,10 @@
           "serveur": "The expense could not be updated. Please try again."
         }
       },
+      "justificatif": {
+        "voir": "Receipt",
+        "voirNom": "View the receipt of expense {{numero}}"
+      },
       "annulation": {
         "titre": "Cancel the expense",
         "motif": "Reason for cancelling",

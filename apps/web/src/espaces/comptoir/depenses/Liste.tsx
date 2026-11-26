@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
 import { useNavigate } from 'react-router';
 
+import { ouvrirLeJustificatif } from './api.ts';
 import { libelleAuteur, libelleDemande, libelleRattachement } from './affichage.ts';
 import styles from './Depenses.module.css';
 import {
@@ -140,6 +141,18 @@ export function Liste({
                       )}
                     </span>
                     <span className={styles.ligneQui}>{libelleAuteur(t, depense, langue)}</span>
+                    {depense.photo && (
+                      <button
+                        type="button"
+                        className={styles.demande}
+                        aria-label={t('comptoir.depenses.justificatif.voirNom', {
+                          numero: numeroDepense(depense.numero),
+                        })}
+                        onClick={() => ouvrirLeJustificatif(depense.id)}
+                      >
+                        {t('comptoir.depenses.justificatif.voir')}
+                      </button>
+                    )}
                     {demande && (
                       <button
                         type="button"

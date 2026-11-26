@@ -348,6 +348,22 @@ describe('Comptoir › Dépenses : corriger une dépense en attente', () => {
   });
 });
 
+describe('Comptoir › Dépenses : justificatif', () => {
+  it('ouvre le justificatif de la dépense dans un nouvel onglet', async () => {
+    const ouvrirOnglet = vi.spyOn(window, 'open').mockReturnValue(null);
+    await ouvrir('willy');
+    const boutons = screen.getAllByRole('button', {
+      name: /^Voir le justificatif de la dépense DEP-/,
+    });
+    expect(boutons.length).toBeGreaterThan(0);
+    fireEvent.click(boutons[0]!);
+    expect(String(ouvrirOnglet.mock.calls[0]?.[0])).toMatch(
+      /\/api\/v1\/depenses\/.+\/justificatif\/$/,
+    );
+    ouvrirOnglet.mockRestore();
+  });
+});
+
 describe('Comptoir › Dépenses (propriétaire)', () => {
   beforeEach(() => ouvrir('fotso'));
 
