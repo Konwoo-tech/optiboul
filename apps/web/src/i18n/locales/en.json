@@ -743,6 +743,7 @@
           "demandeEnvoyee": "Request sent: the delivery will go out once an approver agrees."
         },
         "commande": "Ordered: {{commande}}",
+        "prixManquant": "No price for {{produits}}: set it in the client’s record to deliver as ordered.",
         "commandePropose": "{{montant}} FCFA due · balance after delivery {{solde}} FCFA",
         "commeCommande": "Deliver as ordered"
       },

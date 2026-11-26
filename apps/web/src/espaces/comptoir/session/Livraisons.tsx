@@ -11,7 +11,7 @@ import {
   texteHabituel,
   totauxDesLivraisons,
 } from './calculs.ts';
-import { CLES_PRODUIT } from './catalogue.ts';
+import { CLES_PRODUIT, PRODUITS } from './catalogue.ts';
 import { CommeCommande } from './CommeCommande.tsx';
 import styles from './Livraisons.module.css';
 import type { ChampsLivraison, FormulaireLivraison } from './useFormulaireLivraison.ts';
@@ -57,6 +57,14 @@ export function Livraisons({
           ...Object.fromEntries(CLES_PRODUIT.map((cle) => [cle, lireEntier(commande[cle])])),
         })
       : '';
+
+  // Un produit commandé sans prix pour ce client : le serveur refuserait la livraison.
+  const sansPrix =
+    client && commande && commandeDuClient
+      ? PRODUITS.filter((p) => lireEntier(commande[p.cle]) > 0 && !client.prix[p.cle]).map(
+          (p) => p.libelle,
+        )
+      : [];
 
   const niveauApres = niveauDuSolde(calcul.soldeApres, plafond);
   const motSolde =
@@ -212,6 +220,7 @@ export function Livraisons({
                 clientId={client.id}
                 commande={commandeDuClient}
                 occupe={false}
+                sansPrix={sansPrix}
                 onLivrer={() => void lv.livrerCommeCommande()}
               />
             )}
