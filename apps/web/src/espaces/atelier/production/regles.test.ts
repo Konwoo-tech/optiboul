@@ -36,8 +36,8 @@ describe('plan de production', () => {
 
   it('ajoute le supplément aux sacs', () => {
     const plan = calculerPlan(PAINS, { BAG: 1, KO: 0, GC: 2 });
-    expect(plan.lignes.BAG.sacs).toBe(4);
-    expect(plan.lignes.GC.sacs).toBe(3);
+    expect(plan.lignes.BAG?.sacs).toBe(4);
+    expect(plan.lignes.GC?.sacs).toBe(3);
     expect(plan.supplement).toBe(3);
   });
 
@@ -45,8 +45,8 @@ describe('plan de production', () => {
     const plan = calculerPlan(PAINS, supplementVide());
     const demande = calculerDemande(plan, { BAG: 220, KO: 160, GC: 50 });
     expect(demande.BAG).toMatchObject({ estimee: 1090, besoin: 1 });
-    expect(demande.KO.besoin).toBe(0);
-    expect(demande.GC.besoin).toBe(0);
+    expect(demande.KO?.besoin).toBe(0);
+    expect(demande.GC?.besoin).toBe(0);
   });
 
   it('calcule le reste à produire sans descendre sous zéro', () => {

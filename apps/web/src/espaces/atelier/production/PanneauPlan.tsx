@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n';
 import { formaterNombre } from '@/utils';
 import { Link } from 'react-router';
 
+import { codeServeur, PRODUITS } from '../../comptoir/session/catalogue.ts';
 import { libelleProduit } from './affichage.ts';
 import styles from './Production.module.css';
 import {
@@ -22,7 +23,10 @@ import {
 } from './types.ts';
 
 /** Fiche technique de chaque produit du plan. */
-const FICHE_DU_PRODUIT: Record<CleProduit, string> = { BAG: 'bag', KO: 'ko', GC: 'gc135' };
+/** Adresse de la fiche d'un produit : son code du serveur en minuscules (`?fiche=gc135`). */
+const nomDuProduit = (cle: CleProduit): string => PRODUITS.find((p) => p.cle === cle)?.nom ?? cle;
+
+const ficheDuProduit = (cle: CleProduit): string => codeServeur(cle).toLowerCase();
 
 type Props = {
   instantane: InstantaneProduction;
@@ -67,10 +71,10 @@ export function PanneauPlan({
   const enDemande = supplementEnDemande(etape);
   const cloturee = etape === 'cloturee';
   const saisis = totalSacs(supplement);
-  const habituels = CLES_PRODUIT.reduce((somme, cle) => somme + demande[cle].habituels, 0);
-  const guichet = CLES_PRODUIT.reduce((somme, cle) => somme + demande[cle].guichet, 0);
-  const commandes = CLES_PRODUIT.reduce((somme, cle) => somme + demande[cle].commande, 0);
-  const suggestion = CLES_PRODUIT.reduce((somme, cle) => somme + demande[cle].besoin, 0);
+  const habituels = CLES_PRODUIT.reduce((somme, cle) => somme + (demande[cle]?.habituels ?? 0), 0);
+  const guichet = CLES_PRODUIT.reduce((somme, cle) => somme + (demande[cle]?.guichet ?? 0), 0);
+  const commandes = CLES_PRODUIT.reduce((somme, cle) => somme + (demande[cle]?.commande ?? 0), 0);
+  const suggestion = CLES_PRODUIT.reduce((somme, cle) => somme + (demande[cle]?.besoin ?? 0), 0);
   const besoin = besoinEnFarine(plan, supplement);
   // Le plan compte la farine en sacs à pétrir (50 kg) ; le stock du serveur est en kg.
   const farine = stock.farine / KG_PAR_SAC;
@@ -168,7 +172,8 @@ export function PanneauPlan({
             </div>
             {CLES_PRODUIT.map((cle) => {
               const ligne = demande[cle];
-              const saisi = supplement[cle];
+              const saisi = supplement[cle] ?? 0;
+              if (!ligne) return null;
               return (
                 <div
                   className={`${styles.ligneTableau} ${styles.corpsTableau}`}
@@ -279,7 +284,7 @@ export function PanneauPlan({
             {demandeEnAttente
               ? tp('demandeEnAttente', {
                   total: demandeEnAttente.total,
-                  produits: CLES_PRODUIT.filter((c) => demandeEnAttente.supplement[c] > 0)
+                  produits: CLES_PRODUIT.filter((c) => (demandeEnAttente.supplement[c] ?? 0) > 0)
                     .map(
                       (c) =>
                         `${libelleProduit(c)} +${demandeEnAttente.supplement[c]} ${tp('sacsCourt')}`,
@@ -296,12 +301,13 @@ export function PanneauPlan({
       <ul className={styles.cartes} aria-label={tp('cartesTitre')}>
         {CLES_PRODUIT.map((cle) => {
           const ligne = plan.lignes[cle];
+          if (!ligne) return null;
           return (
             <li className={styles.cartePlan} key={cle}>
               <div className={styles.cartePlanHaut}>
                 <h3 className={styles.cartePlanCode}>{libelleProduit(cle)}</h3>
                 <span className={styles.cartePlanNom}>
-                  {t(`atelier.production.produits.${cle}`)}
+                  {t(`atelier.production.produits.${cle}`, { defaultValue: nomDuProduit(cle) })}
                 </span>
               </div>
               <div className={styles.aPetrir}>{tp('aPetrir')}</div>
@@ -327,7 +333,7 @@ export function PanneauPlan({
                 <span className={styles.ligneCarteLibelle}>{tp('boules')}</span>
                 <span className={styles.ligneCarteValeur}>{formaterNombre(ligne.boules)}</span>
               </div>
-              <Link className={styles.ficheLien} to={cheminFiche(FICHE_DU_PRODUIT[cle])}>
+              <Link className={styles.ficheLien} to={cheminFiche(ficheDuProduit(cle))}>
                 {tp('fiche')}
               </Link>
             </li>

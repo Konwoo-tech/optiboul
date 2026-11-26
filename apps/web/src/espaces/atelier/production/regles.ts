@@ -16,26 +16,23 @@ import type {
   Recette,
   SortieDeStock,
 } from './types.ts';
+import { PRODUITS, parProduit } from '../../comptoir/session/catalogue.ts';
 import { CLES_PRODUIT, INGREDIENTS } from './types.ts';
-
-/** Pains tirés d'un sac de farine, par produit du plan de production. */
-const PRODUITS: readonly { cle: CleProduit; painsParSac: number }[] = [
-  { cle: 'BAG', painsParSac: 315 },
-  { cle: 'KO', painsParSac: 426 },
-  { cle: 'GC', painsParSac: 216 },
-];
 
 /** Poids de pâte d'un sac de farine de 50 kg (50 + 27,4 + 0,6 + 0,45 + 0,3 kg), en grammes. */
 export const PATE_PAR_SAC_G = 78_750;
 
-/** Poids d'une boule de pâte de chaque produit, en grammes (fiches techniques). */
-export const BOULE_PAR_PRODUIT: Record<CleProduit, number> = { BAG: 5000, KO: 3700, GC: 7300 };
+/** Poids d'une boule de pâte d'un produit, en grammes (fiche technique du catalogue). */
+export const bouleDuProduit = (cle: CleProduit): number =>
+  PRODUITS.find((p) => p.cle === cle)?.boule ?? 5000;
 
 /**
  * Ventes au guichet par session : moyenne des quatre dernières sessions du même type (cahier des
  * charges §5.5, à confirmer au point 7 de la section 10 ; la démonstration prend 120, 60 et 20).
  */
-export const GUICHET_MOYEN: Quantites = { BAG: 120, KO: 60, GC: 20 };
+const GUICHET_DE_DEMONSTRATION: Record<string, number> = { BAG: 120, KO: 60, GC: 20 };
+export const guichetMoyen = (): Quantites =>
+  Object.fromEntries(CLES_PRODUIT.map((cle) => [cle, GUICHET_DE_DEMONSTRATION[cle] ?? 0]));
 
 /** Écart de matière toléré par sac travaillé, en kg (R10). */
 export const SEUIL_ECART_KG_PAR_SAC = 2;
@@ -49,9 +46,9 @@ export const SACS_PAR_SESSION = 8;
 /** Un supplément se règle par pas d'un sac, entre 0 et 10 par produit (maquette). */
 export const SUPPLEMENT_MAX_PAR_PRODUIT = 10;
 
-const PAINS_PAR_SAC = /* @__PURE__ */ Object.fromEntries(
-  PRODUITS.map((p) => [p.cle, p.painsParSac]),
-) as Record<CleProduit, number>;
+/** Pains tirés d'un sac de farine : le rendement de la fiche du produit (jamais 0, on divise par lui). */
+const painsParSac = (cle: CleProduit): number =>
+  PRODUITS.find((p) => p.cle === cle)?.painsParSac || 1;
 
 /** Un entier saisi : on ne garde que les chiffres, comme la maquette. Vide : rien de saisi. */
 export const chiffresSaisis = (texte: string): string => texte.replace(/\D/g, '');
@@ -73,19 +70,21 @@ export function calculerPlan(pains: Quantites, supplement: Quantites): Plan {
   let prevus = 0;
   let ajoutes = 0;
   for (const cle of CLES_PRODUIT) {
-    const base = Math.ceil(pains[cle] / PAINS_PAR_SAC[cle]);
-    const total = base + supplement[cle];
+    const commandes = pains[cle] ?? 0;
+    const en_plus = supplement[cle] ?? 0;
+    const base = Math.ceil(commandes / painsParSac(cle));
+    const total = base + en_plus;
     lignes[cle] = {
-      pains: pains[cle],
+      pains: commandes,
       base,
-      supplement: supplement[cle],
+      supplement: en_plus,
       sacs: total,
-      prevus: total * PAINS_PAR_SAC[cle],
-      boules: Math.floor((total * PATE_PAR_SAC_G) / BOULE_PAR_PRODUIT[cle]),
+      prevus: total * painsParSac(cle),
+      boules: Math.floor((total * PATE_PAR_SAC_G) / bouleDuProduit(cle)),
     };
     sacs += total;
-    prevus += total * PAINS_PAR_SAC[cle];
-    ajoutes += supplement[cle];
+    prevus += total * painsParSac(cle);
+    ajoutes += en_plus;
   }
   return { lignes, sacs, prevus, supplement: ajoutes };
 }
@@ -97,34 +96,37 @@ export function calculerPlan(pains: Quantites, supplement: Quantites): Plan {
 export function calculerDemande(
   plan: Plan,
   habituelsSansCommande: Quantites,
-  guichet: Quantites = GUICHET_MOYEN,
+  guichet: Quantites = guichetMoyen(),
 ): DemandeEstimee {
   const demande = {} as DemandeEstimee;
   for (const cle of CLES_PRODUIT) {
     const ligne = plan.lignes[cle];
-    const estimee = ligne.pains + habituelsSansCommande[cle] + guichet[cle];
+    if (!ligne) continue;
+    const habituels = habituelsSansCommande[cle] ?? 0;
+    const auGuichet = guichet[cle] ?? 0;
+    const estimee = ligne.pains + habituels + auGuichet;
     demande[cle] = {
       commande: ligne.pains,
-      habituels: habituelsSansCommande[cle],
-      guichet: guichet[cle],
+      habituels,
+      guichet: auGuichet,
       estimee,
       prevus: ligne.prevus,
       sacs: ligne.sacs,
       supplement: ligne.supplement,
-      besoin: Math.max(0, Math.ceil((estimee - ligne.prevus) / PAINS_PAR_SAC[cle])),
+      besoin: Math.max(0, Math.ceil((estimee - ligne.prevus) / painsParSac(cle))),
     };
   }
   return demande;
 }
 
 export const totalSacs = (sacs: Quantites): number =>
-  CLES_PRODUIT.reduce((somme, cle) => somme + sacs[cle], 0);
+  CLES_PRODUIT.reduce((somme, cle) => somme + (sacs[cle] ?? 0), 0);
 
 /** Pains qu'il reste à produire par produit : prévu moins réalisé, jamais négatif. */
 export function resteAProduire(plan: Plan, realise: Realise): Record<CleProduit, number> {
   const reste = {} as Record<CleProduit, number>;
   for (const cle of CLES_PRODUIT) {
-    reste[cle] = Math.max(0, plan.lignes[cle].prevus - (realise[cle] ?? 0));
+    reste[cle] = Math.max(0, (plan.lignes[cle]?.prevus ?? 0) - (realise[cle] ?? 0));
   }
   return reste;
 }
@@ -302,7 +304,7 @@ export function etatsDesEtapes(etape: Etape): EtatDeLEtape[] {
 export const besoinEnFarine = (plan: Plan, supplementSaisi: Quantites): number =>
   plan.sacs + totalSacs(supplementSaisi);
 
-export const supplementVide = (): Quantites => ({ BAG: 0, KO: 0, GC: 0 });
+export const supplementVide = (): Quantites => parProduit(0);
 
 export const bornerSupplement = (sacs: number): number =>
   Math.max(0, Math.min(SUPPLEMENT_MAX_PAR_PRODUIT, sacs));
@@ -413,14 +415,8 @@ export const brouillonDeConsommation = (consommation: Consommation): Brouillon<M
     MATIERES_CONSOMMEES.map((matiere) => [matiere, texteDeSaisie(consommation[matiere])]),
   ) as Brouillon<Matiere>;
 
-export const brouillonDuRealise = (realise: Realise): Brouillon<CleProduit> => ({
-  BAG: texteDeSaisie(realise.BAG),
-  KO: texteDeSaisie(realise.KO),
-  GC: texteDeSaisie(realise.GC),
-});
+export const brouillonDuRealise = (realise: Realise): Brouillon<CleProduit> =>
+  Object.fromEntries(CLES_PRODUIT.map((cle) => [cle, texteDeSaisie(realise[cle] ?? null)]));
 
-export const realiseSaisi = (brouillon: Brouillon<CleProduit>): Realise => ({
-  BAG: lireSaisie(brouillon.BAG),
-  KO: lireSaisie(brouillon.KO),
-  GC: lireSaisie(brouillon.GC),
-});
+export const realiseSaisi = (brouillon: Brouillon<CleProduit>): Realise =>
+  Object.fromEntries(CLES_PRODUIT.map((cle) => [cle, lireSaisie(brouillon[cle] ?? '')]));

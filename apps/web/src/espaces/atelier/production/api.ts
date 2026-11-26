@@ -18,7 +18,9 @@ import {
   retenirJustification,
   texteDeJustification,
 } from './justifications.ts';
-import { CODE_SERVEUR, lireProductionReelle } from './reel.ts';
+import { codeServeur } from '../../comptoir/session/catalogue.ts';
+import { lireProductionReelle } from './reel.ts';
+import { CLES_PRODUIT } from './types.ts';
 import type {
   Consommation,
   InstantaneFiches,
@@ -93,11 +95,11 @@ export function actionsDe(client: QueryClient, utilisateur: string | undefined) 
   /** Les fournées à ajouter pour passer du réalisé du serveur au réalisé saisi (le serveur les cumule). */
   const fournees = async (id: number, realise: Realise) => {
     const avant = lue()?.realise;
-    for (const produit of Object.keys(CODE_SERVEUR) as (keyof Realise)[]) {
+    for (const produit of CLES_PRODUIT) {
       const voulu = realise[produit] ?? 0;
       const delta = voulu - (avant?.[produit] ?? 0);
       if (delta > 0)
-        await productionsFourneeCreate(id, { produit: CODE_SERVEUR[produit], pains: delta });
+        await productionsFourneeCreate(id, { produit: codeServeur(produit), pains: delta });
     }
   };
   /** La justification déjà envoyée pour cette production, redite pour chaque matière saisie. */
@@ -197,10 +199,7 @@ export function actionsDe(client: QueryClient, utilisateur: string | undefined) 
           const reponse = await productionsSupplementCreate({
             ...session(),
             supplement: Object.fromEntries(
-              (Object.keys(CODE_SERVEUR) as (keyof Quantites)[]).map((p) => [
-                CODE_SERVEUR[p],
-                supplement.sacs[p],
-              ]),
+              CLES_PRODUIT.map((p) => [codeServeur(p), supplement.sacs[p] ?? 0]),
             ),
             motif: supplement.motif as never,
           });

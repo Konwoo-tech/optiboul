@@ -30,10 +30,12 @@ export function ResteAProduire({ plan, realise, onSaisir }: Props) {
         <div className={styles.resteItem} key={cle}>
           <span className={styles.resteLibelle}>{libelleProduit(cle)}</span>
           <span className={styles.resteValeur} aria-live="polite">
-            {formaterNombre(reste[cle])}
+            {formaterNombre(reste[cle] ?? 0)}
           </span>
           <span className={styles.resteSur}>
-            {t('atelier.production.reste.sur', { prevus: formaterNombre(plan.lignes[cle].prevus) })}
+            {t('atelier.production.reste.sur', {
+              prevus: formaterNombre(plan.lignes[cle]?.prevus ?? 0),
+            })}
           </span>
         </div>
       ))}

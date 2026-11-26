@@ -51,8 +51,8 @@ export function PanneauRealise({
         <div className={styles.sousTitre}>{tr('sous')}</div>
       </div>
       {CLES_PRODUIT.map((cle) => {
-        const prevu = plan.lignes[cle].prevus;
-        const saisi = lireSaisie(valeurs[cle]);
+        const prevu = plan.lignes[cle]?.prevus ?? 0;
+        const saisi = lireSaisie(valeurs[cle] ?? '');
         const ecart = (saisi ?? 0) - prevu;
         const pourcent = pourcentDEcart(ecart, prevu);
         const mot = motDEcart(pourcent);
